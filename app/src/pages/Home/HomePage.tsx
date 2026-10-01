@@ -8,7 +8,7 @@ export default function HomePage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:8787/")
+    fetch("http://https://map.kopotitore.workers.dev/api/hello")
       .then((res) => res.json())
       .then((data) => setMessage(data.message));
   }, []);
@@ -16,7 +16,7 @@ export default function HomePage() {
   return (
     <>
       Test
-      <a href="https://github.com/Pycoder28311/Map/releases/download/test01/frontend-0.1.0-1.x86_64.rpm">
+      <a href="https://github.com/Pycoder28311/Map/releases/download/test01/app-0.1.0-1.x86_64.rpm">
         Download Map for Fedora
       </a>
 
