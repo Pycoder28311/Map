@@ -8,7 +8,7 @@ function App() {
   return (
     <>
       Test
-      <a href="https://github.com/Pycoder28311/Map/releases/download/test/frontend-0.1.0-1.x86_64.rpm">
+      <a href="https://github.com/Pycoder28311/Map/releases/download/test01/frontend-0.1.0-1.x86_64.rpm">
         Download Map for Fedora
       </a>
 
