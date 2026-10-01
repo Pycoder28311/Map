@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom'
-import './App.css'
-import { useCounter } from './context/CounterContext'
+import { useCounter } from '../../context/CounterContext'
 
-function App() {
+export default function HomePage() {
   const { count, increment } = useCounter()
 
   return (
@@ -17,5 +16,3 @@ function App() {
     </>
   )
 }
-
-export default App
