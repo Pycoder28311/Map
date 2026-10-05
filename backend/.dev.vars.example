@@ -1,0 +1,26 @@
+# Every variable the backend reads, with LOCAL values. Copy to .dev.vars (git-ignored) and fill in.
+# Production: the same names live in wrangler.jsonc "vars" (domains) and in .secrets.production.json
+# (secrets, uploaded with `npm run secrets:production`). Checked on the first request by src/lib/env.ts.
+
+# ── Domains ──────────────────────────────────────────────────────────────
+# Where this backend runs (Better Auth links and cookies). localhost = development mode
+BETTER_AUTH_URL=http://localhost:8787
+# Websites allowed to call the API from a browser, comma-separated (CORS + CSRF)
+WEB_ORIGINS=http://localhost:5173
+# Public base URL of images (locally served by the Worker's /images/* route)
+IMAGES_URL=http://localhost:8787/images
+# Folder inside the R2 bucket for this app's files (empty = bucket root)
+IMAGES_FOLDER=map
+# Sender address (the sender NAME comes from APP_NAME in packages/shared/src/app.ts)
+EMAIL_FROM=no-reply@testingggg.lol
+# Desktop/mobile deep-link scheme (e.g. "map"); empty until desktop Google sign-in exists
+APP_SCHEME=
+
+# ── Secrets ──────────────────────────────────────────────────────────────
+# Signs sessions. Generate: openssl rand -base64 32 (different from production)
+BETTER_AUTH_SECRET=
+# Resend API key (sending access) for the verified testingggg.lol domain
+RESEND_API_KEY=
+# Optional: Google sign-in is off unless BOTH are set
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=

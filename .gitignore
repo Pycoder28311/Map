@@ -1,0 +1,5 @@
+# Dependencies installed at the workspace root (app + backend + packages)
+node_modules/
+
+# OS files
+.DS_Store

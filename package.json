@@ -1,0 +1,9 @@
+{
+  "name": "map-workspace",
+  "private": true,
+  "workspaces": [
+    "app",
+    "backend",
+    "packages/*"
+  ]
+}

@@ -8,6 +8,9 @@
     "lib": [
       "ESNext"
     ],
+    // Don't auto-load every @types package in the workspace (the app's React/Node types):
+    // Worker types come from worker-configuration.d.ts in this folder
+    "types": [],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx"
   },

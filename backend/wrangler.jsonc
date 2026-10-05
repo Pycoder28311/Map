@@ -1,45 +1,54 @@
+// PRODUCTION configuration. Every production domain lives in "vars" below.
+// Local values: backend/.dev.vars (see .dev.vars.example). Secrets: npm run secrets:production.
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "backend",
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "map",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-01",
+  // The website (app/dist) is served by this Worker; only /api/* and /images/* run the code first
   "assets": {
     "directory": "../app/dist",
     "not_found_handling": "single-page-application",
-    "run_worker_first": [
-      "/api/*"
-    ]
+    "run_worker_first": ["/api/*", "/images/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "map-db",
+      "database_id": "0d18e1b5-e36c-4b02-a521-a09705e62589",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  // Shared with GrowMe: Map's files live under IMAGES_FOLDER ("map/")
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "growme-images"
+    }
+  ],
+  // Namespace ids are account-wide: 1001/1002 belong to GrowMe
+  "ratelimits": [
+    {
+      "name": "AUTH_STRICT",
+      "namespace_id": "2001",
+      "simple": { "limit": 5, "period": 60 }
+    },
+    {
+      "name": "API_GENERAL",
+      "namespace_id": "2002",
+      "simple": { "limit": 120, "period": 60 }
+    }
+  ],
+  // Workers Logs: CPU time per request (cpuTimeMs)
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "APP_SCHEME": "",
+    "WEB_ORIGINS": "https://map.kopotitore.workers.dev,tauri://localhost,http://tauri.localhost",
+    "BETTER_AUTH_URL": "https://map.kopotitore.workers.dev",
+    "IMAGES_URL": "https://images.testingggg.lol",
+    "IMAGES_FOLDER": "map",
+    "EMAIL_FROM": "no-reply@testingggg.lol"
   }
-  // "compatibility_flags": [
-  //   "nodejs_compat"
-  // ],
-  // "vars": {
-  //   "MY_VAR": "my-variable"
-  // },
-  // "kv_namespaces": [
-  //   {
-  //     "binding": "MY_KV_NAMESPACE",
-  //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-  //   }
-  // ],
-  // "r2_buckets": [
-  //   {
-  //     "binding": "MY_BUCKET",
-  //     "bucket_name": "my-bucket"
-  //   }
-  // ],
-  // "d1_databases": [
-  //   {
-  //     "binding": "MY_DB",
-  //     "database_name": "my-database",
-  //     "database_id": ""
-  //   }
-  // ],
-  // "ai": {
-  //   "binding": "AI"
-  // },
-  // "observability": {
-  //   "enabled": true,
-  //   "head_sampling_rate": 1
-  // }
 }

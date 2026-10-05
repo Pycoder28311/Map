@@ -8,7 +8,7 @@ export default function HomePage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    fetch("http://https://map.kopotitore.workers.dev/api/hello")
+    fetch("https://map.kopotitore.workers.dev/api/hello")
       .then((res) => res.json())
       .then((data) => setMessage(data.message));
   }, []);
@@ -21,7 +21,7 @@ export default function HomePage() {
       </a>
 
       <button onClick={increment}>Clicked {count} times</button>
-      <p>s{message}</p>
+      <p>{message}</p>
       <Link to="/dashboard">Go to dashboard</Link>
     </>
   )
