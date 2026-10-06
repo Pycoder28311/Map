@@ -1,17 +1,8 @@
 import { Link } from 'react-router-dom'
-import { useState, useEffect } from 'react';
 import { useCounter } from '../../context/CounterContext'
 
 export default function HomePage() {
   const { count, increment } = useCounter()
-
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    fetch("https://map.kopotitore.workers.dev/api/hello")
-      .then((res) => res.json())
-      .then((data) => setMessage(data.message));
-  }, []);
 
   return (
     <>
@@ -21,7 +12,8 @@ export default function HomePage() {
       </a>
 
       <button onClick={increment}>Clicked {count} times</button>
-      <p>{message}</p>
+      <Link to="/sign-in">Sign in</Link>
+      <Link to="/sign-up">Sign up</Link>
       <Link to="/dashboard">Go to dashboard</Link>
     </>
   )

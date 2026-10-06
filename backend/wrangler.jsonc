@@ -45,10 +45,10 @@
   },
   "vars": {
     "APP_SCHEME": "",
-    "WEB_ORIGINS": "https://map.kopotitore.workers.dev,tauri://localhost,http://tauri.localhost",
+    "WEB_ORIGINS": "https://map.kopotitore.workers.dev,http://localhost:5173,http://127.0.0.1:5173,tauri://localhost,http://tauri.localhost",
     "BETTER_AUTH_URL": "https://map.kopotitore.workers.dev",
     "IMAGES_URL": "https://images.testingggg.lol",
     "IMAGES_FOLDER": "map",
-    "EMAIL_FROM": "no-reply@testingggg.lol"
+    "EMAIL_FROM": "onboarding@resend.dev"
   }
 }

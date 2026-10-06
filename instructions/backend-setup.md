@@ -51,10 +51,10 @@ changes per environment is listed here; the code contains no domains.
 | Name | Kind | Production (`wrangler.jsonc` / secret) | Local (`.dev.vars`) |
 |---|---|---|---|
 | `BETTER_AUTH_URL` | var | `https://map.kopotitore.workers.dev` | `http://localhost:8787` |
-| `WEB_ORIGINS` | var | `https://map.kopotitore.workers.dev,tauri://localhost,http://tauri.localhost` | `http://localhost:5173` |
+| `WEB_ORIGINS` | var | `https://map.kopotitore.workers.dev,http://localhost:5173,http://127.0.0.1:5173,tauri://localhost,http://tauri.localhost` (the two local ones: the local website uses the live API) | `http://localhost:5173,http://127.0.0.1:5173` |
 | `IMAGES_URL` | var | `https://images.testingggg.lol` | `http://localhost:8787/images` |
 | `IMAGES_FOLDER` | var | `map` | `map` |
-| `EMAIL_FROM` | var | `no-reply@testingggg.lol` (address only; the name is `APP_NAME`) | same |
+| `EMAIL_FROM` | var | `onboarding@resend.dev` (address only; the name is `APP_NAME`; see §5) | same |
 | `APP_SCHEME` | var | empty (set when desktop deep links exist) | empty |
 | `BETTER_AUTH_SECRET` | secret | `.secrets.production.json` | its own value (`openssl rand -base64 32`) |
 | `RESEND_API_KEY` | secret | `.secrets.production.json` | a Resend key |
@@ -122,8 +122,10 @@ again.
 
 ## 5. External services
 
-- **Email (Resend):** the domain `testingggg.lol` is verified (shared with GrowMe). Use a separate API
-  key per app, so one can be revoked alone. For a production launch, give Map its own sending domain.
+- **Email (Resend):** Map sends from `onboarding@resend.dev`, Resend's test sender. It delivers
+  **only to the email of the Resend account**, so test sign-ups must use that address. The API key must
+  be allowed to send from that domain (a key restricted to another domain is refused with `403`). For a
+  launch, verify Map's own sending domain in Resend and change only `EMAIL_FROM`.
 - **Google sign-in:** a **Web application** OAuth client named "Map", redirect URIs
   `https://map.kopotitore.workers.dev/api/auth/callback/google` and
   `http://localhost:8787/api/auth/callback/google`.
@@ -131,8 +133,8 @@ again.
 ## 6. Run and deploy
 
 ```
-npm run dev --workspace app              # website, http://localhost:5173
-npm run dev --workspace backend          # API (and app/dist), http://localhost:8787
+npm run dev --workspace app              # website, http://localhost:5173, /api proxied to the LIVE Worker
+npm run dev --workspace backend          # optional local API (and app/dist), http://localhost:8787
 npm run typecheck --workspace backend
 npm run build --workspace app            # the Worker serves app/dist: build before deploying
 npm run deploy --workspace backend       # manual deploy
