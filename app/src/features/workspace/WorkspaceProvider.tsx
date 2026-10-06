@@ -12,7 +12,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core'
 import { useState, type ReactNode } from 'react'
-import { buttonClass } from '../../components/ui/buttonStyles'
+import { buttonClass } from '../../components/ui/buttons/buttonStyles'
 import type { Edge, Slot } from './layout'
 import { PanelRegistryContext } from './registryContext'
 import type { PanelRef, PanelRegistry } from './types'

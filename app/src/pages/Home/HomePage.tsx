@@ -1,7 +1,7 @@
-import DownloadIcon from '../../components/icons/DownloadIcon'
-import Button from '../../components/ui/Button'
-import ButtonLink from '../../components/ui/ButtonLink'
-import SeeMoreLink from '../../components/ui/SeeMoreLink'
+import DownloadIcon from '../../components/ui/icons/DownloadIcon'
+import Button from '../../components/ui/buttons/Button'
+import ButtonLink from '../../components/ui/buttons/ButtonLink'
+import SeeMoreLink from '../../components/ui/links/SeeMoreLink'
 import { useApp } from '../../context/AppContext'
 
 export default function HomePage() {

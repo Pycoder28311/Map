@@ -1,11 +1,12 @@
-import { memo, Suspense, type ComponentType } from 'react'
 import { LuMaximize2, LuUnlink } from 'react-icons/lu'
-import IconButton from '../../components/ui/IconButton'
-import IconSlot from '../../components/ui/IconSlot'
+import IconButton from '../../components/ui/buttons/IconButton'
+import IconSlot from '../../components/ui/icons/IconSlot'
 import DropZones from './DropZones'
 import type { Slot } from './layout'
+import PanelContent from './PanelContent'
+import { paneStyle } from './paneStyles'
 import { usePanelRegistry } from './registryContext'
-import type { PanelProps, PanelRef } from './types'
+import type { PanelRef } from './types'
 import { useWorkspace } from './useWorkspace'
 
 type Props = {
@@ -25,10 +26,10 @@ export default function Pane({ slot, panel }: Props) {
   return (
     <section
       aria-label={title}
-      style={{ gridArea: slot }}
-      className="relative flex min-h-[50vh] min-w-0 flex-col overflow-hidden rounded-(--card-radius) bg-white shadow-lg lg:min-h-0"
+      style={{ ...paneStyle, gridArea: slot }}
+      className="relative flex min-h-[50vh] min-w-0 flex-col overflow-hidden bg-surface shadow-lg lg:min-h-0"
     >
-      <header className="flex h-10 shrink-0 items-center gap-(--btn-gap) border-b border-gray-200 px-(--btn-px)">
+      <header className="flex h-10 shrink-0 items-center gap-(--btn-gap) border-b border-line px-(--btn-px)">
         <IconSlot icon={def.icon} />
         <h2 className="truncate text-body font-medium">{title}</h2>
 
@@ -50,12 +51,3 @@ export default function Pane({ slot, panel }: Props) {
     </section>
   )
 }
-
-/** The panel's own component; memo so resizing or header changes never re-render it */
-const PanelContent = memo(function PanelContent({ component: Content, id }: { component: ComponentType<PanelProps>; id?: string }) {
-  return (
-    <Suspense fallback={<p className="p-4 text-body text-gray-500">Loading…</p>}>
-      <Content id={id} />
-    </Suspense>
-  )
-})

@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { buttonClass, type ButtonVariant } from './buttonStyles'
-import IconSlot, { type ButtonIcon } from './IconSlot'
-import type { IconAnimation } from './iconAnimations'
+import IconSlot, { type ButtonIcon } from '../icons/IconSlot'
+import type { IconAnimation } from '../icons/iconAnimations'
 
 type Props = {
   variant?: ButtonVariant

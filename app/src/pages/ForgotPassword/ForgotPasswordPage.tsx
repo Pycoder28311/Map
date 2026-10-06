@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react'
-import AuthLayout from '../../components/ui/AuthLayout'
-import Button from '../../components/ui/Button'
-import ErrorText from '../../components/ui/ErrorText'
-import HoverLink from '../../components/ui/HoverLink'
-import TextField from '../../components/ui/TextField'
+import AuthLayout from '../../components/layout/AuthLayout'
+import Button from '../../components/ui/buttons/Button'
+import ErrorText from '../../components/ui/fields/ErrorText'
+import HoverLink from '../../components/ui/links/HoverLink'
+import TextField from '../../components/ui/fields/TextField'
 import { authClient } from '../../lib/auth-client'
 import { appUrl } from '../../lib/urls'
 
@@ -29,13 +29,13 @@ export default function ForgotPasswordPage() {
     return (
         <AuthLayout title="Forgot password">
             {sent ? (
-                <p className="text-body text-gray-600">
+                <p className="text-body text-fg-muted">
                     If an account exists for {email.trim()}, we sent a link to reset your password. It&apos;s
                     valid for 1 hour.
                 </p>
             ) : (
                 <form onSubmit={sendLink} className="flex flex-col gap-4">
-                    <p className="text-body text-gray-600">
+                    <p className="text-body text-fg-muted">
                         Enter your email and we&apos;ll send you a link to choose a new password.
                     </p>
                     <TextField

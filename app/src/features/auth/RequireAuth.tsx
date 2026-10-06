@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { authClient } from '../lib/auth-client'
+import { authClient } from '../../lib/auth-client'
 
 /** Pages for signed-in users only: guests go to /sign-in */
 export default function RequireAuth() {

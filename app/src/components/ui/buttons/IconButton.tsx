@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes } from 'react'
 import { iconButtonClass, type ButtonVariant } from './buttonStyles'
-import type { PlainIcon } from './IconSlot'
+import type { PlainIcon } from '../icons/IconSlot'
 
 type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & {
   icon: PlainIcon

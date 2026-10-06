@@ -2,9 +2,9 @@ import type { HTMLAttributes } from 'react'
 
 // Full class strings so Tailwind can detect them at build time.
 const VARIANTS = {
-  gray: 'bg-gray-300',
-  muted: 'bg-gray-200',
-  white: 'bg-white shadow-lg',
+  gray: 'bg-fill-strong',
+  muted: 'bg-fill',
+  white: 'bg-surface shadow-lg',
 } as const
 
 type Props = HTMLAttributes<HTMLDivElement> & {

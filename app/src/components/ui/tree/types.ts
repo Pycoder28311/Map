@@ -1,5 +1,5 @@
 import type { PanelRef } from '../../../features/workspace/types'
-import type { ButtonIcon } from '../IconSlot'
+import type { ButtonIcon } from '../icons/IconSlot'
 
 /** One node: a folder (has children, opens/closes) or a leaf (a link to a page) */
 export type TreeNode = {

@@ -1,0 +1,81 @@
+/* Colors by role, in one place: components use these (bg-surface, text-fg-muted, border-line…),
+   never raw palette colors like gray-200. A theme is only the values below.
+   The active theme is the `dark` class on <html> (index.html); without it, light. */
+
+:root {
+  --surface: #ffffff;        /* panels, cards, navbar, sidebar, modal, fields */
+  --surface-muted: #f9fafb;  /* page background behind the panels */
+  --surface-sunken: #f3f4f6; /* disabled fields */
+  --fill: #e5e7eb;           /* secondary buttons, hovers, placeholders */
+  --fill-strong: #d1d5db;    /* hover / pressed on top of --fill */
+
+  --fg: #111827;             /* text */
+  --fg-muted: #4b5563;       /* secondary text, labels */
+  --fg-subtle: #6b7280;      /* hints, placeholders, icons */
+
+  --line: #e5e7eb;           /* borders and dividers */
+  --line-strong: #d1d5db;    /* field borders */
+
+  --accent: #111827;         /* primary button, focus outline */
+  --accent-hover: #374151;
+  --accent-fg: #ffffff;      /* text on --accent */
+
+  --danger: #dc2626;
+  --overlay: #111827;        /* behind a modal (used with opacity) */
+
+  color-scheme: light;
+}
+
+.dark {
+  --surface: #1c1c1f;
+  --surface-muted: #0f0f11;
+  --surface-sunken: #26262a;
+  --fill: #2e2e33;
+  --fill-strong: #3f3f46;
+
+  --fg: #f4f4f5;
+  --fg-muted: #a1a1aa;
+  --fg-subtle: #71717a;
+
+  --line: #2e2e33;
+  --line-strong: #3f3f46;
+
+  --accent: #f4f4f5;
+  --accent-hover: #d4d4d8;
+  --accent-fg: #111113;
+
+  --danger: #f87171;
+  --overlay: #000000;
+
+  /* Native parts follow: scrollbars, inputs, the <dialog> backdrop */
+  color-scheme: dark;
+}
+
+/* `dark:` classes follow the same switch (for the rare case a role isn't enough) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Tailwind classes for the roles: bg-surface, text-fg, border-line, bg-accent, text-danger… */
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-fill: var(--fill);
+  --color-fill-strong: var(--fill-strong);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-danger: var(--danger);
+  --color-overlay: var(--overlay);
+}
+
+@layer base {
+  body {
+    background-color: var(--surface-muted);
+    color: var(--fg);
+  }
+}

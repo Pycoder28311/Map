@@ -1,5 +1,6 @@
 import { useDndContext, useDroppable } from '@dnd-kit/core'
 import { allowedEdges, type Edge, type Slot } from './layout'
+import { dropPreviewStyle } from './paneStyles'
 import { useWorkspace } from './useWorkspace'
 
 // Full class strings so Tailwind can detect them at build time.
@@ -40,7 +41,8 @@ function DropZone({ slot, edge }: { slot: Slot; edge: Edge }) {
       <div ref={setNodeRef} className={`pointer-events-auto absolute ${ZONE[edge]}`} />
       {isOver && (
         <div
-          className={`absolute rounded-(--card-radius) border-2 border-dashed border-gray-500 bg-gray-900/10 ${PREVIEW[edge]}`}
+          style={dropPreviewStyle}
+          className={`absolute border-2 border-dashed border-fg-subtle bg-fg/10 ${PREVIEW[edge]}`}
         />
       )}
     </>

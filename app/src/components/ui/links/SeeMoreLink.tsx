@@ -6,9 +6,9 @@ export default function SeeMoreLink({ className = '', children, ...link }: LinkP
   return (
     <Link
       {...link}
-      className={`group self-start text-body cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 ${className}`}
+      className={`group self-start text-body cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${className}`}
     >
-      <span className="inline-flex items-center gap-0.5 will-change-transform transition-[color,translate] duration-300 ease-out group-hover:-translate-y-px group-hover:text-neutral-700">
+      <span className="inline-flex items-center gap-0.5 will-change-transform transition-[color,translate] duration-300 ease-out group-hover:-translate-y-px group-hover:text-fg-muted">
         {children}
         <LuChevronRight className="size-[1em] shrink-0 translate-y-px" />
       </span>

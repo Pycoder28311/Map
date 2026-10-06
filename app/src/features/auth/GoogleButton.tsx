@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { FcGoogle } from 'react-icons/fc'
-import { authClient } from '../lib/auth-client'
-import { isDesktop } from '../lib/platform'
-import { appUrl } from '../lib/urls'
-import Button from './ui/Button'
-import ErrorText from './ui/ErrorText'
+import { authClient } from '../../lib/auth-client'
+import { isDesktop } from '../../lib/platform'
+import { appUrl } from '../../lib/urls'
+import Button from '../../components/ui/buttons/Button'
+import ErrorText from '../../components/ui/fields/ErrorText'
 
 /** One button for both sign-up and sign-in with Google (website only, see below) */
 export default function GoogleButton() {

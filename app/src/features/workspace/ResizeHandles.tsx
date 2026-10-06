@@ -15,8 +15,8 @@ type Props = {
 
 const STEP = 0.05
 const HANDLE =
-  'absolute z-10 rounded-full transition-colors duration-150 hover:bg-gray-400/50 active:bg-gray-500/60 ' +
-  'focus-visible:bg-gray-500/60 focus-visible:outline-none max-lg:hidden'
+  'absolute z-10 rounded-full transition-colors duration-150 hover:bg-fg-subtle/40 active:bg-fg-subtle/60 ' +
+  'focus-visible:bg-fg-subtle/60 focus-visible:outline-none max-lg:hidden'
 
 /**
  * Resize handles: the vertical line (x), the horizontal line (y) and, where they meet, the corner

@@ -1,8 +1,8 @@
 import type { AnchorHTMLAttributes, CSSProperties, ReactNode, Ref } from 'react'
 import { NavLink } from 'react-router-dom'
 import { buttonClass, type ButtonVariant } from './buttonStyles'
-import IconSlot, { type ButtonIcon } from './IconSlot'
-import type { IconAnimation } from './iconAnimations'
+import IconSlot, { type ButtonIcon } from '../icons/IconSlot'
+import type { IconAnimation } from '../icons/iconAnimations'
 
 type Props = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'className' | 'style' | 'children'> & {
   to: string

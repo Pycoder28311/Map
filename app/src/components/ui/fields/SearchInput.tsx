@@ -12,7 +12,7 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & {
 export default function SearchInput({ label = 'Search', variant = 'shadow', className = '', placeholder, ...input }: Props) {
   return (
     <label className={`${FIELD_VARIANTS[variant]} ${className}`}>
-      <LuSearch className="size-4 shrink-0 text-gray-500" />
+      <LuSearch className="size-4 shrink-0 text-fg-subtle" />
       <input type="search" aria-label={label} placeholder={placeholder ?? label} className={FIELD_INPUT} {...input} />
     </label>
   )

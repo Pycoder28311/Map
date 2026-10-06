@@ -1,6 +1,7 @@
 import { useDraggable } from '@dnd-kit/core'
 import type { CSSProperties } from 'react'
-import NavButton from '../../components/ui/NavButton'
+import NavButton from '../../components/ui/buttons/NavButton'
+import { TreeLabel } from '../../components/ui/tree/TreeItem'
 import type { TreeNode } from '../../components/ui/tree/types'
 import type { PanelDragData } from './WorkspaceProvider'
 import { useWorkspace } from './useWorkspace'
@@ -32,7 +33,7 @@ export default function PanelDragLink({ node, className = '', style }: Props) {
       className={`${className} ${isDragging ? 'opacity-50' : ''}`}
       style={style}
     >
-      {node.label}
+      <TreeLabel>{node.label}</TreeLabel>
     </NavButton>
   )
 }

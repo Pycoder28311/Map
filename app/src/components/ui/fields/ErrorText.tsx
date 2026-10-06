@@ -2,7 +2,7 @@
 export default function ErrorText({ children }: { children: string | null | undefined }) {
   if (!children) return null
   return (
-    <p role="alert" className="text-body text-red-600">
+    <p role="alert" className="text-body text-danger">
       {children}
     </p>
   )

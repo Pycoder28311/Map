@@ -13,7 +13,10 @@ app/src/
 │   ├── layout.ts (+ .test.ts)     2×2 grid templates, add/remove/keepOnly, URL (pure, tested)
 │   ├── useWorkspace.ts            the current layout (URL or current page) + actions
 │   ├── WorkspaceProvider.tsx      registry + drag & drop context (in AppLayout)
-│   ├── Workspace.tsx, Pane.tsx    the /workspace page and one panel (header: Detach, Full page)
+│   ├── Workspace.tsx              the /workspace page: 1 panel = PanelPage, 2+ = Panes in a rounded frame
+│   ├── PanelPage.tsx, Pane.tsx    a panel alone (like a normal page) / combined (header: Detach, Full page)
+│   ├── PanelContent.tsx           the panel's own component, lazy + memo (used by both)
+│   ├── paneStyles.ts              the panes' look: radius, gap, inset, border, frame corners
 │   ├── ResizeHandles.tsx, split.ts  edge and corner resizing, sizes in localStorage
 │   ├── DropZones.tsx, PageDropZones.tsx  where drags can land
 │   ├── OpenAsPanelButton.tsx      the one-button API for any element

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import Card from './Card'
+import Card from '../ui/Card'
 
 /** Centered card for the sign-in pages */
 export default function AuthLayout({ title, children }: { title: string; children: ReactNode }) {

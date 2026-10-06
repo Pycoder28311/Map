@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { authClient } from '../lib/auth-client'
+import { authClient } from '../../lib/auth-client'
 
 /** Pages for guests only (sign in, sign up, forgot password): signed-in users go to /dashboard */
 export default function GuestOnly() {

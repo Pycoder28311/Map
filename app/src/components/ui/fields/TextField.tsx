@@ -7,7 +7,7 @@ type Props = InputHTMLAttributes<HTMLInputElement> & { label: string; variant?: 
 export default function TextField({ label, variant = 'border', className = '', ...input }: Props) {
   return (
     <label className={`flex flex-col gap-1 ${className}`}>
-      <span className="text-small text-gray-700">{label}</span>
+      <span className="text-small text-fg-muted">{label}</span>
       <span className={FIELD_VARIANTS[variant]}>
         <input className={FIELD_INPUT} {...input} />
       </span>

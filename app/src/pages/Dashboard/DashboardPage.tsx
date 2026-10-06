@@ -1,8 +1,8 @@
 import { LuLogOut } from 'react-icons/lu'
 import { useNavigate } from 'react-router-dom'
-import Button from '../../components/ui/Button'
+import Button from '../../components/ui/buttons/Button'
 import Card from '../../components/ui/Card'
-import SeeMoreLink from '../../components/ui/SeeMoreLink'
+import SeeMoreLink from '../../components/ui/links/SeeMoreLink'
 import { useApp } from '../../context/AppContext'
 import OpenAsPanelButton from '../../features/workspace/OpenAsPanelButton'
 import { authClient } from '../../lib/auth-client'
@@ -24,7 +24,7 @@ export default function DashboardPage() {
             <header className="flex items-center justify-between gap-4">
                 <div>
                     <h1 className="text-title">Dashboard</h1>
-                    <p className="text-body text-gray-600">
+                    <p className="text-body text-fg-muted">
                         Signed in as {session?.user.name} ({session?.user.email})
                     </p>
                 </div>
@@ -41,7 +41,7 @@ export default function DashboardPage() {
                             <Card variant="white" className="flex items-start justify-between gap-2 p-4">
                                 <div>
                                     <p className="text-body font-medium">{project.name}</p>
-                                    <p className="text-small text-gray-600">{project.maps.length} maps</p>
+                                    <p className="text-small text-fg-muted">{project.maps.length} maps</p>
                                 </div>
                                 {/* Any element becomes a panel with this one button */}
                                 <OpenAsPanelButton panel={{ type: 'project', id: project.id }} />

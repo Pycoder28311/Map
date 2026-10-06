@@ -16,7 +16,7 @@ export default function AppLayout() {
                 <Navbar />
                 <div className="flex min-h-0 flex-1">
                     <Sidebar />
-                    <main className="relative min-w-0 flex-1 overflow-auto bg-gray-50">
+                    <main className="relative min-w-0 flex-1 overflow-auto bg-surface-muted">
                         <Outlet />
                         <PageDropZones />
                     </main>

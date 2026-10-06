@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from 'react'
-import GoogleButton from '../../components/GoogleButton'
-import AuthLayout from '../../components/ui/AuthLayout'
-import Button from '../../components/ui/Button'
-import ErrorText from '../../components/ui/ErrorText'
-import HoverLink from '../../components/ui/HoverLink'
-import TextField from '../../components/ui/TextField'
+import GoogleButton from '../../features/auth/GoogleButton'
+import AuthLayout from '../../components/layout/AuthLayout'
+import Button from '../../components/ui/buttons/Button'
+import ErrorText from '../../components/ui/fields/ErrorText'
+import HoverLink from '../../components/ui/links/HoverLink'
+import TextField from '../../components/ui/fields/TextField'
 import { authClient } from '../../lib/auth-client'
 import { appUrl } from '../../lib/urls'
 
@@ -34,7 +34,7 @@ export default function SignUpPage() {
     if (sent) {
         return (
             <AuthLayout title="Check your email">
-                <p className="text-body text-gray-600">
+                <p className="text-body text-fg-muted">
                     We sent a confirmation link to {email.trim()}. Open it to finish signing up.
                 </p>
                 <HoverLink to="/sign-in">

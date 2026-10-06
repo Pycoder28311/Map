@@ -1,5 +1,5 @@
 import { LuSquareSplitHorizontal } from 'react-icons/lu'
-import IconButton from '../../components/ui/IconButton'
+import IconButton from '../../components/ui/buttons/IconButton'
 import { MAX_PANELS } from './layout'
 import type { PanelRef } from './types'
 import { useWorkspace } from './useWorkspace'

@@ -15,7 +15,7 @@
 
   /* Text buttons (Button): the "pill" of the theme */
   --pill-px: 12px;
-  --pill-py: 6px;
+  --pill-py: 8px;
 
   /* Form fields (TextField, SearchInput) */
   --field-h: 40px;
@@ -23,11 +23,15 @@
   --field-gap: 8px;
   --field-radius: 12px;
 
-  /* Tree view (components/ui/tree): indent per level */
-  --tree-indent: 16px;
+  /* Tree view (components/ui/tree): how far right each level's (narrower) rows start */
+  --tree-indent: 8px;
 
-  /* Workspace (features/workspace): space between panels, size of the resize handles */
-  --pane-gap: 8px;
+  /* Bar popouts (components/ui/overlays/BarPopout): rounded panel growing out of a bar's edge on hover */
+  --popout-radius: 16px;
+  --popout-p: 12px;
+  --popout-duration: 300ms;
+
+  /* Workspace (features/workspace): size of the resize handles (panel look: workspace/paneStyles.ts) */
   --resize-handle: 8px;
   --resize-corner: 16px;
 }

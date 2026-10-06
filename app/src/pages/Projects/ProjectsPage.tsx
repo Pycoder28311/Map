@@ -1,5 +1,5 @@
 import Card from '../../components/ui/Card'
-import SeeMoreLink from '../../components/ui/SeeMoreLink'
+import SeeMoreLink from '../../components/ui/links/SeeMoreLink'
 import OpenAsPanelButton from '../../features/workspace/OpenAsPanelButton'
 import { PROJECTS } from '../../mocks/projects'
 
@@ -14,7 +14,7 @@ export default function ProjectsPage() {
                         <Card variant="muted" className="flex items-center justify-between gap-2 px-4 py-3">
                             <div>
                                 <p className="text-body font-medium">{project.name}</p>
-                                <p className="text-small text-gray-600">{project.description}</p>
+                                <p className="text-small text-fg-muted">{project.description}</p>
                             </div>
                             <OpenAsPanelButton panel={{ type: 'project', id: project.id }} />
                         </Card>

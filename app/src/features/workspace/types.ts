@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import type { PlainIcon } from '../../components/ui/IconSlot'
+import type { PlainIcon } from '../../components/ui/icons/IconSlot'
 
 /** Which panel: its registered type and, for items like a project, its id. Fits in the URL */
 export type PanelRef = { type: string; id?: string }
