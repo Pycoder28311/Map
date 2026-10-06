@@ -1,6 +1,7 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import { SITE_URL } from './src/config.ts'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -15,7 +16,7 @@ export default defineConfig({
     // Dev only: the website calls its own origin (/api/...), forwarded to the live Worker.
     // In production the Worker serves the website itself, so /api is the same origin there too.
     proxy: {
-      '/api': { target: 'https://map.kopotitore.workers.dev', changeOrigin: true },
+      '/api': { target: SITE_URL, changeOrigin: true },
     },
   },
 })

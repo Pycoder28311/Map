@@ -1,11 +1,19 @@
 import { useState } from 'react'
 import { authClient } from '../lib/auth-client'
+import { isDesktop } from '../lib/platform'
 import { appUrl } from '../lib/urls'
 import Button from './ui/Button'
 import ErrorText from './ui/ErrorText'
 
-/** One button for both sign-up and sign-in with Google */
+/** One button for both sign-up and sign-in with Google (website only, see below) */
 export default function GoogleButton() {
+    // Desktop: Google blocks sign-in inside embedded windows. It needs the system browser and a
+    // deep link back to the app (separate plan), so the button is hidden there for now.
+    if (isDesktop) return null
+    return <GoogleButtonWeb />
+}
+
+function GoogleButtonWeb() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
