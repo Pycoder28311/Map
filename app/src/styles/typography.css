@@ -1,0 +1,19 @@
+/* Font and text sizes. Inter is bundled with the app (@fontsource-variable/inter in main.tsx),
+   so it also works offline in the desktop app. */
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Text sizes of the "Map buttons" theme; they grow on larger screens */
+@utility text-small {
+  @apply text-[11px] lg:text-xs;
+}
+@utility text-body {
+  @apply text-sm lg:text-base;
+}
+@utility text-heading {
+  @apply text-lg md:text-xl lg:text-2xl;
+}
+@utility text-title {
+  @apply text-2xl md:text-3xl lg:text-[32px] 2xl:text-4xl;
+}

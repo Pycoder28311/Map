@@ -1,20 +1,38 @@
-import { Link } from 'react-router-dom'
-import { useCounter } from '../../context/CounterContext'
+import DownloadIcon from '../../components/icons/DownloadIcon'
+import Button from '../../components/ui/Button'
+import ButtonLink from '../../components/ui/ButtonLink'
+import SeeMoreLink from '../../components/ui/SeeMoreLink'
+import { useApp } from '../../context/AppContext'
 
 export default function HomePage() {
-  const { count, increment } = useCounter()
+  const { count, increment } = useApp()
 
   return (
-    <>
-      Test
-      <a href="https://github.com/Pycoder28311/Map/releases/download/test01/app-0.1.0-1.x86_64.rpm">
-        Download Map for Fedora
-      </a>
+    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-16">
+      <p className="text-body">Test</p>
 
-      <button onClick={increment}>Clicked {count} times</button>
-      <Link to="/sign-in">Sign in</Link>
-      <Link to="/sign-up">Sign up</Link>
-      <Link to="/dashboard">Go to dashboard</Link>
-    </>
+      <ButtonLink
+        variant="ghost"
+        icon={DownloadIcon}
+        iconAnimation="download"
+        href="https://github.com/Pycoder28311/Map/releases/download/test01/app-0.1.0-1.x86_64.rpm"
+        className="self-start"
+      >
+        Download Map for Fedora
+      </ButtonLink>
+
+      <div className="flex gap-2">
+        <ButtonLink to="/sign-in">Sign in</ButtonLink>
+        <ButtonLink to="/sign-up" variant="secondary">
+          Sign up
+        </ButtonLink>
+      </div>
+
+      <Button variant="secondary" onClick={increment} className="self-start">
+        Clicked {count} times
+      </Button>
+
+      <SeeMoreLink to="/dashboard">Go to dashboard</SeeMoreLink>
+    </main>
   )
 }

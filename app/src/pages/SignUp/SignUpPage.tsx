@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
 import GoogleButton from '../../components/GoogleButton'
 import AuthLayout from '../../components/ui/AuthLayout'
 import Button from '../../components/ui/Button'
 import ErrorText from '../../components/ui/ErrorText'
+import HoverLink from '../../components/ui/HoverLink'
 import TextField from '../../components/ui/TextField'
 import { authClient } from '../../lib/auth-client'
 import { appUrl } from '../../lib/urls'
@@ -34,12 +34,12 @@ export default function SignUpPage() {
     if (sent) {
         return (
             <AuthLayout title="Check your email">
-                <p className="text-gray-600">
+                <p className="text-body text-gray-600">
                     We sent a confirmation link to {email.trim()}. Open it to finish signing up.
                 </p>
-                <Link to="/sign-in" className="text-sm underline">
+                <HoverLink to="/sign-in">
                     Back to sign in
-                </Link>
+                </HoverLink>
             </AuthLayout>
         )
     }
@@ -79,9 +79,9 @@ export default function SignUpPage() {
 
             <GoogleButton />
 
-            <Link to="/sign-in" className="text-sm underline">
+            <HoverLink to="/sign-in">
                 Already have an account? Sign in
-            </Link>
+            </HoverLink>
         </AuthLayout>
     )
 }

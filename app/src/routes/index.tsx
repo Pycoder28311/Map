@@ -1,5 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import GuestOnly from '../components/GuestOnly'
+import AppLayout from '../components/layout/AppLayout'
+import { WORKSPACE_PATH } from '../features/workspace/layout'
+import Workspace from '../features/workspace/Workspace'
 import RequireAuth from '../components/RequireAuth'
 import HomePage from '../pages/Home/HomePage'
 import DashboardPage from '../pages/Dashboard/DashboardPage'
@@ -18,10 +21,13 @@ export default function AppRoutes() {
                 element={isDesktop ? <Navigate to="/dashboard" replace /> : <HomePage />}
             />
 
-            {/* Signed-in users only */}
+            {/* Signed-in users only, inside the navbar + sidebar frame */}
             <Route element={<RequireAuth />}>
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/projects" element={<ProjectsPage />} />
+                <Route element={<AppLayout />}>
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/projects" element={<ProjectsPage />} />
+                    <Route path={WORKSPACE_PATH} element={<Workspace />} />
+                </Route>
             </Route>
 
             {/* Guests only */}

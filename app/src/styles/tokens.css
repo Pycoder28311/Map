@@ -1,0 +1,33 @@
+/* Design tokens: sizes, spacing and radii used by the UI components (components/ui).
+   Change the look of every component here. From the "Map buttons" theme; the last
+   two groups are additions for text buttons and form fields in the same style. */
+:root {
+  --btn-px: 6px;
+  --btn-py: 6px;
+  --btn-gap: 6px;
+  --btn-radius: 12px;
+  --btn-icon-size: 16px;
+  --btn-icon-offset-start: 4px;
+  --btn-close-p: 4px;
+  --btn-close-radius: 8px;
+
+  --card-radius: 12px;
+
+  /* Text buttons (Button): the "pill" of the theme */
+  --pill-px: 12px;
+  --pill-py: 6px;
+
+  /* Form fields (TextField, SearchInput) */
+  --field-h: 40px;
+  --field-px: 12px;
+  --field-gap: 8px;
+  --field-radius: 12px;
+
+  /* Tree view (components/ui/tree): indent per level */
+  --tree-indent: 16px;
+
+  /* Workspace (features/workspace): space between panels, size of the resize handles */
+  --pane-gap: 8px;
+  --resize-handle: 8px;
+  --resize-corner: 16px;
+}

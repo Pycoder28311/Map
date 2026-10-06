@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import AuthLayout from '../../components/ui/AuthLayout'
 import Button from '../../components/ui/Button'
 import ErrorText from '../../components/ui/ErrorText'
+import HoverLink from '../../components/ui/HoverLink'
 import TextField from '../../components/ui/TextField'
 import { authClient } from '../../lib/auth-client'
 
@@ -36,10 +37,10 @@ export default function ResetPasswordPage() {
     if (!token || linkError) {
         return (
             <AuthLayout title="Link not valid">
-                <p className="text-gray-600">This reset link is invalid or has expired. Please request a new one.</p>
-                <Link to="/forgot-password" className="text-sm underline">
+                <p className="text-body text-gray-600">This reset link is invalid or has expired. Please request a new one.</p>
+                <HoverLink to="/forgot-password">
                     Request a new link
-                </Link>
+                </HoverLink>
             </AuthLayout>
         )
     }

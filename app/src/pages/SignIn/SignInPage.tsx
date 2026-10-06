@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import GoogleButton from '../../components/GoogleButton'
 import AuthLayout from '../../components/ui/AuthLayout'
 import Button from '../../components/ui/Button'
 import ErrorText from '../../components/ui/ErrorText'
+import HoverLink from '../../components/ui/HoverLink'
 import TextField from '../../components/ui/TextField'
 import { authClient } from '../../lib/auth-client'
 
@@ -87,9 +88,9 @@ export default function SignInPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                     />
-                    <Link to="/forgot-password" className="text-sm underline">
+                    <HoverLink to="/forgot-password">
                         Forgot password?
-                    </Link>
+                    </HoverLink>
                     <ErrorText>{error}</ErrorText>
                     <Button type="submit" disabled={loading || !email.trim() || !password}>
                         {loading ? 'Signing in...' : 'Sign in'}
@@ -116,7 +117,7 @@ export default function SignInPage() {
             {mode === 'code-enter' && (
                 <form onSubmit={signInWithCode} className="flex flex-col gap-4">
                     {emailField}
-                    <p className="text-sm text-gray-600">
+                    <p className="text-body text-gray-600">
                         If an account exists for {email.trim()}, we sent a 6-digit code.
                     </p>
                     <TextField
@@ -143,9 +144,9 @@ export default function SignInPage() {
 
             <GoogleButton />
 
-            <Link to="/sign-up" className="text-sm underline">
+            <HoverLink to="/sign-up">
                 No account? Sign up
-            </Link>
+            </HoverLink>
         </AuthLayout>
     )
 }

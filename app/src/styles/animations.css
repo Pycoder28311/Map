@@ -1,0 +1,9 @@
+@theme {
+  --animate-download: download 1s ease-in-out infinite;
+
+  /* Percent of the icon's size, so it scales with --btn-icon-size (12.5% = 2px at 16px). */
+  @keyframes download {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(12.5%); }
+  }
+}
