@@ -2,56 +2,93 @@
    Change the look of every component here. From the "Map buttons" theme; the last
    two groups are additions for text buttons and form fields in the same style. */
 :root {
-  --btn-px: 6px;
-  --btn-py: 6px;
-  --btn-radius: 12px;
-  --btn-icon-size: 16px;
-  --btn-icon-offset-start: 4px;
-  --btn-close-p: 4px;
-  --btn-close-radius: 8px;
+   --btn-px: 6px;
+   --btn-py: 6px;
+   --btn-radius: 12px;
+   --btn-icon-size: 16px;
+   --btn-icon-offset-start: 4px;
+   --btn-close-p: 4px;
+   --btn-close-radius: 8px;
 
-  --card-radius: 12px;
+   --card-radius: 12px;
 
-  /* Text buttons (Button): the "pill" of the theme */
-  --pill-px: 12px;
-  --pill-py: 8px;
+  /* Clickable icons (components/ui/icons/iconEffects.ts): grow on hover, shrink while pressed */
+  --icon-hover-scale: 1.12;
+  --icon-click-scale: 0.85;
+  --icon-effect-duration: 150ms;
 
-  /* Form fields (TextField, SearchInput) */
-  --field-h: 40px;
-  --field-px: 12px;
-  --field-gap: 8px;
-  --field-radius: 12px;
+   /* Text buttons (Button): the "pill" of the theme */
+   --pill-px: 12px;
+   --pill-py: 8px;
 
-  /* Tree view (components/ui/tree): how far right each level's (narrower) rows start */
-  --tree-indent: 8px;
-  /* between the icon and the name (the icon also has --btn-close-p around it) */
-  --tree-label-gap: 4px;
-  --tree-label-fade: 24px;
-  /* how long the fade at the end of a long name is */
+   /* Form fields (TextField, SearchInput) */
+   --field-h: 40px;
+   --field-px: 12px;
+   --field-gap: 8px;
+   --field-radius: 12px;
 
-  /* Bar popouts (components/ui/overlays/BarPopout): rounded panel growing out of a bar's edge on hover */
-  --popout-radius: 16px;
-  --popout-p: 12px;
-  --popout-duration: 300ms;
+   /* Tree view (components/ui/tree): how far right each level's (narrower) rows start */
+   --tree-indent: 8px;
+   /* between the icon and the name (the icon also has --btn-close-p around it) */
+   --tree-label-gap: 4px;
+   --tree-label-fade: 24px;
+   /* how long the fade at the end of a long name is */
+   --tree-compact-duration: 0ms;
+   /* compact tree (icons only): how long its rows take to shrink to their icon and back (a container
+     opening/closing around it sets it to its own animation's length, e.g. the sidebar) */
 
-  /* Row menus (components/ui/tree/TreeMenu): fixed sizes, so the dots know where each item is */
-  --menu-p: 4px;
-  /* padding inside the menu */
-  --menu-border: 1px;
-  --menu-item-h: 32px;
-  /* height of one item */
-  --menu-item-px: 8px;
-  /* item padding left/right */
-  --menu-dot: 3px;
-  /* size of a flying dot */
-  --menu-item-duration: 450ms;
-  /* one item: dot slides down (~55%), then pops into the button */
-  --menu-stagger: 70ms;
-  /* delay between one item and the next */
-  --menu-minus-delay: 0ms;
-  /* the trigger's − appears this long after the last dot has landed */
+   /* Sidebar (components/layout/sidebar): full width, the thin icons-only rail, open/close animation */
+   --sidebar-w: 224px;
+   --sidebar-rail: 64px;
+   --sidebar-py: 8px;
+   /* space above/below the tree (left/right: computed to center the icons in the rail, Sidebar.tsx) */
+   --sidebar-duration: 200ms;
 
-  /* Workspace (features/workspace): size of the resize handles (panel look: workspace/paneStyles.ts) */
-  --resize-handle: 8px;
-  --resize-corner: 16px;
+   /* Bar popouts (components/ui/overlays/BarPopout): rounded panel growing out of a bar's edge on hover */
+   --popout-radius: 16px;
+   --popout-p: 12px;
+   --popout-duration: 300ms;
+
+   /* Row menus (components/ui/tree/TreeMenu): fixed sizes, so the dots know where each item is */
+   /* the menu */
+   --menu-offset: 4px;
+   /* space between the ⋯ trigger and the menu below it */
+   --menu-radius: 12px;
+   --menu-p: 4px;
+   /* padding inside the menu */
+   --menu-border: 1px;
+   --menu-min-w: 176px;
+   --menu-gap: 0px;
+   /* between items (and around the lines between groups) */
+   /* its buttons (items) */
+   --menu-item-h: 32px;
+   /* height of one item */
+   --menu-item-px: 8px;
+   /* item padding left/right */
+   --menu-item-radius: 8px;
+   --menu-icon-gap: 8px;
+   /* between an item's icon and its name */
+   /* the line between groups of items */
+   --menu-sep-space: 4px;
+   /* space above and below it (the line itself is 1px) */
+   --menu-dot: 3px;
+   /* size of a flying dot */
+   --menu-item-duration: 450ms;
+   /* one item: dot slides down (~55%), then pops into the button */
+   --menu-stagger: 70ms;
+   /* delay between one item and the next */
+   --menu-minus-delay: 0ms;
+   /* the trigger's − appears this long after the last dot has landed */
+
+   /* Workspace (features/workspace): size of the resize handles (panel look: workspace/paneStyles.ts) */
+   --resize-handle: 8px;
+   --resize-corner: 16px;
+
+   /* Pane island (workspace/PaneIsland): the small rounded bar at the top centre of each panel */
+   --island-top: 6px;
+   /* from the panel's top edge */
+   --island-p: 2px;
+   /* padding around its buttons */
+   --island-gap: 2px;
+   /* between its buttons */
 }

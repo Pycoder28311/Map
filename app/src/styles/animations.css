@@ -8,44 +8,96 @@
   }
 }
 
-/* Row menu (components/ui/tree/menuAnimation.ts). Opening: each item's dot leaves the ⋯ trigger,
-   slides down to the item's icon spot and pops; the item grows out of it; the panel fills in behind.
+/* Row menu (components/ui/tree/menuAnimation.ts). Opening: the ⋯ is a queue of dots, one per item,
+   moving left one place every --menu-stagger; the front dot slides down to its item's icon spot and
+   the item opens out of it; new dots fade in at the back; the panel fills in behind and grows with
+   the items, each group line drawn as it reaches it; once the last
+   item is shown, the trigger's − appears.
    Closing: immediate (no animation).
    `inline`: the classes get these values themselves, so --i (the item's index, for its delay) is
    read on each item, not once on :root. */
 @theme inline {
-  --animate-menu-dot: menu-dot var(--menu-item-duration) cubic-bezier(0.2, 0.8, 0.2, 1)
+  /* Its place in the queue: from --i places behind the front to the front (one place per stagger,
+     so it arrives as it's its turn to leave); fades in during the stagger before it reaches the
+     ⋯'s last spot (3rd place), so only the ⋯'s three spots show dots */
+  --animate-menu-queue: menu-queue calc(var(--i, 0) * var(--menu-stagger)) linear both,
+    menu-queue-in var(--menu-stagger) linear calc((var(--i, 0) - 3) * var(--menu-stagger)) both;
+  /* Easing per phase: in the keyframes */
+  --animate-menu-dot: menu-dot var(--menu-item-duration) linear
     calc(var(--i, 0) * var(--menu-stagger)) both;
-  --animate-menu-pop: menu-pop var(--menu-item-duration) cubic-bezier(0.34, 1.56, 0.64, 1)
+  --animate-menu-bloom: menu-bloom var(--menu-item-duration) ease-out
     calc(var(--i, 0) * var(--menu-stagger)) both;
-  --animate-menu-panel: menu-panel 200ms ease-out calc(var(--menu-item-duration) * 0.4) both;
+  --animate-menu-pop: menu-pop var(--menu-item-duration) ease-out
+    calc(var(--i, 0) * var(--menu-stagger)) both;
+  /* The backdrop: fills in as the first dot arrives (0.4), then, from when it lands (0.45), grows
+     with the items: one more item every --menu-stagger, like their dots (linear, so it keeps pace) */
+  --animate-menu-backdrop: menu-panel 200ms ease-out calc(var(--menu-item-duration) * 0.4) both,
+    menu-grow calc((var(--menu-count, 1) - 1) * var(--menu-stagger)) linear calc(var(--menu-item-duration) * 0.45) both;
+  /* A group line: drawn just before the first item below it lands (half a stagger earlier: the
+     backdrop's edge passes it then) */
+  --animate-menu-sep: menu-sep calc(var(--menu-item-duration) * 0.3) ease-out
+    calc((var(--i, 0) - 0.5) * var(--menu-stagger) + var(--menu-item-duration) * 0.45) both;
 
-  /* Where a dot starts: the trigger's dot, relative to the item's icon spot (written in the keyframe:
-     a variable here would be resolved on :root, where --trigger-x/y and --i don't exist):
-     --trigger-x/y: trigger centre from the menu's corner; --dot: -1, 0, 1 = left, middle, right dot
-     of the ⋯, 7/24 of its size apart */
+  /* Where a dot starts: the front of the queue, relative to the item's icon spot (written in the
+     keyframe: a variable here would be resolved on :root, where --trigger-x/y and --i don't exist):
+     --trigger-x/y: trigger centre from the menu's corner; the front of the queue is the ⋯'s left dot, 7/24 of its size left of its centre; the places are
+     that far apart too; --i items above it, --menu-gap apart; --seps: lines above the item
+     (1px + --menu-sep-space above and below each, and a --menu-gap after it) */
 
-  /* Open: from the trigger's dot to the item's icon spot, then pops */
+  /* `transform` (not `translate`): it adds up with menu-dot's translate on the inner dot */
+  @keyframes menu-queue {
+    from { transform: translateX(calc(var(--i) * var(--btn-icon-size) * 7 / 24)); }
+    to { transform: none; }
+  }
+  @keyframes menu-queue-in {
+    from { opacity: 0; }
+  }
+
+  /* Open: from the front of the queue to the item's icon spot, then swells and fades as the item opens */
   @keyframes menu-dot {
     0% {
       translate:
-        calc(var(--trigger-x) + var(--dot) * var(--btn-icon-size) * 7 / 24 - var(--menu-border) - var(--menu-p) - var(--menu-item-px) - var(--btn-icon-size) / 2)
-        calc(var(--trigger-y) - var(--menu-border) - var(--menu-p) - (var(--i) + 0.5) * var(--menu-item-h));
+        calc(var(--trigger-x) - var(--btn-icon-size) * 7 / 24 - var(--menu-border) - var(--menu-p) - var(--menu-item-px) - var(--btn-icon-size) / 2)
+        calc(var(--trigger-y) - var(--menu-border) - var(--menu-p) - (var(--i) + 0.5) * var(--menu-item-h) - var(--i) * var(--menu-gap) - var(--seps, 0) * (1px + 2 * var(--menu-sep-space) + var(--menu-gap)));
       scale: 1;
       opacity: 1;
+      /* The slide speeds up into its spot (no slow end), so it visibly lands exactly at 45%, the
+         moment the item starts opening out of it */
+      animation-timing-function: cubic-bezier(0.4, 0, 0.9, 1);
     }
-    55% { translate: 0 0; scale: 1; opacity: 1; }
-    100% { translate: 0 0; scale: 5; opacity: 0; }
+    45% { translate: 0 0; scale: 1; opacity: 1; animation-timing-function: ease-out; }
+    55%, 100% { translate: 0 0; scale: 2.5; opacity: 0; }
   }
 
-  /* Open: hidden while its dot travels, then pops out of it (slight overshoot) */
+  /* Phases of one item (% of --menu-item-duration): 0–45 its dot travels; 45 it lands, and at once
+     the item's background spreads from it as a circle (45–65) and the icon + label are revealed by
+     a circle from the same spot (45–70); 65–100 the background fades. Circles: centred on the icon spot, 150% reaches
+     the far corners. */
+
+  /* The item's background (BLOOM, on the whole item: the icon spot is --menu-item-px in) */
+  @keyframes menu-bloom {
+    0%, 44.9% { opacity: 0; clip-path: circle(0 at calc(var(--menu-item-px) + var(--btn-icon-size) / 2) 50%); }
+    45% { opacity: 1; clip-path: circle(calc(var(--menu-dot) / 2) at calc(var(--menu-item-px) + var(--btn-icon-size) / 2) 50%); }
+    65% { opacity: 1; clip-path: circle(150% at calc(var(--menu-item-px) + var(--btn-icon-size) / 2) 50%); }
+    100% { opacity: 0; clip-path: circle(150% at calc(var(--menu-item-px) + var(--btn-icon-size) / 2) 50%); }
+  }
+
+  /* The icon + label (ITEM_CONTENT: starts at the icon, so the icon spot is half an icon in) */
   @keyframes menu-pop {
-    0%, 50% { opacity: 0; scale: 0.4; }
-    80% { opacity: 1; scale: 1.06; }
-    100% { opacity: 1; scale: 1; }
+    0%, 45% { clip-path: circle(0 at calc(var(--btn-icon-size) / 2) 50%); }
+    70%, 100% { clip-path: circle(150% at calc(var(--btn-icon-size) / 2) 50%); }
   }
 
   /* Background, border and shadow fill in (the content stays visible: only these fade) */
+  /* From one item tall (its padding and border around it) to the menu's full height */
+  @keyframes menu-grow {
+    from { height: calc(2 * var(--menu-border) + 2 * var(--menu-p) + var(--menu-item-h)); }
+  }
+
+  @keyframes menu-sep {
+    from { scale: 0 1; opacity: 0; }
+  }
+
   @keyframes menu-panel {
     from { background-color: transparent; border-color: transparent; box-shadow: 0 0 #0000; }
   }

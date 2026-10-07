@@ -1,4 +1,5 @@
 import { LuChevronDown, LuChevronRight } from 'react-icons/lu'
+import { ICON_EFFECT_GROUP, iconEffectClass } from '../icons/iconEffects'
 import type { ButtonIcon } from '../icons/IconSlot'
 import { ICON_BOX, ICON_BUTTON } from './treeIconStyles'
 
@@ -47,9 +48,10 @@ export default function TreeRowIcon({ icon: Icon, folder, toggle }: Props) {
         aria-label={toggle.label}
         title={toggle.label}
         onClick={toggle.onClick}
-        className={`${ICON_BOX} ${bg} ${ICON_BUTTON}`}
+        className={`${ICON_EFFECT_GROUP} ${ICON_BOX} ${bg} ${ICON_BUTTON}`}
       >
-        {inner}
+        {/* Hover/click effects only when it's a button of its own */}
+        <span className={`flex ${iconEffectClass()}`}>{inner}</span>
       </button>
     )
   }

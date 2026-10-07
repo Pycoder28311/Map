@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
   addPanel,
   allowedEdges,
+  borders,
   fromSearchParams,
   keepOnly,
+  moveEdges,
+  movePanel,
+  swapPanels,
   removePanel,
   single,
   splitLines,
@@ -120,5 +124,59 @@ describe('URL', () => {
     expect(fromSearchParams(params('/workspace?panels=map:1,map:2,map:3,map:4,map:5'), known)?.panels).toHaveLength(4)
     expect(fromSearchParams(params('/workspace?panels=nope'), known)).toBeNull()
     expect(fromSearchParams(params('/workspace'), known)).toBeNull()
+  })
+})
+
+describe('movePanel', () => {
+  const cols: WorkspaceLayout = { template: '2-cols', panels: [A, B] }
+
+  it('turns two columns into two rows', () => {
+    expect(movePanel(cols, 'a', { slot: 'b', edge: 'bottom' })).toEqual({ template: '2-rows', panels: [B, A] })
+    expect(movePanel(cols, 'a', { slot: 'b', edge: 'right' })).toEqual({ template: '2-cols', panels: [B, A] })
+  })
+
+  it('is null when nothing would change, or onto itself', () => {
+    expect(movePanel(cols, 'a', { slot: 'b', edge: 'left' })).toBeNull()
+    expect(movePanel(cols, 'a', { slot: 'a', edge: 'right' })).toBeNull()
+  })
+
+  it('with 4 panels, only into the neighbour that grows into its place', () => {
+    const four: WorkspaceLayout = { template: '4', panels: [A, B, C, D] }
+    // d out: b grows down; d back on top of it = b and d swapped
+    expect(movePanel(four, 'd', { slot: 'b', edge: 'top' })).toEqual({ template: '4', panels: [A, D, C, B] })
+    // a single cell can't be split
+    expect(moveEdges(four, 'd', 'a')).toEqual([])
+  })
+
+  it('lists only the edges that change something', () => {
+    expect(moveEdges(cols, 'a', 'b')).toEqual(['right', 'top', 'bottom'])
+    expect(moveEdges(cols, 'a', 'a')).toEqual([])
+  })
+})
+
+describe('swapPanels', () => {
+  it('swaps two places, keeping the shape', () => {
+    const three: WorkspaceLayout = { template: '3-left', panels: [A, B, C] }
+    expect(swapPanels(three, 'a', 'c')).toEqual({ template: '3-left', panels: [C, B, A] })
+  })
+
+  it('is null onto itself or an empty slot', () => {
+    const cols: WorkspaceLayout = { template: '2-cols', panels: [A, B] }
+    expect(swapPanels(cols, 'a', 'a')).toBeNull()
+    expect(swapPanels(cols, 'a', 'c')).toBeNull()
+  })
+})
+
+
+describe('borders', () => {
+  it('one per pair of panels a line separates', () => {
+    expect(borders('2-cols')).toEqual([{ axis: 'x', part: 'whole', slots: ['a', 'b'] }])
+    // a | b above, a | c below: two borders on the same line, then b / c
+    expect(borders('3-left')).toEqual([
+      { axis: 'x', part: 'start', slots: ['a', 'b'] },
+      { axis: 'x', part: 'end', slots: ['a', 'c'] },
+      { axis: 'y', part: 'end', slots: ['b', 'c'] },
+    ])
+    expect(borders('4')).toHaveLength(4)
   })
 })

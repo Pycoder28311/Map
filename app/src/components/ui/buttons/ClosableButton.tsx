@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { LuX } from 'react-icons/lu'
 import { ICON_HOVER } from './buttonStyles'
+import { ICON_EFFECT_GROUP, iconEffectClass } from '../icons/iconEffects'
 import IconSlot, { type ButtonIcon } from '../icons/IconSlot'
 import type { IconAnimation } from '../icons/iconAnimations'
 
@@ -26,9 +27,9 @@ export default function ClosableButton({ icon, iconAnimation = 'none', children,
         type="button"
         aria-label={closeLabel}
         onClick={onClose}
-        className={`ml-auto cursor-pointer ${ICON_HOVER}`}
+        className={`${ICON_EFFECT_GROUP} ml-auto cursor-pointer ${ICON_HOVER}`}
       >
-        <LuX className="size-(--btn-icon-size)" />
+        <LuX className={`size-(--btn-icon-size) ${iconEffectClass()}`} />
       </button>
     </div>
   )

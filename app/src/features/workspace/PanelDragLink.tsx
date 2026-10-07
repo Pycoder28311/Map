@@ -2,7 +2,7 @@ import { useDraggable } from '@dnd-kit/core'
 import type { CSSProperties, ReactNode } from 'react'
 import NavButton from '../../components/ui/buttons/NavButton'
 import type { TreeNode } from '../../components/ui/tree/types'
-import type { PanelDragData } from './WorkspaceProvider'
+import type { PanelDragData } from './types'
 import { useWorkspace } from './useWorkspace'
 
 type Props = { node: TreeNode; className?: string; style?: CSSProperties; children: ReactNode }
@@ -18,7 +18,7 @@ export default function PanelDragLink({ node, className = '', style, children }:
   const open = panel ? isOpen(panel) : false
   const disabled = !panel || !node.draggable || !isDraggable(panel) || open || !canAdd
 
-  const data: PanelDragData | undefined = panel && { panel, label: node.label }
+  const data: PanelDragData | undefined = panel && { kind: 'new', panel, label: node.label }
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({ id: `tree:${node.id}`, data, disabled })
   // Keep the link's own role (dnd-kit would announce it as a button)
   const { role: _role, ...dragAttributes } = attributes

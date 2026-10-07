@@ -10,14 +10,20 @@ something a panel. The design is in `docs/plans/03-workspace-panels.md`.
 app/src/
 ├── panels.ts                      PROJECT: the registry, one entry per kind of panel
 ├── features/workspace/            ENGINE: knows nothing about projects, maps or pages
-│   ├── layout.ts (+ .test.ts)     2×2 grid templates, add/remove/keepOnly, URL (pure, tested)
+│   ├── layout.ts (+ .test.ts)     2×2 grid templates, add/remove/move/swap/keepOnly, URL (pure, tested)
 │   ├── useWorkspace.ts            the current layout (URL or current page) + actions
 │   ├── WorkspaceProvider.tsx      registry + drag & drop context (in AppLayout)
 │   ├── Workspace.tsx              the /workspace page: 1 panel = PanelPage, 2+ = Panes in a rounded frame
-│   ├── PanelPage.tsx, Pane.tsx    a panel alone (like a normal page) / combined (header: Detach, Full page)
+│   ├── PanelPage.tsx, Pane.tsx    a panel alone (like a normal page) / combined (PaneIsland: Detach, Full page)
+│   ├── PaneIsland.tsx             a pane's floating actions: grip (drag onto another pane), Detach, Full page
+│   ├── paneFlip.ts                panes glide to their new places when the layout changes
+│   ├── workspaceDrag.ts           the drag in progress (context) + drop zone ids (new panels)
+│   ├── usePaneRearrange.ts        dragging a pane: the panes shown as if dropped there (URL changes on drop)
+│   ├── dropTarget.ts (+ .test.ts) where a dragged pane lands, from the pointer (pure geometry)
 │   ├── PanelContent.tsx           the panel's own component, lazy + memo (used by both)
 │   ├── paneStyles.ts              the panes' look: radius, gap, inset, border, frame corners
 │   ├── ResizeHandles.tsx, split.ts  edge and corner resizing, sizes in localStorage
+│   ├── SwapButtons.tsx            a button in the middle of each border: the two panels trade places
 │   ├── DropZones.tsx, PageDropZones.tsx  where drags can land
 │   ├── OpenAsPanelButton.tsx      the one-button API for any element
 │   └── PanelDragLink.tsx          a draggable sidebar link

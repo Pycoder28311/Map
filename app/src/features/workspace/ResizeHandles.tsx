@@ -109,7 +109,8 @@ export default function ResizeHandles({ template, containerRef, split, onCommit 
           aria-orientation="vertical"
           aria-label="Resize columns"
           aria-valuenow={Math.round(split.x * 100)}
-          className={`${HANDLE} cursor-col-resize`}
+          // peer/x: the swap buttons on this line show while it's hovered (SwapButtons)
+          className={`peer/x ${HANDLE} cursor-col-resize`}
           style={xStyle}
           {...handlers('x')}
         />
@@ -120,7 +121,7 @@ export default function ResizeHandles({ template, containerRef, split, onCommit 
           aria-orientation="horizontal"
           aria-label="Resize rows"
           aria-valuenow={Math.round(split.y * 100)}
-          className={`${HANDLE} cursor-row-resize`}
+          className={`peer/y ${HANDLE} cursor-row-resize`}
           style={yStyle}
           {...handlers('y')}
         />

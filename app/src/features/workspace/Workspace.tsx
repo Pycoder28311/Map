@@ -1,11 +1,14 @@
 import { useRef, type CSSProperties } from 'react'
 import { Navigate } from 'react-router-dom'
-import { gridAreas, panelKey, SLOTS } from './layout'
+import { gridAreas, panelKey, SLOTS, workspaceHref } from './layout'
 import Pane from './Pane'
 import PanelPage from './PanelPage'
+import { usePaneFlip } from './paneFlip'
 import { PANE_GAP, paneGridStyle, workspaceFrameStyle } from './paneStyles'
 import ResizeHandles from './ResizeHandles'
+import SwapButtons from './SwapButtons'
 import { percent, useSplit } from './split'
+import { usePaneRearrange } from './usePaneRearrange'
 import { useWorkspace } from './useWorkspace'
 
 // From lg up: a 2×2 grid whose lines sit at --split-x / --split-y (changed live by ResizeHandles).
@@ -20,9 +23,14 @@ const GRID =
  * inside a rounded frame whose corners continue the navbar and sidebar.
  */
 export default function Workspace() {
-  const { layout } = useWorkspace()
+  const { layout: saved, swap } = useWorkspace()
   const [split, saveSplit] = useSplit()
   const gridRef = useRef<HTMLDivElement>(null)
+  // While a pane is dragged, the panes are shown as if it were dropped where the pointer is
+  const { preview } = usePaneRearrange(gridRef, saved, split)
+  const layout = preview ?? saved
+  // Panes glide to their new places when the layout (or its preview) changes
+  usePaneFlip(gridRef, layout ? workspaceHref(layout) : '')
 
   if (!layout) return <Navigate to="/dashboard" replace />
   if (layout.panels.length === 1) return <PanelPage panel={layout.panels[0]} />
@@ -45,6 +53,8 @@ export default function Workspace() {
             <Pane key={panelKey(panel)} slot={SLOTS[i]} panel={panel} />
           ))}
           <ResizeHandles template={layout.template} containerRef={gridRef} split={split} onCommit={saveSplit} />
+          {/* After the lines: they show it on hover (peer) */}
+          <SwapButtons template={layout.template} onSwap={swap} />
         </div>
       </div>
     </div>

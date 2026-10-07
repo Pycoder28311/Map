@@ -1,25 +1,20 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
 
-/** App-wide state shared by pages and global elements (navbar, sidebar) */
+/** App-wide state shared by pages and global elements (the sidebar's own: layout/sidebar/useSidebar.ts) */
 type AppContextType = {
     count: number
     increment: () => void
-    /** Sidebar visibility: toggled from the navbar, read by the sidebar */
-    sidebarOpen: boolean
-    toggleSidebar: () => void
 }
 
 const AppContext = createContext<AppContextType | null>(null)
 
 export function AppProvider({ children }: { children: ReactNode }) {
     const [count, setCount] = useState(0)
-    const [sidebarOpen, setSidebarOpen] = useState(true)
 
     const increment = () => setCount((c) => c + 1)
-    const toggleSidebar = () => setSidebarOpen((open) => !open)
 
     return (
-        <AppContext.Provider value={{ count, increment, sidebarOpen, toggleSidebar }}>
+        <AppContext.Provider value={{ count, increment }}>
             {children}
         </AppContext.Provider>
     )

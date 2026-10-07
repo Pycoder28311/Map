@@ -1,4 +1,5 @@
 import type { PanelRef } from '../../../features/workspace/types'
+import type { IconEffects } from '../icons/iconEffects'
 import type { ButtonIcon } from '../icons/IconSlot'
 
 /** One node: a folder (has children, opens/closes) or a leaf (a link to a page) */
@@ -38,7 +39,8 @@ export type TreeIconShow = 'always' | 'hover'
  */
 export type TreeIconBg = 'none' | 'hover' | 'always'
 
-type TreeIconLook = {
+/** + hoverEffect / clickEffect (IconEffects): clickable icons only, both on unless turned off */
+type TreeIconLook = IconEffects & {
   /** Default 'always' */
   show?: TreeIconShow
   /** Default 'none'; 'hover' when it is clickable */
@@ -54,18 +56,21 @@ export type TreeMenuItem = {
   danger?: boolean
 }
 
+/** Actions that belong together; the menu draws a line between groups */
+export type TreeMenuGroup = TreeMenuItem[]
+
 /**
  * An icon on the right of a row, outside the row's button/link. It can be:
  * - decoration / a sign: `icon` (no onClick, no menu)
  * - a button: `icon` + `onClick`
- * - a menu of actions below it: `menu`. No `icon`: a menu's trigger is always the ⋯ whose dots fly
+ * - a menu of actions below it: `menu`, in groups (a line between them). No `icon`: a menu's trigger is always the ⋯ whose dots fly
  *   out into the items and leave a ✕ that closes it (menuAnimation.ts)
  * A clickable icon needs a `label` (it has no visible text).
  */
 export type TreeRightIcon =
   | (TreeIconLook & { icon: ButtonIcon; label?: string; onClick?: undefined; menu?: undefined })
   | (TreeIconLook & { icon: ButtonIcon; label: string; onClick: () => void; menu?: undefined })
-  | (TreeIconLook & { label: string; menu: TreeMenuItem[]; icon?: undefined; onClick?: undefined })
+  | (TreeIconLook & { label: string; menu: TreeMenuGroup[]; icon?: undefined; onClick?: undefined })
 
 /** The right icons of every row, chosen per node; set once on TreeView (the left icon is the node's) */
 export type TreeIcons = {

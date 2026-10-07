@@ -23,6 +23,7 @@ type Props = {
   renderLink?: RenderLink
   icons?: TreeIcons
   editableLabels?: boolean
+  compact?: boolean
 }
 
 // Fills the row; the right icons sit over its end and the label fades before them
@@ -48,12 +49,13 @@ const iconsWidth = (n: number) =>
  * - leaf: the row is a link
  * The right icons sit over the end of the row (not inside the button/link), so they can be buttons.
  */
-export default function TreeItem({ node, expanded, onToggle, renderLink, icons = {}, editableLabels }: Props) {
+export default function TreeItem({ node, expanded, onToggle, renderLink, icons = {}, editableLabels, compact }: Props) {
   const state: TreeRowState = { isFolder: !!node.children?.length, isOpen: expanded.has(node.id) }
   const isLink = !state.isFolder || !!(node.to || node.panel)
   const icon = state.isOpen ? (node.openIcon ?? node.icon) : node.icon
   const folder = state.isFolder ? { isOpen: state.isOpen } : undefined
-  const right = icons.right?.(node, state) ?? []
+  // Compact: no right icons (they'd sit over the left one)
+  const right = compact ? [] : (icons.right?.(node, state) ?? [])
   const alwaysShown = right.filter((i) => (i.show ?? 'always') === 'always').length
 
   // [icon] then the label (--tree-label-gap between). One child for the button/link, so the tree's
@@ -72,10 +74,11 @@ export default function TreeItem({ node, expanded, onToggle, renderLink, icons =
 
   return (
     <li role="treeitem" aria-expanded={state.isFolder ? state.isOpen : undefined}>
-      {/* The row: its hover background spans the button/link and the right icons */}
+      {/* The row: its hover background spans the button/link and the right icons. Compact (TreeView):
+          --tree-row-max narrows it to its icon, smoothly over --tree-compact-duration */}
       <div
         style={{ '--icons-rest': iconsWidth(alwaysShown), '--icons-hover': iconsWidth(right.length) } as CSSProperties}
-        className="group/row relative flex items-center rounded-(--btn-radius) hover:bg-fill [--icons:var(--icons-rest)] hover:[--icons:var(--icons-hover)] has-[:focus-visible]:[--icons:var(--icons-hover)]"
+        className="group/row relative flex items-center rounded-(--btn-radius) hover:bg-fill [--icons:var(--icons-rest)] hover:[--icons:var(--icons-hover)] has-[:focus-visible]:[--icons:var(--icons-hover)] max-w-[var(--tree-row-max,100%)] transition-[max-width] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none"
       >
         {!isLink ? (
           <Button variant="ghost" onClick={() => onToggle(node.id)} className={ROW_CLASS} style={INDENT}>
@@ -124,6 +127,7 @@ export default function TreeItem({ node, expanded, onToggle, renderLink, icons =
               renderLink={renderLink}
               icons={icons}
               editableLabels={editableLabels}
+              compact={compact}
             />
           ))}
         </ul>

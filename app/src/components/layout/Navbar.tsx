@@ -1,20 +1,20 @@
 import { LuBell, LuMenu } from 'react-icons/lu'
 import { Link } from 'react-router-dom'
-import { useApp } from '../../context/AppContext'
 import BarPopout from '../ui/overlays/BarPopout'
 import Button from '../ui/buttons/Button'
+import { useSidebar } from './sidebar/useSidebar'
 
-/** Top bar: toggles the sidebar (state in AppContext) and links home */
+/** Top bar: ☰ pins/unpins the sidebar (opens/closes it on narrow screens; sidebar/useSidebar.ts), links home */
 export default function Navbar() {
-    const { sidebarOpen, toggleSidebar } = useApp()
+    const sidebar = useSidebar()
 
     return (
         <header className="flex h-14 items-center gap-2 bg-surface px-2">
             <Button
                 variant="ghost"
                 icon={LuMenu}
-                onClick={toggleSidebar}
-                aria-expanded={sidebarOpen}
+                onClick={sidebar.toggle}
+                aria-expanded={sidebar.expanded}
                 aria-controls="sidebar"
             >
                 Menu
