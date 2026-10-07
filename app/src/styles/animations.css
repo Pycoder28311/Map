@@ -7,3 +7,46 @@
     50% { transform: translateY(12.5%); }
   }
 }
+
+/* Row menu (components/ui/tree/menuAnimation.ts). Opening: each item's dot leaves the ⋯ trigger,
+   slides down to the item's icon spot and pops; the item grows out of it; the panel fills in behind.
+   Closing: immediate (no animation).
+   `inline`: the classes get these values themselves, so --i (the item's index, for its delay) is
+   read on each item, not once on :root. */
+@theme inline {
+  --animate-menu-dot: menu-dot var(--menu-item-duration) cubic-bezier(0.2, 0.8, 0.2, 1)
+    calc(var(--i, 0) * var(--menu-stagger)) both;
+  --animate-menu-pop: menu-pop var(--menu-item-duration) cubic-bezier(0.34, 1.56, 0.64, 1)
+    calc(var(--i, 0) * var(--menu-stagger)) both;
+  --animate-menu-panel: menu-panel 200ms ease-out calc(var(--menu-item-duration) * 0.4) both;
+
+  /* Where a dot starts: the trigger's dot, relative to the item's icon spot (written in the keyframe:
+     a variable here would be resolved on :root, where --trigger-x/y and --i don't exist):
+     --trigger-x/y: trigger centre from the menu's corner; --dot: -1, 0, 1 = left, middle, right dot
+     of the ⋯, 7/24 of its size apart */
+
+  /* Open: from the trigger's dot to the item's icon spot, then pops */
+  @keyframes menu-dot {
+    0% {
+      translate:
+        calc(var(--trigger-x) + var(--dot) * var(--btn-icon-size) * 7 / 24 - var(--menu-border) - var(--menu-p) - var(--menu-item-px) - var(--btn-icon-size) / 2)
+        calc(var(--trigger-y) - var(--menu-border) - var(--menu-p) - (var(--i) + 0.5) * var(--menu-item-h));
+      scale: 1;
+      opacity: 1;
+    }
+    55% { translate: 0 0; scale: 1; opacity: 1; }
+    100% { translate: 0 0; scale: 5; opacity: 0; }
+  }
+
+  /* Open: hidden while its dot travels, then pops out of it (slight overshoot) */
+  @keyframes menu-pop {
+    0%, 50% { opacity: 0; scale: 0.4; }
+    80% { opacity: 1; scale: 1.06; }
+    100% { opacity: 1; scale: 1; }
+  }
+
+  /* Background, border and shadow fill in (the content stays visible: only these fade) */
+  @keyframes menu-panel {
+    from { background-color: transparent; border-color: transparent; box-shadow: 0 0 #0000; }
+  }
+}

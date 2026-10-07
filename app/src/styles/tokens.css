@@ -4,7 +4,6 @@
 :root {
   --btn-px: 6px;
   --btn-py: 6px;
-  --btn-gap: 6px;
   --btn-radius: 12px;
   --btn-icon-size: 16px;
   --btn-icon-offset-start: 4px;
@@ -25,11 +24,32 @@
 
   /* Tree view (components/ui/tree): how far right each level's (narrower) rows start */
   --tree-indent: 8px;
+  /* between the icon and the name (the icon also has --btn-close-p around it) */
+  --tree-label-gap: 4px;
+  --tree-label-fade: 24px;
+  /* how long the fade at the end of a long name is */
 
   /* Bar popouts (components/ui/overlays/BarPopout): rounded panel growing out of a bar's edge on hover */
   --popout-radius: 16px;
   --popout-p: 12px;
   --popout-duration: 300ms;
+
+  /* Row menus (components/ui/tree/TreeMenu): fixed sizes, so the dots know where each item is */
+  --menu-p: 4px;
+  /* padding inside the menu */
+  --menu-border: 1px;
+  --menu-item-h: 32px;
+  /* height of one item */
+  --menu-item-px: 8px;
+  /* item padding left/right */
+  --menu-dot: 3px;
+  /* size of a flying dot */
+  --menu-item-duration: 450ms;
+  /* one item: dot slides down (~55%), then pops into the button */
+  --menu-stagger: 70ms;
+  /* delay between one item and the next */
+  --menu-minus-delay: 0ms;
+  /* the trigger's − appears this long after the last dot has landed */
 
   /* Workspace (features/workspace): size of the resize handles (panel look: workspace/paneStyles.ts) */
   --resize-handle: 8px;

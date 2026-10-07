@@ -1,18 +1,20 @@
 import { useState } from 'react'
-import TreeItem, { type RenderActions, type RenderLeaf } from './TreeItem'
-import type { TreeNode } from './types'
+import TreeItem, { type RenderLink } from './TreeItem'
+import type { TreeIcons, TreeNode } from './types'
 
 type Props = {
   nodes: TreeNode[]
   label: string
-  /** Custom leaf (e.g. a draggable link); default: NavButton */
-  renderLeaf?: RenderLeaf
-  /** Icon buttons shown on the right of a row while it's hovered (e.g. TreeActionButton) */
-  renderActions?: RenderActions
+  /** Custom link for leaves and folders with a page (e.g. a draggable link); default: NavButton */
+  renderLink?: RenderLink
+  /** Left and right icons of every row, with when they show and their background (types.ts) */
+  icons?: TreeIcons
+  /** Names can be edited: the text cursor shows over them */
+  editableLabels?: boolean
 }
 
 /** Expandable tree; knows nothing about what the nodes mean */
-export default function TreeView({ nodes, label, renderLeaf, renderActions }: Props) {
+export default function TreeView({ nodes, label, renderLink, icons, editableLabels }: Props) {
   // Ids of open folders. One Set for the whole tree, so items stay simple.
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
@@ -32,8 +34,9 @@ export default function TreeView({ nodes, label, renderLeaf, renderActions }: Pr
           node={node}
           expanded={expanded}
           onToggle={toggle}
-          renderLeaf={renderLeaf}
-          renderActions={renderActions}
+          renderLink={renderLink}
+          icons={icons}
+          editableLabels={editableLabels}
         />
       ))}
     </ul>
