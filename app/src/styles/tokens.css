@@ -44,6 +44,11 @@
    /* space above/below the tree (left/right: computed to center the icons in the rail, Sidebar.tsx) */
    --sidebar-duration: 200ms;
 
+   /* Dividers (components/ui/Divider): the line between sections, with or without a label */
+   --divider-h: 24px;
+   --divider-gap: 4px;
+   /* space above/below a divider in the sidebar */
+
    /* Bar popouts (components/ui/overlays/BarPopout): rounded panel growing out of a bar's edge on hover */
    --popout-radius: 16px;
    --popout-p: 12px;

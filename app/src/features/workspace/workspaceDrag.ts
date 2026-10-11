@@ -16,6 +16,9 @@ export const useWorkspaceDrag = () => useContext(WorkspaceDragContext)
 /** A drop zone's id (DropZones, for new panels): which slot, which spot on it, e.g. "b:left" */
 export const dropId = (slot: Slot, spot: DropSpot) => `${slot}:${spot}`
 
+/** A pane drop zone's id (not e.g. a sidebar row's) */
+export const isPaneDropId = (id: UniqueIdentifier) => /^[abcd]:(left|right|top|bottom|center)$/.test(String(id))
+
 export function parseDropId(id: UniqueIdentifier): { slot: Slot; spot: DropSpot } {
   const [slot, spot] = String(id).split(':') as [Slot, DropSpot]
   return { slot, spot }

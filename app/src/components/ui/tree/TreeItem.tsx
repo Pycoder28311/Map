@@ -1,10 +1,10 @@
+import { useDraggable, useDroppable } from '@dnd-kit/core'
 import type { CSSProperties, ReactNode } from 'react'
-import Button from '../buttons/Button'
 import NavButton from '../buttons/NavButton'
 import TreeIcon from './TreeIcon'
 import TreeLabel from './TreeLabel'
 import TreeRowIcon from './TreeRowIcon'
-import type { TreeIcons, TreeNode, TreeRowState } from './types'
+import type { TreeDnd, TreeDropPosition, TreeIcons, TreeNode, TreeRowState } from './types'
 
 /**
  * Renders a row's link (e.g. a draggable one), for leaves and for folders that open a page. It
@@ -22,7 +22,13 @@ type Props = {
   onToggle: (id: string) => void
   renderLink?: RenderLink
   icons?: TreeIcons
-  editableLabels?: boolean
+  /** The row whose name is being edited, and how it changes (TreeView) */
+  editingId?: string | null
+  onEditingChange?: (id: string | null) => void
+  onRename?: (node: TreeNode, name: string) => void
+  canRename?: (node: TreeNode) => boolean
+  keepVisible?: (node: TreeNode) => boolean
+  dnd?: TreeDnd
   compact?: boolean
 }
 
@@ -36,6 +42,38 @@ const INDENT_AFTER_ICON: CSSProperties = {
   paddingInlineStart: 'calc(var(--btn-px) + var(--btn-icon-size) + 2 * var(--btn-close-p) + var(--tree-label-gap))',
   paddingInlineEnd: 0,
 }
+// A row that isn't a link: a folder without a page, or any row while its name is edited (an input
+// can't sit inside a link). As tall as a link row (rounded, for the editing highlight); the end
+// padding keeps the text off the edge
+const PLAIN_ROW = `${ROW_CLASS} flex items-center rounded-(--btn-radius) py-(--pill-py) pe-(--btn-px) text-body`
+
+// Children: one indent step right; none in compact (one column), sliding with the width animation
+// They fade in when the folder opens (the Zen reel's expand)
+const GROUP =
+  'mt-1 ms-[var(--tree-indent-now,var(--tree-indent))] flex flex-col gap-1 animate-tree-expand ' +
+  'transition-[margin] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none motion-reduce:animate-none'
+
+/** The descendants of a collapsed folder that must stay visible (e.g. open ones), in tree order */
+function keptDescendants(node: TreeNode, keep: (node: TreeNode) => boolean): TreeNode[] {
+  return (node.children ?? []).flatMap((child) => (keep(child) ? [child] : keptDescendants(child, keep)))
+}
+
+// Where a drop would land: a line with a dot at its start, in the gap above or below the row (the
+// Zen reel's insertion line), starting where the row's content starts
+const LINE: Record<'before' | 'after', string> = {
+  before: '-top-[3px]',
+  after: '-bottom-[3px]',
+}
+// A folder about to receive something: tinted, with a ring
+const INTO = 'bg-drop/16 ring-[1.4px] ring-inset ring-drop/55'
+
+function DropLine({ at }: { at: 'before' | 'after' }) {
+  return (
+    <span aria-hidden className={`pointer-events-none absolute start-(--btn-px) end-0 z-20 h-0.5 bg-drop ${LINE[at]}`}>
+      <span className="absolute -start-[3px] -top-[2px] size-1.5 rounded-full bg-drop" />
+    </span>
+  )
+}
 
 // Width of n right icons: their boxes + the 2px gaps between them (gap-0.5) + the end padding
 const iconsWidth = (n: number) =>
@@ -43,67 +81,128 @@ const iconsWidth = (n: number) =>
 
 /**
  * One row: [icon] [label] ……… [right icons], then its children if it's an open folder. A folder's
- * icon turns into the open/closed arrow while the row is hovered.
- * - folder without a page: the whole row is a button that opens/closes it
- * - folder with a page (`to` or `panel`): the row is a link to it; the icon alone opens/closes
+ * icon turns into the open/closed arrow while the row is hovered; only that icon opens/closes it.
+ * - folder without a page: the rest of the row is plain (clicking the name does nothing)
+ * - folder with a page (`to` or `panel`): the rest of the row is a link to it
  * - leaf: the row is a link
  * The right icons sit over the end of the row (not inside the button/link), so they can be buttons.
  */
-export default function TreeItem({ node, expanded, onToggle, renderLink, icons = {}, editableLabels, compact }: Props) {
+export default function TreeItem({
+  node,
+  expanded,
+  onToggle,
+  renderLink,
+  icons = {},
+  editingId,
+  onEditingChange,
+  onRename,
+  canRename,
+  keepVisible,
+  dnd,
+  compact,
+}: Props) {
   const state: TreeRowState = { isFolder: !!node.children?.length, isOpen: expanded.has(node.id) }
   const isLink = !state.isFolder || !!(node.to || node.panel)
-  const icon = state.isOpen ? (node.openIcon ?? node.icon) : node.icon
+  // Open folders, and folders something is falling into (their lid is up), show their open icon
+  const icon = state.isOpen || dnd?.lidOpen?.(node.id) ? (node.openIcon ?? node.icon) : node.icon
   const folder = state.isFolder ? { isOpen: state.isOpen } : undefined
-  // Compact: no right icons (they'd sit over the left one)
-  const right = compact ? [] : (icons.right?.(node, state) ?? [])
+  const renamable = !!onRename && !!onEditingChange && (canRename?.(node) ?? true)
+  const editing = renamable && editingId === node.id
+
+  // Drag & drop: the row takes drops (dnd.dropData); a row that isn't a link drags itself (links: renderLink)
+  const dropData = dnd?.dropData?.(node)
+  const { setNodeRef: setDropRef } = useDroppable({ id: `row:${node.id}`, data: dropData, disabled: !dropData })
+  const plainDrag = !isLink && !editing ? dnd?.dragData?.(node) : undefined
+  const { setNodeRef: setDragRef, listeners: dragListeners, attributes } = useDraggable({
+    id: `row:${node.id}`,
+    data: plainDrag,
+    disabled: !plainDrag,
+  })
+  // Keep the row's own role (dnd-kit would announce it as a button)
+  const { role: _role, ...dragAttributes } = attributes
+  const dropAt: TreeDropPosition | null = dnd?.target?.nodeId === node.id ? dnd.target.position : null
+  // Compact: no right icons (they'd sit over the left one); none either while the name is edited
+  const right = compact || editing ? [] : (icons.right?.(node, state) ?? [])
   const alwaysShown = right.filter((i) => (i.show ?? 'always') === 'always').length
+  const kept = state.isFolder && !state.isOpen && keepVisible ? keptDescendants(node, keepVisible) : []
 
   // [icon] then the label (--tree-label-gap between). One child for the button/link, so the tree's
   // gap applies instead of the button's own --btn-gap.
   const content = (rowIcon?: ReactNode) => (
     <span className="flex min-w-0 flex-1 items-center gap-(--tree-label-gap)">
       {rowIcon}
-      <TreeLabel editable={editableLabels}>{node.label}</TreeLabel>
+      <TreeLabel
+        onStartEdit={renamable ? () => onEditingChange!(node.id) : undefined}
+        editing={
+          editing
+            ? {
+                onSave: (name) => {
+                  onRename!(node, name)
+                  onEditingChange!(null)
+                },
+                onCancel: () => onEditingChange!(null),
+              }
+            : undefined
+        }
+      >
+        {node.label}
+      </TreeLabel>
     </span>
   )
 
-  const linkProps =
-    state.isFolder
-      ? { className: ROW_CLASS, style: INDENT_AFTER_ICON, children: content() }
-      : { className: ROW_CLASS, style: INDENT, children: content(icon && <TreeRowIcon icon={icon} />) }
+  // Folders: [icon] is a separate button laid over the row's start (opens/closes them), so the label
+  // starts after it; leaves: [icon] inside the row
+  const rowProps = state.isFolder
+    ? { className: ROW_CLASS, style: INDENT_AFTER_ICON, children: content() }
+    : { className: ROW_CLASS, style: INDENT, children: content(icon && <TreeRowIcon icon={icon} />) }
 
   return (
-    <li role="treeitem" aria-expanded={state.isFolder ? state.isOpen : undefined}>
+    <li role="treeitem" aria-expanded={state.isFolder ? state.isOpen : undefined} className="relative">
+      {(dropAt === 'before' || dropAt === 'after') && <DropLine at={dropAt} />}
       {/* The row: its hover background spans the button/link and the right icons. Compact (TreeView):
           --tree-row-max narrows it to its icon, smoothly over --tree-compact-duration */}
       <div
+        ref={setDropRef}
+        data-row-id={node.id}
         style={{ '--icons-rest': iconsWidth(alwaysShown), '--icons-hover': iconsWidth(right.length) } as CSSProperties}
-        className="group/row relative flex items-center rounded-(--btn-radius) hover:bg-fill [--icons:var(--icons-rest)] hover:[--icons:var(--icons-hover)] has-[:focus-visible]:[--icons:var(--icons-hover)] max-w-[var(--tree-row-max,100%)] transition-[max-width] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none"
+        className={`${dropAt === 'into' ? INTO : ''} ${dnd?.draggingId === node.id ? 'opacity-0' : ''} group/row relative flex items-center rounded-(--btn-radius) hover:bg-fill [--icons:var(--icons-rest)] hover:[--icons:var(--icons-hover)] has-[:focus-visible]:[--icons:var(--icons-hover)] max-w-[var(--tree-row-max,100%)] transition-[max-width] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none`}
       >
-        {!isLink ? (
-          <Button variant="ghost" onClick={() => onToggle(node.id)} className={ROW_CLASS} style={INDENT}>
-            {content(<TreeRowIcon icon={icon} folder={folder} />)}
-          </Button>
-        ) : (
-          <>
-            {state.isFolder && (
-              <span className="absolute start-(--btn-px) top-1/2 z-10 flex -translate-y-1/2">
-                <TreeRowIcon
-                  icon={icon}
-                  folder={folder}
-                  toggle={{
-                    onClick: () => onToggle(node.id),
-                    label: state.isOpen ? `Collapse ${node.label}` : `Expand ${node.label}`,
-                  }}
-                />
-              </span>
-            )}
-            {renderLink ? (
-              renderLink(node, linkProps)
+        {state.isFolder && (
+          <span data-row-icon={node.id} className="absolute start-(--btn-px) top-1/2 z-10 flex -translate-y-1/2">
+            {editing ? (
+              // Only the node's own icon while its name is edited (no open/close arrow)
+              <TreeRowIcon icon={icon} />
             ) : (
-              <NavButton to={node.to ?? '/'} {...linkProps} />
+              <TreeRowIcon
+                icon={icon}
+                folder={folder}
+                toggle={{
+                  onClick: () => onToggle(node.id),
+                  label: state.isOpen ? `Collapse ${node.label}` : `Expand ${node.label}`,
+                }}
+              />
             )}
-          </>
+          </span>
+        )}
+
+        {editing ? (
+          <div className={`${PLAIN_ROW} bg-fill`} style={rowProps.style}>
+            {rowProps.children}
+          </div>
+        ) : !isLink ? (
+          // A folder without a page: clicking its name does nothing (only its icon opens/closes it)
+          <div
+            ref={setDragRef}
+            {...(plainDrag ? { ...dragListeners, ...dragAttributes } : {})}
+            className={PLAIN_ROW}
+            style={rowProps.style}
+          >
+            {rowProps.children}
+          </div>
+        ) : renderLink ? (
+          renderLink(node, rowProps)
+        ) : (
+          <NavButton to={node.to ?? '/'} {...rowProps} />
         )}
 
         {right.length > 0 && (
@@ -115,10 +214,10 @@ export default function TreeItem({ node, expanded, onToggle, renderLink, icons =
         )}
       </div>
 
-      {state.isFolder && state.isOpen && (
-        // Children: narrower rows, moved right by one indent step
-        <ul role="group" className="mt-1 ms-(--tree-indent) flex flex-col gap-1">
-          {node.children!.map((child) => (
+      {state.isFolder && (state.isOpen ? node.children! : kept).length > 0 && (
+        // Children: narrower rows, moved right by one indent step. Collapsed: only those that must stay visible
+        <ul role="group" aria-label={state.isOpen ? undefined : 'Open items'} className={GROUP}>
+          {(state.isOpen ? node.children! : kept).map((child) => (
             <TreeItem
               key={child.id}
               node={child}
@@ -126,7 +225,12 @@ export default function TreeItem({ node, expanded, onToggle, renderLink, icons =
               onToggle={onToggle}
               renderLink={renderLink}
               icons={icons}
-              editableLabels={editableLabels}
+              editingId={editingId}
+              onEditingChange={onEditingChange}
+              onRename={onRename}
+              canRename={canRename}
+              keepVisible={keepVisible}
+              dnd={dnd}
               compact={compact}
             />
           ))}

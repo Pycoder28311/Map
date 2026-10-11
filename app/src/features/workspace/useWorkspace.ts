@@ -83,6 +83,7 @@ export function useWorkspace() {
       const target = layout && panelAt(layout, slot)
       if (!drag || !target) return []
       if (drag.kind === 'pane') return drag.from === slot ? ['center'] : [...moveEdges(layout, drag.from, slot), 'center']
+      if (drag.kind === 'tree' || drag.kind === 'layout') return [] // sidebar drops only
       if (!canAdd || !isDraggable(target) || !isDraggable(drag.panel) || hasPanel(layout, drag.panel)) return []
       return allowedEdges(layout, slot)
     },
@@ -109,6 +110,8 @@ export function useWorkspace() {
       const next = layout && swapPanels(layout, a, b)
       if (next) go(next)
     },
+    /** Shows a whole layout (e.g. a saved one, or a new one made from the sidebar) */
+    openLayout: (next: WorkspaceLayout) => go(next),
     detach: (slot: Slot) => layout && go(removePanel(layout, slot)),
     fullPage: (slot: Slot) => layout && go(keepOnly(layout, slot)),
   }

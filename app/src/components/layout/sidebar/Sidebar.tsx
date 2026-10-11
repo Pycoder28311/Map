@@ -1,5 +1,7 @@
 import type { CSSProperties } from 'react'
+import SidebarDropProvider from './SidebarDrop'
 import SidebarTree from './SidebarTree'
+import TrashBin from './TrashBin'
 import { useHoverIntent } from './useHoverIntent'
 import { useSidebar } from './useSidebar'
 
@@ -51,9 +53,17 @@ export default function Sidebar() {
                 style={{ width, '--tree-compact-duration': 'var(--sidebar-duration)' } as CSSProperties}
                 className={`absolute inset-y-0 start-0 overflow-hidden bg-surface transition-[width,box-shadow] ${ANIMATE} ${floating ? 'shadow-xl' : ''}`}
             >
-                <div style={{ paddingInline: PX }} className="h-full w-(--sidebar-w) overflow-y-auto py-(--sidebar-py)">
-                    <SidebarTree compact={!open} />
-                </div>
+                {/* The sections scroll; the trash bin stays at the bottom. Drops on rows and the bin: SidebarDrop */}
+                <SidebarDropProvider>
+                    <div style={{ paddingInline: PX }} className="flex h-full w-(--sidebar-w) flex-col py-(--sidebar-py)">
+                        <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
+                            <SidebarTree compact={!open} />
+                        </div>
+                        <div className="shrink-0 border-t border-line pt-(--divider-gap)">
+                            <TrashBin compact={!open} />
+                        </div>
+                    </div>
+                </SidebarDropProvider>
             </nav>
         </div>
     )

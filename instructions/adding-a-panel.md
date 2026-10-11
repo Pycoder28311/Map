@@ -62,12 +62,15 @@ combined). It's disabled when the panel is already open or 4 are open.
 
 ## Sidebar items (drag & drop)
 
-A tree leaf becomes draggable with `panel` + `draggable` (`app/src/mocks/sidebarTree.ts`, later built
-from backend data):
+A tree leaf becomes draggable with `panel` + `draggable`. The sidebar's nodes are built from the mock
+objects by `buildSidebarSections()` (`app/src/mocks/sidebarTree.ts`, later from backend data); an
+object's `draggable` / `locked` fields become the node's:
 
 ```ts
-{ id: 'note-n1', label: 'Shopping list', icon: LuStickyNote, panel: { type: 'note', id: 'n1' }, draggable: true }
+{ id: 'note-n1', label: 'Shopping list', icon: LuStickyNote, panel: { type: 'note', id: 'n1' }, draggable: true, locked: true }
 ```
+
+`draggable: false` (e.g. Dashboard) can't be picked up at all; `locked: true` never takes a drop into it.
 
 Click = go there; drag (6 px or more) onto the current page or a panel = combine. Keyboard: focus the
 item, Space to pick up, arrows to move, Space to drop.

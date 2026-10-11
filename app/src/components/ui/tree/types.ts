@@ -16,8 +16,32 @@ export type TreeNode = {
   children?: TreeNode[]
   /** The workspace panel it represents (leaf or folder) */
   panel?: PanelRef
-  /** With `panel`: may be dragged onto the current page or a panel to combine them */
+  /** Can be picked up at all: dragged within the tree (when the tree allows it) and, with `panel`,
+   *  onto the current page or a panel to combine them */
   draggable?: boolean
+  /** Never takes a drop into it (e.g. Dashboard, a map) */
+  locked?: boolean
+}
+
+/** Where a drop would land on a row */
+export type TreeDropPosition = 'before' | 'after' | 'into'
+
+/**
+ * Drag & drop inside a tree (TreeView's `dnd`). The tree only draws; the owner decides what may go
+ * where (from the dnd-kit drag events) and passes the result back as `target`.
+ */
+export type TreeDnd = {
+  /** A row's droppable data (dnd-kit `row:<id>`); undefined: it takes no drops */
+  dropData?: (node: TreeNode) => Record<string, unknown> | undefined
+  /** Drag data for rows that aren't links (e.g. a folder without a page); undefined: not draggable.
+   *  Links drag through `renderLink` (e.g. PanelDragLink) */
+  dragData?: (node: TreeNode) => Record<string, unknown> | undefined
+  /** The row being dragged: its place stays empty (the lifted copy follows the pointer) */
+  draggingId?: string | null
+  /** Where the current drag would land: an insertion line (before/after) or a ring (into) */
+  target?: { nodeId: string; position: TreeDropPosition } | null
+  /** Rows whose lid is up (something is falling in): they show their open icon */
+  lidOpen?: (nodeId: string) => boolean
 }
 
 /** What a row is right now; passed to the function that chooses its right icons */

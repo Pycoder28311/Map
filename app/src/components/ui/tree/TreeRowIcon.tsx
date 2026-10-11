@@ -1,4 +1,4 @@
-import { LuChevronDown, LuChevronRight } from 'react-icons/lu'
+import { LuChevronRight } from 'react-icons/lu'
 import { ICON_EFFECT_GROUP, iconEffectClass } from '../icons/iconEffects'
 import type { ButtonIcon } from '../icons/IconSlot'
 import { ICON_BOX, ICON_BUTTON } from './treeIconStyles'
@@ -9,8 +9,11 @@ import { ICON_BOX, ICON_BUTTON } from './treeIconStyles'
 // keeps focus, which would leave the arrow showing).
 // Both are stacked in one grid cell, so swapping them never moves anything.
 const ICON_SWAP = 'transition-opacity duration-150 ease-out group-hover/row:opacity-0 group-has-[:focus-visible]/row:opacity-0'
-const ARROW_SWAP =
-  'opacity-0 transition-opacity duration-150 ease-out group-hover/row:opacity-100 group-has-[:focus-visible]/row:opacity-100'
+const ARROW_SWAP = 'opacity-0 group-hover/row:opacity-100 group-has-[:focus-visible]/row:opacity-100'
+// The arrow fades like the icon, and turns a quarter when the folder opens (the Zen reel's chevron:
+// 260ms, its curve); one transition for both
+const ARROW_TURN =
+  '[transition:opacity_150ms_ease-out,rotate_260ms_cubic-bezier(0.65,0,0.35,1)] motion-reduce:transition-none'
 
 type Props = {
   /** The node's icon (an open folder's openIcon) */
@@ -27,12 +30,11 @@ type Props = {
  */
 export default function TreeRowIcon({ icon: Icon, folder, toggle }: Props) {
   const glyph = 'size-(--btn-icon-size) col-start-1 row-start-1'
-  const Arrow = folder?.isOpen ? LuChevronDown : LuChevronRight
 
   const inner = folder ? (
     <span className="grid">
       {Icon && <Icon className={`${glyph} ${ICON_SWAP}`} />}
-      <Arrow className={`${glyph} ${Icon ? ARROW_SWAP : ''}`} />
+      <LuChevronRight className={`${glyph} ${Icon ? ARROW_SWAP : ''} ${ARROW_TURN} ${folder.isOpen ? 'rotate-90' : ''}`} />
     </span>
   ) : (
     Icon && <Icon className="size-(--btn-icon-size)" />

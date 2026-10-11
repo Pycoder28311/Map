@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
 import { LuX } from 'react-icons/lu'
 import IconButton from '../buttons/IconButton'
 
@@ -8,6 +8,14 @@ const SIZES = {
   md: 'max-w-lg',
   lg: 'max-w-3xl',
 } as const
+
+// Centred over a dimmed, blurred page. Opening: fades in and grows from 95% (@starting-style); closing
+// is instant, since the content unmounts then
+const DIALOG =
+  'm-auto w-[calc(100%-2rem)] max-h-[calc(100%-2rem)] overflow-hidden rounded-(--card-radius) bg-surface p-0 shadow-xl ' +
+  'transition-[opacity,scale] duration-200 ease-out starting:open:opacity-0 starting:open:scale-95 ' +
+  'backdrop:bg-overlay/30 backdrop:backdrop-blur-sm backdrop:transition-opacity backdrop:duration-200 starting:open:backdrop:opacity-0 ' +
+  'motion-reduce:transition-none motion-reduce:backdrop:transition-none'
 
 type Props = {
   open: boolean
@@ -23,8 +31,9 @@ type Props = {
 /**
  * Dialog over everything, built on the native <dialog> + showModal(): the browser puts it in the
  * top layer, so it shows in front of every element (panels included) wherever it is rendered, with
- * Esc, focus kept inside and the page behind it inactive. Render it next to the code that owns its
- * data; the content is only mounted while open.
+ * Esc, focus kept inside and the page behind it inactive. Centred, the page behind blurred; a click
+ * outside it closes it. Render it next to the code that owns its data; the content is only mounted
+ * while open. The element with `data-autofocus` (e.g. a name field) gets focus when it opens.
  *
  *   const [open, setOpen] = useState(false)
  *   <Modal open={open} onClose={() => setOpen(false)} title="Rename">…</Modal>
@@ -32,18 +41,30 @@ type Props = {
 export default function Modal({ open, onClose, title, children, footer, size = 'md' }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
+  // The press started on the backdrop (not e.g. a text selection that ended there)
+  const pressedBackdrop = useRef(false)
 
   // `open` decides; the dialog follows (the guards make it safe to run twice)
   useEffect(() => {
     const dialog = ref.current
     if (!dialog) return
-    if (open && !dialog.open) dialog.showModal()
+    if (open && !dialog.open) {
+      dialog.showModal()
+      // showModal() focuses the first focusable element (the close button); prefer the marked one
+      const target = dialog.querySelector<HTMLElement>('[data-autofocus]')
+      target?.focus()
+      if (target instanceof HTMLInputElement) target.select()
+    }
     if (!open && dialog.open) dialog.close()
   }, [open])
 
   // Only the backdrop is the <dialog> itself: the content fills the inner box
+  const onPointerDown = (e: PointerEvent<HTMLDialogElement>) => {
+    pressedBackdrop.current = e.target === e.currentTarget
+  }
   const onBackdrop = (e: MouseEvent<HTMLDialogElement>) => {
-    if (e.target === e.currentTarget) onClose()
+    if (pressedBackdrop.current && e.target === e.currentTarget) onClose()
+    pressedBackdrop.current = false
   }
 
   return (
@@ -55,8 +76,9 @@ export default function Modal({ open, onClose, title, children, footer, size = '
         e.preventDefault()
         onClose()
       }}
+      onPointerDown={onPointerDown}
       onClick={onBackdrop}
-      className={`m-auto w-[calc(100%-2rem)] ${SIZES[size]} max-h-[calc(100%-2rem)] overflow-hidden rounded-(--card-radius) bg-surface p-0 shadow-xl backdrop:bg-overlay/40`}
+      className={`${DIALOG} ${SIZES[size]}`}
     >
       {open && (
         <div className="flex max-h-[calc(100vh-2rem)] flex-col">

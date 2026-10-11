@@ -6,13 +6,14 @@ import SeeMoreLink from '../../components/ui/links/SeeMoreLink'
 import { useApp } from '../../context/AppContext'
 import OpenAsPanelButton from '../../features/workspace/OpenAsPanelButton'
 import { authClient } from '../../lib/auth-client'
-import { PROJECTS } from '../../mocks/projects'
+import { useMockProjects } from '../../mocks/projectsStore'
 
 // Also a workspace panel (src/panels.ts): no <main> here, AppLayout provides it
 export default function DashboardPage() {
     const { count, increment } = useApp()
     const navigate = useNavigate()
     const { data: session } = authClient.useSession()
+    const projects = useMockProjects()
 
     const signOut = async () => {
         await authClient.signOut()
@@ -36,7 +37,7 @@ export default function DashboardPage() {
             <section className="flex flex-col gap-3">
                 <h2 className="text-heading">Projects</h2>
                 <ul className="grid gap-3 sm:grid-cols-2">
-                    {PROJECTS.map((project) => (
+                    {projects.map((project) => (
                         <li key={project.id}>
                             <Card variant="white" className="flex items-start justify-between gap-2 p-4">
                                 <div>

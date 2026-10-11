@@ -23,6 +23,9 @@
   --danger: #dc2626;
   --overlay: #111827;        /* behind a modal (used with opacity) */
 
+  --drop: #8b7cf6;           /* drag & drop: insertion line, drop ring, sparks (the Zen sidebar's accent) */
+  --row-drag: #ffffff;       /* a sidebar row while it's being dragged */
+
   color-scheme: light;
 }
 
@@ -46,6 +49,9 @@
 
   --danger: #f87171;
   --overlay: #000000;
+
+  --drop: #8b7cf6;
+  --row-drag: #2b2a33;
 
   /* Native parts follow: scrollbars, inputs, the <dialog> backdrop */
   color-scheme: dark;
@@ -71,6 +77,8 @@
   --color-accent-fg: var(--accent-fg);
   --color-danger: var(--danger);
   --color-overlay: var(--overlay);
+  --color-drop: var(--drop);
+  --color-row-drag: var(--row-drag);
 }
 
 @layer base {

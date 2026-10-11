@@ -12,11 +12,16 @@ import {
 } from '@dnd-kit/core'
 import { useState, type ReactNode } from 'react'
 import { buttonClass } from '../../components/ui/buttons/buttonStyles'
-import { BackgroundPointerSensor, followPointer } from '../../lib/dnd'
+import { MOTION } from '../../components/ui/tree/dragEffects'
+import LiftedRow from '../../components/ui/tree/LiftedRow'
+import { BackgroundPointerSensor, followPointer, rowInColumn } from '../../lib/dnd'
 import { PanelRegistryContext } from './registryContext'
 import type { PanelDragData, PanelRegistry } from './types'
 import { useWorkspace } from './useWorkspace'
-import { parseDropId, WorkspaceDragContext } from './workspaceDrag'
+import { isPaneDropId, parseDropId, WorkspaceDragContext } from './workspaceDrag'
+
+/** A sidebar row being dragged stays in the sidebar's column while over it */
+const sidebarRow = rowInColumn('#sidebar', MOTION.dragNudge)
 
 /** Mouse/touch: the zone under the pointer. Keyboard (no pointer): the zone the dragged item overlaps */
 const collisionDetection: CollisionDetection = (args) =>
@@ -26,6 +31,7 @@ const collisionDetection: CollisionDetection = (args) =>
  * Makes the workspace available below it: the app's panel registry and one drag & drop context
  * shared by the drag sources (sidebar items, panes' grips) and the drop zones (current page, panels),
  * and the drag in progress (workspaceDrag.ts). Panes dragged within the grid: usePaneRearrange.
+ * Drops inside the sidebar (rows, trash) are handled by the sidebar itself (useDndMonitor).
  */
 export default function WorkspaceProvider({ panels, children }: { panels: PanelRegistry; children: ReactNode }) {
   return (
@@ -47,12 +53,15 @@ function WorkspaceDnd({ children }: { children: ReactNode }) {
     useSensor(KeyboardSensor, { keyboardCodes: { start: ['Space'], cancel: ['Escape'], end: ['Space'] } }),
   )
 
+  // A sidebar row being dragged
+  const tree = dragging && (dragging.kind === 'new' || dragging.kind === 'tree') ? dragging.tree : undefined
+
   const onDragStart = ({ active }: DragStartEvent) => setDragging((active.data.current as PanelDragData) ?? null)
   const onDragEnd = ({ over }: DragEndEvent) => {
     const drag = dragging
     setDragging(null)
-    // Panes are handled by the grid itself (usePaneRearrange)
-    if (drag?.kind !== 'new' || !over) return
+    // Panes are handled by the grid itself (usePaneRearrange); sidebar drops by the sidebar
+    if (drag?.kind !== 'new' || !over || !isPaneDropId(over.id)) return
     const { slot, spot } = parseDropId(over.id)
     dropNew(drag.panel, slot, spot)
   }
@@ -67,8 +76,13 @@ function WorkspaceDnd({ children }: { children: ReactNode }) {
     >
       <WorkspaceDragContext.Provider value={{ dragging }}>{children}</WorkspaceDragContext.Provider>
       {/* What follows the pointer while dragging (next to it, wherever the item was grabbed) */}
-      <DragOverlay dropAnimation={null} modifiers={[followPointer]}>
-        {dragging && <div className={buttonClass('secondary', false, 'shadow-lg')}>{dragging.label}</div>}
+      <DragOverlay dropAnimation={null} modifiers={[tree ? sidebarRow : followPointer]}>
+        {tree && dragging ? (
+          // A sidebar row: lifted like the Zen sidebar's
+          <LiftedRow label={dragging.label} icon={tree.icon} />
+        ) : (
+          dragging && <div className={buttonClass('secondary', false, 'shadow-lg')}>{dragging.label}</div>
+        )}
       </DragOverlay>
     </DndContext>
   )

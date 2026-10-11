@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useSyncExternalStore } from 'react'
 
 /** Position of the vertical (x) and horizontal (y) resize lines, as fractions of the workspace */
 export type Split = { x: number; y: number }
@@ -21,16 +21,30 @@ function load(): Split {
   return DEFAULT
 }
 
-/** Sizes kept in localStorage (not in the URL: they change on every mouse move) */
-export function useSplit() {
-  const [split, setSplit] = useState<Split>(load)
-  const save = (next: Split) => {
-    setSplit(next)
-    try {
-      localStorage.setItem(KEY, JSON.stringify(next))
-    } catch {
-      // private mode or full storage: sizes just aren't remembered
-    }
+// One value for the whole app (the workspace resizes it; opening a saved layout sets it)
+let current: Split | null = null
+const listeners = new Set<() => void>()
+
+export const getSplit = () => (current ??= load())
+
+/** Sets the sizes (clamped) and remembers them */
+export function setSplit(next: Split) {
+  current = { x: clamp(next.x), y: clamp(next.y) }
+  listeners.forEach((listener) => listener())
+  try {
+    localStorage.setItem(KEY, JSON.stringify(current))
+  } catch {
+    // private mode or full storage: sizes just aren't remembered
   }
-  return [split, save] as const
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+/** Sizes kept in localStorage (not in the URL: they change on every mouse move), shared app-wide */
+export function useSplit() {
+  const split = useSyncExternalStore(subscribe, getSplit)
+  return [split, setSplit] as const
 }

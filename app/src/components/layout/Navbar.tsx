@@ -1,24 +1,32 @@
-import { LuBell, LuMenu } from 'react-icons/lu'
+import { LuBell } from 'react-icons/lu'
 import { Link } from 'react-router-dom'
 import BarPopout from '../ui/overlays/BarPopout'
 import Button from '../ui/buttons/Button'
+import { iconButtonClass } from '../ui/buttons/buttonStyles'
+import MenuToggleIcon from '../ui/icons/MenuToggleIcon'
 import { useSidebar } from './sidebar/useSidebar'
 
-/** Top bar: ☰ pins/unpins the sidebar (opens/closes it on narrow screens; sidebar/useSidebar.ts), links home */
+/**
+ * Top bar: ☰ pins/unpins the sidebar (opens/closes it on narrow screens; sidebar/useSidebar.ts) and
+ * turns into an ✕ while it's open; links home
+ */
 export default function Navbar() {
     const sidebar = useSidebar()
 
     return (
         <header className="flex h-14 items-center gap-2 bg-surface px-2">
-            <Button
-                variant="ghost"
-                icon={LuMenu}
+            {/* As tall as the "Map" next to it */}
+            <button
+                type="button"
                 onClick={sidebar.toggle}
                 aria-expanded={sidebar.expanded}
                 aria-controls="sidebar"
+                aria-label={sidebar.expanded ? 'Close menu' : 'Open menu'}
+                title={sidebar.expanded ? 'Close menu' : 'Open menu'}
+                className={iconButtonClass('ghost')}
             >
-                Menu
-            </Button>
+                <MenuToggleIcon open={sidebar.expanded} className="size-6" />
+            </button>
             <Link to="/" className="text-heading font-semibold">
                 Map
             </Link>
