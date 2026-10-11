@@ -1,6 +1,6 @@
 import { useRef, type CSSProperties } from 'react'
 import { Navigate } from 'react-router-dom'
-import { gridAreas, panelKey, SLOTS, workspaceHref } from './layout'
+import { paneBoxCss, panelKey, SLOTS, splitFor, workspaceHref } from './layout'
 import Pane from './Pane'
 import PanelPage from './PanelPage'
 import { usePaneFlip } from './paneFlip'
@@ -11,12 +11,12 @@ import { percent, useSplit } from './split'
 import { usePaneRearrange } from './usePaneRearrange'
 import { useWorkspace } from './useWorkspace'
 
-// From lg up: a 2×2 grid whose lines sit at --split-x / --split-y (changed live by ResizeHandles).
-// Below lg: panels stacked, no resizing. The grid has no padding of its own (the frame around it
-// does), so the handles' percentages and the grid's line up exactly.
-const GRID =
-  'relative h-full max-lg:flex max-lg:flex-col max-lg:overflow-auto ' +
-  'lg:grid lg:[grid-template-areas:var(--ws-areas)] lg:[grid-template-columns:var(--ws-cols)] lg:[grid-template-rows:var(--ws-rows)]'
+// From lg up: the panes are boxes placed from the split lines (--split-x / --split-y, and in a 2×2
+// layout --split-x2 / --split-y2 for a line whose halves differ), changed live by ResizeHandles.
+// Below lg: panels stacked, no resizing; the scroll area is rounded like the panes and clips to it,
+// so a pane cut off by the scroll still shows rounded corners. The area has no padding of its own
+// (the frame around it does), so the handles' percentages and the panes' boxes line up exactly.
+const GRID = 'relative h-full max-lg:flex max-lg:flex-col max-lg:overflow-auto max-lg:rounded-(--pane-radius)'
 
 /**
  * The /workspace page. One panel: a normal page (PanelPage). Two or more: panes on a resizable grid,
@@ -24,11 +24,13 @@ const GRID =
  */
 export default function Workspace() {
   const { layout: saved, swap } = useWorkspace()
-  const [split, saveSplit] = useSplit()
+  const [storedSplit, saveSplit] = useSplit()
   const gridRef = useRef<HTMLDivElement>(null)
   // While a pane is dragged, the panes are shown as if it were dropped where the pointer is
-  const { preview } = usePaneRearrange(gridRef, saved, split)
+  const { preview } = usePaneRearrange(gridRef, saved, splitFor(saved?.template ?? '1', storedSplit))
   const layout = preview ?? saved
+  // Halves only apply to a 2×2 layout (layout.ts: splitFor)
+  const split = splitFor(layout?.template ?? '1', storedSplit)
   // Panes glide to their new places when the layout (or its preview) changes
   usePaneFlip(gridRef, layout ? workspaceHref(layout) : '')
 
@@ -38,10 +40,9 @@ export default function Workspace() {
   const vars = {
     '--split-x': percent(split.x),
     '--split-y': percent(split.y),
-    '--ws-areas': gridAreas(layout.template),
-    // The gap is centred on the line, so each track gives up half of it
-    '--ws-cols': `calc(var(--split-x) - ${PANE_GAP / 2}px) minmax(0, 1fr)`,
-    '--ws-rows': `calc(var(--split-y) - ${PANE_GAP / 2}px) minmax(0, 1fr)`,
+    // Only when a line's halves differ; otherwise the panes fall back to the whole line
+    ...(split.x2 !== undefined ? { '--split-x2': percent(split.x2) } : {}),
+    ...(split.y2 !== undefined ? { '--split-y2': percent(split.y2) } : {}),
   } as CSSProperties
 
   return (
@@ -50,11 +51,11 @@ export default function Workspace() {
       <div style={workspaceFrameStyle} className="h-full bg-surface-muted">
         <div ref={gridRef} style={{ ...paneGridStyle, ...vars }} className={GRID}>
           {layout.panels.map((panel, i) => (
-            <Pane key={panelKey(panel)} slot={SLOTS[i]} panel={panel} />
+            <Pane key={panelKey(panel)} slot={SLOTS[i]} panel={panel} box={paneBoxCss(layout.template, SLOTS[i], PANE_GAP)} />
           ))}
           <ResizeHandles template={layout.template} containerRef={gridRef} split={split} onCommit={saveSplit} />
           {/* After the lines: they show it on hover (peer) */}
-          <SwapButtons template={layout.template} onSwap={swap} />
+          <SwapButtons template={layout.template} onSwap={swap} containerRef={gridRef} split={split} onCommit={saveSplit} />
         </div>
       </div>
     </div>

@@ -63,26 +63,3 @@ export function dragPoint(e: DragMoveEvent): { x: number; y: number } | null {
   const rect = e.active.rect.current.translated
   return rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : null
 }
-
-/**
- * DragOverlay modifier for list rows (Zen sidebar style): while the pointer is over `column` (e.g. the
- * sidebar), the row stays in its column, drifted `nudge` px right, centred on the pointer's height;
- * outside it, it follows the pointer like followPointer. Keyboard drags: unchanged.
- */
-export const rowInColumn =
-  (column: string, nudge: number): Modifier =>
-  (args) => {
-    const { activatorEvent, draggingNodeRect, transform } = args
-    if (!draggingNodeRect || !(activatorEvent instanceof MouseEvent)) return transform
-    const x = activatorEvent.clientX + transform.x
-    const y = activatorEvent.clientY + transform.y
-    const box = document.querySelector(column)?.getBoundingClientRect()
-    if (box && x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) {
-      return {
-        ...transform,
-        x: nudge,
-        y: transform.y + activatorEvent.clientY - draggingNodeRect.top - draggingNodeRect.height / 2,
-      }
-    }
-    return followPointer(args)
-  }

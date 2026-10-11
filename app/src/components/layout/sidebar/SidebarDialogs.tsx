@@ -1,5 +1,5 @@
 import { useId, useState, type FormEvent } from 'react'
-import { LuFolderKanban, LuStickyNote } from 'react-icons/lu'
+import { LuFolder, LuStickyNote } from 'react-icons/lu'
 import {
   createMap,
   createNote,
@@ -111,7 +111,7 @@ function NameDialog({ title, submitLabel, onSubmit, onClose }: NameDialogProps) 
 function MoveDialog({ item, onClose }: { item: SidebarItem; onClose: () => void }) {
   const projects = useMockProjects().filter((p) => p.id !== item.parentId)
   const targets = [
-    ...projects.map((p) => ({ id: p.id as string | null, name: p.name, icon: LuFolderKanban })),
+    ...projects.map((p) => ({ id: p.id as string | null, name: p.name, icon: LuFolder })),
     ...(item.parentId ? [{ id: null, name: 'Notes (no project)', icon: LuStickyNote }] : []),
   ]
 
@@ -142,7 +142,7 @@ function MoveDialog({ item, onClose }: { item: SidebarItem; onClose: () => void 
   )
 }
 
-const KIND_NAME = { project: 'project', map: 'map', note: 'note' } as const
+const KIND_NAME = { project: 'project', map: 'map', note: 'note', article: 'article' } as const
 
 /** Asks first; a project goes with everything in it */
 export function DeleteDialog({ item, onClose }: { item: SidebarItem; onClose: () => void }) {

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { LuLink } from 'react-icons/lu'
 
 // Long names fade out at the end instead of "…". flex-1: the label fills the row up to the right
 // icons, so the fade sits at the row's end and short names (which don't reach it) stay untouched.
@@ -13,6 +14,8 @@ const MAX_NAME = 100
 
 type Props = {
   children: string
+  /** A small count after the name (e.g. linked notes) */
+  badge?: number
   /** The name can be edited by double-clicking it: the text cursor shows over the text itself (not the
    *  empty space after it), and only the text reacts */
   onStartEdit?: () => void
@@ -21,7 +24,7 @@ type Props = {
 }
 
 /** A row's name. The inner span is just the text, so only it gets the editable cursor */
-export default function TreeLabel({ children, onStartEdit, editing }: Props) {
+export default function TreeLabel({ children, badge, onStartEdit, editing }: Props) {
   if (editing) return <NameInput initial={children} {...editing} />
 
   return (
@@ -39,6 +42,12 @@ export default function TreeLabel({ children, onStartEdit, editing }: Props) {
       >
         {children}
       </span>
+      {!!badge && (
+        <span title={`${badge} linked`} className="ms-1.5 inline-flex items-center gap-0.5 align-middle text-small text-fg-subtle">
+          <LuLink className="size-3" aria-hidden />
+          {badge}
+        </span>
+      )}
     </span>
   )
 }

@@ -2,7 +2,10 @@
 // Replaced by API calls later; components only use the types and the find helpers.
 import { getObjects, getProjects } from './projectsStore'
 
-export type ObjectKind = 'project' | 'map' | 'note'
+export type ObjectKind = 'project' | 'map' | 'note' | 'article'
+
+/** Notes and articles: leaves that can be linked to projects and maps (they behave the same) */
+export const isNoteLike = (kind?: string) => kind === 'note' || kind === 'article'
 
 /**
  * One sidebar object. All of them live in one flat list in document order (a project, then its
@@ -21,10 +24,12 @@ export type MockObject = {
   /** In the trash (hidden with everything under it, restorable) */
   archived: boolean
   description?: string
+  /** A note's or article's text */
+  text?: string
 }
 
-/** A project's child (a map, or a note moved into it) */
-export type MockMap = { id: string; name: string; kind: 'map' | 'note' }
+/** A project's child (a map, or a note or article moved into it) */
+export type MockMap = { id: string; name: string; kind: 'map' | 'note' | 'article' }
 /** A project with its (not archived) children: derived from the flat list */
 export type MockProject = { id: string; name: string; description: string; maps: MockMap[] }
 

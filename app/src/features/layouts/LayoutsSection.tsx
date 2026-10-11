@@ -1,14 +1,18 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { LuChevronsDown, LuChevronsUp, LuLayoutTemplate, LuPlus, LuSave } from 'react-icons/lu'
+import { LuChevronsDown, LuChevronsUp, LuLayoutTemplate, LuPlus, LuSave, LuTrash2, LuX } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import Divider from '../../components/ui/Divider'
 import Callout from '../../components/ui/overlays/Callout'
 import Modal from '../../components/ui/overlays/Modal'
 import {
+  deleteLayout,
+  dropChanges,
   fromSaved,
+  keepChanges,
   sameLayout,
   saveLayout,
   selectLayout,
+  toSaved,
   updateLayout,
   useLayoutsState,
   type SavedLayout,
@@ -20,7 +24,7 @@ import { usePanelRegistry } from '../workspace/registryContext'
 import { setSplit, useSplit } from '../workspace/split'
 import type { PanelRef } from '../workspace/types'
 import { useWorkspace } from '../workspace/useWorkspace'
-import LayoutThumb from './LayoutThumb'
+import LayoutThumb, { TileAction } from './LayoutThumb'
 import { positions, visibleCount } from './tileGrid'
 
 /** Between tiles (px) */
@@ -29,6 +33,11 @@ const GAP = 6
 // Full class strings so Tailwind can detect them at build time.
 // Compact: the button narrows to a rail row (its icon's box + the row padding), like the tree's rows
 const BUTTON_COMPACT = 'max-w-[calc(2*var(--btn-px)+var(--btn-icon-size)+2*var(--btn-close-p))]'
+// A tile slides between its grid place and its rail place with the sidebar
+const TILE = 'absolute transition-[left,top,width,height] duration-(--sidebar-duration) ease-out motion-reduce:transition-none'
+
+/** The id of the unsaved tile (the panes on screen) */
+const UNSAVED = 'unsaved'
 
 type Hint = { kind: 'drag' | 'swap' | 'empty'; key?: string }
 
@@ -51,14 +60,18 @@ function useExists() {
 }
 
 /**
- * The sidebar's Layouts section: Save / Create, then the saved layouts as 16:9 tiles filling the
- * width (bigger rows first), the first rows only until "Show more". In the rail the tiles stack in one
- * column of the same total height, so nothing below moves.
- * - Save (panes on screen): a new layout, or, with one selected (opened from its tile), asks to update it
- * - Create (no panes): opens two random objects as panes and shows a hint next to the sidebar
+ * The sidebar's Layouts section: the layouts as 16:9 tiles filling the width (at most 2 per row,
+ * bigger rows first), the first rows only until "Show more". In the rail the tiles stack in one column
+ * of the same total height, so nothing below moves.
+ * - the newest layouts first; panes on screen with no layout selected: an unsaved (blue) tile before
+ *   them, with Save and ✕ (hides it until the panes change)
+ * - hover a tile: Delete (asks first); the open layout, once changed, turns blue: Save (updates it),
+ *   and a Create layout button below the tiles (saves the panes as a new layout, which becomes the
+ *   selected one)
+ * - Create (no tiles): opens two random objects as panes and shows a hint next to the sidebar
  */
 export default function LayoutsSection({ compact }: { compact: boolean }) {
-  const { layouts, selectedId } = useLayoutsState()
+  const { layouts, selectedId, pending } = useLayoutsState()
   const saved = layouts.filter((l) => !l.archived)
   const objects = useMockObjects() // names and missing panels follow renames / archives
   const { isKnown, exists, title } = useExists()
@@ -69,8 +82,10 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
   const selected = saved.find((l) => l.id === selectedId)
 
   const [expanded, setExpanded] = useState(false)
-  const [confirm, setConfirm] = useState(false)
+  const [deleting, setDeleting] = useState<SavedLayout | null>(null)
   const [hint, setHint] = useState<Hint | null>(null)
+  // The panes (their URL) whose unsaved tile was closed with ✕: hidden until they change
+  const [dismissed, setDismissed] = useState<string | null>(null)
   // The section's element: the hints point at it
   const [section, setSection] = useState<HTMLElement | null>(null)
   const boxRef = useRef<HTMLDivElement>(null)
@@ -78,7 +93,8 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
   const railWidth = useMemo(() => 2 * cssPx('--btn-px') + cssPx('--btn-icon-size') + 2 * cssPx('--btn-close-p'), [])
 
   // The tiles' area is always the sidebar's full inner width (the rail only clips it)
-  const hasLayouts = saved.length > 0
+  // Any tile at all (a saved one, or the unsaved panes)
+  const hasTiles = saved.length > 0 || (active && !selected)
   useLayoutEffect(() => {
     const box = boxRef.current
     if (!box) return
@@ -86,13 +102,27 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
     const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width))
     observer.observe(box)
     return () => observer.disconnect()
-  }, [hasLayouts])
+  }, [hasTiles])
 
-  // A selected layout stops being selected when the panes go away. Only on that change: opening a
-  // tile selects it before the navigation (a transition) has shown its panes
+  // The open layout's unsaved changes, while its panes are on screen (kept when they're left)
+  const lastChange = useRef<{ id: string; layout: WorkspaceLayout; split: typeof split } | null>(null)
+  const changedNow = active && selected !== undefined && !sameLayout(selected, workspace.layout!, split)
+  useEffect(() => {
+    if (!active) return
+    lastChange.current = changedNow ? { id: selected!.id, layout: workspace.layout!, split } : null
+  }, [active, changedNow, selected, workspace.layout, split])
+
+  // A selected layout stops being selected when the panes go away; its unsaved changes stay (its tile
+  // stays blue until they're saved or dropped). Only on that change: opening a tile selects it before
+  // the navigation (a transition) has shown its panes
   const wasActive = useRef(active)
   useEffect(() => {
-    if (wasActive.current && !active) selectLayout(null)
+    if (wasActive.current && !active) {
+      const change = lastChange.current
+      if (change) keepChanges(change.id, change.layout, change.split)
+      lastChange.current = null
+      selectLayout(null)
+    }
     wasActive.current = active
   }, [active])
 
@@ -105,15 +135,22 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
     else if (seen.current) setHint(null)
   }, [currentKey, hint])
 
+  /** Opens a layout: with its unsaved changes if it has some (they're then on screen, so not kept) */
   const open = (layout: SavedLayout) => {
-    const next = fromSaved(layout, isKnown, exists)
+    const held = pending[layout.id]
+    const next = held ? held.layout : fromSaved(layout, isKnown, exists)
     if (!next) return
-    setSplit(layout.split)
+    // Leaving another changed layout's panes: keep its changes
+    if (changed && selected && selected.id !== layout.id) keepChanges(selected.id, workspace.layout!, split)
+    lastChange.current = null
+    setSplit(held ? held.split : layout.split)
     workspace.openLayout(next)
     selectLayout(layout.id)
+    if (held) dropChanges(layout.id)
   }
 
-  const create = () => {
+  /** Opens 2 random objects as panes; `save`: also saves them as a new layout (selected, its tile appears) */
+  function createRandom(save = false) {
     // Every object that opens as a panel (a project opens its Overview)
     const candidates: PanelRef[] = objects
       .filter((o) => findObject(o.id))
@@ -123,23 +160,22 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
     const layout: WorkspaceLayout = { template: '2-cols', panels: shuffled.slice(0, 2) }
     seen.current = false
     setHint({ kind: candidates.length >= 3 ? 'drag' : 'swap', key: workspaceHref(layout) })
+    if (save) {
+      // Even halves, so the new tile matches what opens (nothing to save yet)
+      const even = { x: 0.5, y: 0.5 }
+      setSplit(even)
+      saveLayout(layout, even)
+    }
     workspace.openLayout(layout)
   }
 
-  const save = () => {
-    if (!active) return create()
-    if (!selected) return void saveLayout(workspace.layout!, split)
-    setConfirm(true)
-  }
+  // The panes on screen, not saved yet (no layout selected): first, in blue (unless closed with ✕)
+  const draft = active && !selected && currentKey !== dismissed ? workspace.layout! : null
+  // The open layout, changed since it was saved (panels or sizes): its tile offers Save
+  const changed = changedNow
 
-  // Nothing to save: the panes are exactly the selected layout
-  const unchanged = active && selected !== undefined && sameLayout(selected, workspace.layout!, split)
-  const action = {
-    icon: active ? LuSave : LuPlus,
-    label: active ? (selected ? 'Save layout (update or new)' : 'Save layout') : 'Create layout',
-    onClick: save,
-    disabled: unchanged,
-  }
+  // The divider's +: a new saved layout (the first Create button only opens panes: createRandom())
+  const create = { icon: LuPlus, label: 'New layout', onClick: () => createRandom(true) }
 
   const namesOf = (layout: Pick<SavedLayout, 'panels'>) =>
     layout.panels.map((key) => {
@@ -148,43 +184,99 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
     })
   const missingIn = (layout: SavedLayout) => layout.panels.some((key) => !exists(parsePanelKey(key) ?? { type: '' }))
 
-  const shown = visibleCount(saved.length, expanded)
-  const { tiles, height } = positions(saved.length, shown, { width, gap: GAP, railWidth, mode: compact ? 'rail' : 'grid' })
-  const hidden = saved.length - visibleCount(saved.length, false)
+  // Every tile, the unsaved one first
+  const tilesData = [
+    ...(draft
+      ? [
+          {
+            layout: { id: UNSAVED, template: draft.template, split },
+            names: draft.panels.map(title),
+            unsaved: true as const,
+          },
+        ]
+      : []),
+    // Newest first; one with changes kept from before shows them (blue, until saved or dropped)
+    ...[...saved].reverse().map((layout) => {
+      const held = pending[layout.id]
+      const shape = held ? { ...layout, ...toSaved(held.layout, held.split) } : layout
+      return { layout: shape, names: namesOf(shape), unsaved: false as const }
+    }),
+  ]
+  const n = tilesData.length
+  const shown = visibleCount(n, expanded)
+  const { tiles, height } = positions(n, shown, { width, gap: GAP, railWidth, mode: compact ? 'rail' : 'grid' })
+  const hidden = n - visibleCount(n, false)
+
+  const actionsOf = (layout: SavedLayout) => {
+    const held = pending[layout.id]
+    return (
+      <>
+        {layout.id === selectedId && changed && (
+          <TileAction icon={LuSave} label="Save changes" tone="highlight" onClick={() => updateLayout(layout.id, workspace.layout!, split)} />
+        )}
+        {/* Changes kept after its panes were left: save them, or drop them (✕) */}
+        {held && (
+          <>
+            <TileAction icon={LuSave} label="Save changes" tone="highlight" onClick={() => updateLayout(layout.id, held.layout, held.split)} />
+            <TileAction icon={LuX} label="Discard changes" onClick={() => dropChanges(layout.id)} />
+          </>
+        )}
+        <TileAction icon={LuTrash2} label="Delete layout" tone="danger" onClick={() => setDeleting(layout)} />
+      </>
+    )
+  }
 
   return (
     <section ref={setSection} aria-label="Layouts">
-      <Divider label="Layouts" action={saved.length > 0 ? action : undefined} compact={compact} className="my-(--divider-gap)" />
+      {/* + at the right edge: a new layout, like the first Create button (that one shows while there are no tiles) */}
+      <Divider label="Layouts" action={n > 0 ? create : undefined} compact={compact} className="my-(--divider-gap)" />
 
-      {saved.length === 0 ? (
-        // No layouts yet: one full-width button
-        <Button
-          variant="secondary"
-          icon={LuLayoutTemplate}
-          onClick={save}
-          title={action.label}
-          className={`w-full justify-start overflow-hidden whitespace-nowrap transition-[max-width] duration-(--sidebar-duration) ease-out motion-reduce:transition-none ${compact ? BUTTON_COMPACT : 'max-w-full'}`}
-        >
-          {active ? 'Save layout' : 'Create layout'}
-        </Button>
+      {n === 0 ? (
+        // No layouts and no panes: opens two random objects as panes
+        <CreateButton compact={compact} onClick={() => createRandom()} />
       ) : (
         <>
           <div ref={boxRef} className="relative transition-[height] duration-(--sidebar-duration)" style={{ height }}>
-            {saved.slice(0, shown).map((layout, i) => (
-              <LayoutThumb
-                key={layout.id}
-                layout={layout}
-                names={namesOf(layout)}
-                selected={layout.id === selectedId}
-                missing={missingIn(layout)}
-                onOpen={() => open(layout)}
-                draggable
-                labels={!compact}
-                style={tiles[i]}
-                className="absolute"
-              />
-            ))}
+            {tilesData.slice(0, shown).map(({ layout, names, unsaved }, i) =>
+              unsaved ? (
+                <LayoutThumb
+                  key={UNSAVED}
+                  layout={layout}
+                  names={names}
+                  variant="unsaved"
+                  labels={!compact}
+                  actions={
+                    !compact && (
+                      <>
+                        <TileAction icon={LuSave} label="Save layout" tone="highlight" onClick={() => saveLayout(draft!, split)} />
+                        <TileAction icon={LuX} label="Close" onClick={() => setDismissed(currentKey)} />
+                      </>
+                    )
+                  }
+                  style={tiles[i]}
+                  className={TILE}
+                />
+              ) : (
+                <LayoutThumb
+                  key={layout.id}
+                  layout={layout}
+                  names={names}
+                  selected={layout.id === selectedId}
+                  // Changed since saved (open now, or changes kept from before): blue like the unsaved tile
+                  variant={(layout.id === selectedId && changed) || layout.id in pending ? 'unsaved' : 'saved'}
+                  missing={missingIn(layout as SavedLayout)}
+                  onOpen={() => open(layout as SavedLayout)}
+                  draggable
+                  labels={!compact}
+                  actions={!compact && actionsOf(layout as SavedLayout)}
+                  style={tiles[i]}
+                  className={TILE}
+                />
+              ),
+            )}
           </div>
+          {/* The open layout changed: save the panes as a new layout instead (it becomes the selected one) */}
+          {changed && <CreateButton compact={compact} onClick={() => saveLayout(workspace.layout!, split)} className="mt-2" />}
           {hidden > 0 && (
             <Button
               variant="ghost"
@@ -206,58 +298,52 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
         </Callout>
       )}
 
-      {confirm && selected && active && (
+      {deleting && (
         <Modal
           open
-          onClose={() => setConfirm(false)}
-          title="Update layout?"
+          onClose={() => setDeleting(null)}
+          title="Delete layout"
           size="sm"
           footer={
             <>
-              <Button variant="secondary" onClick={() => setConfirm(false)}>
+              <Button variant="secondary" onClick={() => setDeleting(null)}>
                 Cancel
               </Button>
               <Button
                 variant="secondary"
+                className="text-danger"
                 onClick={() => {
-                  saveLayout(workspace.layout!, split)
-                  setConfirm(false)
+                  deleteLayout(deleting.id)
+                  setDeleting(null)
                 }}
               >
-                Save as new
-              </Button>
-              <Button
-                onClick={() => {
-                  updateLayout(selected.id, workspace.layout!, split)
-                  setConfirm(false)
-                }}
-              >
-                Update
+                Delete
               </Button>
             </>
           }
         >
-          <p className="mb-3 text-body">Replace the selected layout with what's on screen now?</p>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              // Own ids: the sidebar's tile keeps its drag id
-              { caption: 'Saved', layout: { ...selected, id: `preview-${selected.id}` }, names: namesOf(selected) },
-              {
-                caption: 'Now',
-                layout: { id: 'preview-now', template: workspace.layout!.template, split },
-                names: workspace.layout!.panels.map(title),
-              },
-            ].map(({ caption, layout, names }) => (
-              <figure key={caption} className="flex flex-col gap-1">
-                <LayoutThumb layout={layout} names={names} labels={false} className="aspect-video w-full" />
-                <figcaption className="text-small text-fg-muted">
-                  {caption}: {names.join(', ')}
-                </figcaption>
-              </figure>
-            ))}
-          </div>
+          <p className="text-body">Delete this layout ({namesOf(deleting).join(', ')})? This can't be undone.</p>
         </Modal>
       )}
     </section>
+  )
+}
+
+/** The full-width Create layout button (in the rail, only its icon) */
+function CreateButton({ compact, onClick, className = '' }: { compact: boolean; onClick: () => void; className?: string }) {
+  return (
+    <Button
+      variant="secondary"
+      icon={LuLayoutTemplate}
+      onClick={onClick}
+      title="Create layout"
+      className={`w-full justify-start overflow-hidden whitespace-nowrap transition-[max-width] duration-(--sidebar-duration) ease-out motion-reduce:transition-none ${compact ? BUTTON_COMPACT : 'max-w-full'} ${className}`}
+    >
+      <span
+        className={`overflow-hidden transition-[max-width,opacity] duration-(--sidebar-duration) ease-out motion-reduce:transition-none ${compact ? 'max-w-0 opacity-0' : 'max-w-40'}`}
+      >
+        Create layout
+      </span>
+    </Button>
   )
 }

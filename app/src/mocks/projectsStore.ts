@@ -2,14 +2,19 @@
 // sidebar objects (projects, maps, notes). Nothing is saved: a reload starts again from the seed data.
 // Replaced by API calls later (same function names, async then); the UI only uses what's exported here.
 import { useSyncExternalStore } from 'react'
-import { SEED_OBJECTS, type MockObject, type MockProject } from './projects'
+import { isNoteLike, SEED_OBJECTS, type MockMap, type MockObject, type MockProject } from './projects'
 
 type State = {
   /** Flat, in document order (a project, then its children) */
   objects: MockObject[]
   /** Pinned object ids, in pin order */
   pins: string[]
+  /** Notes linked to projects / maps (many-to-many; nothing moves) */
+  links: Link[]
 }
+
+/** A note linked to a project or map */
+export type Link = { noteId: string; targetId: string }
 
 // Copied from the seed on first use (not at import: projects.ts imports this file too)
 let state: State | null = null
@@ -19,7 +24,7 @@ const listeners = new Set<() => void>()
 let nextId = 101
 const newId = (kind: MockObject['kind']) => `${kind[0]}${nextId++}`
 
-const seed = (): State => ({ objects: structuredClone(SEED_OBJECTS), pins: [] })
+const seed = (): State => ({ objects: structuredClone(SEED_OBJECTS), pins: [], links: [] })
 const getState = () => (state ??= seed())
 
 function set(next: Partial<State>) {
@@ -35,6 +40,7 @@ function subscribe(listener: () => void) {
 /** All objects, archived ones included (a new array after every change) */
 export const getObjects = () => getState().objects
 export const getPins = () => getState().pins
+export const getLinks = () => getState().links
 
 /* ─────────────── Tree helpers (flat list, like the Zen sidebar's) ─────────────── */
 
@@ -75,6 +81,7 @@ function endOfSubtree(objects: MockObject[], parentId: string) {
 /** All objects; re-renders on every change */
 export const useMockObjects = () => useSyncExternalStore(subscribe, getObjects)
 export const usePins = () => useSyncExternalStore(subscribe, getPins)
+export const useLinks = () => useSyncExternalStore(subscribe, getLinks)
 
 // Projects with their children, derived once per change
 let derived: { from: MockObject[]; projects: MockProject[] } | null = null
@@ -92,7 +99,7 @@ export function getProjects(): MockProject[] {
       description: p.description ?? '',
       maps: visible
         .filter((o) => o.parentId === p.id && o.kind !== 'project')
-        .map((o) => ({ id: o.id, name: o.name, kind: o.kind as 'map' | 'note' })),
+        .map((o) => ({ id: o.id, name: o.name, kind: o.kind as MockMap['kind'] })),
     }))
   derived = { from: objects, projects }
   return projects
@@ -122,8 +129,11 @@ export function createMap(projectId: string, name: string) {
   return add({ ...fresh, id: newId('map'), kind: 'map', name, parentId: projectId, locked: true })
 }
 
-export const createNote = (name: string) =>
-  add({ ...fresh, id: newId('note'), kind: 'note', name, parentId: null, locked: true })
+export const createNote = (name: string, text?: string) =>
+  add({ ...fresh, id: newId('note'), kind: 'note', name, text, parentId: null, locked: true })
+
+export const createArticle = (name: string, text?: string) =>
+  add({ ...fresh, id: newId('article'), kind: 'article', name, text, parentId: null, locked: true })
 
 export function renameObject(id: string, name: string) {
   if (!has(id)) return
@@ -202,7 +212,7 @@ export function emptyTrash() {
   const objects = getObjects()
   const ids = new Set(getArchived().flatMap((o) => [...subtreeIds(objects, o.id)]))
   if (ids.size === 0) return
-  set({ objects: objects.filter((o) => !ids.has(o.id)), pins: getPins().filter((p) => !ids.has(p)) })
+  set({ objects: objects.filter((o) => !ids.has(o.id)), pins: getPins().filter((p) => !ids.has(p)), links: withoutLinksOf(ids) })
 }
 
 /** Deletes an object and everything under it (and their pins) */
@@ -210,8 +220,46 @@ export function deleteObject(id: string) {
   const objects = getObjects()
   if (!has(id)) return
   const ids = subtreeIds(objects, id)
-  set({ objects: objects.filter((o) => !ids.has(o.id)), pins: getPins().filter((p) => !ids.has(p)) })
+  set({ objects: objects.filter((o) => !ids.has(o.id)), pins: getPins().filter((p) => !ids.has(p)), links: withoutLinksOf(ids) })
 }
+
+/* ─────────────── Links ─────────────── */
+
+const visibleById = (id: string) => {
+  const objects = getObjects()
+  const object = objects.find((o) => o.id === id)
+  return object && !isHidden(objects, object) ? object : undefined
+}
+
+/** Whether a note may be linked to a target: a visible note or article, a visible project or map, not linked yet */
+export function canLink(noteId: string, targetId: string) {
+  const note = visibleById(noteId)
+  const target = visibleById(targetId)
+  if (!isNoteLike(note?.kind) || !target || isNoteLike(target.kind)) return false
+  return !getLinks().some((l) => l.noteId === noteId && l.targetId === targetId)
+}
+
+export function linkNote(noteId: string, targetId: string) {
+  if (canLink(noteId, targetId)) set({ links: [...getLinks(), { noteId, targetId }] })
+}
+
+export function unlinkNote(noteId: string, targetId: string) {
+  const links = getLinks()
+  if (links.some((l) => l.noteId === noteId && l.targetId === targetId)) {
+    set({ links: links.filter((l) => !(l.noteId === noteId && l.targetId === targetId)) })
+  }
+}
+
+/** The visible objects linked to one: the notes linked to a target, or the targets of a note */
+export function linksOf(id: string) {
+  return getLinks()
+    .flatMap((l) => (l.noteId === id ? [l.targetId] : l.targetId === id ? [l.noteId] : []))
+    .map(visibleById)
+    .filter((o): o is MockObject => o !== undefined)
+}
+
+/** The links left once these objects are gone */
+const withoutLinksOf = (ids: Set<string>) => getLinks().filter((l) => !ids.has(l.noteId) && !ids.has(l.targetId))
 
 /** Tests only: back to the seed data */
 export function resetMockProjects() {

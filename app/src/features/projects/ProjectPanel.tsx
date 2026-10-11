@@ -1,6 +1,7 @@
 import Card from '../../components/ui/Card'
 import { findProject } from '../../mocks/projects'
 import { useMockProjects } from '../../mocks/projectsStore'
+import LinkedList from '../links/LinkedList'
 import OpenAsPanelButton from '../workspace/OpenAsPanelButton'
 import type { PanelProps } from '../workspace/types'
 
@@ -26,6 +27,7 @@ export default function ProjectPanel({ id }: PanelProps) {
           </li>
         ))}
       </ul>
+      <LinkedList objectId={project.id} isNote={false} title="Linked notes" />
     </div>
   )
 }

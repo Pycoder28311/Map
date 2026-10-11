@@ -75,6 +75,34 @@ object's `draggable` / `locked` fields become the node's:
 Click = go there; drag (6 px or more) onto the current page or a panel = combine. Keyboard: focus the
 item, Space to pick up, arrows to move, Space to drop.
 
+## Dragging objects from anywhere (features/drag)
+
+Any element can drag a sidebar object, and any area can take drops or change how a dragged object
+looks. Three hooks, all on the app's one drag context:
+
+```tsx
+// 1. Drag an object (a list row, a card…): spread listeners/attributes, set the ref
+const drag = useObjectDrag({ id: 'my-list:n1', label: note.name, panel: { type: 'note', id: 'n1' },
+  object: { objectId: 'n1', kind: 'note', icon: LuStickyNote, source: 'pane' } })
+// Or just use <ObjectRow …/> (features/objects/ObjectRow.tsx), a draggable row with a link count
+
+// 2. How a dragged object looks over this area (the floating copy switches to it)
+useDragSurface('my-list', listRef, (item) => <ObjectRowLook label={item.label} icon={item.icon} />)
+
+// 3. A drop target: a droppable with data { zone, priority }, and the zone's handler registered once
+useDropZone('link', linkZone)   // features/links/linkNode.ts; 'row' and 'trash': the sidebar's
+<DropIcon {...linkNodeFor(objectId, 'my-list', name)} size="small" />  // a link node for a note
+```
+
+- **Zones:** `row` (sidebar move/pin), `trash` (archive), `link` (link a note). Pane edges stay with
+  the workspace.
+- **Priority:** when several droppables are under the pointer, the highest `data.priority` wins
+  (link nodes 3, rows / cards / the trash 2, pane edges 1).
+- **Falling into an icon:** mark the icon with `data-drop-icon={key}` and call `fallInto(float, key)`
+  in the zone's drop (components/ui/drop/fallInto.ts).
+- **The floating copy** (DragFloat) keeps the pointer where the object was grabbed and takes the look
+  of the surface under it; anywhere else it's a pill.
+
 ## Rules
 
 - **Both sides must be draggable** (the dragged item and the target panel) to combine.

@@ -25,6 +25,12 @@
 
   --drop: #8b7cf6;           /* drag & drop: insertion line, drop ring, sparks (the Zen sidebar's accent) */
   --row-drag: #ffffff;       /* a sidebar row while it's being dragged */
+  --highlight: #3b82f6;      /* the hovered pane, an unsaved layout */
+  /* the light shadow the navbar and sidebar cast on the page (inset: drawn on the page's side) */
+  --chrome-shadow: inset 2px 2px 8px rgb(0 0 0 / 0.07);
+  --chrome-drop: drop-shadow(0 2px 6px rgb(0 0 0 / 0.08));
+  /* something lifted in front of the page (e.g. the quick note input while it's open) */
+  --lift-shadow: 0 8px 24px rgb(0 0 0 / 0.10), 0 2px 6px rgb(0 0 0 / 0.06);
 
   color-scheme: light;
 }
@@ -52,6 +58,10 @@
 
   --drop: #8b7cf6;
   --row-drag: #2b2a33;
+  --highlight: #3b82f6;
+  --chrome-shadow: inset 2px 2px 10px rgb(0 0 0 / 0.35);
+  --chrome-drop: drop-shadow(0 2px 8px rgb(0 0 0 / 0.35));
+  --lift-shadow: 0 8px 24px rgb(0 0 0 / 0.45), 0 2px 6px rgb(0 0 0 / 0.30);
 
   /* Native parts follow: scrollbars, inputs, the <dialog> backdrop */
   color-scheme: dark;
@@ -79,6 +89,7 @@
   --color-overlay: var(--overlay);
   --color-drop: var(--drop);
   --color-row-drag: var(--row-drag);
+  --color-highlight: var(--highlight);
 }
 
 @layer base {

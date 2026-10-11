@@ -1,7 +1,7 @@
 // MOCK DATA: saved pane layouts, in memory. Nothing is saved: a reload starts with none. Replaced by
 // API calls later (same function names, async then); the UI only uses what's exported here.
 import { useSyncExternalStore } from 'react'
-import { fromSearchParams, panelKey, parsePanelKey, type Template, type WorkspaceLayout } from '../features/workspace/layout'
+import { fromSearchParams, panelKey, parsePanelKey, splitFor, type Template, type WorkspaceLayout } from '../features/workspace/layout'
 import type { Split } from '../features/workspace/split'
 import type { PanelRef } from '../features/workspace/types'
 
@@ -16,9 +16,17 @@ export type SavedLayout = {
   archived: boolean
 }
 
-type State = { layouts: SavedLayout[]; selectedId: string | null }
+/** Changes made to a layout's panes, not saved yet, kept after its panes were left */
+export type PendingChanges = { layout: WorkspaceLayout; split: Split }
 
-let state: State = { layouts: [], selectedId: null }
+type State = {
+  layouts: SavedLayout[]
+  selectedId: string | null
+  /** By layout id: its tile stays blue (Save / ✕) until they're saved or dropped */
+  pending: Record<string, PendingChanges>
+}
+
+let state: State = { layouts: [], selectedId: null, pending: {} }
 const listeners = new Set<() => void>()
 let nextId = 1
 
@@ -39,10 +47,11 @@ export const useLayoutsState = () => useSyncExternalStore(subscribe, getLayoutsS
 
 /* ─────────────── Converting ─────────────── */
 
+/** What's saved: the shape, the panels and the lines (a 2×2 layout's uneven halves only when they differ) */
 export const toSaved = (layout: WorkspaceLayout, split: Split) => ({
   template: layout.template,
   panels: layout.panels.map(panelKey),
-  split: { x: split.x, y: split.y },
+  split: splitFor(layout.template, split),
 })
 
 /**
@@ -58,14 +67,19 @@ export function fromSaved(saved: Pick<SavedLayout, 'template' | 'panels'>, isKno
   return fromSearchParams(new URLSearchParams({ layout: saved.template, panels: keys.join(',') }), isKnown)
 }
 
-/** The same shape, panels and sizes (sizes within a hair) */
+/** The same shape, panels and sizes (sizes within a hair; a missing half equals its partner) */
 export function sameLayout(saved: Pick<SavedLayout, 'template' | 'panels' | 'split'>, layout: WorkspaceLayout, split: Split) {
   const now = toSaved(layout, split)
+  const near = (a: number, b: number) => Math.abs(a - b) < 0.001
+  const a = splitFor(saved.template, saved.split)
+  const b = now.split
   return (
     saved.template === now.template &&
     saved.panels.join(',') === now.panels.join(',') &&
-    Math.abs(saved.split.x - split.x) < 0.001 &&
-    Math.abs(saved.split.y - split.y) < 0.001
+    near(a.x, b.x) &&
+    near(a.y, b.y) &&
+    near(a.x2 ?? a.x, b.x2 ?? b.x) &&
+    near(a.y2 ?? a.y, b.y2 ?? b.y)
   )
 }
 
@@ -78,9 +92,25 @@ export function saveLayout(layout: WorkspaceLayout, split: Split) {
   return id
 }
 
+/** Saves a layout's panes over it (its pending changes, if any, are then saved too) */
 export function updateLayout(id: string, layout: WorkspaceLayout, split: Split) {
   if (!state.layouts.some((l) => l.id === id)) return
-  set({ layouts: state.layouts.map((l) => (l.id === id ? { ...l, ...toSaved(layout, split) } : l)) })
+  set({ layouts: state.layouts.map((l) => (l.id === id ? { ...l, ...toSaved(layout, split) } : l)), pending: without(id) })
+}
+
+const without = (id: string) => {
+  const { [id]: _, ...rest } = state.pending
+  return rest
+}
+
+/** Keeps a layout's unsaved changes after its panes are left (replacing older ones) */
+export function keepChanges(id: string, layout: WorkspaceLayout, split: Split) {
+  if (state.layouts.some((l) => l.id === id)) set({ pending: { ...state.pending, [id]: { layout, split } } })
+}
+
+/** Forgets a layout's unsaved changes */
+export function dropChanges(id: string) {
+  if (id in state.pending) set({ pending: without(id) })
 }
 
 /** The layout last opened from its tile (Save then asks to update it); null: none */
@@ -101,16 +131,22 @@ export const restoreLayout = (id: string) => setArchived(id, false)
 
 export function deleteLayout(id: string) {
   if (!state.layouts.some((l) => l.id === id)) return
-  set({ layouts: state.layouts.filter((l) => l.id !== id), selectedId: state.selectedId === id ? null : state.selectedId })
+  set({
+    layouts: state.layouts.filter((l) => l.id !== id),
+    selectedId: state.selectedId === id ? null : state.selectedId,
+    pending: without(id),
+  })
 }
 
 /** Deletes every archived layout (emptying the trash) */
 export function deleteArchivedLayouts() {
-  if (state.layouts.some((l) => l.archived)) set({ layouts: state.layouts.filter((l) => !l.archived) })
+  if (!state.layouts.some((l) => l.archived)) return
+  const pending = Object.fromEntries(Object.entries(state.pending).filter(([id]) => !state.layouts.find((l) => l.id === id)?.archived))
+  set({ layouts: state.layouts.filter((l) => !l.archived), pending })
 }
 
 /** Tests only: no layouts */
 export function resetMockLayouts() {
   nextId = 1
-  set({ layouts: [], selectedId: null })
+  set({ layouts: [], selectedId: null, pending: {} })
 }

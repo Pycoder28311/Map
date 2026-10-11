@@ -3,7 +3,12 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { findMap, findObject } from './projects'
 import {
   archiveObject,
+  canLink,
+  linkNote,
+  linksOf,
+  unlinkNote,
   createMap,
+  createArticle,
   createNote,
   createProject,
   deleteObject,
@@ -136,5 +141,46 @@ describe('projectsStore', () => {
     moveObject('m1', { parentId: 'nope' })
     deleteObject('nope')
     expect(getObjects()).toBe(before)
+  })
+
+  it('links notes to projects and maps only, once', () => {
+    linkNote('n1', 'm1')
+    linkNote('n1', 'p2')
+    linkNote('n1', 'm1') // again: nothing
+    linkNote('n1', 'n2') // note to note: not allowed
+    linkNote('m1', 'p2') // only notes are linked
+    expect(linksOf('n1').map((o) => o.id)).toEqual(['m1', 'p2'])
+    expect(linksOf('m1').map((o) => o.id)).toEqual(['n1'])
+    expect(canLink('n1', 'm1')).toBe(false)
+    unlinkNote('n1', 'p2')
+    expect(linksOf('n1').map((o) => o.id)).toEqual(['m1'])
+  })
+
+  it('creates notes and articles at the top level, with their text', () => {
+    const note = createNote('Quick', 'Some text')
+    const article = createArticle('Essay', 'Long text')
+    expect(findObject(note)).toMatchObject({ kind: 'note', name: 'Quick', text: 'Some text', parentId: null })
+    expect(findObject(article)).toMatchObject({ kind: 'article', name: 'Essay', text: 'Long text', parentId: null })
+    expect(order().slice(-2)).toEqual([note, article])
+  })
+
+  it('links articles like notes, never to a note or an article', () => {
+    const article = createArticle('Essay')
+    expect(canLink(article, 'm1')).toBe(true)
+    expect(canLink(article, 'n1')).toBe(false)
+    expect(canLink('n1', article)).toBe(false)
+    linkNote(article, 'p1')
+    expect(linksOf('p1').map((o) => o.id)).toEqual([article])
+  })
+
+  it('hides links of archived objects, and drops those of deleted ones', () => {
+    linkNote('n1', 'm1')
+    linkNote('n2', 'm3')
+    archiveObject('p1')
+    expect(linksOf('n1')).toEqual([])
+    restoreObject('p1')
+    expect(linksOf('n1').map((o) => o.id)).toEqual(['m1'])
+    deleteObject('p2')
+    expect(linksOf('n2')).toEqual([])
   })
 })

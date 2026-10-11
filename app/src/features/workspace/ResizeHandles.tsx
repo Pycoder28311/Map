@@ -1,12 +1,11 @@
-import { useRef, type CSSProperties, type KeyboardEvent, type PointerEvent, type RefObject } from 'react'
-import { splitLines, type Template } from './layout'
-import { clamp, percent, type Split } from './split'
-
-type Axis = 'x' | 'y' | 'xy'
+import type { CSSProperties, KeyboardEvent, PointerEvent, RefObject } from 'react'
+import { moveSplit, resetSplit, segmentValue, SEGMENT_VAR, splitFor, splitSegments, type SplitSegment, type Template } from './layout'
+import { clamp, type Split } from './split'
+import { useSplitDrag, type SplitAxis } from './useSplitDrag'
 
 type Props = {
   template: Template
-  /** The grid element: its --split-x / --split-y change while dragging */
+  /** The grid element: its split variables change while dragging */
   containerRef: RefObject<HTMLDivElement | null>
   split: Split
   /** Called once when a drag or key press ends (saves the sizes) */
@@ -18,82 +17,74 @@ const HANDLE =
   'absolute z-10 rounded-full transition-colors duration-150 hover:bg-fg-subtle/40 active:bg-fg-subtle/60 ' +
   'focus-visible:bg-fg-subtle/60 focus-visible:outline-none max-lg:hidden'
 
+// Full class strings so Tailwind can detect them at build time.
+/** Each segment is a `peer` for the swap buttons on it (SwapButtons shows them while it's hovered) */
+const SEGMENT_PEER: Record<SplitSegment['id'], string> = {
+  x: 'peer/x',
+  'x-top': 'peer/xt',
+  'x-bottom': 'peer/xb',
+  y: 'peer/y',
+  'y-left': 'peer/yl',
+  'y-right': 'peer/yr',
+}
+
+const LABEL: Record<SplitSegment['id'], string> = {
+  x: 'Resize columns',
+  'x-top': 'Resize the top two panes',
+  'x-bottom': 'Resize the bottom two panes',
+  y: 'Resize rows',
+  'y-left': 'Resize the left two panes',
+  'y-right': 'Resize the right two panes',
+}
+
+/** Where a segment lies: on its line, over its part (a half ends where the other line crosses) */
+function segmentStyle({ id, axis, part }: SplitSegment): CSSProperties {
+  const at = SEGMENT_VAR[id]
+  const cross = axis === 'x' ? 'var(--split-y)' : 'var(--split-x)'
+  const from = part === 'end' ? cross : 0
+  const to = part === 'start' ? `calc(100% - ${cross})` : 0
+  return axis === 'x'
+    ? { left: `calc(${at} - var(--resize-handle) / 2)`, width: 'var(--resize-handle)', top: from, bottom: to }
+    : { top: `calc(${at} - var(--resize-handle) / 2)`, height: 'var(--resize-handle)', left: from, right: to }
+}
+
 /**
- * Resize handles: the vertical line (x), the horizontal line (y) and, where they meet, the corner
- * (both at once; every panel adjusts). While dragging only CSS variables change: no React render.
+ * Resize handles: each line, or (2×2) each half of a line, and, where the lines cross, the corner
+ * (both at once). Dragging a half moves only the two panes beside it; it snaps back to its partner
+ * when close (layout.ts: moveSplit). The drag itself: useSplitDrag (shared with the swap buttons).
  */
-export default function ResizeHandles({ template, containerRef, split, onCommit }: Props) {
-  const lines = splitLines(template)
-  const hasX = lines.x.top || lines.x.bottom
-  const hasY = lines.y.left || lines.y.right
-  const live = useRef(split)
-  const drag = useRef<{ axis: Axis; rect: DOMRect } | null>(null)
+export default function ResizeHandles({ template, containerRef, split: raw, onCommit }: Props) {
+  const split = splitFor(template, raw)
+  const { segments, corner } = splitSegments(template, split)
+  const { start, move, end: stop, apply } = useSplitDrag({ template, containerRef, split, onCommit })
 
-  const apply = (next: Split) => {
-    live.current = next
-    containerRef.current?.style.setProperty('--split-x', percent(next.x))
-    containerRef.current?.style.setProperty('--split-y', percent(next.y))
+  const commit = (next: Split) => {
+    const fitted = splitFor(template, next)
+    apply(fitted)
+    onCommit(fitted)
   }
 
-  const onPointerDown = (axis: Axis) => (e: PointerEvent<HTMLDivElement>) => {
-    const rect = containerRef.current?.getBoundingClientRect()
-    if (!rect) return
-    e.preventDefault()
-    e.currentTarget.setPointerCapture(e.pointerId)
-    live.current = split // start from the saved position
-    drag.current = { axis, rect }
-  }
-  const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
-    if (!drag.current) return
-    const { axis, rect } = drag.current
-    apply({
-      x: axis === 'y' ? live.current.x : clamp((e.clientX - rect.left) / rect.width),
-      y: axis === 'x' ? live.current.y : clamp((e.clientY - rect.top) / rect.height),
-    })
-  }
-  const onPointerUp = () => {
-    if (!drag.current) return
-    drag.current = null
-    onCommit(live.current)
-  }
-  const onKeyDown = (axis: Axis) => (e: KeyboardEvent<HTMLDivElement>) => {
-    const dx = axis !== 'y' ? ({ ArrowLeft: -STEP, ArrowRight: STEP } as Record<string, number>)[e.key] ?? 0 : 0
-    const dy = axis !== 'x' ? ({ ArrowUp: -STEP, ArrowDown: STEP } as Record<string, number>)[e.key] ?? 0 : 0
+  const onKeyDown = (axis: SplitAxis) => (e: KeyboardEvent<HTMLDivElement>) => {
+    const dx = axis.startsWith('y') ? 0 : (({ ArrowLeft: -STEP, ArrowRight: STEP } as Record<string, number>)[e.key] ?? 0)
+    const dy = axis.startsWith('x') && axis !== 'xy' ? 0 : (({ ArrowUp: -STEP, ArrowDown: STEP } as Record<string, number>)[e.key] ?? 0)
     if (!dx && !dy) return
     e.preventDefault()
-    const next = { x: clamp(split.x + dx), y: clamp(split.y + dy) }
-    apply(next)
-    onCommit(next)
-  }
-  const reset = (axis: Axis) => () => {
-    const next = { x: axis === 'y' ? split.x : 0.5, y: axis === 'x' ? split.y : 0.5 }
-    apply(next)
-    onCommit(next)
+    const rect = containerRef.current?.getBoundingClientRect()
+    const x = axis === 'x-bottom' ? (split.x2 ?? split.x) : split.x
+    const y = axis === 'y-right' ? (split.y2 ?? split.y) : split.y
+    commit(moveSplit(split, axis, { x: clamp(x + dx), y: clamp(y + dy) }, rect ?? { width: 0, height: 0 }))
   }
 
-  const handlers = (axis: Axis) => ({
+  const handlers = (axis: SplitAxis) => ({
     tabIndex: 0,
-    onPointerDown: onPointerDown(axis),
-    onPointerMove,
-    onPointerUp,
-    onPointerCancel: onPointerUp,
+    onPointerDown: (e: PointerEvent<HTMLDivElement>) => start(axis, e),
+    onPointerMove: move,
+    onPointerUp: stop,
+    onPointerCancel: stop,
     onKeyDown: onKeyDown(axis),
-    onDoubleClick: reset(axis),
+    onDoubleClick: () => commit(resetSplit(split, axis)),
   })
 
-  // A line only spans the part of the grid where it actually separates panels
-  const xStyle: CSSProperties = {
-    left: 'calc(var(--split-x) - var(--resize-handle) / 2)',
-    width: 'var(--resize-handle)',
-    top: lines.x.top ? 0 : 'var(--split-y)',
-    bottom: lines.x.bottom ? 0 : 'calc(100% - var(--split-y))',
-  }
-  const yStyle: CSSProperties = {
-    top: 'calc(var(--split-y) - var(--resize-handle) / 2)',
-    height: 'var(--resize-handle)',
-    left: lines.y.left ? 0 : 'var(--split-x)',
-    right: lines.y.right ? 0 : 'calc(100% - var(--split-x))',
-  }
   const cornerStyle: CSSProperties = {
     left: 'calc(var(--split-x) - var(--resize-corner) / 2)',
     top: 'calc(var(--split-y) - var(--resize-corner) / 2)',
@@ -103,37 +94,21 @@ export default function ResizeHandles({ template, containerRef, split, onCommit 
 
   return (
     <>
-      {hasX && (
+      {segments.map((seg) => (
         <div
+          key={seg.id}
           role="separator"
-          aria-orientation="vertical"
-          aria-label="Resize columns"
-          aria-valuenow={Math.round(split.x * 100)}
-          // peer/x: the swap buttons on this line show while it's hovered (SwapButtons)
-          className={`peer/x ${HANDLE} cursor-col-resize`}
-          style={xStyle}
-          {...handlers('x')}
+          aria-orientation={seg.axis === 'x' ? 'vertical' : 'horizontal'}
+          aria-label={LABEL[seg.id]}
+          aria-valuenow={Math.round(segmentValue(split, seg.id) * 100)}
+          // A peer: the swap buttons on this segment show while it's hovered (SwapButtons)
+          className={`${SEGMENT_PEER[seg.id]} ${HANDLE} ${seg.axis === 'x' ? 'cursor-col-resize' : 'cursor-row-resize'}`}
+          style={segmentStyle(seg)}
+          {...handlers(seg.id)}
         />
-      )}
-      {hasY && (
-        <div
-          role="separator"
-          aria-orientation="horizontal"
-          aria-label="Resize rows"
-          aria-valuenow={Math.round(split.y * 100)}
-          className={`peer/y ${HANDLE} cursor-row-resize`}
-          style={yStyle}
-          {...handlers('y')}
-        />
-      )}
-      {hasX && hasY && (
-        <div
-          role="separator"
-          aria-label="Resize columns and rows"
-          className={`${HANDLE} z-20 cursor-move`}
-          style={cornerStyle}
-          {...handlers('xy')}
-        />
+      ))}
+      {corner && (
+        <div role="separator" aria-label="Resize columns and rows" className={`${HANDLE} z-20 cursor-move`} style={cornerStyle} {...handlers('xy')} />
       )}
     </>
   )

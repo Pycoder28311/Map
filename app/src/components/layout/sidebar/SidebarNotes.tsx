@@ -26,14 +26,14 @@ type Props = {
 export default function SidebarNotes({ nodes, tree, compact, onCreate, dropAtEnd = false }: Props) {
   const [showAll, setShowAll] = useState(false)
   // The header takes drops too (e.g. when there are no notes yet)
-  const { setNodeRef } = useDroppable({ id: `row:${NOTES_END}`, data: { nodeId: NOTES_END, section: 'notes-end' } })
+  const { setNodeRef } = useDroppable({ id: `row:${NOTES_END}`, data: { zone: 'row', priority: 2, nodeId: NOTES_END, section: 'notes-end' } })
   const hidden = nodes.length - LIMIT
   const shown = showAll || hidden <= 0 ? nodes : nodes.slice(0, LIMIT)
 
   return (
     <section aria-label="Notes">
       <div ref={setNodeRef} className={`rounded-(--btn-radius) ${dropAtEnd ? 'bg-drop/16 ring-[1.4px] ring-inset ring-drop/55' : ''}`}>
-        <Divider label="Notes" action={{ icon: LuPlus, label: 'New note', onClick: onCreate }} compact={compact} className="my-(--divider-gap)" />
+        <Divider label="Notes" labelTo="/notes" action={{ icon: LuPlus, label: 'New note', onClick: onCreate }} compact={compact} className="my-(--divider-gap)" />
       </div>
       {nodes.length === 0 ? (
         // Same height as one row, so the rail keeps its layout

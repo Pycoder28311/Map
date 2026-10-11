@@ -4,8 +4,11 @@ import type { WorkspaceLayout } from '../features/workspace/layout'
 import {
   archiveLayout,
   deleteArchivedLayouts,
+  deleteLayout,
+  dropChanges,
   fromSaved,
   getLayoutsState,
+  keepChanges,
   resetMockLayouts,
   restoreLayout,
   sameLayout,
@@ -38,6 +41,38 @@ describe('layoutsStore', () => {
       panels: [{ type: 'map', id: 'm1' }, { type: 'dashboard' }],
     })
     expect(fromSaved(saved, known, () => false)).toBeNull()
+  })
+
+  it("keeps a 2×2 layout's uneven halves (and drops them elsewhere)", () => {
+    const four: WorkspaceLayout = {
+      template: '4',
+      panels: [{ type: 'map', id: 'm1' }, { type: 'note', id: 'n1' }, { type: 'dashboard' }, { type: 'map', id: 'm2' }],
+    }
+    expect(toSaved(four, { x: 0.3, y: 0.5, x2: 0.7 }).split).toEqual({ x: 0.3, y: 0.5, x2: 0.7 })
+    expect(toSaved(layout, { x: 0.3, y: 0.5, x2: 0.7 }).split).toEqual({ x: 0.3, y: 0.5 })
+    const saved = toSaved(four, { x: 0.3, y: 0.5, x2: 0.7 })
+    expect(sameLayout(saved, four, { x: 0.3, y: 0.5, x2: 0.7 })).toBe(true)
+    expect(sameLayout(saved, four, { x: 0.3, y: 0.5 })).toBe(false)
+    expect(sameLayout(toSaved(four, { x: 0.3, y: 0.5 }), four, { x: 0.3, y: 0.5, x2: 0.3 })).toBe(true)
+  })
+
+  it('keeps unsaved changes until they are saved, dropped or the layout is deleted', () => {
+    const id = saveLayout(layout, split)
+    const changed = { x: 0.5, y: 0.6 }
+    keepChanges(id, layout, changed)
+    keepChanges('nope', layout, changed) // no such layout: nothing
+    expect(getLayoutsState().pending).toEqual({ [id]: { layout, split: changed } })
+    dropChanges(id)
+    expect(getLayoutsState().pending).toEqual({})
+
+    keepChanges(id, layout, changed)
+    updateLayout(id, layout, changed)
+    expect(getLayoutsState().pending).toEqual({})
+    expect(getLayoutsState().layouts[0].split).toEqual(changed)
+
+    keepChanges(id, layout, split)
+    deleteLayout(id)
+    expect(getLayoutsState().pending).toEqual({})
   })
 
   it('compares shape, panels and sizes', () => {

@@ -1,41 +1,13 @@
-import { useDndMonitor, type DragMoveEvent, type DragOverEvent } from '@dnd-kit/core'
-import { useRef, useState, type ReactNode } from 'react'
-import { drop, sameTarget, SidebarDropContext, targetOf, treeInfo, type SidebarDrop, type SidebarDropTarget } from './sidebarDropState'
+import type { ReactNode } from 'react'
+import { useDropZone } from '../../../features/drag/objectDrop'
+import { rowZone, trashZone } from './sidebarDropState'
 
 /**
- * Drag & drop inside the sidebar (rows and the trash bin), on the app's one drag context
- * (WorkspaceProvider): follows the drag to show where it would land, and applies the drop. Drops on
- * panes stay with the workspace.
+ * The sidebar's drop zones on the app's drop system: rows (move, pin) and the trash bin (archive).
+ * Objects dragged from anywhere (the sidebar or a pane's list) land the same way.
  */
 export default function SidebarDropProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<SidebarDrop>({ draggingNodeId: null, target: null })
-  const targetRef = useRef<SidebarDropTarget>(null)
-
-  const follow = (e: DragMoveEvent | DragOverEvent) => {
-    const target = targetOf(e)
-    if (sameTarget(targetRef.current, target)) return
-    targetRef.current = target
-    setState((s) => ({ ...s, target }))
-  }
-  const reset = () => {
-    targetRef.current = null
-    setState({ draggingNodeId: null, target: null })
-  }
-
-  useDndMonitor({
-    onDragStart: ({ active }) => {
-      targetRef.current = null
-      setState({ draggingNodeId: treeInfo(active.data.current)?.nodeId ?? null, target: null })
-    },
-    onDragMove: follow,
-    onDragOver: follow,
-    onDragEnd: ({ active }) => {
-      const target = targetRef.current
-      drop(active.data.current, target)
-      reset()
-    },
-    onDragCancel: reset,
-  })
-
-  return <SidebarDropContext.Provider value={state}>{children}</SidebarDropContext.Provider>
+  useDropZone('row', rowZone)
+  useDropZone('trash', trashZone)
+  return <>{children}</>
 }

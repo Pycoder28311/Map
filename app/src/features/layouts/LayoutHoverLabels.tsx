@@ -8,9 +8,8 @@ const OUT = 26
 const EDGE = 4
 // Where the curve meets the pane: this far inside its corner / side (px)
 const INSET = 3
-// Room a label needs on the left; with less (the sidebar is at the window's left edge) it goes
-// above / below the tile instead
-const ROOM = 80
+// A turned label (see below) starts this far right of where its curve leaves the pane (px)
+const RUN = 14
 
 type Props = {
   /** The tile the labels belong to */
@@ -33,7 +32,7 @@ export default function LayoutHoverLabels({ tile, template, split, names }: Prop
   const [placed, setPlaced] = useState<Placed[]>([])
 
   // By content: the parent passes new arrays / objects on every render
-  const key = `${template} ${split.x} ${split.y} ${names.join('\n')}`
+  const key = `${template} ${split.x} ${split.y} ${split.x2} ${split.y2} ${names.join('\n')}`
 
   useLayoutEffect(() => {
     const box = tile.getBoundingClientRect()
@@ -43,12 +42,14 @@ export default function LayoutHoverLabels({ tile, template, split, names }: Prop
         // The anchor: just inside the pane's corner / side
         const ax = box.left + spot.x * box.width - spot.dx * INSET
         const ay = box.top + spot.y * box.height - spot.dy * INSET
-        // No room on the left: above / below instead (a pane spanning the height: above)
-        const turn = spot.dx < 0 && ax - OUT - EDGE < ROOM
+        // Left panes: the sidebar is at the window's left edge, so their labels go above / below the
+        // tile instead (a pane spanning the height: above); the curve leaves the pane vertically and
+        // bends right into the label
+        const turn = spot.dx < 0
         const dx = turn ? 0 : spot.dx
         const dy = turn ? spot.dy || -1 : spot.dy
         // The label's near edge: out of the tile in that direction (labels going up/down also lean out)
-        const ex = turn ? Math.max(EDGE, ax - INSET) : ax + dx * OUT
+        const ex = turn ? Math.max(EDGE, ax + RUN) : ax + dx * OUT
         const ey = ay + dy * OUT * 0.8
         return { name, ax, ay, ex, ey, dx, dy, start: turn }
       }),
@@ -67,9 +68,13 @@ export default function LayoutHoverLabels({ tile, template, split, names }: Prop
       <svg className="absolute inset-0 size-full overflow-visible">
         {placed.map((p) => (
           <g key={p.name + p.ax}>
-            {/* Leaves the pane straight out, then bends towards the label */}
+            {/* Leaves the pane straight out, then bends towards the label (turned ones: up/down, then right) */}
             <path
-              d={`M ${p.ax} ${p.ay} C ${p.ax + p.dx * OUT * 0.15} ${p.ay + p.dy * OUT * 0.7}, ${p.ex - p.dx * OUT * 0.6} ${p.ey}, ${p.ex} ${p.ey}`}
+              d={
+                p.start
+                  ? `M ${p.ax} ${p.ay} C ${p.ax} ${p.ay + p.dy * OUT * 0.7}, ${p.ex - RUN} ${p.ey}, ${p.ex} ${p.ey}`
+                  : `M ${p.ax} ${p.ay} C ${p.ax + p.dx * OUT * 0.15} ${p.ay + p.dy * OUT * 0.7}, ${p.ex - p.dx * OUT * 0.6} ${p.ey}, ${p.ex} ${p.ey}`
+              }
               fill="none"
               stroke="var(--fg)"
               strokeWidth={1.25}

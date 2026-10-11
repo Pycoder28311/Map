@@ -1,4 +1,5 @@
 import { useDraggable } from '@dnd-kit/core'
+import type { CSSProperties } from 'react'
 import DropZones from './DropZones'
 import { panelKey, type Slot } from './layout'
 import PanelContent from './PanelContent'
@@ -7,12 +8,20 @@ import { paneStyle } from './paneStyles'
 import { usePanelRegistry } from './registryContext'
 import type { PanelDragData, PanelRef } from './types'
 import { useWorkspace } from './useWorkspace'
+import { useWorkspaceDrag } from './workspaceDrag'
+
+// Wide screens: placed by its box (stacked below lg)
+const PLACED = 'lg:absolute lg:[left:var(--pane-l)] lg:[top:var(--pane-t)] lg:[right:var(--pane-r)] lg:[bottom:var(--pane-b)]'
+// The hovered pane's border colour (paneStyles' PANE_BORDER reads --pane-border)
+const HOVER = 'hover:[--pane-border:var(--highlight)]'
 
 type Props = {
   /** Position in the grid: a, b, c, d (also its CSS grid-area) */
   slot: Slot
   /** What it shows, e.g. { type: 'project', id: 'p1' } */
   panel: PanelRef
+  /** Where it sits on wide screens: insets from the split lines (layout.ts: paneBoxCss) */
+  box: { left: string; top: string; right: string; bottom: string }
 }
 
 /**
@@ -20,9 +29,10 @@ type Props = {
  * Dragged by its background or the island's grip (BackgroundPointerSensor: not from its buttons,
  * fields, map…) onto another panel: an edge splits it, the centre swaps the two (usePaneRearrange).
  */
-export default function Pane({ slot, panel }: Props) {
+export default function Pane({ slot, panel, box }: Props) {
   const registry = usePanelRegistry()
   const { count, detach, fullPage } = useWorkspace()
+  const { dragging } = useWorkspaceDrag()
   const def = registry[panel.type]
   const title = def.title(panel.id)
   const key = panelKey(panel)
@@ -42,8 +52,9 @@ export default function Pane({ slot, panel }: Props) {
       data-pane={key}
       aria-label={title}
       {...(count > 1 ? listeners : {})}
-      style={{ ...paneStyle, gridArea: slot }}
-      className={`relative flex min-h-[50vh] min-w-0 flex-col overflow-hidden bg-surface shadow-lg transition-opacity lg:min-h-0 ${isDragging ? 'opacity-50' : ''}`}
+      style={{ ...paneStyle, '--pane-l': box.left, '--pane-t': box.top, '--pane-r': box.right, '--pane-b': box.bottom } as CSSProperties}
+      // Hovered: a blue border (not while something is dragged: the drop previews show then)
+      className={`relative flex min-h-[50vh] ${PLACED} min-w-0 flex-col overflow-hidden bg-surface shadow-lg transition-[opacity,border-color] duration-150 lg:min-h-0 ${isDragging ? 'opacity-50' : ''} ${dragging ? '' : HOVER}`}
     >
       <div className="min-h-0 flex-1 overflow-auto">
         <PanelContent component={def.component} id={panel.id} />

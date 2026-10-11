@@ -10,17 +10,21 @@ import {
     LuPlus,
     LuStickyNote,
     LuTrash2,
+    LuUnlink,
 } from 'react-icons/lu'
 import LayoutsSection from '../../../features/layouts/LayoutsSection'
+import { useLinkNode } from '../../../features/links/linkNode'
 import PanelDragLink from '../../../features/workspace/PanelDragLink'
 import { useWorkspace } from '../../../features/workspace/useWorkspace'
 import {
     duplicateObject,
     renameObject,
     togglePin,
+    useLinks,
     useMockObjects,
     usePins,
 } from '../../../mocks/projectsStore'
+import { isNoteLike } from '../../../mocks/projects'
 import { buildSidebarSections, DASHBOARD_NODE, type SidebarItem } from '../../../mocks/sidebarTree'
 import { NOTES_END } from './SidebarNotes'
 import Divider from '../../ui/Divider'
@@ -46,7 +50,9 @@ const DIVIDER = 'my-(--divider-gap)'
 export default function SidebarTree({ compact }: { compact: boolean }) {
     const objects = useMockObjects()
     const pins = usePins()
-    const { pinned, projects, notes, items } = useMemo(() => buildSidebarSections(objects, pins), [objects, pins])
+    const links = useLinks()
+    const { pinned, projects, notes, items } = useMemo(() => buildSidebarSections(objects, pins, links), [objects, pins, links])
+    const linkNodeFor = useLinkNode()
     const workspace = useWorkspace()
     const drop = useSidebarDrop()
     const lidOpen = useLids()
@@ -61,6 +67,10 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
         const isPinned = pins.includes(item.id)
         return [
             [
+                // Shown as a pane: take it out of the panes
+                ...(node.panel && workspace.isPane(node.panel)
+                    ? [{ label: 'Remove from screen', icon: LuUnlink, onClick: () => workspace.close(node.panel!) }]
+                    : []),
                 { label: 'Rename', icon: LuPencil, onClick: () => setEditingId(node.id) },
                 { label: isPinned ? 'Unpin' : 'Pin', icon: isPinned ? LuPinOff : LuPin, onClick: () => togglePin(item.id) },
             ],
@@ -86,19 +96,28 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
         ]
     }
 
-    // Right icons, only on hover (the left icon is each node's own). Fixed rows (Dashboard, Overview) get none
+    // Right icons, only on hover (the left icon is each node's own). Fixed rows (Dashboard, Overview): only undrag
+    // Shown as a pane: "undrag" (take it out of the panes), left of the others
     const rightIcons = (node: TreeNode): TreeRightIcon[] => {
+        const undrag: TreeRightIcon[] =
+            node.panel && workspace.isPane(node.panel)
+                ? [{ icon: LuUnlink, label: `Remove from screen: ${node.label}`, show: 'hover', onClick: () => workspace.close(node.panel!) }]
+                : []
         const item = items.get(node.id)
-        if (!item) return []
+        if (!item) return undrag
         const more: TreeRightIcon = { label: `More: ${item.name}`, show: 'hover', menu: menuOf(node, item) }
-        if (item.kind !== 'project' || node.id.startsWith('pin:')) return [more]
+        if (item.kind !== 'project' || node.id.startsWith('pin:')) return [...undrag, more]
         const create = () => setDialog({ kind: 'create', parent: { kind: 'project', id: item.id, name: item.name } })
-        return [{ icon: LuPlus, label: `New map in ${item.name}`, show: 'hover', onClick: create }, more]
+        return [...undrag, { icon: LuPlus, label: `New map in ${item.name}`, show: 'hover', onClick: create }, more]
     }
 
-    // What a dragged row carries for drops in the sidebar (rows that can't be picked up: none)
-    const treeInfo = (node: TreeNode) =>
-        node.draggable ? { nodeId: node.id, objectId: items.get(node.id)?.id, icon: node.icon } : undefined
+    // What a dragged row carries (rows that can't be picked up: none)
+    const objectInfo = (node: TreeNode) => {
+        const item = items.get(node.id)
+        return node.draggable
+            ? { nodeId: node.id, objectId: item?.id, kind: item?.kind, icon: node.icon, source: 'sidebar' as const }
+            : undefined
+    }
 
     // Drag & drop per section: which rows take drops (RowDropData, rules in treeDrop.ts) and what's
     // being dragged / where it would land (SidebarDrop)
@@ -108,24 +127,30 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
             const item = items.get(node.id)
             // A project's Overview row: things can go right after it (first in the project)
             if (!item && section === 'projects' && node.panel?.type === 'project') {
-                return { nodeId: node.id, section, overviewOf: node.panel.id }
+                return { zone: 'row', priority: 2, nodeId: node.id, section, overviewOf: node.panel.id }
             }
             if (!item) return undefined
-            return { nodeId: node.id, section, objectId: item.id, folder: item.kind === 'project' && !node.locked }
+            return { zone: 'row', priority: 2, nodeId: node.id, section, objectId: item.id, folder: item.kind === 'project' && !node.locked }
         },
         // Rows that aren't links (projects) drag themselves
         dragData: (node) => {
-            const tree = treeInfo(node)
-            return tree?.objectId ? { kind: 'tree', label: node.label, tree } : undefined
+            const object = objectInfo(node)
+            return object?.objectId ? { kind: 'object', label: node.label, object } : undefined
         },
         draggingId: drop.draggingNodeId,
         target: drop.target?.kind === 'row' ? { nodeId: drop.target.nodeId, position: drop.target.position } : null,
         lidOpen,
+        // Projects and maps take links: a link node slides out while a note is dragged (features/links)
+        linkNode: (node) => {
+            const item = items.get(node.id)
+            if (!item || isNoteLike(item.kind)) return undefined
+            return linkNodeFor(item.id, node.id.startsWith('pin:') ? 'pin' : 'sidebar', item.name)
+        },
     })
 
     // What every section's tree shares
     const tree: Omit<ComponentProps<typeof TreeView>, 'nodes' | 'label'> = {
-        renderLink: (node, props) => <PanelDragLink node={node} tree={treeInfo(node)} {...props} />,
+        renderLink: (node, props) => <PanelDragLink node={node} object={objectInfo(node)} {...props} />,
         // Double-click on an object's name (or the menu's Rename): edit it in place
         onRename: (node, name) => {
             const item = items.get(node.id)

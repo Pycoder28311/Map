@@ -1,6 +1,7 @@
 import { LuMap } from 'react-icons/lu'
 import { findMap } from '../../mocks/projects'
 import { useMockProjects } from '../../mocks/projectsStore'
+import LinkedList from '../links/LinkedList'
 import type { PanelProps } from '../workspace/types'
 
 /** One map (placeholder until real maps exist) */
@@ -15,6 +16,7 @@ export default function MapPanel({ id }: PanelProps) {
       <div className="flex flex-1 items-center justify-center rounded-(--card-radius) bg-fill text-fg-subtle">
         <LuMap className="size-10" aria-hidden="true" />
       </div>
+      <LinkedList objectId={map.id} isNote={false} title="Linked notes" />
     </div>
   )
 }

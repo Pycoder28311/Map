@@ -8,6 +8,9 @@ export type DropPosition = 'before' | 'after' | 'into'
 
 /** What each droppable row says about itself (dnd-kit droppable data) */
 export type RowDropData = {
+  /** The drop system's zone (features/drag/objectDrop.ts) and priority among droppables */
+  zone?: 'row'
+  priority?: number
   nodeId: string
   section: 'pinned' | 'projects' | 'notes' | 'notes-end' | 'fixed'
   /** The object this row is */

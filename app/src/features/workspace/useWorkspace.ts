@@ -12,6 +12,7 @@ import {
   rearrange,
   removePanel,
   single,
+  slotOf,
   swapPanels,
   WORKSPACE_PATH,
   workspaceHref,
@@ -69,6 +70,8 @@ export function useWorkspace() {
     count,
     canAdd,
     isOpen: (panel: PanelRef) => layout !== null && hasPanel(layout, panel),
+    /** It's one of the panes (the workspace with 2 or more panels), not just the page */
+    isPane: (panel: PanelRef) => onWorkspace && count >= 2 && layout !== null && hasPanel(layout, panel),
     isDraggable,
     /** Link target for one panel on its own */
     hrefOf: (panel: PanelRef) => hrefFor(single(panel), registry),
@@ -83,7 +86,9 @@ export function useWorkspace() {
       const target = layout && panelAt(layout, slot)
       if (!drag || !target) return []
       if (drag.kind === 'pane') return drag.from === slot ? ['center'] : [...moveEdges(layout, drag.from, slot), 'center']
-      if (drag.kind === 'tree' || drag.kind === 'layout') return [] // sidebar drops only
+      if (drag.kind === 'object' || drag.kind === 'layout') return [] // no panel: not onto panes
+      // From inside a pane or page (a list row, a card): only links and sidebar drops, never a new pane
+      if (drag.object?.source === 'pane') return []
       if (!canAdd || !isDraggable(target) || !isDraggable(drag.panel) || hasPanel(layout, drag.panel)) return []
       return allowedEdges(layout, slot)
     },
@@ -113,6 +118,11 @@ export function useWorkspace() {
     /** Shows a whole layout (e.g. a saved one, or a new one made from the sidebar) */
     openLayout: (next: WorkspaceLayout) => go(next),
     detach: (slot: Slot) => layout && go(removePanel(layout, slot)),
+    /** Takes a panel out of the panes (Detach, from anywhere, e.g. the sidebar) */
+    close: (panel: PanelRef) => {
+      const slot = layout && slotOf(layout, panel)
+      if (layout && slot) go(removePanel(layout, slot))
+    },
     fullPage: (slot: Slot) => layout && go(keepOnly(layout, slot)),
   }
 }

@@ -7,6 +7,7 @@ import RequireAuth from '../features/auth/RequireAuth'
 import HomePage from '../pages/Home/HomePage'
 import DashboardPage from '../pages/Dashboard/DashboardPage'
 import ProjectsPage from '../pages/Projects/ProjectsPage'
+import NotesPage from '../pages/Notes/NotesPage'
 import SignInPage from '../pages/SignIn/SignInPage'
 import SignUpPage from '../pages/SignUp/SignUpPage'
 import ForgotPasswordPage from '../pages/ForgotPassword/ForgotPasswordPage'
@@ -26,6 +27,7 @@ export default function AppRoutes() {
                 <Route element={<AppLayout />}>
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/projects" element={<ProjectsPage />} />
+                    <Route path="/notes" element={<NotesPage />} />
                     <Route path={WORKSPACE_PATH} element={<Workspace />} />
                 </Route>
             </Route>

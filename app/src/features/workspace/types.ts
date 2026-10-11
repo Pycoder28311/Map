@@ -7,20 +7,31 @@ export type PanelRef = { type: string; id?: string }
 
 export type PanelProps = { id?: string }
 
-/** A dragged sidebar row: which row, and the object it is (if any), for drops inside the sidebar */
-export type TreeDragInfo = { nodeId: string; objectId?: string; icon?: ButtonIcon }
+/**
+ * A dragged object, wherever it's dragged from (a sidebar row, a list row in a pane…): which object it
+ * is (if any), its kind, its sidebar row (if dragged from there), its icon, and where it comes from
+ */
+export type ObjectDragInfo = {
+  objectId?: string
+  /** e.g. 'note', 'map', 'project' */
+  kind?: string
+  /** The sidebar row it was dragged from (its place shows as an outline) */
+  nodeId?: string
+  icon?: ButtonIcon
+  source: 'sidebar' | 'pane'
+}
 
 /**
  * What a drag carries:
- * - new: a panel from outside the workspace (a sidebar item, PanelDragLink), dropped on an edge;
- *   `tree` when it's a sidebar row (it can also be dropped in the sidebar)
- * - tree: a sidebar row with no panel (e.g. a project): drops in the sidebar only
+ * - new: a panel from outside the workspace (a sidebar item, a list row…), dropped on an edge;
+ *   `object` when it's an object (it can also be dropped on sidebar rows, link nodes, the trash…)
+ * - object: an object with no panel of its own (e.g. a project's sidebar row): object drops only
  * - pane: a panel of the workspace (its grip, Pane), dropped on an edge or the centre of another
  * - layout: a saved layout's tile (sidebar), dropped on the trash
  */
 export type PanelDragData =
-  | { kind: 'new'; panel: PanelRef; label: string; tree?: TreeDragInfo }
-  | { kind: 'tree'; label: string; tree: TreeDragInfo }
+  | { kind: 'new'; panel: PanelRef; label: string; object?: ObjectDragInfo }
+  | { kind: 'object'; label: string; object: ObjectDragInfo }
   | { kind: 'pane'; panel: PanelRef; label: string; from: Slot }
   | { kind: 'layout'; layoutId: string; label: string }
 

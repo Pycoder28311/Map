@@ -8,6 +8,8 @@ import { TRASH_ID, useSidebarDrop } from './sidebarDropState'
 import TrashModal from './TrashModal'
 
 // Full class strings so Tailwind can detect them at build time.
+// Closed sidebar: as wide as a rail row (its icon's box + the row padding), so its hover/drop look fits
+const RAIL_ROW = 'max-w-[calc(2*var(--btn-px)+var(--btn-icon-size)+2*var(--btn-close-p))]'
 // The lid swings open around its left hinge (where the lid line starts: 3,6 in the 24×24 icon)
 const LID =
   '[transform-box:view-box] origin-[3px_6px] transition-[rotate] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none'
@@ -41,7 +43,7 @@ function TrashIcon({ open }: { open: boolean }) {
  * lid opens). Click: what's in it, to restore or delete for good.
  */
 export default function TrashBin({ compact }: { compact: boolean }) {
-  const { setNodeRef } = useDroppable({ id: TRASH_ID })
+  const { setNodeRef } = useDroppable({ id: TRASH_ID, data: { zone: 'trash', priority: 2 } })
   const { target } = useSidebarDrop()
   const over = target?.kind === 'trash'
   const swallowing = useLidOpen(TRASH_ID)
@@ -59,13 +61,20 @@ export default function TrashBin({ compact }: { compact: boolean }) {
         className={buttonClass(
           'ghost',
           true,
-          `relative w-full justify-start text-fg-muted ${over ? 'bg-drop/16 ring-[1.4px] ring-inset ring-drop/55' : ''}`,
+          `relative w-full justify-start text-fg-muted transition-[max-width] duration-(--sidebar-duration) ${compact ? RAIL_ROW : 'max-w-full'} ${over ? 'bg-drop/16 ring-[1.4px] ring-inset ring-drop/55' : ''}`,
         )}
       >
-        <span data-trash-icon className="ms-(--btn-icon-offset-start) flex shrink-0">
+        <span data-drop-icon={TRASH_ID} className="ms-(--btn-icon-offset-start) flex shrink-0">
           <TrashIcon open={over || swallowing} />
         </span>
-        <span className="whitespace-nowrap">Trash</span>
+        {/* Closed sidebar: only the icon (the label fades out and takes no space) */}
+        <span
+          className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-(--sidebar-duration) ease-out motion-reduce:transition-none ${
+            compact ? 'max-w-0 opacity-0' : 'max-w-24'
+          }`}
+        >
+          Trash
+        </span>
         {count > 0 && (
           // Compact: a badge on the icon; open: at the row's end
           <span

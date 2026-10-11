@@ -4,16 +4,15 @@ import Button from '../../components/ui/buttons/Button'
 import Card from '../../components/ui/Card'
 import SeeMoreLink from '../../components/ui/links/SeeMoreLink'
 import { useApp } from '../../context/AppContext'
-import OpenAsPanelButton from '../../features/workspace/OpenAsPanelButton'
+import QuickCreate from '../../features/notes/QuickCreate'
+import ProjectList from '../../features/projects/ProjectList'
 import { authClient } from '../../lib/auth-client'
-import { useMockProjects } from '../../mocks/projectsStore'
 
 // Also a workspace panel (src/panels.ts): no <main> here, AppLayout provides it
 export default function DashboardPage() {
     const { count, increment } = useApp()
     const navigate = useNavigate()
     const { data: session } = authClient.useSession()
-    const projects = useMockProjects()
 
     const signOut = async () => {
         await authClient.signOut()
@@ -22,6 +21,11 @@ export default function DashboardPage() {
 
     return (
         <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8">
+            {/* The page's main input, with room above it */}
+            <div className="mt-16 mb-6">
+                <QuickCreate />
+            </div>
+
             <header className="flex items-center justify-between gap-4">
                 <div>
                     <h1 className="text-title">Dashboard</h1>
@@ -36,20 +40,8 @@ export default function DashboardPage() {
 
             <section className="flex flex-col gap-3">
                 <h2 className="text-heading">Projects</h2>
-                <ul className="grid gap-3 sm:grid-cols-2">
-                    {projects.map((project) => (
-                        <li key={project.id}>
-                            <Card variant="white" className="flex items-start justify-between gap-2 p-4">
-                                <div>
-                                    <p className="text-body font-medium">{project.name}</p>
-                                    <p className="text-small text-fg-muted">{project.maps.length} maps</p>
-                                </div>
-                                {/* Any element becomes a panel with this one button */}
-                                <OpenAsPanelButton panel={{ type: 'project', id: project.id }} />
-                            </Card>
-                        </li>
-                    ))}
-                </ul>
+                {/* Draggable cards and rows; notes dropped on a card or map get linked */}
+                <ProjectList />
             </section>
 
             <Card variant="muted" className="flex flex-col gap-3 p-4">

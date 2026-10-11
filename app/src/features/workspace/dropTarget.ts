@@ -1,7 +1,7 @@
 // Where a dragged pane would land, from the pointer's position: pure geometry (no DOM, no React), so
 // it's easy to test (dropTarget.test.ts). Measured against the layout from before the drag, never
 // against what's on screen: the live preview moves the panes, but never the targets under the pointer.
-import { SLOTS, slotCells, type DropSpot, type Slot, type Template } from './layout'
+import { paneBox, SLOTS, type DropSpot, type Slot, type Template } from './layout'
 import type { Split } from './split'
 
 /** A point in the grid, as fractions of its width and height (0–1) */
@@ -11,28 +11,10 @@ type Box = { left: number; top: number; right: number; bottom: number }
 /** How far in from an edge its drop spot reaches, as a part of the slot's size (as DropZones) */
 const EDGE_REACH = 1 / 3
 
-/** A cell of the 2×2 grid (0 1 / 2 3), its lines at the split */
-function cellBox(cell: number, split: Split): Box {
-  const right = cell % 2 === 1
-  const bottom = cell >= 2
-  return {
-    left: right ? split.x : 0,
-    right: right ? 1 : split.x,
-    top: bottom ? split.y : 0,
-    bottom: bottom ? 1 : split.y,
-  }
-}
-
-/** A slot's box: the union of its cells */
+/** A slot's box (layout.ts: paneBox, so uneven halves of a 2×2 layout are followed too) */
 function slotBox(template: Template, slot: Slot, split: Split): Box | null {
-  const boxes = slotCells(template, slot).map((cell) => cellBox(cell, split))
-  if (boxes.length === 0) return null
-  return {
-    left: Math.min(...boxes.map((b) => b.left)),
-    top: Math.min(...boxes.map((b) => b.top)),
-    right: Math.max(...boxes.map((b) => b.right)),
-    bottom: Math.max(...boxes.map((b) => b.bottom)),
-  }
+  const box = paneBox(template, slot, split)
+  return box && { left: box.x0, top: box.y0, right: box.x1, bottom: box.y1 }
 }
 
 const inside = (box: Box, p: GridPoint) => p.x >= box.left && p.x <= box.right && p.y >= box.top && p.y <= box.bottom

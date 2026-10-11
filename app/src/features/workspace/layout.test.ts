@@ -10,6 +10,14 @@ import {
   swapPanels,
   removePanel,
   single,
+  slotOf,
+  moveSplit,
+  paneBox,
+  resetSplit,
+  segmentOf,
+  snapHalf,
+  splitFor,
+  splitSegments,
   splitLines,
   workspaceHref,
   type WorkspaceLayout,
@@ -178,5 +186,65 @@ describe('borders', () => {
       { axis: 'y', part: 'end', slots: ['b', 'c'] },
     ])
     expect(borders('4')).toHaveLength(4)
+  })
+})
+
+describe('slotOf', () => {
+  it('finds the slot a panel sits in', () => {
+    const layout = { template: '3-left' as const, panels: [{ type: 'map', id: 'm1' }, { type: 'dashboard' }, { type: 'note', id: 'n1' }] }
+    expect(slotOf(layout, { type: 'note', id: 'n1' })).toBe('c')
+    expect(slotOf(layout, { type: 'dashboard' })).toBe('b')
+    expect(slotOf(layout, { type: 'map', id: 'm9' })).toBeUndefined()
+  })
+})
+
+describe('lines with halves (2×2)', () => {
+  const ids = (template: Parameters<typeof splitSegments>[0], split: Parameters<typeof splitSegments>[1]) =>
+    splitSegments(template, split).segments.map((s) => s.id)
+
+  it('keeps halves only for 4 panes, one line at a time, and not when joined', () => {
+    expect(splitFor('3-left', { x: 0.4, y: 0.5, x2: 0.6 })).toEqual({ x: 0.4, y: 0.5 })
+    expect(splitFor('4', { x: 0.4, y: 0.5, x2: 0.6, y2: 0.3 })).toEqual({ x: 0.4, y: 0.5, x2: 0.6 })
+    expect(splitFor('4', { x: 0.4, y: 0.5, y2: 0.3 })).toEqual({ x: 0.4, y: 0.5, y2: 0.3 })
+    expect(splitFor('4', { x: 0.4, y: 0.5, x2: 0.4 })).toEqual({ x: 0.4, y: 0.5 })
+  })
+
+  it("boxes each pane by its own row's / column's line, without overlaps", () => {
+    const split = { x: 0.3, y: 0.5, x2: 0.7 }
+    expect(paneBox('4', 'a', split)).toEqual({ x0: 0, x1: 0.3, y0: 0, y1: 0.5 })
+    expect(paneBox('4', 'b', split)).toEqual({ x0: 0.3, x1: 1, y0: 0, y1: 0.5 })
+    expect(paneBox('4', 'c', split)).toEqual({ x0: 0, x1: 0.7, y0: 0.5, y1: 1 })
+    expect(paneBox('4', 'd', split)).toEqual({ x0: 0.7, x1: 1, y0: 0.5, y1: 1 })
+    expect(paneBox('4', 'b', { x: 0.5, y: 0.4, y2: 0.6 })).toEqual({ x0: 0.5, x1: 1, y0: 0, y1: 0.6 })
+    expect(paneBox('3-left', 'a', { x: 0.4, y: 0.5 })).toEqual({ x0: 0, x1: 0.4, y0: 0, y1: 1 })
+    expect(paneBox('2-cols', 'c', { x: 0.5, y: 0.5 })).toBeNull()
+  })
+
+  it('offers halves and the corner when joined; one line whole and no corner once split', () => {
+    expect(ids('4', { x: 0.5, y: 0.5 })).toEqual(['x-top', 'x-bottom', 'y-left', 'y-right'])
+    expect(splitSegments('4', { x: 0.5, y: 0.5 }).corner).toBe(true)
+    expect(ids('4', { x: 0.5, y: 0.5, x2: 0.6 })).toEqual(['x-top', 'x-bottom', 'y'])
+    expect(splitSegments('4', { x: 0.5, y: 0.5, x2: 0.6 }).corner).toBe(false)
+    expect(ids('4', { x: 0.5, y: 0.5, y2: 0.6 })).toEqual(['x', 'y-left', 'y-right'])
+    expect(ids('3-top', { x: 0.5, y: 0.5 })).toEqual(['x', 'y'])
+    expect(splitSegments('3-top', { x: 0.5, y: 0.5 }).segments[0].part).toBe('end')
+    expect(segmentOf('4', { x: 0.5, y: 0.5, y2: 0.6 }, { axis: 'x', part: 'end' })).toBe('x')
+    expect(segmentOf('4', { x: 0.5, y: 0.5 }, { axis: 'x', part: 'end' })).toBe('x-bottom')
+  })
+
+  it('moves one half, freezing its partner, and snaps within 12px', () => {
+    const size = { width: 1000, height: 600 }
+    expect(moveSplit({ x: 0.5, y: 0.5 }, 'x-top', { x: 0.3, y: 0 }, size)).toEqual({ x: 0.3, y: 0.5, x2: 0.5 })
+    expect(moveSplit({ x: 0.3, y: 0.5, x2: 0.5 }, 'x-top', { x: 0.495, y: 0 }, size)).toEqual({ x: 0.5, y: 0.5, x2: 0.5 })
+    expect(moveSplit({ x: 0.3, y: 0.5, x2: 0.5 }, 'x-bottom', { x: 0.31, y: 0 }, size).x2).toBe(0.3)
+    expect(moveSplit({ x: 0.5, y: 0.5 }, 'y-right', { x: 0, y: 0.7 }, size)).toEqual({ x: 0.5, y: 0.5, y2: 0.7 })
+    expect(moveSplit({ x: 0.3, y: 0.5, x2: 0.5 }, 'y', { x: 0, y: 0.6 }, size)).toEqual({ x: 0.3, y: 0.6, x2: 0.5 })
+    expect(snapHalf(0.51, 0.5, 1000)).toBe(0.5)
+    expect(snapHalf(0.52, 0.5, 1000)).toBe(0.52)
+  })
+
+  it('rejoins halves halfway on reset', () => {
+    expect(resetSplit({ x: 0.3, y: 0.5, x2: 0.5 }, 'x-bottom')).toEqual({ x: 0.4, y: 0.5 })
+    expect(resetSplit({ x: 0.3, y: 0.4, y2: 0.6 }, 'xy')).toEqual({ x: 0.5, y: 0.5 })
   })
 })

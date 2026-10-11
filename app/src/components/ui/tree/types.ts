@@ -1,6 +1,6 @@
 import type { PanelRef } from '../../../features/workspace/types'
 import type { IconEffects } from '../icons/iconEffects'
-import type { ButtonIcon } from '../icons/IconSlot'
+import type { ButtonIcon, PlainIcon } from '../icons/IconSlot'
 
 /** One node: a folder (has children, opens/closes) or a leaf (a link to a page) */
 export type TreeNode = {
@@ -21,6 +21,8 @@ export type TreeNode = {
   draggable?: boolean
   /** Never takes a drop into it (e.g. Dashboard, a map) */
   locked?: boolean
+  /** A small count after the name (e.g. how many notes are linked to it) */
+  badge?: number
 }
 
 /** Where a drop would land on a row */
@@ -42,6 +44,14 @@ export type TreeDnd = {
   target?: { nodeId: string; position: TreeDropPosition } | null
   /** Rows whose lid is up (something is falling in): they show their open icon */
   lidOpen?: (nodeId: string) => boolean
+  /**
+   * A round drop node sliding out of a row's right side (e.g. "link a note here"): its droppable id,
+   * drop key (fall-into effect), data, icon, label, whether it shows and whether it's targeted.
+   * undefined: none on that row
+   */
+  linkNode?: (node: TreeNode) =>
+    | { id: string; dropKey: string; data: Record<string, unknown>; icon: PlainIcon; label: string; state: 'hidden' | 'faint' | 'shown'; active: boolean }
+    | undefined
 }
 
 /** What a row is right now; passed to the function that chooses its right icons */

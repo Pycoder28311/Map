@@ -1,0 +1,71 @@
+import type { ReactNode } from 'react'
+import { LuLink } from 'react-icons/lu'
+import type { ButtonIcon } from '../../components/ui/icons/IconSlot'
+import { useObjectDrag } from '../drag/objectDrag'
+import type { PanelRef } from '../workspace/types'
+
+// Full class strings so Tailwind can detect them at build time.
+const ROW = 'flex items-center gap-2 rounded-(--card-radius) bg-fill px-3 py-2 text-body'
+
+type Props = {
+  /** The object it shows */
+  object: { id: string; kind: string; name: string }
+  icon: ButtonIcon
+  /** Unique among draggables (e.g. "notes-list:n1") */
+  dragId: string
+  /** Its panel: dropped on a pane's edge, it opens there */
+  panel?: PanelRef
+  /** Small text after the name (e.g. its project) */
+  hint?: string
+  /** How many objects it's linked to */
+  links?: number
+  /** At its end (e.g. open-as-panel, a link node) */
+  end?: ReactNode
+  className?: string
+}
+
+/**
+ * One object as a row in a pane's list (the Notes page, a Dashboard card…), draggable anywhere: onto
+ * sidebar rows, link nodes, the trash, pane edges (features/drag). Dragged by its background (its
+ * buttons keep the pointer); its place stays faint while it's dragged.
+ */
+export default function ObjectRow({ object, icon: Icon, dragId, panel, hint, links, end, className = '' }: Props) {
+  const { setNodeRef, listeners, attributes, isDragging } = useObjectDrag({
+    id: dragId,
+    label: object.name,
+    panel,
+    object: { objectId: object.id, kind: object.kind, icon: Icon, source: 'pane' },
+  })
+  const { role: _role, ...dragAttributes } = attributes
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...dragAttributes}
+      className={`${ROW} cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-40' : ''} ${className}`}
+    >
+      <Icon className="size-(--btn-icon-size) shrink-0 text-fg-subtle" />
+      <span className="min-w-0 flex-1 truncate">
+        {object.name}
+        {hint && <span className="text-fg-subtle"> · {hint}</span>}
+      </span>
+      {!!links && (
+        <span title={`${links} linked`} className="inline-flex shrink-0 items-center gap-0.5 text-small text-fg-subtle">
+          <LuLink className="size-3" aria-hidden />
+          {links}
+        </span>
+      )}
+      {end}
+    </div>
+  )
+}
+
+/** How a dragged object looks over a list of ObjectRows (a drag surface's look) */
+export function ObjectRowLook({ label, icon: Icon, className = 'w-72' }: { label: string; icon?: ButtonIcon; className?: string }) {
+  return (
+    <div className={`${ROW} ${className} bg-surface shadow-lg ring-1 ring-line`}>
+      {Icon && <Icon className="size-(--btn-icon-size) shrink-0 text-fg-subtle" />}
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+    </div>
+  )
+}

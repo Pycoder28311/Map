@@ -1,15 +1,20 @@
 // MOCK DATA: turns the mock objects into the sidebar's tree nodes. Replaced by the same mapping over
 // backend data later; the components stay the same.
-import { LuFolderKanban, LuFolderOpen, LuInfo, LuLayoutDashboard, LuMap, LuStickyNote } from 'react-icons/lu'
+import { LuFileText, LuFolder, LuFolderOpen, LuInfo, LuLayoutDashboard, LuMap, LuStickyNote } from 'react-icons/lu'
 import type { ButtonIcon } from '../components/ui/icons/IconSlot'
 import type { TreeNode } from '../components/ui/tree/types'
 import type { MockObject, ObjectKind } from './projects'
-import { isHidden } from './projectsStore'
+import { isHidden, type Link } from './projectsStore'
 
 /** A row the user can change (rename, duplicate, move, pin, archive, delete): one object */
 export type SidebarItem = { kind: ObjectKind; id: string; name: string; parentId: string | null }
 
-export const KIND_ICON: Record<ObjectKind, ButtonIcon> = { project: LuFolderKanban, map: LuMap, note: LuStickyNote }
+export const KIND_ICON: Record<ObjectKind, ButtonIcon> = {
+  project: LuFolder,
+  map: LuMap,
+  note: LuStickyNote,
+  article: LuFileText,
+}
 
 /** The node id of an object's row (Pinned rows: `pin:` + it) */
 export const nodeIdOf = (object: { kind: ObjectKind; id: string }) => `${object.kind}-${object.id}`
@@ -27,13 +32,14 @@ export const DASHBOARD_NODE: TreeNode = {
 const itemOf = (o: MockObject): SidebarItem => ({ kind: o.kind, id: o.id, name: o.name, parentId: o.parentId })
 
 /** A map or note row (a leaf that opens its panel) */
-const leafOf = (o: MockObject, id = nodeIdOf(o)): TreeNode => ({
+const leafOf = (o: MockObject, id = nodeIdOf(o), badge?: number): TreeNode => ({
   id,
   label: o.name,
   icon: KIND_ICON[o.kind],
   panel: { type: o.kind, id: o.id },
   draggable: o.draggable,
   locked: o.locked,
+  badge,
 })
 
 /**
@@ -43,10 +49,18 @@ const leafOf = (o: MockObject, id = nodeIdOf(o)): TreeNode => ({
  * - notes: the top-level objects that aren't projects
  * `items`: which rows are objects (by node id, Pinned rows included); the others are fixed.
  */
-export function buildSidebarSections(objects: MockObject[], pins: string[]) {
+export function buildSidebarSections(objects: MockObject[], pins: string[], links: Link[] = []) {
   const items = new Map<string, SidebarItem>()
   const visible = objects.filter((o) => !isHidden(objects, o))
   const byId = new Map(visible.map((o) => [o.id, o]))
+  // How many visible objects each one is linked to (shown as a small count on its row)
+  const linked = new Map<string, number>()
+  for (const { noteId, targetId } of links) {
+    if (!byId.has(noteId) || !byId.has(targetId)) continue
+    linked.set(noteId, (linked.get(noteId) ?? 0) + 1)
+    linked.set(targetId, (linked.get(targetId) ?? 0) + 1)
+  }
+  const badge = (id: string) => linked.get(id)
 
   const projects = visible
     .filter((o) => o.kind === 'project')
@@ -59,6 +73,7 @@ export function buildSidebarSections(objects: MockObject[], pins: string[]) {
         openIcon: LuFolderOpen,
         draggable: p.draggable,
         locked: p.locked,
+        badge: badge(p.id),
         children: [
           {
             id: `${nodeIdOf(p)}-overview`,
@@ -72,7 +87,7 @@ export function buildSidebarSections(objects: MockObject[], pins: string[]) {
             .filter((o) => o.parentId === p.id)
             .map((o) => {
               items.set(nodeIdOf(o), itemOf(o))
-              return leafOf(o)
+              return leafOf(o, nodeIdOf(o), badge(o.id))
             }),
         ],
       }
@@ -82,7 +97,7 @@ export function buildSidebarSections(objects: MockObject[], pins: string[]) {
     .filter((o) => o.parentId === null && o.kind !== 'project')
     .map((o) => {
       items.set(nodeIdOf(o), itemOf(o))
-      return leafOf(o)
+      return leafOf(o, nodeIdOf(o), badge(o.id))
     })
 
   const pinned = pins.flatMap((id) => {
@@ -90,7 +105,7 @@ export function buildSidebarSections(objects: MockObject[], pins: string[]) {
     if (!o) return []
     const nodeId = `pin:${nodeIdOf(o)}`
     items.set(nodeId, itemOf(o))
-    const node = leafOf(o, nodeId)
+    const node = leafOf(o, nodeId, badge(o.id))
     // A project's shortcut opens its Overview
     return [o.kind === 'project' ? { ...node, panel: { type: 'project', id: o.id } } : node]
   })

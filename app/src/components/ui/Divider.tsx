@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { ICON_EFFECT_GROUP, iconEffectClass } from './icons/iconEffects'
 import type { PlainIcon } from './icons/IconSlot'
 import { ICON_BOX, ICON_BUTTON } from './tree/treeIconStyles'
@@ -10,7 +11,9 @@ const RAIL_LINE_W = 'w-[calc(2*var(--btn-px)+var(--btn-icon-size)+2*var(--btn-cl
 type Props = {
   /** Text before the line, e.g. "Projects"; none: just the line */
   label?: string
-  /** A small button left of the label, e.g. "New note" */
+  /** The label is a link to this page (e.g. the Notes page) */
+  labelTo?: string
+  /** A small button at the right end, e.g. "New note" */
   action?: { icon: PlainIcon; label: string; onClick: () => void; disabled?: boolean }
   /** Icons-only sidebar: only a short line shows; the height stays, so nothing below moves */
   compact?: boolean
@@ -18,15 +21,29 @@ type Props = {
 }
 
 /**
- * The line between two parts of a list (e.g. the sidebar's sections), with an optional label and
- * button. Always --divider-h tall, with or without a label, open or compact.
+ * The line between two parts of a list (e.g. the sidebar's sections): [label] ──── [button], both
+ * optional. Always --divider-h tall, with or without a label, open or compact.
  *
  *   <Divider label="Notes" action={{ icon: LuPlus, label: 'New note', onClick }} />
  */
-export default function Divider({ label, action, compact = false, className = '' }: Props) {
+export default function Divider({ label, labelTo, action, compact = false, className = '' }: Props) {
   const hidden = compact ? 'pointer-events-none opacity-0' : ''
   return (
     <div role="separator" aria-label={label} className={`relative flex h-(--divider-h) shrink-0 items-center gap-1 px-(--btn-px) ${className}`}>
+      {label &&
+        (labelTo ? (
+          <Link
+            to={labelTo}
+            tabIndex={compact ? -1 : undefined}
+            className={`shrink-0 rounded-sm text-small font-medium text-fg-muted hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-accent ${FADE} ${hidden}`}
+          >
+            {label}
+          </Link>
+        ) : (
+          <span className={`shrink-0 text-small font-medium text-fg-muted ${FADE} ${hidden}`}>{label}</span>
+        ))}
+      <span aria-hidden className={`h-px flex-1 bg-line ${FADE} ${hidden}`} />
+      {/* At the row's right edge, in line with the rows' own right icons */}
       {action && (
         <button
           type="button"
@@ -40,8 +57,6 @@ export default function Divider({ label, action, compact = false, className = ''
           <action.icon className={`size-(--btn-icon-size) ${iconEffectClass()}`} />
         </button>
       )}
-      {label && <span className={`shrink-0 text-small font-medium text-fg-muted ${FADE} ${hidden}`}>{label}</span>}
-      <span aria-hidden className={`h-px flex-1 bg-line ${FADE} ${hidden}`} />
       {/* Compact: the short line in the rail */}
       <span
         aria-hidden

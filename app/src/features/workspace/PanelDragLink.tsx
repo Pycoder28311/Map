@@ -1,14 +1,14 @@
-import { useDraggable } from '@dnd-kit/core'
 import type { CSSProperties, ReactNode } from 'react'
 import NavButton from '../../components/ui/buttons/NavButton'
 import type { TreeNode } from '../../components/ui/tree/types'
-import type { PanelDragData, TreeDragInfo } from './types'
+import { useObjectDrag } from '../drag/objectDrag'
+import type { ObjectDragInfo } from './types'
 import { useWorkspace } from './useWorkspace'
 
 type Props = {
   node: TreeNode
-  /** It's a sidebar row: it can also be dragged within the sidebar */
-  tree?: TreeDragInfo
+  /** It's an object (e.g. a sidebar row's): it can also be dropped on rows, link nodes, the trash */
+  object?: ObjectDragInfo
   className?: string
   style?: CSSProperties
   children: ReactNode
@@ -16,19 +16,24 @@ type Props = {
 
 /**
  * A tree row's link (click = go there) that can also be dragged onto the current page or a panel
- * when it represents a draggable panel, and (with `tree`) within the sidebar. `draggable: false`
- * never drags. Without `tree`: disabled while that panel is open or 4 are open (the drop zones also
- * refuse those, so with `tree` it stays draggable for the sidebar).
+ * when it represents a draggable panel, and (with `object`) onto object drop targets. `draggable:
+ * false` never drags. Without `object`: disabled while that panel is open or 4 are open (the drop
+ * zones also refuse those, so with `object` it stays draggable for the other targets).
  * Its content (left icons + label) comes from the tree as children.
  */
-export default function PanelDragLink({ node, tree, className = '', style, children }: Props) {
+export default function PanelDragLink({ node, object, className = '', style, children }: Props) {
   const { isOpen, isDraggable, canAdd, hrefOf } = useWorkspace()
   const panel = node.panel
   const open = panel ? isOpen(panel) : false
-  const disabled = !panel || !node.draggable || (!tree && (!isDraggable(panel) || open || !canAdd))
+  const disabled = !panel || !node.draggable || (!object && (!isDraggable(panel) || open || !canAdd))
 
-  const data: PanelDragData | undefined = panel && { kind: 'new', panel, label: node.label, tree }
-  const { setNodeRef, listeners, attributes, isDragging } = useDraggable({ id: `tree:${node.id}`, data, disabled })
+  const { setNodeRef, listeners, attributes, isDragging } = useObjectDrag({
+    id: `tree:${node.id}`,
+    label: node.label,
+    panel,
+    object: object ?? { nodeId: node.id, icon: node.icon, source: 'sidebar' },
+    disabled,
+  })
   // Keep the link's own role (dnd-kit would announce it as a button)
   const { role: _role, ...dragAttributes } = attributes
 

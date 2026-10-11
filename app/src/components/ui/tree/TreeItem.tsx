@@ -1,6 +1,7 @@
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import type { CSSProperties, ReactNode } from 'react'
 import NavButton from '../buttons/NavButton'
+import DropIcon from '../drop/DropIcon'
 import TreeIcon from './TreeIcon'
 import TreeLabel from './TreeLabel'
 import TreeRowIcon from './TreeRowIcon'
@@ -64,6 +65,9 @@ const LINE: Record<'before' | 'after', string> = {
   before: '-top-[3px]',
   after: '-bottom-[3px]',
 }
+// The row being dragged: its place shows as a dashed outline of its shape (its contents hidden; an
+// outline, not a border, so the row keeps its exact size)
+const LEFT_BEHIND = 'outline-1 outline-dashed -outline-offset-1 outline-line-strong [&>*]:invisible hover:bg-transparent'
 // A folder about to receive something: tinted, with a ring
 const INTO = 'bg-drop/16 ring-[1.4px] ring-inset ring-drop/55'
 
@@ -121,8 +125,11 @@ export default function TreeItem({
   // Keep the row's own role (dnd-kit would announce it as a button)
   const { role: _role, ...dragAttributes } = attributes
   const dropAt: TreeDropPosition | null = dnd?.target?.nodeId === node.id ? dnd.target.position : null
-  // Compact: no right icons (they'd sit over the left one); none either while the name is edited
-  const right = compact || editing ? [] : (icons.right?.(node, state) ?? [])
+  // The drop node sliding out of its right side (none in compact: the rail is too narrow)
+  const link = compact ? undefined : dnd?.linkNode?.(node)
+  // Compact: no right icons (they'd sit over the left one); none either while the name is edited or
+  // while the drop node is out
+  const right = compact || editing || link?.state === 'shown' ? [] : (icons.right?.(node, state) ?? [])
   const alwaysShown = right.filter((i) => (i.show ?? 'always') === 'always').length
   const kept = state.isFolder && !state.isOpen && keepVisible ? keptDescendants(node, keepVisible) : []
 
@@ -132,6 +139,7 @@ export default function TreeItem({
     <span className="flex min-w-0 flex-1 items-center gap-(--tree-label-gap)">
       {rowIcon}
       <TreeLabel
+        badge={node.badge}
         onStartEdit={renamable ? () => onEditingChange!(node.id) : undefined}
         editing={
           editing
@@ -165,10 +173,10 @@ export default function TreeItem({
         ref={setDropRef}
         data-row-id={node.id}
         style={{ '--icons-rest': iconsWidth(alwaysShown), '--icons-hover': iconsWidth(right.length) } as CSSProperties}
-        className={`${dropAt === 'into' ? INTO : ''} ${dnd?.draggingId === node.id ? 'opacity-0' : ''} group/row relative flex items-center rounded-(--btn-radius) hover:bg-fill [--icons:var(--icons-rest)] hover:[--icons:var(--icons-hover)] has-[:focus-visible]:[--icons:var(--icons-hover)] max-w-[var(--tree-row-max,100%)] transition-[max-width] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none`}
+        className={`${dropAt === 'into' ? INTO : ''} ${dnd?.draggingId === node.id ? LEFT_BEHIND : ''} group/row relative flex items-center rounded-(--btn-radius) hover:bg-fill [--icons:var(--icons-rest)] hover:[--icons:var(--icons-hover)] has-[:focus-visible]:[--icons:var(--icons-hover)] max-w-[var(--tree-row-max,100%)] transition-[max-width] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none`}
       >
         {state.isFolder && (
-          <span data-row-icon={node.id} className="absolute start-(--btn-px) top-1/2 z-10 flex -translate-y-1/2">
+          <span data-drop-icon={node.id} className="absolute start-(--btn-px) top-1/2 z-10 flex -translate-y-1/2">
             {editing ? (
               // Only the node's own icon while its name is edited (no open/close arrow)
               <TreeRowIcon icon={icon} />
@@ -204,6 +212,8 @@ export default function TreeItem({
         ) : (
           <NavButton to={node.to ?? '/'} {...rowProps} />
         )}
+
+        {link && <DropIcon {...link} className="absolute end-0 top-0 z-20" />}
 
         {right.length > 0 && (
           <div className="absolute inset-y-0 end-0 z-10 flex items-center gap-0.5 pe-(--btn-px)">

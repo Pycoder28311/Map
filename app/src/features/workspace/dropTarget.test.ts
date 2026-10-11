@@ -17,6 +17,13 @@ describe('dropTargetAt', () => {
     expect(dropTargetAt('2-cols', { x: 0.3, y: 0.5 }, { x: 0.4, y: 0.5 }, all)?.slot).toBe('b')
   })
 
+  it("follows a 2×2 layout's uneven halves", () => {
+    // Top row split at 0.3, bottom row at 0.7: x = 0.5 is in b on top and in c below
+    const split = { x: 0.3, y: 0.5, x2: 0.7 }
+    expect(dropTargetAt('4', split, { x: 0.5, y: 0.25 }, all)?.slot).toBe('b')
+    expect(dropTargetAt('4', split, { x: 0.5, y: 0.75 }, all)?.slot).toBe('c')
+  })
+
   it('an edge near it, the centre in the middle', () => {
     expect(dropTargetAt('2-cols', HALF, { x: 0.05, y: 0.5 }, all)).toEqual({ slot: 'a', spot: 'left' })
     expect(dropTargetAt('2-cols', HALF, { x: 0.25, y: 0.5 }, all)).toEqual({ slot: 'a', spot: 'center' })

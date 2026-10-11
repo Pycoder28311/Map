@@ -1,5 +1,6 @@
 // Workspace layout model: up to 4 panels on a 2×2 grid, as one of 8 templates.
 // Pure functions (no React), so the rules are easy to test (layout.test.ts).
+import type { Split } from './split'
 import type { PanelRef } from './types'
 
 export type Slot = 'a' | 'b' | 'c' | 'd'
@@ -51,6 +52,12 @@ export const panelAt = (layout: WorkspaceLayout, slot: Slot): PanelRef | undefin
 
 export const single = (panel: PanelRef): WorkspaceLayout => ({ template: '1', panels: [panel] })
 
+/** The slot a panel sits in, or undefined when it isn't in the layout */
+export function slotOf(layout: WorkspaceLayout, panel: PanelRef): Slot | undefined {
+  const i = layout.panels.findIndex((p) => panelKey(p) === panelKey(panel))
+  return i === -1 ? undefined : SLOTS[i]
+}
+
 /* ─────────────── Grid geometry ─────────────── */
 
 /** CSS grid-template-areas, e.g. '"a b" "a c"' */
@@ -91,6 +98,183 @@ export function borders(template: Template): Border[] {
     if (lines.y.right) result.push({ axis: 'y', part: 'end', slots: [c[1], c[3]] })
   }
   return result
+}
+
+/* ─────────────── Lines with halves (2×2) ─────────────── */
+
+/**
+ * What a resize drag moves:
+ * - x / y: a whole line (or the only part of it there is)
+ * - x-top / x-bottom, y-left / y-right: one half of a line in a 2×2 layout (only those two panes)
+ * - xy: both lines at their crossing (the corner)
+ */
+export type SplitAxis = 'x' | 'x-top' | 'x-bottom' | 'y' | 'y-left' | 'y-right' | 'xy'
+
+/** A resize segment: what it moves, which line it lies on, and which part of it */
+export type SplitSegment = { id: Exclude<SplitAxis, 'xy'>; axis: 'x' | 'y'; part: 'start' | 'end' | 'whole' }
+
+/** A box as fractions of the workspace (0–1) */
+export type Box = { x0: number; y0: number; x1: number; y1: number }
+
+const SAME = 0.001
+
+/**
+ * The split as it applies to a template: halves only in a 2×2 layout, only one line's at a time
+ * (x2 wins), and none when equal to their partner (joined)
+ */
+export function splitFor(template: Template, split: Split): Split {
+  const { x, y } = split
+  if (template !== '4') return { x, y }
+  if (split.x2 !== undefined && Math.abs(split.x2 - x) >= SAME) return { x, y, x2: split.x2 }
+  if (split.y2 !== undefined && Math.abs(split.y2 - y) >= SAME) return { x, y, y2: split.y2 }
+  return { x, y }
+}
+
+/** The vertical line in a row (0: top, 1: bottom) and the horizontal line in a column (0: left, 1: right) */
+const xLine = (s: Split, row: number) => (row === 0 ? s.x : (s.x2 ?? s.x))
+const yLine = (s: Split, col: number) => (col === 0 ? s.y : (s.y2 ?? s.y))
+
+/** Where a pane (slot) sits: the union of its cells, each bounded by its own row's / column's line */
+export function paneBox(template: Template, slot: Slot, split: Split): Box | null {
+  const s = splitFor(template, split)
+  const boxes = slotCells(template, slot).map((cell) => {
+    const col = cell % 2
+    const row = Math.floor(cell / 2)
+    const x = xLine(s, row)
+    const y = yLine(s, col)
+    return { x0: col ? x : 0, x1: col ? 1 : x, y0: row ? y : 0, y1: row ? 1 : y }
+  })
+  if (boxes.length === 0) return null
+  return {
+    x0: Math.min(...boxes.map((b) => b.x0)),
+    y0: Math.min(...boxes.map((b) => b.y0)),
+    x1: Math.max(...boxes.map((b) => b.x1)),
+    y1: Math.max(...boxes.map((b) => b.y1)),
+  }
+}
+
+/** The CSS variable of a segment's line (live while dragging: useSplitDrag sets them) */
+export const SEGMENT_VAR: Record<SplitSegment['id'], string> = {
+  x: 'var(--split-x)',
+  'x-top': 'var(--split-x)',
+  'x-bottom': 'var(--split-x2, var(--split-x))',
+  y: 'var(--split-y)',
+  'y-left': 'var(--split-y)',
+  'y-right': 'var(--split-y2, var(--split-y))',
+}
+
+/**
+ * A pane's box in CSS (insets for an absolutely placed pane), from the split variables, with half
+ * the gap on each inner edge. The same cell rules as paneBox, so the two always agree.
+ */
+export function paneBoxCss(template: Template, slot: Slot, gap: number) {
+  const cells = slotCells(template, slot)
+  const cols = cells.map((c) => c % 2)
+  const rows = cells.map((c) => Math.floor(c / 2))
+  const row = Math.min(...rows)
+  const col = Math.min(...cols)
+  // A pane spanning both rows / columns has one line there (the halves only exist with 4 panes)
+  const x = row === 0 ? SEGMENT_VAR['x-top'] : SEGMENT_VAR['x-bottom']
+  const y = col === 0 ? SEGMENT_VAR['y-left'] : SEGMENT_VAR['y-right']
+  const half = `${gap / 2}px`
+  return {
+    left: Math.min(...cols) === 0 ? '0px' : `calc(${x} + ${half})`,
+    right: Math.max(...cols) === 1 ? '0px' : `calc(100% - ${x} + ${half})`,
+    top: row === 0 ? '0px' : `calc(${y} + ${half})`,
+    bottom: Math.max(...rows) === 1 ? '0px' : `calc(100% - ${y} + ${half})`,
+  }
+}
+
+/**
+ * The resize segments of a layout and whether the corner (both lines at once) can be dragged:
+ * - 2×2, joined: each line in two halves (only the two panes beside a half move), plus the corner
+ * - 2×2, one line's halves apart: that line in halves, the other whole, no corner
+ * - other templates: their lines as they are (splitLines), the corner where they meet
+ */
+export function splitSegments(template: Template, split: Split): { segments: SplitSegment[]; corner: boolean } {
+  if (template === '4') {
+    const s = splitFor(template, split)
+    const xHalves: SplitSegment[] = [
+      { id: 'x-top', axis: 'x', part: 'start' },
+      { id: 'x-bottom', axis: 'x', part: 'end' },
+    ]
+    const yHalves: SplitSegment[] = [
+      { id: 'y-left', axis: 'y', part: 'start' },
+      { id: 'y-right', axis: 'y', part: 'end' },
+    ]
+    if (s.x2 !== undefined) return { segments: [...xHalves, { id: 'y', axis: 'y', part: 'whole' }], corner: false }
+    if (s.y2 !== undefined) return { segments: [{ id: 'x', axis: 'x', part: 'whole' }, ...yHalves], corner: false }
+    return { segments: [...xHalves, ...yHalves], corner: true }
+  }
+  const lines = splitLines(template)
+  const part = (a: boolean, b: boolean) => (a && b ? 'whole' : a ? 'start' : 'end') as SplitSegment['part']
+  const segments: SplitSegment[] = []
+  if (lines.x.top || lines.x.bottom) segments.push({ id: 'x', axis: 'x', part: part(lines.x.top, lines.x.bottom) })
+  if (lines.y.left || lines.y.right) segments.push({ id: 'y', axis: 'y', part: part(lines.y.left, lines.y.right) })
+  return { segments, corner: segments.length === 2 }
+}
+
+/** The segment a border (borders()) lies on, in the current state (a swap button drags it) */
+export function segmentOf(template: Template, split: Split, border: Pick<Border, 'axis' | 'part'>): SplitSegment['id'] {
+  return splitSegments(template, split).segments.find(
+    (seg) => seg.axis === border.axis && (seg.part === 'whole' || seg.part === border.part),
+  )!.id
+}
+
+/** A segment's line position (fraction), e.g. for aria-valuenow */
+export function segmentValue(split: Split, id: SplitSegment['id']) {
+  if (id === 'x-bottom') return split.x2 ?? split.x
+  if (id === 'y-right') return split.y2 ?? split.y
+  return id.startsWith('x') ? split.x : split.y
+}
+
+/** A half within `threshold` px of its partner jumps to it (so the 4 corners are easy to join again) */
+export const snapHalf = (value: number, partner: number, sizePx: number, threshold = 12) =>
+  Math.abs(value - partner) * sizePx <= threshold ? partner : value
+
+/**
+ * The split after dragging `axis` to `to` (fractions), from the split at the start of the drag.
+ * Moving a half freezes its partner where it was, and snaps to it when close (snapHalf).
+ */
+export function moveSplit(start: Split, axis: SplitAxis, to: { x: number; y: number }, size: { width: number; height: number }): Split {
+  switch (axis) {
+    case 'x':
+      return { ...start, x: to.x }
+    case 'y':
+      return { ...start, y: to.y }
+    case 'xy':
+      return { x: to.x, y: to.y }
+    case 'x-top': {
+      const partner = start.x2 ?? start.x
+      return { x: snapHalf(to.x, partner, size.width), y: start.y, x2: partner }
+    }
+    case 'x-bottom':
+      return { x: start.x, y: start.y, x2: snapHalf(to.x, start.x, size.width) }
+    case 'y-left': {
+      const partner = start.y2 ?? start.y
+      return { x: start.x, y: snapHalf(to.y, partner, size.height), y2: partner }
+    }
+    case 'y-right':
+      return { x: start.x, y: start.y, y2: snapHalf(to.y, start.y, size.height) }
+  }
+}
+
+/** Double-click: a whole line back to the middle; a half rejoins its partner halfway between them */
+export function resetSplit(split: Split, axis: SplitAxis): Split {
+  switch (axis) {
+    case 'x':
+      return { ...split, x: 0.5 }
+    case 'y':
+      return { ...split, y: 0.5 }
+    case 'xy':
+      return { x: 0.5, y: 0.5 }
+    case 'x-top':
+    case 'x-bottom':
+      return { x: (split.x + (split.x2 ?? split.x)) / 2, y: split.y }
+    case 'y-left':
+    case 'y-right':
+      return { x: split.x, y: (split.y + (split.y2 ?? split.y)) / 2 }
+  }
 }
 
 /** Edges of a slot where a new panel can be dropped: only spans of 2+ cells can split */
