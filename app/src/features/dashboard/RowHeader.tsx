@@ -23,8 +23,9 @@ type Props = {
 
 /**
  * A Dashboard row's header: its name on the left (a project's is edited in place: hover shows ✎ and a
- * text cursor, a click edits it), Sort by and Create on the right, small, their menus hanging from
- * them like extensions. Create is split (Create │ ▾); both parts open its menu.
+ * text cursor, a click edits it), Sort by (a background only on hover) and Create (green) on the
+ * right, as big as a sidebar row, their menus popping out below them. Create is split (Create │ ▾);
+ * both parts open its menu.
  */
 export default function RowHeader({ name, onRename, sort, onSort, creatable, onCreate }: Props) {
   const [editing, setEditing] = useState(false)
@@ -68,15 +69,15 @@ export default function RowHeader({ name, onRename, sort, onSort, creatable, onC
       )}
 
       <div className="flex shrink-0 items-center gap-2">
-        <ButtonMenu variant="secondary" label={`Sort ${name}`} items={SORTS} value={sort} onSelect={(next) => onSort(next === sort ? null : next)}>
+        <ButtonMenu variant="ghost" label={`Sort ${name}`} items={SORTS} value={sort} onSelect={(next) => onSort(next === sort ? null : next)}>
           {sort ? SORT_LABEL[sort] : 'Sort by'}
-          <LuChevronDown aria-hidden className="size-3.5" />
+          <LuChevronDown aria-hidden className="size-4" />
         </ButtonMenu>
-        <ButtonMenu variant="primary" label={`Create in ${name}`} items={createItems} onSelect={onCreate} className="gap-0 px-0">
-          <span className="px-2.5">Create</span>
+        <ButtonMenu variant="create" label={`Create in ${name}`} items={createItems} onSelect={onCreate} className="gap-0! px-0!">
+          <span className="px-(--pill-px)">Create</span>
           {/* The split: a thin line, then the arrow (both open the same menu) */}
-          <span aria-hidden className="flex items-center self-stretch border-s border-accent-fg/30 px-1.5">
-            <LuChevronDown className="size-3.5" />
+          <span aria-hidden className="flex items-center self-stretch border-s border-create-fg/30 px-2">
+            <LuChevronDown className="size-4" />
           </span>
         </ButtonMenu>
       </div>

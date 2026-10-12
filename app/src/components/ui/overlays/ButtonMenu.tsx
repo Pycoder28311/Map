@@ -3,19 +3,23 @@ import { LuCheck } from 'react-icons/lu'
 import type { ButtonIcon } from '../icons/IconSlot'
 
 // Full class strings so Tailwind can detect them at build time.
-// Small buttons (e.g. a list's Sort by / Create): the menu takes the button's colours
+// The button's look: green (create), or a background only on hover (ghost); a bit darker while open
 const LOOK = {
-  primary: { button: 'bg-accent text-accent-fg hover:bg-accent-hover', open: 'bg-accent-hover', menu: 'bg-accent text-accent-fg', item: 'hover:bg-accent-hover focus-visible:bg-accent-hover' },
-  secondary: { button: 'bg-fill text-fg hover:bg-fill-strong', open: 'bg-fill-strong', menu: 'bg-fill text-fg', item: 'hover:bg-fill-strong focus-visible:bg-fill-strong' },
+  create: { button: 'bg-create text-create-fg hover:bg-create-hover', open: 'bg-create-hover' },
+  ghost: { button: 'text-fg hover:bg-fill', open: 'bg-fill' },
 } as const
+// The padding, corners and text of a sidebar row (as tall as one)
 const BUTTON =
-  'inline-flex items-center gap-1.5 rounded-(--btn-radius) px-2.5 py-1 text-small font-medium cursor-pointer transition-colors ' +
+  'inline-flex items-center gap-1.5 rounded-(--btn-radius) px-(--pill-px) py-(--pill-py) text-body font-medium cursor-pointer transition-colors ' +
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
-// A native popover (top layer; closes on a click outside or Esc), UA defaults reset; placed on open.
-// Its top corners are square where it hangs from the button; it grows down out of it
-const MENU = 'inset-auto m-0 rounded-b-(--btn-radius) rounded-t-none p-1 text-small shadow-md animate-menu-extend motion-reduce:animate-none'
+// A native popover (top layer; closes on a click outside or Esc), UA defaults reset; placed on open,
+// under the button's right end. It pops out of the button's corner (like Dropdown)
+const MENU =
+  'inset-auto m-0 min-w-40 rounded-(--menu-radius) border border-line bg-surface p-(--menu-p) text-fg shadow-lg ' +
+  'origin-top-right animate-dropdown-in motion-reduce:animate-none'
 const ITEM =
-  'flex w-full cursor-pointer items-center gap-2 rounded-[6px] px-2 py-1.5 text-start whitespace-nowrap focus-visible:outline-none'
+  'flex h-(--menu-item-h) w-full cursor-pointer items-center gap-(--menu-icon-gap) rounded-(--menu-item-radius) px-(--menu-item-px) ' +
+  'text-body text-start whitespace-nowrap hover:bg-fill focus-visible:bg-fill focus-visible:outline-none aria-checked:font-medium'
 
 export type ButtonMenuItem<T extends string> = { value: T; label: string; icon?: ButtonIcon }
 
@@ -33,32 +37,26 @@ type Props<T extends string> = {
 }
 
 /**
- * A small button whose menu hangs from its bottom edge like an extension of it: the same colours,
- * square corners where they meet (the button's bottom ones while open), at least as wide as the
- * button, growing down out of it.
+ * A button (a sidebar row's size) that opens a menu popping out below it, at its right end.
  *
- *   <ButtonMenu variant="secondary" label="Sort" value={sort} onSelect={setSort} items={[{ value: 'new', label: 'Newest' }]}>
+ *   <ButtonMenu variant="ghost" label="Sort" value={sort} onSelect={setSort} items={[{ value: 'new', label: 'Newest' }]}>
  *     Sort by
  *   </ButtonMenu>
  */
-export default function ButtonMenu<T extends string>({ variant = 'secondary', items, value, onSelect, label, children, className = '' }: Props<T>) {
+export default function ButtonMenu<T extends string>({ variant = 'ghost', items, value, onSelect, label, children, className = '' }: Props<T>) {
   const id = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
   const look = LOOK[variant]
 
-  // Placed before it shows: under the button, at least as wide; wider, its top right corner is
-  // free (rounded)
+  // Placed before it shows, so it never appears in the wrong spot
   const place = (e: ToggleEvent<HTMLDivElement>) => {
     const trigger = triggerRef.current
     if (e.newState !== 'open' || !trigger) return
-    const menu = e.currentTarget
     const rect = trigger.getBoundingClientRect()
-    menu.style.left = `${rect.left}px`
-    menu.style.top = `${rect.bottom}px`
-    menu.style.minWidth = `${rect.width}px`
-    menu.style.borderTopRightRadius = menu.offsetWidth > rect.width + 1 ? 'var(--btn-radius)' : ''
+    e.currentTarget.style.top = `${rect.bottom + 4}px`
+    e.currentTarget.style.right = `${window.innerWidth - rect.right}px`
   }
 
   const toggled = (e: ToggleEvent<HTMLDivElement>) => {
@@ -74,11 +72,11 @@ export default function ButtonMenu<T extends string>({ variant = 'secondary', it
         popoverTarget={id}
         aria-haspopup="menu"
         aria-expanded={open}
-        className={`${BUTTON} ${look.button} ${open ? `rounded-b-none ${look.open}` : ''} ${className}`}
+        className={`${BUTTON} ${look.button} ${open ? look.open : ''} ${className}`}
       >
         {children}
       </button>
-      <div ref={menuRef} id={id} popover="auto" role="menu" aria-label={label} onBeforeToggle={place} onToggle={toggled} className={`${MENU} ${look.menu}`}>
+      <div ref={menuRef} id={id} popover="auto" role="menu" aria-label={label} onBeforeToggle={place} onToggle={toggled} className={MENU}>
         {items.map((item) => {
           const Icon = item.icon
           const checked = value !== undefined ? item.value === value : undefined
@@ -92,11 +90,11 @@ export default function ButtonMenu<T extends string>({ variant = 'secondary', it
                 menuRef.current?.hidePopover()
                 onSelect(item.value)
               }}
-              className={`${ITEM} ${look.item}`}
+              className={ITEM}
             >
-              {Icon && <Icon className="size-3.5 shrink-0" />}
+              {Icon && <Icon className="size-4 shrink-0 text-fg-subtle" />}
               <span className="flex-1">{item.label}</span>
-              {checked && <LuCheck className="size-3.5 shrink-0" />}
+              {checked && <LuCheck className="size-4 shrink-0" />}
             </button>
           )
         })}

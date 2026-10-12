@@ -275,9 +275,14 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
               onClick={() => setExpanded(!expanded)}
               aria-expanded={expanded}
               title={expanded ? 'Show less' : `Show ${hidden} more`}
-              className="mt-1 w-full justify-start text-fg-muted"
+              // Closed sidebar: only its icon (the button narrows to a rail row, its text fades out)
+              className={`mt-1 w-full justify-start overflow-hidden text-fg-muted transition-[max-width] duration-(--sidebar-duration) ease-out motion-reduce:transition-none ${compact ? BUTTON_COMPACT : 'max-w-full'}`}
             >
-              <span className="whitespace-nowrap">{expanded ? 'Show less' : `Show more (${hidden})`}</span>
+              <span
+                className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-(--sidebar-duration) ease-out motion-reduce:transition-none ${compact ? 'max-w-0 opacity-0' : 'max-w-40'}`}
+              >
+                {expanded ? 'Show less' : `Show more (${hidden})`}
+              </span>
             </Button>
           )}
         </>
