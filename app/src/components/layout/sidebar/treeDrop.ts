@@ -1,8 +1,9 @@
 // Where a dragged sidebar object lands, and whether it may (pure: tested in treeDrop.test.ts).
-// Rules: maps and notes go into any unlocked project, between rows inside a project, or into Notes
-// (parentless); projects are reordered among projects, never nested; Pinned rows reorder pins (a
-// dropped object gets pinned); Dashboard never takes a drop.
-import type { MockObject } from '../../../mocks/projects'
+// Rules: an object goes into an unlocked project or folder, between rows inside one, or into Notes
+// (parentless), wherever canPlace allows it (e.g. only articles into a folder, folders never into a
+// folder); projects are reordered among projects, never nested; Pinned rows reorder pins (a dropped
+// object gets pinned); Dashboard never takes a drop.
+import { canPlace, type MockObject } from '../../../mocks/projects'
 
 export type DropPosition = 'before' | 'after' | 'into'
 
@@ -17,7 +18,7 @@ export type RowDropData = {
   objectId?: string
   /** A project's Overview row: which project */
   overviewOf?: string
-  /** An unlocked folder: may take drops into it */
+  /** An unlocked container (a project or a folder): may take drops into it */
   folder?: boolean
 }
 
@@ -65,12 +66,12 @@ export function resolveDrop(
       return beforeId === draggedId ? null : { kind: 'pin', beforeId }
     }
     case 'notes-end':
-      return isProject ? null : { kind: 'move', parentId: null, beforeId: null }
+      return canPlace(dragged.kind, null) && !isProject ? { kind: 'move', parentId: null, beforeId: null } : null
   }
 
   // A project's Overview row: only "after" it, i.e. first among the project's own children
   if (row.overviewOf) {
-    if (isProject || position !== 'after') return null
+    if (!canPlace(dragged.kind, 'project') || position !== 'after') return null
     const first = objects.find((o) => o.parentId === row.overviewOf && o.id !== draggedId)
     return { kind: 'move', parentId: row.overviewOf, beforeId: first?.id ?? null }
   }
@@ -79,7 +80,7 @@ export function resolveDrop(
   if (!target || target.id === draggedId) return null
 
   if (position === 'into') {
-    if (target.kind !== 'project' || target.locked || isProject) return null
+    if (target.locked || !canPlace(dragged.kind, target.kind)) return null
     return { kind: 'move', parentId: target.id, beforeId: null, into: target.id }
   }
 
@@ -91,8 +92,11 @@ export function resolveDrop(
     return { kind: 'move', parentId: null, beforeId }
   }
 
-  // A map or note: next to another map or note (in its project, or in Notes), never among projects
+  // Any other object: next to a sibling (in its project or folder, or in Notes), never among
+  // projects, and only where it may go (e.g. a note never between a folder's articles)
   if (target.kind === 'project') return null
+  const parent = target.parentId ? objects.find((o) => o.id === target.parentId) : null
+  if (parent === undefined || !canPlace(dragged.kind, parent?.kind ?? null)) return null
   const sibling = (o: MockObject) => o.parentId === target.parentId && o.kind !== 'project'
   const beforeId = position === 'before' ? target.id : nextAfter(objects, target, draggedId, sibling)
   return { kind: 'move', parentId: target.parentId, beforeId }

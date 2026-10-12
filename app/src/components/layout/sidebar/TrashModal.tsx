@@ -10,7 +10,7 @@ import Button from '../../ui/buttons/Button'
 import IconButton from '../../ui/buttons/IconButton'
 import Modal from '../../ui/overlays/Modal'
 import { snapshotRows } from '../../ui/tree/rowFlip'
-import { DeleteDialog } from './SidebarDialogs'
+import { DeleteDialog } from '../../../features/objects/ObjectDialogs'
 
 const ROW = 'flex items-center gap-2 rounded-(--btn-radius) px-2 py-1.5 hover:bg-fill'
 

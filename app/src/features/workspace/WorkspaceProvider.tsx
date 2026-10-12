@@ -7,7 +7,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { buttonClass } from '../../components/ui/buttons/buttonStyles'
 import { BackgroundPointerSensor, followPointer } from '../../lib/dnd'
 import { byPriority } from '../drag/collision'
@@ -45,6 +45,11 @@ function WorkspaceDnd({ children }: { children: ReactNode }) {
     // Space only: Enter must keep following the link
     useSensor(KeyboardSensor, { keyboardCodes: { start: ['Space'], cancel: ['Escape'], end: ['Space'] } }),
   )
+
+  // While anything is dragged, <html data-dragging>: lists turn off their hover effects
+  useEffect(() => {
+    document.documentElement.toggleAttribute('data-dragging', dragging !== null)
+  }, [dragging])
 
   const onDragStart = ({ active }: DragStartEvent) => setDragging((active.data.current as PanelDragData) ?? null)
   const onDragEnd = ({ over }: DragEndEvent) => {

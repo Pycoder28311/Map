@@ -4,7 +4,7 @@ import { paneBoxCss, panelKey, SLOTS, splitFor, workspaceHref } from './layout'
 import Pane from './Pane'
 import PanelPage from './PanelPage'
 import { usePaneFlip } from './paneFlip'
-import { PANE_GAP, paneGridStyle, workspaceFrameStyle } from './paneStyles'
+import { FRAME_RADIUS, PANE_GAP, paneGridStyle, workspaceFrameShadowStyle, workspaceFrameStyle } from './paneStyles'
 import ResizeHandles from './ResizeHandles'
 import SwapButtons from './SwapButtons'
 import { percent, useSplit } from './split'
@@ -48,7 +48,12 @@ export default function Workspace() {
   return (
     // The bars' colour, seen around the frame's rounded corners
     <div className="h-full bg-surface">
-      <div style={workspaceFrameStyle} className="h-full bg-surface-muted">
+      <div style={workspaceFrameStyle} className="relative h-full bg-surface-muted">
+        {/* The sidebar's shadow along the left edge (clipped by the frame's corners; before the panes,
+            which lie over it) */}
+        <div aria-hidden style={{ borderRadius: FRAME_RADIUS }} className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div style={workspaceFrameShadowStyle} className="absolute inset-x-0 -top-6 bottom-0" />
+        </div>
         <div ref={gridRef} style={{ ...paneGridStyle, ...vars }} className={GRID}>
           {layout.panels.map((panel, i) => (
             <Pane key={panelKey(panel)} slot={SLOTS[i]} panel={panel} box={paneBoxCss(layout.template, SLOTS[i], PANE_GAP)} />

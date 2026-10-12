@@ -23,6 +23,8 @@ export type TreeNode = {
   locked?: boolean
   /** A small count after the name (e.g. how many notes are linked to it) */
   badge?: number
+  /** Extra data attributes on its row (e.g. { 'data-share-id': … } for the owner's own features) */
+  rowData?: Record<`data-${string}`, string>
 }
 
 /** Where a drop would land on a row */

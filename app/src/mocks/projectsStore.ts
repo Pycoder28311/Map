@@ -2,7 +2,7 @@
 // sidebar objects (projects, maps, notes). Nothing is saved: a reload starts again from the seed data.
 // Replaced by API calls later (same function names, async then); the UI only uses what's exported here.
 import { useSyncExternalStore } from 'react'
-import { isNoteLike, SEED_OBJECTS, type MockMap, type MockObject, type MockProject } from './projects'
+import { canPlace, isNoteLike, SEED_OBJECTS, type MockMap, type MockObject, type MockProject, type ObjectKind } from './projects'
 
 type State = {
   /** Flat, in document order (a project, then its children) */
@@ -119,21 +119,56 @@ function add(object: MockObject) {
   return object.id
 }
 
-const fresh = { draggable: true, archived: false }
+// A new object: made now, no likes yet
+const fresh = () => ({ draggable: true, archived: false, createdAt: Date.now(), likes: 0 })
 
-export const createProject = (name: string) =>
-  add({ ...fresh, id: newId('project'), kind: 'project', name, description: '', parentId: null, locked: false })
+/** The kind of an object's parent (null: top level; undefined: no such parent) */
+const parentKind = (parentId: string | null): ObjectKind | null | undefined =>
+  parentId === null ? null : getObjects().find((o) => o.id === parentId)?.kind
 
-export function createMap(projectId: string, name: string) {
-  if (!has(projectId)) return undefined
-  return add({ ...fresh, id: newId('map'), kind: 'map', name, parentId: projectId, locked: true })
+/**
+ * A new object of any kind in `parentId` (null: top level), if it may go there (canPlace). Last among
+ * its siblings, or with `first` before them (e.g. created from a Dashboard row). Returns its id.
+ */
+export function createObjectOf(
+  kind: ObjectKind,
+  parentId: string | null,
+  name: string,
+  { text, description, first = false }: { text?: string; description?: string; first?: boolean } = {},
+) {
+  const parent = parentKind(parentId)
+  if (parent === undefined || !canPlace(kind, parent)) return undefined
+  const firstSibling = first ? getObjects().find((o) => o.parentId === parentId && (parentId !== null || o.kind !== 'project')) : undefined
+  const id = add({
+    ...fresh(),
+    id: newId(kind),
+    kind,
+    name,
+    text,
+    description,
+    parentId,
+    // Containers take drops into them; the rest never do
+    locked: kind !== 'project' && kind !== 'folder',
+  })
+  if (firstSibling) moveObject(id, { parentId, beforeId: firstSibling.id })
+  return id
 }
 
-export const createNote = (name: string, text?: string) =>
-  add({ ...fresh, id: newId('note'), kind: 'note', name, text, parentId: null, locked: true })
+export const createProject = (name: string) => createObjectOf('project', null, name, { description: '' })!
 
-export const createArticle = (name: string, text?: string) =>
-  add({ ...fresh, id: newId('article'), kind: 'article', name, text, parentId: null, locked: true })
+export const createMap = (projectId: string, name: string) => createObjectOf('map', projectId, name)
+
+export const createNote = (name: string, text?: string) => createObjectOf('note', null, name, { text })!
+
+export const createArticle = (name: string, text?: string) => createObjectOf('article', null, name, { text })!
+
+/** Likes it, or takes the like back */
+export function toggleLike(id: string) {
+  if (!has(id)) return
+  set({
+    objects: getObjects().map((o) => (o.id === id ? { ...o, liked: !o.liked, likes: Math.max(0, o.likes + (o.liked ? -1 : 1)) } : o)),
+  })
+}
 
 export function renameObject(id: string, name: string) {
   if (!has(id)) return
@@ -154,6 +189,7 @@ export function duplicateObject(id: string) {
       id: newIds.get(o.id)!,
       name: o.id === id ? `${o.name} (copy)` : o.name,
       parentId: o.id === id ? o.parentId : newIds.get(o.parentId!)!,
+      ...fresh(),
     }))
   const at = endOfSubtree(objects, id)
   set({ objects: [...objects.slice(0, at), ...copies, ...objects.slice(at)] })
@@ -161,11 +197,14 @@ export function duplicateObject(id: string) {
 
 /**
  * Moves an object (with everything under it) to a new parent (null: top level), just before
- * `beforeId` if given (a sibling there), else at the end of that parent's children
+ * `beforeId` if given (a sibling there), else at the end of that parent's children. Only where it
+ * may go (canPlace: e.g. only articles into a folder)
  */
 export function moveObject(id: string, to: { parentId: string | null; beforeId?: string | null }) {
   const objects = getObjects()
-  if (!has(id) || (to.parentId && !has(to.parentId))) return
+  const object = objects.find((o) => o.id === id)
+  const parent = parentKind(to.parentId)
+  if (!object || parent === undefined || !canPlace(object.kind, parent)) return
   const ids = subtreeIds(objects, id)
   if (to.parentId && ids.has(to.parentId)) return // not into itself
   if (to.beforeId && ids.has(to.beforeId)) return
@@ -174,6 +213,16 @@ export function moveObject(id: string, to: { parentId: string | null; beforeId?:
   let at = to.beforeId ? rest.findIndex((o) => o.id === to.beforeId) : -1
   if (at === -1) at = to.parentId ? endOfSubtree(rest, to.parentId) : rest.length
   set({ objects: [...rest.slice(0, at), ...moved, ...rest.slice(at)] })
+}
+
+/**
+ * Puts these children of `parentId` in this order (after its other children; ids that aren't its
+ * children are skipped). E.g. a sorted Dashboard row made its manual order, or an undo.
+ */
+export function reorderChildren(parentId: string | null, ids: string[]) {
+  for (const id of ids) {
+    if (getObjects().find((o) => o.id === id)?.parentId === parentId) moveObject(id, { parentId, beforeId: null })
+  }
 }
 
 export function togglePin(id: string) {
@@ -231,11 +280,14 @@ const visibleById = (id: string) => {
   return object && !isHidden(objects, object) ? object : undefined
 }
 
-/** Whether a note may be linked to a target: a visible note or article, a visible project or map, not linked yet */
+/** What notes can be linked to */
+export const isLinkTarget = (kind?: string) => kind === 'project' || kind === 'map' || kind === 'object'
+
+/** Whether a note may be linked to a target: a visible note or article, a visible project, map or object card, not linked yet */
 export function canLink(noteId: string, targetId: string) {
   const note = visibleById(noteId)
   const target = visibleById(targetId)
-  if (!isNoteLike(note?.kind) || !target || isNoteLike(target.kind)) return false
+  if (!isNoteLike(note?.kind) || !target || !isLinkTarget(target.kind)) return false
   return !getLinks().some((l) => l.noteId === noteId && l.targetId === targetId)
 }
 

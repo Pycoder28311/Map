@@ -68,6 +68,8 @@ function useExists() {
  * - hover a tile: Delete (asks first); the open layout, once changed, turns blue: Save (updates it),
  *   and a Create layout button below the tiles (saves the panes as a new layout, which becomes the
  *   selected one)
+ * - leaving the panes for a single page: the layout is unselected and its changes dropped; switching
+ *   straight to another layout's tile keeps them (the tile stays blue with Save and ✕)
  * - Create (no tiles): opens two random objects as panes and shows a hint next to the sidebar
  */
 export default function LayoutsSection({ compact }: { compact: boolean }) {
@@ -104,25 +106,15 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
     return () => observer.disconnect()
   }, [hasTiles])
 
-  // The open layout's unsaved changes, while its panes are on screen (kept when they're left)
-  const lastChange = useRef<{ id: string; layout: WorkspaceLayout; split: typeof split } | null>(null)
+  // The open layout, changed since it was saved (panels or sizes)
   const changedNow = active && selected !== undefined && !sameLayout(selected, workspace.layout!, split)
-  useEffect(() => {
-    if (!active) return
-    lastChange.current = changedNow ? { id: selected!.id, layout: workspace.layout!, split } : null
-  }, [active, changedNow, selected, workspace.layout, split])
 
-  // A selected layout stops being selected when the panes go away; its unsaved changes stay (its tile
-  // stays blue until they're saved or dropped). Only on that change: opening a tile selects it before
-  // the navigation (a transition) has shown its panes
+  // A selected layout stops being selected when the panes go away (a single page opened): its unsaved
+  // changes are dropped with it, and an unsaved draft tile goes too (it only shows with panes). Only
+  // on that change: opening a tile selects it before the navigation (a transition) has shown its panes
   const wasActive = useRef(active)
   useEffect(() => {
-    if (wasActive.current && !active) {
-      const change = lastChange.current
-      if (change) keepChanges(change.id, change.layout, change.split)
-      lastChange.current = null
-      selectLayout(null)
-    }
+    if (wasActive.current && !active) selectLayout(null)
     wasActive.current = active
   }, [active])
 
@@ -140,9 +132,8 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
     const held = pending[layout.id]
     const next = held ? held.layout : fromSaved(layout, isKnown, exists)
     if (!next) return
-    // Leaving another changed layout's panes: keep its changes
+    // Switching straight from another changed layout: keep its changes (its tile stays blue: Save / ✕)
     if (changed && selected && selected.id !== layout.id) keepChanges(selected.id, workspace.layout!, split)
-    lastChange.current = null
     setSplit(held ? held.split : layout.split)
     workspace.openLayout(next)
     selectLayout(layout.id)

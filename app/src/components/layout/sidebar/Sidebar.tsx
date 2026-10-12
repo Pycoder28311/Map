@@ -1,5 +1,6 @@
 import { useRef, type CSSProperties } from 'react'
 import { useDragSurface } from '../../../features/drag/surfaces'
+import { useFocusMode } from '../../../features/focus/FocusMode'
 import LiftedRow from '../../ui/tree/LiftedRow'
 import SidebarDropProvider from './SidebarDrop'
 import SidebarTree from './SidebarTree'
@@ -41,9 +42,11 @@ export default function Sidebar() {
     const { isWide, pinned, drawerOpen, closeDrawer } = useSidebar()
     const peek = useHoverIntent({ enabled: isWide && !pinned, openDelay: PEEK_OPEN_DELAY, closeDelay: PEEK_CLOSE_DELAY })
 
-    const space = isWide ? (pinned ? FULL : RAIL) : '0px'
-    const open = isWide ? pinned || peek.open : drawerOpen
-    const width = open ? FULL : isWide ? RAIL : '0px'
+    // Focus mode (the navbar's Zoom): slid away entirely
+    const { on: hidden } = useFocusMode()
+    const space = hidden ? '0px' : isWide ? (pinned ? FULL : RAIL) : '0px'
+    const open = !hidden && (isWide ? pinned || peek.open : drawerOpen)
+    const width = hidden ? '0px' : open ? FULL : isWide ? RAIL : '0px'
     // Lying over the page (peek or drawer): a shadow separates it
     const floating = open && !(isWide && pinned)
 
@@ -61,7 +64,7 @@ export default function Sidebar() {
                 ref={navRef}
                 id="sidebar"
                 aria-label="Main"
-                inert={!open && !isWide}
+                inert={hidden || (!open && !isWide)}
                 {...peek.handlers}
                 style={{ width, '--tree-compact-duration': 'var(--sidebar-duration)' } as CSSProperties}
                 className={`absolute inset-y-0 start-0 overflow-hidden bg-surface transition-[width,box-shadow] ${ANIMATE} ${floating ? 'shadow-xl' : ''}`}

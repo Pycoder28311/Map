@@ -1,6 +1,6 @@
 // MOCK DATA: turns the mock objects into the sidebar's tree nodes. Replaced by the same mapping over
 // backend data later; the components stay the same.
-import { LuFileText, LuFolder, LuFolderOpen, LuInfo, LuLayoutDashboard, LuMap, LuStickyNote } from 'react-icons/lu'
+import { LuBox, LuFileText, LuFolder, LuFolderOpen, LuFolders, LuInfo, LuLayoutDashboard, LuMap, LuStickyNote } from 'react-icons/lu'
 import type { ButtonIcon } from '../components/ui/icons/IconSlot'
 import type { TreeNode } from '../components/ui/tree/types'
 import type { MockObject, ObjectKind } from './projects'
@@ -14,6 +14,8 @@ export const KIND_ICON: Record<ObjectKind, ButtonIcon> = {
   map: LuMap,
   note: LuStickyNote,
   article: LuFileText,
+  object: LuBox,
+  folder: LuFolders,
 }
 
 /** The node id of an object's row (Pinned rows: `pin:` + it) */
@@ -31,9 +33,13 @@ export const DASHBOARD_NODE: TreeNode = {
 
 const itemOf = (o: MockObject): SidebarItem => ({ kind: o.kind, id: o.id, name: o.name, parentId: o.parentId })
 
+// An object's row can be picked to share (features/share)
+const shareData = (o: MockObject) => ({ 'data-share-id': o.id }) as const
+
 /** A map or note row (a leaf that opens its panel) */
 const leafOf = (o: MockObject, id = nodeIdOf(o), badge?: number): TreeNode => ({
   id,
+  rowData: shareData(o),
   label: o.name,
   icon: KIND_ICON[o.kind],
   panel: { type: o.kind, id: o.id },
@@ -62,6 +68,16 @@ export function buildSidebarSections(objects: MockObject[], pins: string[], link
   }
   const badge = (id: string) => linked.get(id)
 
+  /** An object's row in a project or in Notes: a leaf, or a folder with its articles (nested) */
+  const rowOf = (o: MockObject): TreeNode => {
+    items.set(nodeIdOf(o), itemOf(o))
+    if (o.kind !== 'folder') return leafOf(o, nodeIdOf(o), badge(o.id))
+    return {
+      ...leafOf(o, nodeIdOf(o), badge(o.id)),
+      children: visible.filter((c) => c.parentId === o.id).map(rowOf),
+    }
+  }
+
   const projects = visible
     .filter((o) => o.kind === 'project')
     .map((p): TreeNode => {
@@ -71,6 +87,7 @@ export function buildSidebarSections(objects: MockObject[], pins: string[], link
         label: p.name,
         icon: KIND_ICON.project,
         openIcon: LuFolderOpen,
+        rowData: shareData(p),
         draggable: p.draggable,
         locked: p.locked,
         badge: badge(p.id),
@@ -83,22 +100,12 @@ export function buildSidebarSections(objects: MockObject[], pins: string[], link
             draggable: true,
             locked: true,
           },
-          ...visible
-            .filter((o) => o.parentId === p.id)
-            .map((o) => {
-              items.set(nodeIdOf(o), itemOf(o))
-              return leafOf(o, nodeIdOf(o), badge(o.id))
-            }),
+          ...visible.filter((o) => o.parentId === p.id).map(rowOf),
         ],
       }
     })
 
-  const notes = visible
-    .filter((o) => o.parentId === null && o.kind !== 'project')
-    .map((o) => {
-      items.set(nodeIdOf(o), itemOf(o))
-      return leafOf(o, nodeIdOf(o), badge(o.id))
-    })
+  const notes = visible.filter((o) => o.parentId === null && o.kind !== 'project').map(rowOf)
 
   const pinned = pins.flatMap((id) => {
     const o = byId.get(id)

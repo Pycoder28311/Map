@@ -6,6 +6,10 @@ import type { PanelRef } from '../workspace/types'
 
 // Full class strings so Tailwind can detect them at build time.
 const ROW = 'flex items-center gap-2 rounded-(--card-radius) bg-fill px-3 py-2 text-body'
+// A line in a plain list (the Dashboard's columns): no fill, a background on hover (not while
+// something is being dragged: <html data-dragging>, WorkspaceProvider)
+export const PLAIN_ROW =
+  'flex items-center gap-2 rounded-(--btn-radius) px-2 py-2 text-body [html:not([data-dragging])_&:hover]:bg-fill'
 
 type Props = {
   /** The object it shows */
@@ -21,6 +25,10 @@ type Props = {
   links?: number
   /** At its end (e.g. open-as-panel, a link node) */
   end?: ReactNode
+  /** card: a filled row (Notes page); plain: a line in a list (Dashboard columns) */
+  variant?: 'card' | 'plain'
+  /** Click: open it (e.g. navigate to its page) */
+  onOpen?: () => void
   className?: string
 }
 
@@ -29,7 +37,7 @@ type Props = {
  * sidebar rows, link nodes, the trash, pane edges (features/drag). Dragged by its background (its
  * buttons keep the pointer); its place stays faint while it's dragged.
  */
-export default function ObjectRow({ object, icon: Icon, dragId, panel, hint, links, end, className = '' }: Props) {
+export default function ObjectRow({ object, icon: Icon, dragId, panel, hint, links, end, variant = 'card', onOpen, className = '' }: Props) {
   const { setNodeRef, listeners, attributes, isDragging } = useObjectDrag({
     id: dragId,
     label: object.name,
@@ -42,7 +50,9 @@ export default function ObjectRow({ object, icon: Icon, dragId, panel, hint, lin
       ref={setNodeRef}
       {...listeners}
       {...dragAttributes}
-      className={`${ROW} cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-40' : ''} ${className}`}
+      data-share-id={object.id}
+      onClick={onOpen}
+      className={`${variant === 'plain' ? PLAIN_ROW : ROW} cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-40' : ''} ${className}`}
     >
       <Icon className="size-(--btn-icon-size) shrink-0 text-fg-subtle" />
       <span className="min-w-0 flex-1 truncate">

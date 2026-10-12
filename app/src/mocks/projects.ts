@@ -1,8 +1,32 @@
 // MOCK DATA: fake projects, maps and notes in the shape the backend will return them.
 // Replaced by API calls later; components only use the types and the find helpers.
-import { getObjects, getProjects } from './projectsStore'
+import { getObjects, getProjects, isHidden } from './projectsStore'
 
-export type ObjectKind = 'project' | 'map' | 'note' | 'article'
+export type ObjectKind = 'project' | 'map' | 'note' | 'article' | 'object' | 'folder'
+
+/**
+ * Whether an object of `kind` may sit in `parent` (null: the top level):
+ * - a project only at the top level; a folder at the top level or in a project
+ * - an article anywhere: the top level, a project or a folder (folders hold articles only)
+ * - a map, a note or an object card at the top level or in a project
+ */
+export function canPlace(kind: ObjectKind, parent: ObjectKind | null): boolean {
+  if (parent === null) return true
+  if (kind === 'project') return false
+  if (parent === 'folder') return kind === 'article'
+  // Nothing goes into a map, note, article or object card
+  return parent === 'project'
+}
+
+/** Each kind's name, as shown in menus and on cards */
+export const KIND_LABEL: Record<ObjectKind, string> = {
+  project: 'Project',
+  map: 'Map',
+  note: 'Note',
+  article: 'Article',
+  object: 'Object card',
+  folder: 'Folder',
+}
 
 /** Notes and articles: leaves that can be linked to projects and maps (they behave the same) */
 export const isNoteLike = (kind?: string) => kind === 'note' || kind === 'article'
@@ -26,10 +50,15 @@ export type MockObject = {
   description?: string
   /** A note's or article's text */
   text?: string
+  /** When it was made (ms since 1970): Sort by Newest / Oldest */
+  createdAt: number
+  /** How many liked it (mock), and whether the user did */
+  likes: number
+  liked?: boolean
 }
 
-/** A project's child (a map, or a note or article moved into it) */
-export type MockMap = { id: string; name: string; kind: 'map' | 'note' | 'article' }
+/** A project's child (a map, note, article, object card or folder) */
+export type MockMap = { id: string; name: string; kind: Exclude<ObjectKind, 'project'> }
 /** A project with its (not archived) children: derived from the flat list */
 export type MockProject = { id: string; name: string; description: string; maps: MockMap[] }
 
@@ -69,15 +98,42 @@ export const NOTES = [
   { id: 'n4', name: 'Todo' },
 ]
 
-const base = { draggable: true, archived: false }
+/** More seed objects, so every kind of card shows up: in Hiking trails and at the top level */
+const EXTRAS: { id: string; kind: ObjectKind; name: string; parentId: string | null; description?: string; text?: string }[] = [
+  { id: 'o1', kind: 'object', name: 'Base camp', parentId: 'p2', description: 'Where every route starts: parking, water and a hut.' },
+  { id: 'f1', kind: 'folder', name: 'Guides', parentId: 'p2' },
+  { id: 'a1', kind: 'article', name: 'Choosing boots', parentId: 'f1', text: 'Stiff soles for rock, soft for forest paths.' },
+  { id: 'a2', kind: 'article', name: 'Reading the weather', parentId: 'f1', text: 'Clouds building after noon mean turning back.' },
+  { id: 'a3', kind: 'article', name: 'Trail markings', parentId: 'f1', text: 'Red and white means the main route.' },
+  { id: 'a4', kind: 'article', name: 'First aid kit', parentId: 'f1', text: 'Plasters, a bandage, a foil blanket.' },
+  { id: 'a5', kind: 'article', name: 'Night hiking', parentId: 'f1', text: 'A head torch and a spare battery.' },
+  { id: 'o2', kind: 'object', name: 'Compass', parentId: null, description: 'The old brass one from the drawer.' },
+  { id: 'a6', kind: 'article', name: 'Packing tips', parentId: null, text: 'Heavy things close to the back.' },
+]
 
-/** The seed as one flat list: each project followed by its maps, then the notes */
+const base = { draggable: true, archived: false }
+// Seed dates: one day apart, the first on 1 Sep 2026; likes: a spread of counts
+const DAY = 24 * 60 * 60 * 1000
+let seedIndex = 0
+const stamp = () => {
+  const i = seedIndex++
+  return { createdAt: Date.UTC(2026, 8, 1) + i * DAY, likes: (i * 7) % 23 }
+}
+// Containers take drops into them; the rest never do
+const lockedFor = (kind: ObjectKind) => kind !== 'project' && kind !== 'folder'
+
+/** The seed as one flat list: each project followed by its children, then the top-level objects */
 export const SEED_OBJECTS: MockObject[] = [
   ...PROJECTS.flatMap((p): MockObject[] => [
-    { ...base, id: p.id, kind: 'project', name: p.name, description: p.description, parentId: null, locked: false },
-    ...p.maps.map((m): MockObject => ({ ...base, id: m.id, kind: 'map', name: m.name, parentId: p.id, locked: true })),
+    { ...base, ...stamp(), id: p.id, kind: 'project', name: p.name, description: p.description, parentId: null, locked: false },
+    ...p.maps.map((m): MockObject => ({ ...base, ...stamp(), id: m.id, kind: 'map', name: m.name, parentId: p.id, locked: true })),
+    ...EXTRAS.filter((e) => e.parentId === p.id).flatMap((e): MockObject[] => [
+      { ...base, ...stamp(), ...e, locked: lockedFor(e.kind) },
+      ...EXTRAS.filter((c) => c.parentId === e.id).map((c): MockObject => ({ ...base, ...stamp(), ...c, locked: lockedFor(c.kind) })),
+    ]),
   ]),
-  ...NOTES.map((n): MockObject => ({ ...base, id: n.id, kind: 'note', name: n.name, parentId: null, locked: true })),
+  ...NOTES.map((n): MockObject => ({ ...base, ...stamp(), id: n.id, kind: 'note', name: n.name, parentId: null, locked: true })),
+  ...EXTRAS.filter((e) => e.parentId === null).map((e): MockObject => ({ ...base, ...stamp(), ...e, locked: lockedFor(e.kind) })),
 ]
 
 // Read the store, so they see created / renamed / moved items
@@ -90,11 +146,9 @@ export const findMap = (id?: string) => {
   return { ...object, project: findProject(object.parentId ?? undefined) }
 }
 
-/** Any visible object (not archived, nor under an archived one) */
+/** Any visible object (not archived, nor under an archived one, at any depth) */
 export const findObject = (id?: string) => {
   const objects = getObjects()
   const object = objects.find((o) => o.id === id)
-  if (!object || object.archived) return undefined
-  const parent = object.parentId ? objects.find((o) => o.id === object.parentId) : undefined
-  return parent?.archived ? undefined : object
+  return object && !isHidden(objects, object) ? object : undefined
 }

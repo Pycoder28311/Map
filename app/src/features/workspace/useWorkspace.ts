@@ -86,7 +86,7 @@ export function useWorkspace() {
       const target = layout && panelAt(layout, slot)
       if (!drag || !target) return []
       if (drag.kind === 'pane') return drag.from === slot ? ['center'] : [...moveEdges(layout, drag.from, slot), 'center']
-      if (drag.kind === 'object' || drag.kind === 'layout') return [] // no panel: not onto panes
+      if (drag.kind === 'object' || drag.kind === 'layout' || drag.kind === 'column') return [] // no panel: not onto panes
       // From inside a pane or page (a list row, a card): only links and sidebar drops, never a new pane
       if (drag.object?.source === 'pane') return []
       if (!canAdd || !isDraggable(target) || !isDraggable(drag.panel) || hasPanel(layout, drag.panel)) return []

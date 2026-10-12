@@ -7,6 +7,7 @@ import { objectOf } from '../../../features/drag/objectDrag'
 import type { PanelDragData } from '../../../features/workspace/types'
 import { dragPoint } from '../../../lib/dnd'
 import { archiveLayout } from '../../../mocks/layoutsStore'
+import { canPlace } from '../../../mocks/projects'
 import { archiveObject, getObjects, getPins, moveObject, reorderPinned } from '../../../mocks/projectsStore'
 import { dropIconOf, fallInto } from '../../ui/drop/fallInto'
 import { snapshotRows } from '../../ui/tree/rowFlip'
@@ -64,7 +65,9 @@ export const rowZone: ZoneHandler = {
     if (!row?.section || !point) return null
     const objects = getObjects()
     const dragged = objects.find((o) => o.id === item.objectId)
-    const canInto = !!row.folder && dragged?.kind !== 'project'
+    // A container that may hold it (e.g. a folder only takes articles): a middle band for "into"
+    const container = objects.find((o) => o.id === row.objectId)
+    const canInto = !!row.folder && !!dragged && !!container && canPlace(dragged.kind, container.kind)
     const position = row.section === 'notes-end' ? 'after' : rowDropPosition(point.y, e.over.rect, canInto)
     const action = resolveDrop(objects, getPins(), item.objectId, row, position)
     return action ? { key: `${row.nodeId}:${position}`, nodeId: row.nodeId, position, action } : null

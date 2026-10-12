@@ -30,11 +30,17 @@ export const paneGridStyle: CSSProperties = { gap: PANE_GAP, '--pane-radius': `$
 export const FRAME_RADIUS = PANE_RADIUS + PANE_INSET
 
 /**
- * The rounded frame holding the panels (Workspace); the bars' colour shows around its corners, and
- * the bars' light shadow falls inside it
+ * The rounded frame holding the panels (Workspace); the bars' colour shows around its corners. The
+ * sidebar's light shadow falls inside it along its left edge (workspaceFrameShadowStyle); the navbar's
+ * along its top comes from the navbar (its PopoutLayer draws these corners too, so it follows them)
  */
 export const workspaceFrameStyle: CSSProperties = {
   borderRadius: FRAME_RADIUS,
   padding: PANE_INSET,
+}
+
+/** Inside the frame (clipped by its corners): the shadow, its top edge cut off above the frame */
+export const workspaceFrameShadowStyle: CSSProperties = {
+  borderRadius: FRAME_RADIUS,
   boxShadow: 'var(--chrome-shadow)',
 }

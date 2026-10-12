@@ -2,7 +2,7 @@
 // To make something a panel: add one entry here, then put <OpenAsPanelButton panel={{ type, id }} />
 // next to it anywhere (see instructions/adding-a-panel.md). Passed to <WorkspaceProvider> in AppLayout.
 import { lazy } from 'react'
-import { LuFileText, LuFolder, LuFolderOpen, LuLayoutDashboard, LuMap, LuStickyNote } from 'react-icons/lu'
+import { LuBox, LuFileText, LuFolder, LuFolderOpen, LuFolders, LuLayoutDashboard, LuMap, LuStickyNote } from 'react-icons/lu'
 import type { PanelRegistry } from './features/workspace/types'
 import { findMap, findObject, findProject } from './mocks/projects'
 
@@ -48,6 +48,19 @@ export const PANELS: PanelRegistry = {
     title: (id) => findObject(id)?.name ?? 'Note',
     icon: LuStickyNote,
     component: lazy(() => import('./features/notes/NotePanel')),
+    draggable: true,
+  },
+  object: {
+    title: (id) => findObject(id)?.name ?? 'Object',
+    icon: LuBox,
+    component: lazy(() => import('./features/objects/ObjectPanel')),
+    draggable: true,
+  },
+  // Its articles, as cards
+  folder: {
+    title: (id) => findObject(id)?.name ?? 'Folder',
+    icon: LuFolders,
+    component: lazy(() => import('./features/objects/FolderPanel')),
     draggable: true,
   },
   // Behaves like a note: the same panel

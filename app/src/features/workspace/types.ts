@@ -28,12 +28,14 @@ export type ObjectDragInfo = {
  * - object: an object with no panel of its own (e.g. a project's sidebar row): object drops only
  * - pane: a panel of the workspace (its grip, Pane), dropped on an edge or the centre of another
  * - layout: a saved layout's tile (sidebar), dropped on the trash
+ * - column: a Dashboard column by its grip, dropped among the other columns only (features/dashboard)
  */
 export type PanelDragData =
   | { kind: 'new'; panel: PanelRef; label: string; object?: ObjectDragInfo }
   | { kind: 'object'; label: string; object: ObjectDragInfo }
   | { kind: 'pane'; panel: PanelRef; label: string; from: Slot }
   | { kind: 'layout'; layoutId: string; label: string }
+  | { kind: 'column'; index: number; label: string }
 
 /** How one panel type looks and behaves. Registered once per type (see src/panels.ts) */
 export type PanelDefinition = {

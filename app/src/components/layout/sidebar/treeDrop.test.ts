@@ -41,7 +41,23 @@ describe('resolveDrop', () => {
   it('places a map between siblings of another project', () => {
     expect(resolveDrop(objects, [], 'm1', row('m3'), 'before')).toEqual({ kind: 'move', parentId: 'p2', beforeId: 'm3' })
     expect(resolveDrop(objects, [], 'm1', row('m3'), 'after')).toEqual({ kind: 'move', parentId: 'p2', beforeId: 'm4' })
-    expect(resolveDrop(objects, [], 'm1', row('m4'), 'after')).toEqual({ kind: 'move', parentId: 'p2', beforeId: null })
+    expect(resolveDrop(objects, [], 'm1', row('m4'), 'after')).toEqual({ kind: 'move', parentId: 'p2', beforeId: 'o1' })
+    // After a folder: past its articles, to the next sibling (none: last)
+    expect(resolveDrop(objects, [], 'm1', row('f1'), 'after')).toEqual({ kind: 'move', parentId: 'p2', beforeId: null })
+  })
+
+  it('takes only articles into folders and between their articles', () => {
+    const folder = row('f1', 'projects', { folder: true })
+    expect(resolveDrop(objects, [], 'a6', folder, 'into')).toEqual({ kind: 'move', parentId: 'f1', beforeId: null, into: 'f1' })
+    expect(resolveDrop(objects, [], 'n1', folder, 'into')).toBeNull()
+    expect(resolveDrop(objects, [], 'a6', row('a2'), 'before')).toEqual({ kind: 'move', parentId: 'f1', beforeId: 'a2' })
+    expect(resolveDrop(objects, [], 'n1', row('a2'), 'before')).toBeNull()
+  })
+
+  it('keeps folders out of folders, but lets them into projects and the top level', () => {
+    expect(resolveDrop(objects, [], 'f1', row('a2'), 'before')).toBeNull()
+    expect(resolveDrop(objects, [], 'f1', row('p1', 'projects', { folder: true }), 'into')).toMatchObject({ parentId: 'p1' })
+    expect(resolveDrop(objects, [], 'f1', row('n1', 'notes'), 'before')).toEqual({ kind: 'move', parentId: null, beforeId: 'n1' })
   })
 
   it('reorders projects among projects only', () => {

@@ -1,6 +1,6 @@
 // MOCK DATA tests: deleted together with projectsStore.ts
 import { beforeEach, describe, expect, it } from 'vitest'
-import { findMap, findObject } from './projects'
+import { canPlace, findMap, findObject } from './projects'
 import {
   archiveObject,
   canLink,
@@ -9,6 +9,9 @@ import {
   unlinkNote,
   createMap,
   createArticle,
+  createObjectOf,
+  reorderChildren,
+  toggleLike,
   createNote,
   createProject,
   deleteObject,
@@ -162,6 +165,52 @@ describe('projectsStore', () => {
     expect(findObject(note)).toMatchObject({ kind: 'note', name: 'Quick', text: 'Some text', parentId: null })
     expect(findObject(article)).toMatchObject({ kind: 'article', name: 'Essay', text: 'Long text', parentId: null })
     expect(order().slice(-2)).toEqual([note, article])
+  })
+
+  it('places objects only where they may go', () => {
+    expect(canPlace('article', 'folder')).toBe(true)
+    expect(canPlace('note', 'folder')).toBe(false)
+    expect(canPlace('folder', 'folder')).toBe(false)
+    expect(canPlace('folder', 'project')).toBe(true)
+    expect(canPlace('project', 'project')).toBe(false)
+    expect(canPlace('note', 'map')).toBe(false)
+    expect(createObjectOf('note', 'f1', 'Nope')).toBeUndefined()
+    moveObject('n1', { parentId: 'f1' })
+    expect(findObject('n1')?.parentId).toBeNull()
+    moveObject('a6', { parentId: 'f1' })
+    expect(findObject('a6')?.parentId).toBe('f1')
+  })
+
+  it('creates any kind first among its siblings when asked, made now with no likes', () => {
+    const id = createObjectOf('object', 'p2', 'Map board', { first: true, description: 'At the trailhead' })!
+    const children = getObjects().filter((o) => o.parentId === 'p2').map((o) => o.id)
+    expect(children[0]).toBe(id)
+    expect(findObject(id)).toMatchObject({ kind: 'object', likes: 0, description: 'At the trailhead', locked: true })
+    const folder = createObjectOf('folder', null, 'Drafts', { first: true })!
+    expect(getObjects().filter((o) => o.parentId === null && o.kind !== 'project')[0].id).toBe(folder)
+    expect(findObject(folder)?.locked).toBe(false)
+  })
+
+  it('puts a parent children in a given order', () => {
+    reorderChildren('p2', ['f1', 'm3', 'o1', 'm4', 'n1'])
+    expect(getObjects().filter((o) => o.parentId === 'p2').map((o) => o.id)).toEqual(['f1', 'm3', 'o1', 'm4'])
+    // A folder keeps its articles under it
+    expect(getObjects().filter((o) => o.parentId === 'f1')).toHaveLength(5)
+  })
+
+  it('likes and unlikes', () => {
+    const before = findObject('n1')!.likes
+    toggleLike('n1')
+    expect(findObject('n1')).toMatchObject({ liked: true, likes: before + 1 })
+    toggleLike('n1')
+    expect(findObject('n1')).toMatchObject({ liked: false, likes: before })
+  })
+
+  it('hides what is under an archived project, folders included', () => {
+    archiveObject('p2')
+    expect(findObject('a1')).toBeUndefined()
+    restoreObject('p2')
+    expect(findObject('a1')?.parentId).toBe('f1')
   })
 
   it('links articles like notes, never to a note or an article', () => {

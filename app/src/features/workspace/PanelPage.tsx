@@ -12,7 +12,8 @@ export default function PanelPage({ panel }: { panel: PanelRef }) {
   const registry = usePanelRegistry()
 
   return (
-    <div className="relative min-h-full">
+    // An object's page can be picked to share (features/share)
+    <div data-share-id={panel.id} className="relative min-h-full">
       <PanelContent component={registry[panel.type].component} id={panel.id} />
       <DropZones slot="a" />
     </div>

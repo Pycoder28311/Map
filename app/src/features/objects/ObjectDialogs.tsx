@@ -1,32 +1,24 @@
 import { useId, useState, type FormEvent } from 'react'
-import { LuFolder, LuStickyNote } from 'react-icons/lu'
-import {
-  createMap,
-  createNote,
-  createProject,
-  deleteObject,
-  getObjects,
-  moveObject,
-  subtreeIds,
-  useMockProjects,
-} from '../../../mocks/projectsStore'
-import type { SidebarItem } from '../../../mocks/sidebarTree'
-import Button from '../../ui/buttons/Button'
-import TextField from '../../ui/fields/TextField'
-import Modal from '../../ui/overlays/Modal'
+import { LuStickyNote } from 'react-icons/lu'
+import Button from '../../components/ui/buttons/Button'
+import TextField from '../../components/ui/fields/TextField'
+import Modal from '../../components/ui/overlays/Modal'
+import { canPlace, findObject } from '../../mocks/projects'
+import { createMap, createNote, createProject, deleteObject, getObjects, moveObject, subtreeIds, useMockObjects } from '../../mocks/projectsStore'
+import { KIND_ICON, type SidebarItem } from '../../mocks/sidebarTree'
 
 const MAX_NAME = 100
 
 /** Where a new object goes */
 export type CreateParent = { kind: 'projects' } | { kind: 'notes' } | { kind: 'project'; id: string; name: string }
 
-/** The sidebar dialog that is open (SidebarTree holds it; null = none) */
-export type SidebarDialog =
+/** The object dialog that is open (useObjectActions holds it; null = none) */
+export type ObjectDialog =
   | { kind: 'create'; parent: CreateParent }
   | { kind: 'move'; item: SidebarItem }
   | { kind: 'delete'; item: SidebarItem }
 
-type Props = { dialog: SidebarDialog | null; onClose: () => void }
+type Props = { dialog: ObjectDialog | null; onClose: () => void }
 
 const CREATE: Record<CreateParent['kind'], { title: (parent: CreateParent) => string; create: (parent: CreateParent, name: string) => void }> = {
   projects: { title: () => 'New project', create: (_, name) => createProject(name) },
@@ -38,10 +30,10 @@ const CREATE: Record<CreateParent['kind'], { title: (parent: CreateParent) => st
 }
 
 /**
- * The sidebar's dialogs: create, move to, delete (renaming happens in place, in the tree). Each one is
- * mounted only while open, so its form starts fresh every time (closing unmounts it).
+ * The objects' dialogs (sidebar rows, Dashboard cards): create, move to, delete (renaming happens in
+ * place). Each one is mounted only while open, so its form starts fresh every time (closing unmounts it).
  */
-export default function SidebarDialogs({ dialog, onClose }: Props) {
+export default function ObjectDialogs({ dialog, onClose }: Props) {
   if (!dialog) return null
   switch (dialog.kind) {
     case 'create': {
@@ -107,11 +99,17 @@ function NameDialog({ title, submitLabel, onSubmit, onClose }: NameDialogProps) 
   )
 }
 
-/** The other projects (and Notes, for an object inside a project); a click moves it there */
+/**
+ * Where it may go (canPlace) other than where it is: the projects, the folders (for an article), and
+ * Notes (no project); a click moves it there
+ */
 function MoveDialog({ item, onClose }: { item: SidebarItem; onClose: () => void }) {
-  const projects = useMockProjects().filter((p) => p.id !== item.parentId)
+  const objects = useMockObjects()
+  const containers = objects.filter(
+    (o) => (o.kind === 'project' || o.kind === 'folder') && o.id !== item.id && o.id !== item.parentId && findObject(o.id) && canPlace(item.kind, o.kind),
+  )
   const targets = [
-    ...projects.map((p) => ({ id: p.id as string | null, name: p.name, icon: LuFolder })),
+    ...containers.map((o) => ({ id: o.id as string | null, name: o.name, icon: KIND_ICON[o.kind] })),
     ...(item.parentId ? [{ id: null, name: 'Notes (no project)', icon: LuStickyNote }] : []),
   ]
 
@@ -142,7 +140,7 @@ function MoveDialog({ item, onClose }: { item: SidebarItem; onClose: () => void 
   )
 }
 
-const KIND_NAME = { project: 'project', map: 'map', note: 'note', article: 'article' } as const
+const KIND_NAME = { project: 'project', map: 'map', note: 'note', article: 'article', object: 'object card', folder: 'folder' } as const
 
 /** Asks first; a project goes with everything in it */
 export function DeleteDialog({ item, onClose }: { item: SidebarItem; onClose: () => void }) {

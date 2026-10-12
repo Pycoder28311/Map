@@ -144,3 +144,63 @@
     }
   }
 }
+
+/* Dropdowns (components/ui/overlays/Dropdown): the menu pops out of its trigger's corner, settling
+   just below it; plays every time it opens (a popover is display:none while closed) */
+@theme {
+  --animate-dropdown-in: dropdown-in 180ms cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+
+  @keyframes dropdown-in {
+    from {
+      opacity: 0;
+      scale: 0.9;
+      translate: 0 -6px;
+    }
+  }
+}
+
+/* Bar popouts (components/ui/overlays/PopoutLayer): the bridge joining two touching popouts fades in
+   once they have slid out */
+@theme {
+  --animate-bridge-in: bridge-in 120ms ease-out var(--popout-duration) both;
+
+  @keyframes bridge-in {
+    from {
+      opacity: 0;
+    }
+  }
+}
+
+/* Share mode (features/share/ShareMode): each shareable object's ring pops in (one after another),
+   and the chosen one flashes as the screen comes back */
+@theme {
+  --animate-share-pop: share-pop 320ms cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+  --animate-share-flash: share-flash 600ms ease-out both;
+
+  @keyframes share-pop {
+    from {
+      opacity: 0;
+      scale: 0.9;
+    }
+  }
+  @keyframes share-flash {
+    to {
+      opacity: 0;
+    }
+  }
+}
+
+/* Button menus (components/ui/overlays/ButtonMenu): the menu grows down out of its button, like an
+   extension of it */
+@theme {
+  --animate-menu-extend: menu-extend 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+
+  @keyframes menu-extend {
+    from {
+      clip-path: inset(0 0 100% 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
+}

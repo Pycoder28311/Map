@@ -20,6 +20,8 @@
    /* Text buttons (Button): the "pill" of the theme */
    --pill-px: 12px;
    --pill-py: 8px;
+   /* between a button's icon and its text: the same as a sidebar row's (its icon's padding + the label gap) */
+   --btn-gap: calc(var(--btn-close-p) + var(--tree-label-gap));
 
    /* Form fields (TextField, SearchInput) */
    --field-h: 40px;
@@ -39,7 +41,7 @@
 
    /* Sidebar (components/layout/sidebar): full width, the thin icons-only rail, open/close animation */
    --sidebar-w: 224px;
-   --sidebar-rail: 64px;
+   --sidebar-rail: 56px;
    --sidebar-py: 8px;
    /* space above/below the tree (left/right: computed to center the icons in the rail, Sidebar.tsx) */
    --sidebar-duration: 200ms;

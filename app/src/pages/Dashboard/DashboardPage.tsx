@@ -1,18 +1,22 @@
 import { LuLogOut } from 'react-icons/lu'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/ui/buttons/Button'
-import Card from '../../components/ui/Card'
-import SeeMoreLink from '../../components/ui/links/SeeMoreLink'
-import { useApp } from '../../context/AppContext'
+import DashboardColumns from '../../features/dashboard/DashboardColumns'
+import DashboardSections from '../../features/dashboard/DashboardSections'
+import { useDashboardColumns } from '../../features/dashboard/useDashboardColumns'
 import QuickCreate from '../../features/notes/QuickCreate'
-import ProjectList from '../../features/projects/ProjectList'
 import { authClient } from '../../lib/auth-client'
 
 // Also a workspace panel (src/panels.ts): no <main> here, AppLayout provides it
+/**
+ * The main page: the quick note input, three columns (Recent, Notes, Maps by default; each can show
+ * another list), and under them the sections (Orphans, then each project) as rows of cards
+ */
 export default function DashboardPage() {
-    const { count, increment } = useApp()
     const navigate = useNavigate()
     const { data: session } = authClient.useSession()
+    const columns = useDashboardColumns()
+    const firstName = session?.user.name?.split(/\s+/)[0]
 
     const signOut = async () => {
         await authClient.signOut()
@@ -20,38 +24,31 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8">
-            {/* The page's main input, with room above it */}
-            <div className="mt-16 mb-6">
-                <QuickCreate />
+        <div className="mx-auto flex max-w-[65rem] flex-col gap-12 px-4 py-8">
+            {/* The input and the columns share one narrower width, centred over the sections */}
+            <div className="mx-auto flex w-full max-w-[54rem] flex-col gap-10">
+                {/* A greeting, then the page's main input, low on the screen with room above them */}
+                <div className="mt-[18vh] flex flex-col items-center gap-12">
+                    <h1 className="text-center text-5xl font-semibold tracking-tight">
+                        Hello{firstName ? `, ${firstName}` : ''}
+                    </h1>
+                    <div className="w-full">
+                        <QuickCreate />
+                    </div>
+                </div>
+                <DashboardColumns {...columns} />
             </div>
 
-            <header className="flex items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-title">Dashboard</h1>
-                    <p className="text-body text-fg-muted">
-                        Signed in as {session?.user.name} ({session?.user.email})
-                    </p>
-                </div>
+            <DashboardSections columns={columns.columns} projects={columns.projects} />
+
+            <footer className="flex items-center justify-between gap-4 border-t border-line pt-4">
+                <p className="text-body text-fg-muted">
+                    Signed in as {session?.user.name} ({session?.user.email})
+                </p>
                 <Button variant="ghost" icon={LuLogOut} onClick={signOut}>
                     Sign out
                 </Button>
-            </header>
-
-            <section className="flex flex-col gap-3">
-                <h2 className="text-heading">Projects</h2>
-                {/* Draggable cards and rows; notes dropped on a card or map get linked */}
-                <ProjectList />
-            </section>
-
-            <Card variant="muted" className="flex flex-col gap-3 p-4">
-                <p className="text-body">Count from home page: {count}</p>
-                <Button variant="secondary" onClick={increment} className="self-start">
-                    Clicked {count} times
-                </Button>
-            </Card>
-
-            <SeeMoreLink to="/projects">Go to projects</SeeMoreLink>
+            </footer>
         </div>
     )
 }

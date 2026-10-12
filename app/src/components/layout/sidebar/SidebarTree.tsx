@@ -1,30 +1,11 @@
 import { useMemo, useState, type ComponentProps } from 'react'
-import {
-    LuArchive,
-    LuColumns2,
-    LuCopy,
-    LuFolderInput,
-    LuPencil,
-    LuPin,
-    LuPinOff,
-    LuPlus,
-    LuStickyNote,
-    LuTrash2,
-    LuUnlink,
-} from 'react-icons/lu'
+import { LuPlus, LuUnlink } from 'react-icons/lu'
 import LayoutsSection from '../../../features/layouts/LayoutsSection'
 import { useLinkNode } from '../../../features/links/linkNode'
 import PanelDragLink from '../../../features/workspace/PanelDragLink'
 import { useWorkspace } from '../../../features/workspace/useWorkspace'
-import {
-    duplicateObject,
-    renameObject,
-    togglePin,
-    useLinks,
-    useMockObjects,
-    usePins,
-} from '../../../mocks/projectsStore'
-import { isNoteLike } from '../../../mocks/projects'
+import { useObjectActions } from '../../../features/objects/useObjectActions'
+import { isLinkTarget, renameObject, useLinks, useMockObjects, usePins } from '../../../mocks/projectsStore'
 import { buildSidebarSections, DASHBOARD_NODE, type SidebarItem } from '../../../mocks/sidebarTree'
 import { NOTES_END } from './SidebarNotes'
 import Divider from '../../ui/Divider'
@@ -32,13 +13,9 @@ import { useRowFlip } from '../../ui/tree/rowFlip'
 import { useLids } from '../../ui/tree/swallow'
 import type { TreeDnd, TreeMenuGroup, TreeNode, TreeRightIcon } from '../../ui/tree/types'
 import TreeView from '../../ui/tree/TreeView'
-import SidebarDialogs, { type SidebarDialog } from './SidebarDialogs'
-import { archiveWithEffect, useSidebarDrop } from './sidebarDropState'
+import { useSidebarDrop } from './sidebarDropState'
 import SidebarNotes from './SidebarNotes'
 import type { RowDropData } from './treeDrop'
-
-// Not wired yet: shown in the menus, does nothing
-const ADD_NOTE = { label: 'Add note', icon: LuStickyNote, onClick: () => {} }
 
 const DIVIDER = 'my-(--divider-gap)'
 
@@ -58,43 +35,17 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
     const lidOpen = useLids()
     // Rows glide to their new places after a drop, archive or restore
     useRowFlip([objects, pins])
-    const [dialog, setDialog] = useState<SidebarDialog | null>(null)
+    const actions = useObjectActions()
     // The row whose name is being edited in place (one for all sections)
     const [editingId, setEditingId] = useState<string | null>(null)
 
-    // Actions of an object: groups of the ⋯ menu, a line between them
-    const menuOf = (node: TreeNode, item: SidebarItem): TreeMenuGroup[] => {
-        const isPinned = pins.includes(item.id)
-        return [
-            [
-                // Shown as a pane: take it out of the panes
-                ...(node.panel && workspace.isPane(node.panel)
-                    ? [{ label: 'Remove from screen', icon: LuUnlink, onClick: () => workspace.close(node.panel!) }]
-                    : []),
-                { label: 'Rename', icon: LuPencil, onClick: () => setEditingId(node.id) },
-                { label: isPinned ? 'Unpin' : 'Pin', icon: isPinned ? LuPinOff : LuPin, onClick: () => togglePin(item.id) },
-            ],
-            [
-                { label: 'Duplicate', icon: LuCopy, onClick: () => duplicateObject(item.id) },
-                // Projects stay top level: reordered by dragging, never moved into another
-                ...(item.kind !== 'project'
-                    ? [{ label: 'Move to', icon: LuFolderInput, onClick: () => setDialog({ kind: 'move', item }) }]
-                    : []),
-                ADD_NOTE,
-                // Open it as a panel next to what's on screen
-                ...(node.panel
-                    ? [{ label: 'Add in screen', icon: LuColumns2, onClick: () => workspace.open(node.panel!) }]
-                    : []),
-                // Into the trash (restorable): the row falls into the bin
-                {
-                    label: 'Archive',
-                    icon: LuArchive,
-                    onClick: () => archiveWithEffect(item.id, document.querySelector(`[data-row-id="${CSS.escape(node.id)}"]`)),
-                },
-            ],
-            [{ label: 'Delete', icon: LuTrash2, onClick: () => setDialog({ kind: 'delete', item }), danger: true }],
-        ]
-    }
+    // Actions of an object: groups of the ⋯ menu, a line between them (shared with the Dashboard's cards)
+    const menuOf = (node: TreeNode, item: SidebarItem): TreeMenuGroup[] =>
+        actions.menuOf(item, {
+            panel: node.panel,
+            onRename: () => setEditingId(node.id),
+            element: () => document.querySelector(`[data-row-id="${CSS.escape(node.id)}"]`),
+        })
 
     // Right icons, only on hover (the left icon is each node's own). Fixed rows (Dashboard, Overview): only undrag
     // Shown as a pane: "undrag" (take it out of the panes), left of the others
@@ -107,7 +58,7 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
         if (!item) return undrag
         const more: TreeRightIcon = { label: `More: ${item.name}`, show: 'hover', menu: menuOf(node, item) }
         if (item.kind !== 'project' || node.id.startsWith('pin:')) return [...undrag, more]
-        const create = () => setDialog({ kind: 'create', parent: { kind: 'project', id: item.id, name: item.name } })
+        const create = () => actions.openDialog({ kind: 'create', parent: { kind: 'project', id: item.id, name: item.name } })
         return [...undrag, { icon: LuPlus, label: `New map in ${item.name}`, show: 'hover', onClick: create }, more]
     }
 
@@ -130,7 +81,7 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
                 return { zone: 'row', priority: 2, nodeId: node.id, section, overviewOf: node.panel.id }
             }
             if (!item) return undefined
-            return { zone: 'row', priority: 2, nodeId: node.id, section, objectId: item.id, folder: item.kind === 'project' && !node.locked }
+            return { zone: 'row', priority: 2, nodeId: node.id, section, objectId: item.id, folder: (item.kind === 'project' || item.kind === 'folder') && !node.locked }
         },
         // Rows that aren't links (projects) drag themselves
         dragData: (node) => {
@@ -140,10 +91,10 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
         draggingId: drop.draggingNodeId,
         target: drop.target?.kind === 'row' ? { nodeId: drop.target.nodeId, position: drop.target.position } : null,
         lidOpen,
-        // Projects and maps take links: a link node slides out while a note is dragged (features/links)
+        // Projects, maps and object cards take links: a link node slides out while a note is dragged (features/links)
         linkNode: (node) => {
             const item = items.get(node.id)
-            if (!item || isNoteLike(item.kind)) return undefined
+            if (!item || !isLinkTarget(item.kind)) return undefined
             return linkNodeFor(item.id, node.id.startsWith('pin:') ? 'pin' : 'sidebar', item.name)
         },
     })
@@ -183,7 +134,7 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
             <section aria-label="Projects">
                 <Divider
                     label="Projects"
-                    action={{ icon: LuPlus, label: 'New project', onClick: () => setDialog({ kind: 'create', parent: { kind: 'projects' } }) }}
+                    action={{ icon: LuPlus, label: 'New project', onClick: () => actions.openDialog({ kind: 'create', parent: { kind: 'projects' } }) }}
                     compact={compact}
                     className={DIVIDER}
                 />
@@ -195,10 +146,10 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
                 tree={{ ...tree, dnd: dndFor('notes') }}
                 dropAtEnd={drop.target?.kind === 'row' && drop.target.nodeId === NOTES_END}
                 compact={compact}
-                onCreate={() => setDialog({ kind: 'create', parent: { kind: 'notes' } })}
+                onCreate={() => actions.openDialog({ kind: 'create', parent: { kind: 'notes' } })}
             />
 
-            <SidebarDialogs dialog={dialog} onClose={() => setDialog(null)} />
+            {actions.dialogs}
         </>
     )
 }

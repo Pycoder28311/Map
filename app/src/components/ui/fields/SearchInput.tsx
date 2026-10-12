@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes } from 'react'
+import type { InputHTMLAttributes, Ref } from 'react'
 import { LuSearch } from 'react-icons/lu'
 import { FIELD_INPUT, FIELD_VARIANTS, type FieldVariant } from './fieldStyles'
 
@@ -6,6 +6,8 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & {
   /** Screen-reader name, also the placeholder unless one is given */
   label?: string
   variant?: FieldVariant
+  /** The input element (e.g. to focus it from a shortcut) */
+  ref?: Ref<HTMLInputElement>
 }
 
 /** Search field with a magnifier icon; `shadow` (floating) or `border` (outlined). Size it with className (e.g. w-64) */
