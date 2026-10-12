@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { LuChevronDown, LuPencil } from 'react-icons/lu'
-import ButtonMenu, { type ButtonMenuItem } from '../../components/ui/overlays/ButtonMenu'
+import ExtendMenu, { type ExtendMenuItem } from '../../components/ui/overlays/ExtendMenu'
 import { KIND_LABEL, type ObjectKind } from '../../mocks/projects'
 import { KIND_ICON } from '../../mocks/sidebarTree'
 import { SORT_LABEL, type CardSort } from './rows'
 
 type CreatableKind = Exclude<ObjectKind, 'project'>
 
-const SORTS: ButtonMenuItem<CardSort>[] = (Object.keys(SORT_LABEL) as CardSort[]).map((value) => ({ value, label: SORT_LABEL[value] }))
+const SORTS: ExtendMenuItem<CardSort>[] = (Object.keys(SORT_LABEL) as CardSort[]).map((value) => ({ value, label: SORT_LABEL[value] }))
 const CREATE_ORDER: CreatableKind[] = ['object', 'article', 'note', 'map', 'folder']
 
 type Props = {
@@ -24,8 +24,8 @@ type Props = {
 /**
  * A Dashboard row's header: its name on the left (a project's is edited in place: hover shows ✎ and a
  * text cursor, a click edits it), Sort by (a background only on hover) and Create (green) on the
- * right, as big as a sidebar row, their menus popping out below them. Create is split (Create │ ▾);
- * both parts open its menu.
+ * right, as big as a sidebar row; they extend (ExtendMenu: the button grows to show its options).
+ * Create is split (Create │ ▾); both parts open its menu.
  */
 export default function RowHeader({ name, onRename, sort, onSort, creatable, onCreate }: Props) {
   const [editing, setEditing] = useState(false)
@@ -69,17 +69,19 @@ export default function RowHeader({ name, onRename, sort, onSort, creatable, onC
       )}
 
       <div className="flex shrink-0 items-center gap-2">
-        <ButtonMenu variant="ghost" label={`Sort ${name}`} items={SORTS} value={sort} onSelect={(next) => onSort(next === sort ? null : next)}>
+        {/* They extend: the button grows down to show its options, and wider for a wide one; the right
+            edge stays put, so they grow to the left */}
+        <ExtendMenu variant="ghost" align="end" label={`Sort ${name}`} items={SORTS} value={sort} onSelect={(next) => onSort(next === sort ? null : next)}>
           {sort ? SORT_LABEL[sort] : 'Sort by'}
           <LuChevronDown aria-hidden className="size-4" />
-        </ButtonMenu>
-        <ButtonMenu variant="create" label={`Create in ${name}`} items={createItems} onSelect={onCreate} className="gap-0! px-0!">
-          <span className="px-(--pill-px)">Create</span>
+        </ExtendMenu>
+        <ExtendMenu variant="create" align="end" label={`Create in ${name}`} items={createItems} onSelect={onCreate}>
+          Create
           {/* The split: a thin line, then the arrow (both open the same menu) */}
-          <span aria-hidden className="flex items-center self-stretch border-s border-create-fg/30 px-2">
+          <span aria-hidden className="-my-(--pill-py) ms-1 flex items-center self-stretch border-s border-create-fg/30 ps-2">
             <LuChevronDown className="size-4" />
           </span>
-        </ButtonMenu>
+        </ExtendMenu>
       </div>
     </div>
   )

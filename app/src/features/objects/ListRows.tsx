@@ -1,5 +1,5 @@
 // Plain lists of rows (the Dashboard's columns, the navbar's Recent History): the list with its lines
-// and "Show more", an object's row (draggable, opens on click, takes note links), and a row for
+// and "Show all", an object's row (draggable, opens on click, takes note links), and a row for
 // anything else (a page, a combination of panes, a saved layout).
 import { useState, type ReactNode } from 'react'
 import { LuChevronsDown, LuChevronsUp } from 'react-icons/lu'
@@ -16,8 +16,8 @@ import type { PanelRef } from '../workspace/types'
 import { hrefFor } from '../workspace/useWorkspace'
 import ObjectRow, { PLAIN_ROW } from './ObjectRow'
 
-/** Rows shown before "Show more" */
-const MAX_ROWS = 8
+/** Rows shown before "Show all" (the Dashboard's columns: three) */
+const MAX_ROWS = 3
 
 // Full class strings so Tailwind can detect them at build time.
 // A line between rows; a hovered row hides the lines above and below it (not while dragging)
@@ -32,8 +32,8 @@ export function useOpenLayout() {
 }
 
 /**
- * The rows, the first `limit` until "Show more" (or a "Show all" link to `allHref`, when the list has
- * a page of its own)
+ * The rows, the first `limit` (3 by default); more than that, "Show all" below them: it opens the rest
+ * in place (and "Show less" folds them), or, when the list has a page of its own, links to `allHref`
  */
 export function Rows({ rows, empty, allHref, limit = MAX_ROWS }: { rows: ReactNode[]; empty: string; allHref?: string; limit?: number }) {
   const [expanded, setExpanded] = useState(false)
@@ -60,7 +60,7 @@ export function Rows({ rows, empty, allHref, limit = MAX_ROWS }: { rows: ReactNo
             className="mt-1 inline-flex cursor-pointer items-center gap-1 px-2 text-small text-fg-muted hover:text-fg"
           >
             {expanded ? <LuChevronsUp className="size-3.5" /> : <LuChevronsDown className="size-3.5" />}
-            {expanded ? 'Show less' : `Show more (${more})`}
+            {expanded ? 'Show less' : `Show all (${rows.length})`}
           </button>
         ))}
     </>

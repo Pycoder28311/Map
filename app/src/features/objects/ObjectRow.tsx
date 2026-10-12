@@ -7,9 +7,10 @@ import type { PanelRef } from '../workspace/types'
 // Full class strings so Tailwind can detect them at build time.
 const ROW = 'flex items-center gap-2 rounded-(--card-radius) bg-fill px-3 py-2 text-body'
 // A line in a plain list (the Dashboard's columns): no fill, a background on hover (not while
-// something is being dragged: <html data-dragging>, WorkspaceProvider)
+// something is being dragged: <html data-dragging>, WorkspaceProvider). A fixed height (as tall as
+// a row with a link node's 24px circle), so every row is the same, with or without one
 export const PLAIN_ROW =
-  'flex items-center gap-2 rounded-(--btn-radius) px-2 py-2 text-body [html:not([data-dragging])_&:hover]:bg-fill'
+  'flex h-10 items-center gap-2 rounded-(--btn-radius) px-2 text-body [html:not([data-dragging])_&:hover]:bg-fill'
 
 type Props = {
   /** The object it shows */

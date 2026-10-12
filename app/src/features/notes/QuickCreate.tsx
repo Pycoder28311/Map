@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { LuFileText, LuStickyNote } from 'react-icons/lu'
+import { LuChevronDown, LuFileText, LuStickyNote } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
-import Dropdown, { type DropdownOption } from '../../components/ui/overlays/Dropdown'
+import ExtendMenu, { type ExtendMenuItem } from '../../components/ui/overlays/ExtendMenu'
 import { createArticle, createNote } from '../../mocks/projectsStore'
 
 type Kind = 'note' | 'article'
 
-const KINDS: DropdownOption<Kind>[] = [
+const KINDS: ExtendMenuItem<Kind>[] = [
   { value: 'note', label: 'Note', icon: LuStickyNote },
   { value: 'article', label: 'Article', icon: LuFileText },
 ]
@@ -20,8 +20,9 @@ const ANIMATE = 'duration-200 ease-out motion-reduce:transition-none'
 const GROW = `grid transition-[grid-template-rows,opacity] ${ANIMATE}`
 // Starts once the bottom part has grown (its duration, in ANIMATE)
 const AFTER_GROW = 'delay-200'
-// The kind button's distance from the card's edges (px): centred in the 44px text row and bottom part
-const KIND_INSET = 8
+// The kind button (a sidebar row tall, 36px) and Create: the same distance from the top or bottom and from the right
+// edge (px), which centres them in the 44px text row and bottom part
+const KIND_INSET = 4
 const FIELD = 'w-full resize-none bg-transparent px-4 text-fg outline-none placeholder:text-fg-subtle'
 
 /**
@@ -49,6 +50,7 @@ export default function QuickCreate() {
   // up) and Create's width (how far it pushes the kind button)
   const [size, setSize] = useState({ folded: 0, title: 0, create: 0 })
 
+  const KindIcon = KINDS.find((k) => k.value === kind)?.icon
   const canCreate = title.trim() !== '' || text.trim() !== ''
   const bigTitle = titleFocused || title !== ''
 
@@ -105,8 +107,8 @@ export default function QuickCreate() {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault()
       create()
-    } else if (e.key === 'Escape' && !rootRef.current?.querySelector(':popover-open')) {
-      // (Esc in the open dropdown only closes the dropdown)
+    } else if (e.key === 'Escape' && !rootRef.current?.querySelector(':popover-open, [aria-haspopup="menu"][aria-expanded="true"]')) {
+      // (Esc in an open menu only closes the menu)
       fold()
     }
   }
@@ -135,7 +137,10 @@ export default function QuickCreate() {
     <div ref={rootRef} style={{ height: size.folded || undefined }} className={`relative ${open ? 'z-30' : ''}`}>
       <div
         ref={cardRef}
-        onFocus={() => setOpen(true)}
+        // Only a field opens it (the text or the title): the Note / Article button, and its menu, don't
+        onFocus={(e) => {
+          if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) setOpen(true)
+        }}
         // Tabbing out folds it too
         onBlur={(e) => {
           if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget)) setOpen(false)
@@ -144,7 +149,10 @@ export default function QuickCreate() {
         // Open: moved up by the title's height while the title grows (same timing), so the text stays put
         style={open ? { boxShadow: 'var(--lift-shadow)', transform: `translateY(${-size.title}px)` } : undefined}
         // overflow-hidden: Create slides in from beyond the right edge
-      className={`absolute inset-x-0 top-0 flex flex-col overflow-hidden rounded-(--card-radius) border border-line bg-surface transition-[box-shadow,transform] ${ANIMATE}`}
+      className={`absolute inset-x-0 top-0 flex flex-col rounded-(--card-radius) border border-line bg-surface transition-[box-shadow,transform] ${ANIMATE} ${
+        // Open: clips Create sliding in from the right. Folded: nothing, so the kind button can extend below the card
+        open ? 'overflow-hidden' : ''
+      }`}
       >
         {/* The title, growing on top; out of the tab order while folded */}
         <div className={`${GROW} ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr] opacity-0'}`} inert={!open}>
@@ -190,12 +198,17 @@ export default function QuickCreate() {
           style={open ? { bottom: KIND_INSET, right: KIND_INSET + size.create + KIND_INSET } : { top: KIND_INSET, right: KIND_INSET }}
           className={`absolute ${open ? `transition-[right] ${ANIMATE} ${AFTER_GROW}` : ''}`}
         >
-          <Dropdown label="Kind" value={kind} options={KINDS} onChange={chooseKind} />
+          {/* It extends (ExtendMenu): down from the text's row while folded, up from the bottom part while open */}
+          <ExtendMenu variant="ghost" align="end" direction={open ? 'up' : 'down'} label="Kind" items={KINDS} value={kind} onSelect={chooseKind}>
+            {KindIcon && <KindIcon className="size-4 shrink-0 text-fg-subtle" />}
+            {KINDS.find((k) => k.value === kind)?.label}
+            <LuChevronDown aria-hidden className="size-4 shrink-0" />
+          </ExtendMenu>
         </div>
         <div
           ref={createRef}
           inert={!open}
-          className={`absolute right-2 bottom-1 ${
+          className={`absolute right-1 bottom-1 ${
             open ? `translate-x-0 opacity-100 transition-[translate,opacity] ${ANIMATE} ${AFTER_GROW}` : 'translate-x-[calc(100%+1rem)] opacity-0'
           }`}
         >

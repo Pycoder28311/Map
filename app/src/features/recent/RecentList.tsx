@@ -14,7 +14,7 @@ import { useWorkspace } from '../workspace/useWorkspace'
 import { useRecent, type RecentEntry } from './recentStore'
 
 type Props = {
-  /** Rows shown before "Show more" (or before "Show all" with `allHref`) */
+  /** Rows shown before "Show all" (default: 3) */
   limit?: number
   /** "Show all" goes there (e.g. the Dashboard, from the navbar) */
   allHref?: string

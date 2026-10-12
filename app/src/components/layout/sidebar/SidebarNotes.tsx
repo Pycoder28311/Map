@@ -50,10 +50,11 @@ export default function SidebarNotes({ nodes, tree, compact, onCreate, dropAtEnd
           onClick={() => setShowAll(!showAll)}
           aria-expanded={showAll}
           title={showAll ? 'Show less' : `Show ${hidden} more`}
-          className="mt-1 w-full justify-start text-fg-muted"
+          aria-label={showAll ? 'Show less' : `Show ${hidden} more`}
+          className="mt-1 w-full justify-start overflow-hidden text-fg-muted"
         >
-          {/* Compact: the rail clips the text, the icon stays in the column */}
-          <span className="whitespace-nowrap">{showAll ? 'Show less' : `Show more (${hidden})`}</span>
+          {/* Compact (the rail): only the icon, no text at all */}
+          {!compact && <span className="whitespace-nowrap">{showAll ? 'Show less' : `Show more (${hidden})`}</span>}
         </Button>
       )}
     </section>
