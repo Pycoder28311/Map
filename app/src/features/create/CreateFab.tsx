@@ -5,6 +5,7 @@ import { KIND_LABEL } from '../../mocks/projects'
 import { useOpenLayout } from '../objects/ListRows'
 import { single } from '../workspace/layout'
 import CreateModal from './CreateModal'
+import { RAISED } from './buttonLook'
 import type { CreateKind } from './place'
 
 /** The modal's shrink-back (its animation, in animations.css) before it's removed (ms) */
@@ -15,8 +16,8 @@ const TOAST_MS = 6000
 // Full class strings so Tailwind can detect them at build time.
 // The two faces of the button, back to back: they never show through each other
 const FACE =
-  'absolute inset-0 flex cursor-pointer items-center justify-center gap-2 rounded-[calc(var(--corner-lg)+4px)] text-base font-medium shadow-lg [backface-visibility:hidden] ' +
-  'transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+  'absolute inset-0 flex cursor-pointer items-center justify-center gap-2 rounded-[calc(var(--corner-lg)+4px)] text-base font-medium [backface-visibility:hidden] ' +
+  `transition-[background-color,box-shadow,translate] ${RAISED} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`
 
 type Made = { id: string; kind: CreateKind; name: string; where: string | null }
 

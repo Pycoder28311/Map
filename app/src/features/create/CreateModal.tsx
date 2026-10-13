@@ -5,6 +5,7 @@ import { getObjects, useMockObjects } from '../../mocks/projectsStore'
 import { KIND_ICON } from '../../mocks/sidebarTree'
 import { createFromModal } from './createFromModal'
 import CreatePath from './CreatePath'
+import { RAISED } from './buttonLook'
 import { CREATE_KINDS, eligibleFor, type CreateKind, type Path } from './place'
 import { useCurrentPlace } from './useCurrentPlace'
 
@@ -14,8 +15,8 @@ const FIELD =
   'placeholder:text-fg-subtle focus:border-fg-subtle'
 // The modal's Create: the floating button's Create face (CreateFab), same size, green and rounded
 const CREATE_BUTTON =
-  'inline-flex h-11 w-36 cursor-pointer items-center justify-center gap-2 rounded-[calc(var(--corner-lg)+4px)] bg-create text-base font-medium text-create-fg shadow-lg ' +
-  'transition-colors hover:bg-create-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-create'
+  'inline-flex h-11 w-36 cursor-pointer items-center justify-center gap-2 rounded-[calc(var(--corner-lg)+4px)] bg-create text-base font-medium text-create-fg ' +
+  `transition-[background-color,box-shadow,translate] ${RAISED} hover:bg-create-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-create`
 // A tab: one of the five kinds, in a row above the form
 const KIND_BUTTON =
   'flex shrink-0 cursor-pointer items-center gap-2 rounded-(--btn-radius) px-2.5 py-1.5 text-start text-body font-medium whitespace-nowrap transition-colors ' +
