@@ -6,9 +6,9 @@ import type { ButtonIcon } from '../icons/IconSlot'
 const LOOK = {
   ghost: { closed: 'text-fg hover:bg-fill', open: 'bg-fill text-fg shadow-md', item: 'hover:bg-fill-strong focus-visible:bg-fill-strong' },
   secondary: { closed: 'bg-fill text-fg hover:bg-fill-strong', open: 'bg-fill-strong text-fg shadow-md', item: 'hover:bg-fill focus-visible:bg-fill' },
-  // create: green; no hover of its own, its parts darken one by one (a split button, see `padded`).
-  // Open: the gray of the other dropdowns
-  create: { closed: 'bg-create text-create-fg', open: 'bg-fill text-fg shadow-md', item: 'hover:bg-fill-strong focus-visible:bg-fill-strong' },
+  // create: a split button (see `padded`): closed, it has no background of its own: each part is its own
+  // green button, with the page showing between them. Open: one gray shape, like the other dropdowns
+  create: { closed: 'text-create-fg', open: 'bg-fill text-fg shadow-md', item: 'hover:bg-fill-strong focus-visible:bg-fill-strong' },
 } as const
 // The padding, corners and text of a sidebar row (as tall as one)
 // whitespace-nowrap: the button's text never breaks into lines, whatever width it is given
@@ -16,7 +16,7 @@ const ROW = 'flex items-center text-body font-medium whitespace-nowrap'
 // With the standard padding, and a gap between its contents (e.g. a label and an icon)
 const ROW_PADDING = 'gap-1.5 px-(--pill-px) py-(--pill-py)'
 const ITEM =
-  'flex w-full cursor-pointer items-center gap-(--menu-icon-gap) rounded-(--btn-radius) px-(--pill-px) py-(--pill-py) text-body text-start whitespace-nowrap ' +
+  'flex w-full cursor-pointer items-center gap-(--menu-icon-gap) rounded-(--menu-item-radius) px-(--pill-px) py-(--pill-py) text-body text-start whitespace-nowrap ' +
   'transition-colors focus-visible:outline-none'
 const GROW = 'duration-200 ease-out motion-reduce:transition-none'
 
@@ -133,7 +133,7 @@ export default function ExtendMenu<T extends string>({
         {typeof children === 'function' ? children(false) : children}
       </div>
       {/* The options, laid out in full but unseen: their natural size is what the button grows to */}
-      <div ref={optionsRef} aria-hidden className="invisible pointer-events-none absolute top-0 left-0 -z-10 inline-flex flex-col py-0.5">
+      <div ref={optionsRef} aria-hidden className="invisible pointer-events-none absolute top-0 left-0 -z-10 inline-flex flex-col p-(--menu-p)">
         {items.map((item) => (
           <span key={item.value} className={ITEM}>
             {item.icon && <span className="size-4 shrink-0" />}
@@ -162,7 +162,7 @@ export default function ExtendMenu<T extends string>({
             {typeof children === 'function' ? children(open) : children}
           </span>
         </button>
-        <div id={id} role="menu" aria-label={label} inert={!open} className="flex shrink-0 flex-col py-0.5">
+        <div id={id} role="menu" aria-label={label} inert={!open} className="flex shrink-0 flex-col p-(--menu-p)">
           {items.map((item) => {
             const Icon = item.icon
             return (

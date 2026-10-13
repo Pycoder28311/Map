@@ -13,7 +13,7 @@ export default function PanelPage({ panel }: { panel: PanelRef }) {
 
   return (
     // An object's page can be picked to share (features/share)
-    <div data-share-id={panel.id} className="relative min-h-full">
+    <div data-share-id={panel.id} className="relative min-h-full pb-20">
       <PanelContent component={registry[panel.type].component} id={panel.id} />
       <DropZones slot="a" />
     </div>

@@ -19,7 +19,8 @@ function objectsOf(id: ColumnId, objects: MockObject[]): { object: MockObject; h
   const visible = objects.filter((o) => findObject(o.id))
   const projectName = (o: MockObject) => (o.parentId ? findObject(o.parentId)?.name : undefined)
   const projectId = projectIdOf(id)
-  if (projectId) return visible.filter((o) => o.parentId === projectId).map((object) => ({ object }))
+  // A project's or Orphans' list is its row's: no notes (they live in the Notes list)
+  if (projectId) return visible.filter((o) => o.parentId === projectId && o.kind !== 'note').map((object) => ({ object }))
   switch (id) {
     case 'notes':
       return visible.filter((o) => isNoteLike(o.kind)).map((object) => ({ object, hint: projectName(object) }))
@@ -28,8 +29,8 @@ function objectsOf(id: ColumnId, objects: MockObject[]): { object: MockObject; h
     case 'projects':
       return visible.filter((o) => o.kind === 'project').map((object) => ({ object }))
     case 'orphans':
-      // Every top-level object that isn't a project
-      return visible.filter((o) => o.parentId === null && o.kind !== 'project').map((object) => ({ object }))
+      // Every top-level object that isn't a project or a note
+      return visible.filter((o) => o.parentId === null && o.kind !== 'project' && o.kind !== 'note').map((object) => ({ object }))
     default:
       return []
   }

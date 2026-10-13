@@ -7,7 +7,7 @@ import { useMockProjects } from '../../mocks/projectsStore'
 export default function ProjectsPage() {
     const projects = useMockProjects()
     return (
-        <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8">
+        <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 pt-8 pb-24">
             <h1 className="text-title">Projects</h1>
             <ul className="flex flex-col gap-2">
                 {projects.map((project) => (

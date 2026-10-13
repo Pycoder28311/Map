@@ -20,7 +20,7 @@ export default function NotesPage() {
   useDragSurface('notes-list', listRef, (item) => <ObjectRowLook label={item.label} icon={item.icon} />)
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8">
+    <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 pt-8 pb-24">
       <div>
         <h1 className="text-title">Notes</h1>
         <p className="text-body text-fg-muted">Drag a note onto a project or map to link it.</p>

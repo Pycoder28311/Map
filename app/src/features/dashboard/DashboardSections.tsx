@@ -11,7 +11,7 @@ import { useObjectActions } from '../objects/useObjectActions'
 import { single } from '../workspace/layout'
 import { useBlockFlip } from './blockFlip'
 import Card from './cards/Cards'
-import { CARD } from './cards/CardShell'
+import { CARD_SIZE, COMMENT_SIZE, cardOf } from './cards/CardShell'
 import { columnLabel, sectionsBelow, type ColumnId } from './columns'
 import RowHeader from './RowHeader'
 import { describeDrop, rowItems, rowParent, sortCards, type CardSort, type RowId } from './rows'
@@ -23,9 +23,11 @@ import { SectionCardLook } from './SectionCard'
 const NOTE_FOR = 6000
 
 type Creatable = Exclude<ObjectKind, 'project'>
-const ALL_KINDS: Creatable[] = ['object', 'article', 'note', 'map', 'folder']
-// Maps live in projects: Orphans' Create leaves them out
-const ROOT_KINDS: Creatable[] = ['object', 'article', 'note', 'folder']
+// A project's Create: no notes (they live in the Notes list), Orphans' also no maps (they live in projects);
+// the Notes row creates notes only
+const PROJECT_KINDS: Creatable[] = ['object', 'article', 'map', 'folder']
+const ROOT_KINDS: Creatable[] = ['object', 'article', 'folder']
+const NOTE_KINDS: Creatable[] = ['note']
 
 type Props = {
   columns: ColumnId[]
@@ -110,8 +112,10 @@ export default function DashboardSections({ columns, projects }: Props) {
               onRename={projectId ? (name) => renameObject(projectId, name) : undefined}
               sort={sortOf(row)}
               onSort={(sort: CardSort | null) => setSort(row, sort)}
-              creatable={projectId ? ALL_KINDS : ROOT_KINDS}
+              creatable={row === 'notes' ? NOTE_KINDS : projectId ? PROJECT_KINDS : ROOT_KINDS}
               onCreate={(kind) => create(row, kind)}
+              // Create names what it makes ("+ Note", "+ Article"…) everywhere but Orphans ("Create ▾")
+              named={row !== 'orphans'}
             />
             {note?.row === row && (
               <p role="status" className="flex items-center gap-2 self-start rounded-full bg-fill px-3 py-1 text-small text-fg-muted">
@@ -161,7 +165,9 @@ type StripProps = {
 /** A row's cards, sideways: a drop target ('row-card' zone) where a gap opens for what's dragged over it */
 function RowStrip({ row, items, target, renderCard }: StripProps) {
   const stripRef = useRef<HTMLDivElement | null>(null)
-  const { setNodeRef } = useDroppable({ id: `dash-row:${row}`, data: { zone: 'row-card', priority: 2, row } })
+  // The Notes row takes no drops (every note is there already, wherever it is)
+  const { setNodeRef } = useDroppable({ id: `dash-row:${row}`, data: { zone: 'row-card', priority: 2, row }, disabled: row === 'notes' })
+  const size = row === 'notes' ? COMMENT_SIZE : CARD_SIZE
   const gapAt = target && !target.folderId ? (target.beforeId ? items.findIndex((o) => o.id === target.beforeId) : items.length) : -1
   const slots: (MockObject | 'gap')[] = [...items]
   if (gapAt >= 0) slots.splice(gapAt, 0, 'gap')
@@ -177,11 +183,13 @@ function RowStrip({ row, items, target, renderCard }: StripProps) {
       className="-mx-2 flex min-h-56 snap-x gap-3 overflow-x-auto px-2 pt-1 pb-3"
     >
       {slots.length === 0 ? (
-        <p className={`${CARD} items-center justify-center border border-dashed border-line-strong text-body text-fg-subtle shadow-none ring-0`}>Nothing here yet</p>
+        <p className={`${cardOf(size)} items-center justify-center border border-dashed border-line-strong text-body text-fg-subtle shadow-none ring-0`}>
+          {row === 'notes' ? 'No notes yet' : 'Nothing here yet'}
+        </p>
       ) : (
         slots.map((slot) =>
           slot === 'gap' ? (
-            <div key="gap" data-flip-card="gap" aria-hidden className={`${CARD} border-2 border-dashed border-drop/60 bg-drop/5 shadow-none ring-0`} />
+            <div key="gap" data-flip-card="gap" aria-hidden className={`${cardOf(size)} border-2 border-dashed border-drop/60 bg-drop/5 shadow-none ring-0`} />
           ) : (
             <div key={slot.id} data-flip-card={slot.id} className="shrink-0">
               {renderCard(slot)}

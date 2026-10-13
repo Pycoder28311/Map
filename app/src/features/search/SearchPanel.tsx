@@ -17,7 +17,7 @@ const KIND_NAME: Record<ObjectKind, string> = {
 // Full class strings so Tailwind can detect them at build time.
 const HEADING = 'text-small font-medium uppercase tracking-wide text-fg-subtle'
 const CHECK = 'flex cursor-pointer items-center gap-2 rounded-(--btn-close-radius) px-1.5 py-1 text-body hover:bg-fill'
-const SEGMENT = 'flex-1 cursor-pointer rounded-[6px] px-2 py-0.5 text-small transition-colors'
+const SEGMENT = 'flex-1 cursor-pointer rounded-(--corner-sm) px-2 py-0.5 text-small transition-colors'
 // Open Filters: small, as tall as the chips beside it
 const FILTERS_BUTTON =
   'inline-flex cursor-pointer items-center gap-1 rounded-full px-2 py-0.5 text-small font-medium transition-colors ' +

@@ -2,6 +2,7 @@ import { LuFolders } from 'react-icons/lu'
 import Card from '../dashboard/cards/Cards'
 import { findObject } from '../../mocks/projects'
 import { useMockObjects } from '../../mocks/projectsStore'
+import LinkedList from '../links/LinkedList'
 import { useLinkNode } from '../links/linkNode'
 import { useOpenLayout } from './ListRows'
 import { single } from '../workspace/layout'
@@ -41,6 +42,7 @@ export default function FolderPanel({ id }: PanelProps) {
           ))}
         </div>
       )}
+      <LinkedList objectId={folder.id} isNote={false} title="Linked notes" />
       {actions.dialogs}
     </div>
   )

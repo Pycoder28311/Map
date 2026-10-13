@@ -5,15 +5,21 @@ import DropIcon from '../../../components/ui/drop/DropIcon'
 import TreeMenu from '../../../components/ui/tree/TreeMenu'
 import type { TreeMenuGroup } from '../../../components/ui/tree/types'
 import type { MockObject } from '../../../mocks/projects'
-import { renameObject, toggleLike } from '../../../mocks/projectsStore'
+import { isLinkTarget, renameObject, toggleLike } from '../../../mocks/projectsStore'
 import { KIND_ICON } from '../../../mocks/sidebarTree'
 import { useObjectDrag } from '../../drag/objectDrag'
 import type { useLinkNode } from '../../links/linkNode'
 
 // Full class strings so Tailwind can detect them at build time.
-// Every card the same size, so a row lines up (each kind arranges its own content inside)
-export const CARD =
-  'group/card relative flex h-52 w-44 shrink-0 snap-start flex-col gap-2 overflow-hidden rounded-(--card-radius) p-2 text-start shadow-sm ring-1 ring-line'
+// Every card in a row the same size, so it lines up (each kind arranges its own content inside)
+const CARD_BASE =
+  'group/card relative flex shrink-0 snap-start flex-col gap-2 overflow-hidden rounded-(--card-radius) p-2 text-start shadow-sm ring-1 ring-line'
+/** The usual card size, and the Notes row's wider, shorter comment cards */
+export const CARD_SIZE = 'h-52 w-44'
+export const COMMENT_SIZE = 'h-40 w-72'
+export const CARD = `${CARD_BASE} ${CARD_SIZE}`
+/** A card of a given size (for the empty state and the drop gap of a row) */
+export const cardOf = (size: string) => `${CARD_BASE} ${size}`
 // Shown on hover or keyboard focus, and while its menu is open
 const ON_HOVER = 'opacity-0 transition-opacity group-hover/card:opacity-100 group-focus-within/card:opacity-100 has-[:popover-open]:opacity-100'
 
@@ -29,7 +35,9 @@ export type CardProps = {
   renameOnMount?: boolean
 }
 
-type ShellProps = CardProps & {
+type SizeProp = { size?: string }
+
+type ShellProps = CardProps & SizeProp & {
   /** The card's background (e.g. a note's paper); default: the surface */
   className?: string
   /** Its content; `name`: the name, or its input while renaming */
@@ -41,7 +49,7 @@ type ShellProps = CardProps & {
  * sidebar, panes, link nodes, the trash), click to open, the ⋯ menu (the sidebar's actions), renaming
  * in place, the ♡ likes, a link node for what notes link to, and the marks for share mode and row drops.
  */
-export default function CardShell({ object, menu, onOpen, linkNodeFor, dropActive, renameOnMount, className = 'bg-surface', children }: ShellProps) {
+export default function CardShell({ object, menu, onOpen, linkNodeFor, dropActive, renameOnMount, size = CARD_SIZE, className = 'bg-surface', children }: ShellProps) {
   const Icon = KIND_ICON[object.kind]
   const [renaming, setRenaming] = useState(!!renameOnMount)
   const { setNodeRef, listeners, attributes, isDragging } = useObjectDrag({
@@ -52,7 +60,7 @@ export default function CardShell({ object, menu, onOpen, linkNodeFor, dropActiv
     disabled: renaming,
   })
   const { role: _role, ...dragAttributes } = attributes
-  const link = object.kind === 'map' || object.kind === 'object' ? linkNodeFor(object.id, 'dash-card', object.name) : undefined
+  const link = isLinkTarget(object.kind) ? linkNodeFor(object.id, 'dash-card', object.name) : undefined
   // The whole card takes the note too (the node shows where it falls in)
   const { setNodeRef: setDropRef } = useDroppable({
     id: `${link?.dropKey ?? `dash-card:${object.id}`}:card`,
@@ -86,7 +94,7 @@ export default function CardShell({ object, menu, onOpen, linkNodeFor, dropActiv
         if (next && next !== object.name) renameObject(object.id, next)
         setRenaming(false)
       }}
-      className="w-full min-w-0 rounded-[4px] bg-surface px-1 text-body font-medium text-fg outline-2 outline-accent"
+      className="w-full min-w-0 rounded-(--corner-sm) bg-surface px-1 text-body font-medium text-fg outline-2 outline-accent"
     />
   ) : (
     <span className="min-w-0 truncate text-body font-medium">{object.name}</span>
@@ -101,7 +109,7 @@ export default function CardShell({ object, menu, onOpen, linkNodeFor, dropActiv
       data-card-id={object.id}
       data-card-kind={object.kind}
       onClick={renaming ? undefined : onOpen}
-      className={`${CARD} ${className} cursor-grab active:cursor-grabbing transition-[box-shadow,opacity] ${
+      className={`${cardOf(size)} ${className} cursor-grab active:cursor-grabbing transition-[box-shadow,opacity] ${
         dropActive || link?.active ? 'ring-2 ring-drop' : ''
       } ${isDragging ? 'opacity-40' : ''}`}
     >

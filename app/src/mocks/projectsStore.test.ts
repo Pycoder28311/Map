@@ -198,6 +198,16 @@ describe('projectsStore', () => {
     expect(getObjects().filter((o) => o.parentId === 'f1')).toHaveLength(5)
   })
 
+  it('links notes to folders, and unlinks them', () => {
+    expect(canLink('n1', 'f1')).toBe(true)
+    linkNote('n1', 'f1')
+    expect(linksOf('f1').map((o) => o.id)).toEqual(['n1'])
+    expect(linksOf('n1').map((o) => o.id)).toContain('f1')
+    expect(canLink('n1', 'f1')).toBe(false)
+    unlinkNote('n1', 'f1')
+    expect(linksOf('f1')).toEqual([])
+  })
+
   it('likes and unlikes', () => {
     const before = findObject('n1')!.likes
     toggleLike('n1')

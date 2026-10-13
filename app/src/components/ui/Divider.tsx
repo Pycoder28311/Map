@@ -35,7 +35,7 @@ export default function Divider({ label, labelTo, action, compact = false, class
           <Link
             to={labelTo}
             tabIndex={compact ? -1 : undefined}
-            className={`shrink-0 rounded-sm text-small font-medium text-fg-muted hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-accent ${FADE} ${hidden}`}
+            className={`shrink-0 rounded-(--corner-sm) text-small font-medium text-fg-muted hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-accent ${FADE} ${hidden}`}
           >
             {label}
           </Link>

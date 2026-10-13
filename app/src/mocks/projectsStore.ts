@@ -281,9 +281,9 @@ const visibleById = (id: string) => {
 }
 
 /** What notes can be linked to */
-export const isLinkTarget = (kind?: string) => kind === 'project' || kind === 'map' || kind === 'object'
+export const isLinkTarget = (kind?: string) => kind === 'project' || kind === 'folder' || kind === 'map' || kind === 'object'
 
-/** Whether a note may be linked to a target: a visible note or article, a visible project, map or object card, not linked yet */
+/** Whether a note may be linked to a target: a visible note or article, a visible project, folder, map or object card, not linked yet */
 export function canLink(noteId: string, targetId: string) {
   const note = visibleById(noteId)
   const target = visibleById(targetId)

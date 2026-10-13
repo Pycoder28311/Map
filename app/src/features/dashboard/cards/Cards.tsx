@@ -4,7 +4,7 @@ import { findObject } from '../../../mocks/projects'
 import { linksOf, useMockObjects } from '../../../mocks/projectsStore'
 import { KIND_ICON } from '../../../mocks/sidebarTree'
 import { hueOf, placeholderArt } from '../../objects/placeholderArt'
-import CardShell, { type CardProps } from './CardShell'
+import CardShell, { COMMENT_SIZE, type CardProps } from './CardShell'
 
 const DATE = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' })
 
@@ -107,17 +107,21 @@ function MapCard(props: CardProps) {
   )
 }
 
-/** A note: paper, its name, its text fading out at the bottom */
+/**
+ * A note, as a comment: a wide paper card (the Notes row's), its title and date on top, its text quoted
+ * below it behind a thin bar, fading out where it's cut
+ */
 function NoteCard(props: CardProps) {
   const { object } = props
   return (
-    <CardShell {...props} className="bg-note">
+    <CardShell {...props} size={COMMENT_SIZE} className="bg-note">
       {(name) => (
         <>
-          <div className="px-0.5 pe-8 pt-0.5">
+          <div className="flex items-baseline gap-2 px-0.5 pe-8 pt-0.5">
             <KindName kind="note" name={name} />
+            <span className="shrink-0 text-small text-fg-subtle">{DATE.format(object.createdAt)}</span>
           </div>
-          <p className="line-clamp-6 px-0.5 text-small whitespace-pre-wrap text-fg-muted [mask-image:linear-gradient(to_bottom,black_70%,transparent)]">
+          <p className="line-clamp-4 border-s-2 border-fg/20 ps-2 text-body whitespace-pre-wrap text-fg-muted [mask-image:linear-gradient(to_bottom,black_65%,transparent)]">
             {object.text || 'Empty note'}
           </p>
         </>
@@ -142,9 +146,9 @@ function FolderCard(props: CardProps) {
           <div data-drop-icon={folderDropKey(object.id)} className="grid flex-1 grid-cols-2 grid-rows-2 gap-1.5">
             {[0, 1, 2, 3].map((i) =>
               articles[i] ? (
-                <div key={i} title={articles[i].name} style={placeholderArt(articles[i].id)} className="rounded-[8px]" />
+                <div key={i} title={articles[i].name} style={placeholderArt(articles[i].id)} className="rounded-(--corner-sm)" />
               ) : (
-                <div key={i} className="rounded-[8px] border border-dashed border-line-strong" />
+                <div key={i} className="rounded-(--corner-sm) border border-dashed border-line-strong" />
               ),
             )}
           </div>

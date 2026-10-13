@@ -2,19 +2,24 @@
 // a dropped card goes, and what the undo note says. Pure (rows.test.ts).
 import { canPlace, type MockObject } from '../../mocks/projects'
 
-/** A row: Orphans (the top level, projects aside) or a project's */
-export type RowId = 'orphans' | `project:${string}`
+/** A row: Notes (every note), Orphans (the top level, projects and notes aside) or a project's */
+export type RowId = 'notes' | 'orphans' | `project:${string}`
 
 export type CardSort = 'newest' | 'oldest' | 'liked'
 export const SORT_LABEL: Record<CardSort, string> = { newest: 'Newest', oldest: 'Oldest', liked: 'Most liked' }
 
-/** The parent a row's cards have (null: the top level) */
-export const rowParent = (row: RowId): string | null => (row === 'orphans' ? null : row.slice('project:'.length))
+/** The parent a row's cards have (null: the top level; Notes, new ones too) */
+export const rowParent = (row: RowId): string | null => (row === 'orphans' || row === 'notes' ? null : row.slice('project:'.length))
 
-/** A row's cards in manual order (the sidebar's): the parent's direct children, never projects. `objects`: the visible ones */
+/**
+ * A row's cards in manual order (the sidebar's). Notes: every note, wherever it is. The others: the
+ * parent's direct children, never projects and never notes (those live in the Notes row or column).
+ * `objects`: the visible ones
+ */
 export function rowItems(objects: MockObject[], row: RowId): MockObject[] {
+  if (row === 'notes') return objects.filter((o) => o.kind === 'note')
   const parent = rowParent(row)
-  return objects.filter((o) => o.parentId === parent && o.kind !== 'project')
+  return objects.filter((o) => o.parentId === parent && o.kind !== 'project' && o.kind !== 'note')
 }
 
 /** Sorted (a copy), or as they are without a sort. Ties: by name */
@@ -42,11 +47,13 @@ export type DropPlan =
 
 /** What dropping `dragged` on `target` does, or null when it may not go there (canPlace) or nothing changes */
 export function dropPlan(dragged: MockObject, target: DropTarget): DropPlan | null {
-  if (dragged.kind === 'project') return null
+  // Notes move in the sidebar or the Notes list, not between these rows; and nothing lands in the Notes row
+  if (dragged.kind === 'project' || dragged.kind === 'note') return null
   if ('folderId' in target) {
     if (target.folderId === dragged.id || dragged.parentId === target.folderId || !canPlace(dragged.kind, 'folder')) return null
     return { kind: 'into-folder', folderId: target.folderId }
   }
+  if (target.row === 'notes') return null
   const parentId = rowParent(target.row)
   if (!canPlace(dragged.kind, parentId === null ? null : 'project')) return null
   if (target.beforeId === dragged.id) return null

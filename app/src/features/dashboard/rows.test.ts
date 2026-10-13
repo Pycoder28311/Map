@@ -7,9 +7,16 @@ const byId = (id: string) => objects.find((o) => o.id === id)!
 const ids = (list: MockObject[]) => list.map((o) => o.id)
 
 describe('rowItems', () => {
-  it('lists the top level without projects, and a project direct children', () => {
-    expect(ids(rowItems(objects, 'orphans'))).toEqual(['n1', 'n2', 'n3', 'n4', 'o2', 'a6'])
+  it('lists the top level without projects or notes, and a project direct children', () => {
+    expect(ids(rowItems(objects, 'orphans'))).toEqual(['o2', 'a6'])
     expect(ids(rowItems(objects, 'project:p2'))).toEqual(['m3', 'm4', 'o1', 'f1'])
+  })
+
+  it('lists every note in the Notes row, wherever it is, and in no other row', () => {
+    const inProject = { ...byId('n1'), id: 'n9', parentId: 'p2' }
+    const all = [...objects, inProject]
+    expect(ids(rowItems(all, 'notes'))).toEqual(['n1', 'n2', 'n3', 'n4', 'n9'])
+    expect(ids(rowItems(all, 'project:p2'))).not.toContain('n9')
   })
 })
 
@@ -31,8 +38,8 @@ describe('sortCards', () => {
 
 describe('dropPlan', () => {
   it('reorders in the same row and moves to another', () => {
-    expect(dropPlan(byId('n2'), { row: 'orphans', beforeId: 'n1' })).toEqual({ kind: 'reorder', parentId: null, beforeId: 'n1' })
-    expect(dropPlan(byId('n2'), { row: 'project:p1', beforeId: null })).toEqual({ kind: 'move', parentId: 'p1', beforeId: null })
+    expect(dropPlan(byId('a6'), { row: 'orphans', beforeId: 'o2' })).toEqual({ kind: 'reorder', parentId: null, beforeId: 'o2' })
+    expect(dropPlan(byId('a6'), { row: 'project:p1', beforeId: null })).toEqual({ kind: 'move', parentId: 'p1', beforeId: null })
   })
   it('puts only articles into folders', () => {
     expect(dropPlan(byId('a6'), { folderId: 'f1' })).toEqual({ kind: 'into-folder', folderId: 'f1' })
@@ -41,7 +48,12 @@ describe('dropPlan', () => {
   })
   it('refuses projects and no-op drops', () => {
     expect(dropPlan(byId('p1'), { row: 'orphans', beforeId: null })).toBeNull()
-    expect(dropPlan(byId('n1'), { row: 'orphans', beforeId: 'n1' })).toBeNull()
+    expect(dropPlan(byId('a6'), { row: 'orphans', beforeId: 'a6' })).toBeNull()
+  })
+
+  it('keeps notes out of the rows, and takes nothing into the Notes row', () => {
+    expect(dropPlan(byId('n1'), { row: 'project:p1', beforeId: null })).toBeNull()
+    expect(dropPlan(byId('a6'), { row: 'notes', beforeId: null })).toBeNull()
   })
 })
 

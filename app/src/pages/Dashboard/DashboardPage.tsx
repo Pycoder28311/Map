@@ -24,7 +24,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="mx-auto flex max-w-[65rem] flex-col gap-12 px-4 py-8">
+        <div className="mx-auto flex max-w-[65rem] flex-col gap-12 px-4 pt-8 pb-24">
             {/* The input and the columns share one narrower width, centred over the sections */}
             <div className="mx-auto flex w-full max-w-[54rem] flex-col gap-10">
                 {/* A greeting, then the page's main input, low on the screen with room above them */}

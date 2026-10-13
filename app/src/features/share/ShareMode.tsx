@@ -2,9 +2,14 @@ import { useEffect, useId, useLayoutEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { chooseToShare, stopSharing, useShareState } from './shareStore'
 
-/** Room around each highlighted object (px) */
-const PAD = 4
-const RADIUS = 10
+/**
+ * How far each highlight sits inside its object (px), so neighbours that touch (sidebar rows, cards)
+ * never overlap: this much, and a few more for each shareable object it is inside (a row in a pane
+ * sits further in than the pane's own highlight, which then never covers it)
+ */
+const INSET = 3
+const INSET_PER_LEVEL = 4
+const RADIUS = 8
 
 type Target = { id: string; x: number; y: number; w: number; h: number }
 
@@ -33,7 +38,14 @@ function measure(): Target[] {
   for (const el of document.querySelectorAll<HTMLElement>('[data-share-id]')) {
     const id = el.dataset.shareId
     const r = id ? visibleRect(el) : null
-    if (r) targets.push({ id: id!, x: r.left - PAD, y: r.top - PAD, w: r.width + 2 * PAD, h: r.height + 2 * PAD })
+    if (!r) continue
+    // How many shareable objects it is inside
+    let level = 0
+    for (let p = el.parentElement?.closest('[data-share-id]'); p; p = p.parentElement?.closest('[data-share-id]')) level++
+    const inset = INSET + INSET_PER_LEVEL * level
+    const w = r.width - 2 * inset
+    const h = r.height - 2 * inset
+    if (w >= 12 && h >= 12) targets.push({ id: id!, x: r.left + inset, y: r.top + inset, w, h })
   }
   return targets
 }
@@ -99,7 +111,7 @@ export default function ShareMode() {
   if (phase === 'chosen' && flash) {
     return createPortal(
       <svg aria-hidden className="pointer-events-none fixed inset-0 z-[29] size-full animate-share-flash">
-        <rect x={flash.x} y={flash.y} width={flash.w} height={flash.h} rx={RADIUS} fill="none" stroke="var(--drop)" strokeWidth={3} />
+        <rect x={flash.x} y={flash.y} width={flash.w} height={flash.h} rx={RADIUS} fill="none" className="stroke-highlight" strokeWidth={3} />
       </svg>,
       document.body,
     )
@@ -140,12 +152,11 @@ export default function ShareMode() {
           width={t.w}
           height={t.h}
           rx={RADIUS}
-          fill={hover === i ? 'rgb(255 255 255 / 0.12)' : 'transparent'}
-          stroke="white"
-          strokeOpacity={hover === i ? 1 : 0.7}
           strokeWidth={hover === i ? 3 : 2}
           style={{ animationDelay: `${Math.min(i * 20, 400)}ms` }}
-          className="origin-center animate-share-pop transition-[stroke-width,stroke-opacity,fill] duration-150 [transform-box:fill-box] motion-reduce:animate-none"
+          className={`origin-center animate-share-pop transition-[stroke-width,stroke,fill] duration-150 [transform-box:fill-box] motion-reduce:animate-none ${
+            hover === i ? 'fill-highlight/20 stroke-highlight' : 'fill-transparent stroke-highlight/70'
+          }`}
         />
       ))}
     </svg>,

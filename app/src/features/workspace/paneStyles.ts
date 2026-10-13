@@ -2,8 +2,8 @@
 // Inline styles (not Tailwind classes) because the gap is also used in the grid's calc().
 import type { CSSProperties } from 'react'
 
-/** Corner rounding of a panel (px) */
-export const PANE_RADIUS = 12
+/** Corner rounding of a panel (px): keep it equal to --corner-lg (styles/tokens.css), like the cards */
+export const PANE_RADIUS = 8
 
 /** Space between two panels (px) */
 export const PANE_GAP = 6

@@ -18,7 +18,7 @@ export const projectColumn = (projectId: string): ColumnId => `project:${project
 export const projectIdOf = (id: ColumnId) => (id.startsWith('project:') ? id.slice('project:'.length) : null)
 
 /** Section kinds: shown below the columns (as a horizontal row) whenever they aren't a column */
-export const isSection = (id: ColumnId) => id === 'orphans' || id.startsWith('project:')
+export const isSection = (id: ColumnId) => id === 'notes' || id === 'orphans' || id.startsWith('project:')
 
 /** Column i shows `choice`: if another column shows it, the two trade places; else it replaces column i */
 export function pickColumn(columns: ColumnId[], i: number, choice: ColumnId): ColumnId[] {
@@ -39,9 +39,13 @@ export function moveColumn(columns: ColumnId[], from: number, to: number): Colum
   return next
 }
 
-/** The sections below the columns: Orphans, then each project, minus those shown as columns */
+/**
+ * The rows below the columns: Notes (when it isn't a column), Orphans, then each project, minus those
+ * shown as columns. Notes only live in the Notes list, as a column or as its own row (never in the
+ * other rows).
+ */
 export function sectionsBelow(columns: ColumnId[], projectIds: string[]): ColumnId[] {
-  return (['orphans', ...projectIds.map(projectColumn)] as ColumnId[]).filter((id) => !columns.includes(id))
+  return (['notes', 'orphans', ...projectIds.map(projectColumn)] as ColumnId[]).filter((id) => !columns.includes(id))
 }
 
 const isKnown = (id: unknown, projectIds: string[]): id is ColumnId =>

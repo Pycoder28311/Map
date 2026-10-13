@@ -24,8 +24,8 @@ describe('moveColumn', () => {
 })
 
 describe('sectionsBelow', () => {
-  it('lists Orphans and the projects that are not columns', () => {
-    expect(sectionsBelow(['recent', 'project:p2', 'maps'], ['p1', 'p2', 'p3'])).toEqual(['orphans', 'project:p1', 'project:p3'])
+  it('lists Notes (when it is not a column), Orphans and the projects that are not columns', () => {
+    expect(sectionsBelow(['recent', 'project:p2', 'maps'], ['p1', 'p2', 'p3'])).toEqual(['notes', 'orphans', 'project:p1', 'project:p3'])
     expect(sectionsBelow(['orphans', 'notes', 'maps'], ['p1'])).toEqual(['project:p1'])
   })
 })

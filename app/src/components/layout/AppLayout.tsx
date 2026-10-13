@@ -3,6 +3,7 @@ import { FocusModeProvider, useFocusMode } from '../../features/focus/FocusMode'
 import ShareMode from '../../features/share/ShareMode'
 import PageDropZones from '../../features/workspace/PageDropZones'
 import LinkZone from '../../features/links/LinkZone'
+import CreateFab from '../../features/create/CreateFab'
 import RecordRecent from '../../features/recent/RecordRecent'
 import { useWorkspace } from '../../features/workspace/useWorkspace'
 import WorkspaceProvider from '../../features/workspace/WorkspaceProvider'
@@ -59,6 +60,8 @@ function Frame() {
                         <Outlet />
                         <PageDropZones />
                     </main>
+                    {/* The floating Create button: over the page and its panes, in none of them */}
+                    <CreateFab />
                     {!focus.on && <ChromeShadow />}
                 </div>
             </div>
