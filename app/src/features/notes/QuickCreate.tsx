@@ -199,7 +199,7 @@ export default function QuickCreate() {
           className={`absolute ${open ? `transition-[right] ${ANIMATE} ${AFTER_GROW}` : ''}`}
         >
           {/* It extends (ExtendMenu): down from the text's row while folded, up from the bottom part while open */}
-          <ExtendMenu variant="ghost" align="end" direction={open ? 'up' : 'down'} label="Kind" items={KINDS} value={kind} onSelect={chooseKind}>
+          <ExtendMenu variant="ghost" direction={open ? 'up' : 'down'} label="Kind" items={KINDS} value={kind} onSelect={chooseKind}>
             {KindIcon && <KindIcon className="size-4 shrink-0 text-fg-subtle" />}
             {KINDS.find((k) => k.value === kind)?.label}
             <LuChevronDown aria-hidden className="size-4 shrink-0" />

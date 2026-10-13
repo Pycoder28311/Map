@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LuChevronDown, LuPencil } from 'react-icons/lu'
+import { LuChevronDown, LuPencil, LuX } from 'react-icons/lu'
 import ExtendMenu, { type ExtendMenuItem } from '../../components/ui/overlays/ExtendMenu'
 import { KIND_LABEL, type ObjectKind } from '../../mocks/projects'
 import { KIND_ICON } from '../../mocks/sidebarTree'
@@ -7,7 +7,15 @@ import { SORT_LABEL, type CardSort } from './rows'
 
 type CreatableKind = Exclude<ObjectKind, 'project'>
 
-const SORTS: ExtendMenuItem<CardSort>[] = (Object.keys(SORT_LABEL) as CardSort[]).map((value) => ({ value, label: SORT_LABEL[value] }))
+type SortChoice = CardSort | 'manual'
+// One part of the split Create button: as tall as the button, darker while hovered (green when closed,
+// the dropdowns' gray when open)
+const PART = 'flex items-center self-stretch py-(--pill-py) transition-colors'
+const PART_HOVER = { closed: 'hover:bg-create-hover', open: 'hover:bg-fill-strong' }
+
+const SORTS: ExtendMenuItem<SortChoice>[] = (Object.keys(SORT_LABEL) as CardSort[]).map((value) => ({ value, label: SORT_LABEL[value] }))
+// While a sort is on, its button shows it (and leaves it out of its options); this one goes back to the manual order
+const MANUAL: ExtendMenuItem<SortChoice> = { value: 'manual', label: 'Manual order' }
 const CREATE_ORDER: CreatableKind[] = ['object', 'article', 'note', 'map', 'folder']
 
 type Props = {
@@ -69,18 +77,33 @@ export default function RowHeader({ name, onRename, sort, onSort, creatable, onC
       )}
 
       <div className="flex shrink-0 items-center gap-2">
-        {/* They extend: the button grows down to show its options, and wider for a wide one; the right
-            edge stays put, so they grow to the left */}
-        <ExtendMenu variant="ghost" align="end" label={`Sort ${name}`} items={SORTS} value={sort} onSelect={(next) => onSort(next === sort ? null : next)}>
+        {/* They extend: the button grows down to show its options (not the one it already shows), and
+            wider for a wide one, the same on both sides (its text stays put) */}
+        <ExtendMenu
+          variant="ghost"
+          label={`Sort ${name}`}
+          items={sort ? [...SORTS, MANUAL] : SORTS}
+          value={sort}
+          onSelect={(next) => onSort(next === 'manual' ? null : next)}
+        >
           {sort ? SORT_LABEL[sort] : 'Sort by'}
           <LuChevronDown aria-hidden className="size-4" />
         </ExtendMenu>
-        <ExtendMenu variant="create" align="end" label={`Create in ${name}`} items={createItems} onSelect={onCreate}>
-          Create
-          {/* The split: a thin line, then the arrow (both open the same menu) */}
-          <span aria-hidden className="-my-(--pill-py) ms-1 flex items-center self-stretch border-s border-create-fg/30 ps-2">
-            <LuChevronDown className="size-4" />
-          </span>
+        {/* Split: each part fills the button's height and darkens on its own when hovered; the thin line
+            between them (4px short of the top and bottom edges) goes while the arrow part is hovered.
+            Open: gray like the other dropdowns, and the arrow is an ✕ */}
+        <ExtendMenu variant="create" padded={false} label={`Create in ${name}`} items={createItems} onSelect={onCreate}>
+          {(open) => (
+            <>
+              <span className={`${PART} ${PART_HOVER[open ? 'open' : 'closed']} px-(--pill-px)`}>Create</span>
+              <span aria-hidden className={`${PART} ${PART_HOVER[open ? 'open' : 'closed']} group/arrow relative px-2`}>
+                <span
+                  className={`absolute inset-y-1 start-0 w-px transition-[opacity,background-color] group-hover/arrow:opacity-0 ${open ? 'bg-fg/20' : 'bg-create-fg/30'}`}
+                />
+                {open ? <LuX className="size-4" /> : <LuChevronDown className="size-4" />}
+              </span>
+            </>
+          )}
         </ExtendMenu>
       </div>
     </div>
