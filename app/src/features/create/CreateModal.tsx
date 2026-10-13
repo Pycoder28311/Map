@@ -1,5 +1,5 @@
-import { useState, type KeyboardEvent } from 'react'
-import Button from '../../components/ui/buttons/Button'
+import { useId, useState, type KeyboardEvent } from 'react'
+import { LuPlus } from 'react-icons/lu'
 import { findObject, KIND_LABEL } from '../../mocks/projects'
 import { getObjects, useMockObjects } from '../../mocks/projectsStore'
 import { KIND_ICON } from '../../mocks/sidebarTree'
@@ -12,8 +12,13 @@ import { useCurrentPlace } from './useCurrentPlace'
 const FIELD =
   'w-full rounded-(--field-radius) border border-line-strong bg-surface px-(--field-px) py-2 text-body text-fg outline-none transition-colors ' +
   'placeholder:text-fg-subtle focus:border-fg-subtle'
+// The modal's Create: the floating button's Create face (CreateFab), same size, green and rounded
+const CREATE_BUTTON =
+  'inline-flex h-11 w-36 cursor-pointer items-center justify-center gap-2 rounded-[calc(var(--corner-lg)+4px)] bg-create text-base font-medium text-create-fg shadow-lg ' +
+  'transition-colors hover:bg-create-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-create'
+// A tab: one of the five kinds, in a row above the form
 const KIND_BUTTON =
-  'flex w-full cursor-pointer items-center gap-2 rounded-(--btn-radius) px-2.5 py-2 text-start text-body font-medium transition-colors ' +
+  'flex shrink-0 cursor-pointer items-center gap-2 rounded-(--btn-radius) px-2.5 py-1.5 text-start text-body font-medium whitespace-nowrap transition-colors ' +
   'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40'
 
 /** The last kind picked, kept for the session; the first time: a note */
@@ -35,6 +40,7 @@ type Props = {
 export default function CreateModal({ closing, onCreated }: Props) {
   const current = useCurrentPlace()
   useMockObjects() // names and existence follow changes
+  const formId = useId()
   const [kind, setKind] = useState<CreateKind>(lastKind)
   const [chosen, setChosen] = useState<Path | null>(null)
   const [title, setTitle] = useState('')
@@ -82,9 +88,9 @@ export default function CreateModal({ closing, onCreated }: Props) {
       role="dialog"
       aria-label="Create"
       onKeyDown={onKeyDown}
-      // Its bottom right corner is behind the button, which it grows out of (and shrinks back into): pb-8
-      // keeps its own buttons clear of the one over its corner
-      className={`absolute end-9 bottom-7 z-20 flex max-h-[calc(100%-5rem)] w-[min(34rem,calc(100%-2rem))] origin-bottom-right flex-col overflow-hidden rounded-(--card-radius) border-[3px] border-fg/30 bg-surface pb-8 shadow-[var(--lift-shadow),0_24px_60px_rgb(0_0_0/0.25)] motion-reduce:animate-none ${
+      // Its bottom right corner is right by the floating button, which sits in the footer's corner as the
+      // modal's own bottom right button (CreateFab); the modal grows out of it and shrinks back into it
+      className={`absolute end-3 bottom-3 z-20 flex max-h-[calc(100%-1.5rem)] w-[min(34rem,calc(100%-2rem))] origin-bottom-right flex-col overflow-hidden rounded-(--card-radius) border-[3px] border-fg/30 bg-surface shadow-[var(--lift-shadow),0_24px_60px_rgb(0_0_0/0.25)] motion-reduce:animate-none ${
         closing ? 'animate-create-unpop' : 'animate-create-pop'
       }`}
     >
@@ -94,14 +100,14 @@ export default function CreateModal({ closing, onCreated }: Props) {
         <p className="px-1.5 text-small text-fg-subtle">{goes}</p>
       </div>
 
-      <div className="flex min-h-0 flex-1 max-sm:flex-col">
-        {/* The five kinds */}
-        <ul aria-label="What to create" className="flex shrink-0 gap-1 border-line p-2 sm:w-40 sm:flex-col sm:border-e max-sm:border-b max-sm:overflow-x-auto">
+      <div className="flex min-h-0 flex-1 flex-col">
+        {/* The five kinds, as tabs above the form */}
+        <ul aria-label="What to create" className="flex shrink-0 gap-1 overflow-x-auto border-b border-line px-3 py-2">
           {CREATE_KINDS.map((k) => {
             const Icon = KIND_ICON[k]
             const ok = eligibleFor(k, last)
             return (
-              <li key={k} className="max-sm:shrink-0">
+              <li key={k} className="shrink-0">
                 <button
                   type="button"
                   disabled={!ok.ok}
@@ -120,6 +126,7 @@ export default function CreateModal({ closing, onCreated }: Props) {
 
         {/* The form of the chosen kind */}
         <form
+          id={formId}
           className="flex min-w-0 flex-1 flex-col gap-3 overflow-y-auto p-3"
           onSubmit={(e) => {
             e.preventDefault()
@@ -156,13 +163,17 @@ export default function CreateModal({ closing, onCreated }: Props) {
             />
           )}
           {!fit.ok && <p className="text-small text-danger">{fit.why}</p>}
-          <div className="mt-auto flex items-center justify-end gap-3">
-            <span className="text-small text-fg-subtle">Ctrl+Enter</span>
-            <Button type="submit" disabled={!canCreate}>
-              Create
-            </Button>
-          </div>
         </form>
+      </div>
+
+      {/* The footer: Create here, and in its corner the floating button (Cancel), the modal's own bottom
+          right button: as tall as that button (44px) plus 9px around it (the border counted), with room left for its width (144px + the gaps) */}
+      <div className="flex h-[62px] shrink-0 items-center justify-end gap-3 border-t border-line ps-3 pe-[165px]">
+        <span className="text-small text-fg-subtle">Ctrl+Enter</span>
+        <button type="submit" form={formId} disabled={!canCreate} className={CREATE_BUTTON}>
+          <LuPlus aria-hidden className="size-5" />
+          Create
+        </button>
       </div>
     </div>
   )

@@ -15,7 +15,7 @@ const TOAST_MS = 6000
 // Full class strings so Tailwind can detect them at build time.
 // The two faces of the button, back to back: they never show through each other
 const FACE =
-  'absolute inset-0 flex cursor-pointer items-center justify-center gap-1.5 rounded-(--btn-radius) text-body font-medium shadow-lg [backface-visibility:hidden] ' +
+  'absolute inset-0 flex cursor-pointer items-center justify-center gap-2 rounded-[calc(var(--corner-lg)+4px)] text-base font-medium shadow-lg [backface-visibility:hidden] ' +
   'transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 
 type Made = { id: string; kind: CreateKind; name: string; where: string | null }
@@ -73,8 +73,8 @@ export default function CreateFab() {
     <>
       {mounted && <CreateModal key={session} closing={!open} onCreated={onCreated} />}
 
-      {/* Over the modal's corner. A fixed size: both faces say their word without moving */}
-      <div className="absolute end-4 bottom-4 z-[21] h-10 w-32 [perspective:600px]">
+      {/* In the modal's footer corner (24px from the page's edges). A fixed size: both faces say their word without moving */}
+      <div className="absolute end-6 bottom-6 z-[21] h-11 w-36 [perspective:600px]">
         {made && !open && (
           <p
             role="status"
@@ -101,7 +101,7 @@ export default function CreateFab() {
             open ? '[transform:rotateY(180deg)]' : ''
           }`}
         >
-          {/* Front: Create (primary) */}
+          {/* Front: Create (green, like the rows' Create buttons) */}
           <button
             ref={buttonRef}
             type="button"
@@ -110,9 +110,9 @@ export default function CreateFab() {
             aria-hidden={open}
             aria-expanded={open}
             aria-controls="create-modal"
-            className={`${FACE} bg-accent text-accent-fg hover:bg-accent-hover`}
+            className={`${FACE} bg-create text-create-fg hover:bg-create-hover`}
           >
-            <LuPlus aria-hidden className="size-4" />
+            <LuPlus aria-hidden className="size-5" />
             Create
           </button>
           {/* Back: ✕ Cancel (gray), turned round so it reads right when the button is flipped */}
@@ -123,7 +123,7 @@ export default function CreateFab() {
             aria-hidden={!open}
             className={`${FACE} bg-fill-strong text-fg hover:bg-fill [transform:rotateY(180deg)]`}
           >
-            <LuX aria-hidden className="size-4" />
+            <LuX aria-hidden className="size-5" />
             Cancel
           </button>
         </div>
