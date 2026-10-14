@@ -1,8 +1,10 @@
 import { useDroppable } from '@dnd-kit/core'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { findObject, KIND_LABEL, type MockObject, type ObjectKind } from '../../mocks/projects'
 import { createObjectOf, getObjects, renameObject, useLinks, useMockObjects } from '../../mocks/projectsStore'
 import { useTimeout } from '../../lib/useTimeout'
+import NoteModal from '../notes/NoteModal'
+import { clearSelected } from '../select/selectStore'
 import { useObjectDrop } from '../drag/objectDrop'
 import { useDragSurface } from '../drag/surfaces'
 import { useLinkNode } from '../links/linkNode'
@@ -56,6 +58,14 @@ export default function DashboardSections({ columns, projects }: Props) {
   const noteTimer = useTimeout()
   // A card just created: its name opens for editing
   const [created, setCreated] = useState<string | null>(null)
+  // The note open in its modal
+  const [noteId, setNoteId] = useState<string | null>(null)
+  // Esc unticks the selected cards (a dialog or menu takes the Esc first)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !e.defaultPrevented && clearSelected()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const rows = sectionsBelow(
     columns,
@@ -133,7 +143,7 @@ export default function DashboardSections({ columns, projects }: Props) {
                 <Card
                   object={o}
                   linkNodeFor={linkNodeFor}
-                  onOpen={() => open(single({ type: o.kind, id: o.id }))}
+                  onOpen={() => (o.kind === 'note' ? setNoteId(o.id) : open(single({ type: o.kind, id: o.id })))}
                   dropActive={rowTarget?.folderId === o.id}
                   renameOnMount={o.id === created}
                   menu={(onRename) =>
@@ -150,6 +160,7 @@ export default function DashboardSections({ columns, projects }: Props) {
         )
       })}
       {actions.dialogs}
+      <NoteModal noteId={noteId} onClose={() => setNoteId(null)} />
     </div>
   )
 }

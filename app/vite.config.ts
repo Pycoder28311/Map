@@ -1,3 +1,5 @@
+/// <reference types="vitest/config" />
+import { createRequire } from 'node:module'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
@@ -6,6 +8,8 @@ import { SITE_URL } from './src/config.ts'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // Tests run in Node, where brotli-wasm has its own (synchronous) build; the browser one fetches its wasm
+  test: { alias: { 'brotli-wasm': createRequire(import.meta.url).resolve('brotli-wasm') } },
   envPrefix: ['VITE_', 'TAURI_ENV_'],
   server: {
     // IPv4 loopback: on this machine "localhost" resolves to IPv6 only, and Firefox opens the

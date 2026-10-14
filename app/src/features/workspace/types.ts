@@ -44,6 +44,8 @@ export type PanelDefinition = {
   component: ComponentType<PanelProps>
   /** May be combined with other panels (dragged in, or receive drops) */
   draggable: boolean
+  /** Fills the panel's whole area (no page padding, no scrolling): the content gets a definite height, e.g. the map editor */
+  fill?: boolean
   /** Its own page, if it has one: used for "Full page" and when it's the only panel left */
   route?: (id?: string) => string
   /** Route pattern of that page, so the current page can act as a panel (drop target) */

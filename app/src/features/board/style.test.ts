@@ -1,0 +1,50 @@
+import { describe, expect, it } from 'vitest'
+import { Reader, Writer } from '../projects/strokeCodec'
+import { DEFAULT_STYLE, readStyle, writeStyle } from './style'
+import { DRAWING_WAYS, LINE_TYPES, type Style } from './types'
+
+const roundTrip = (s: Style) => {
+  const w = new Writer()
+  writeStyle(w, s)
+  const r = new Reader(Uint8Array.from(w.bytes))
+  const back = readStyle(r)
+  expect(r.left).toBe(0)
+  return { back, size: w.bytes.length }
+}
+
+describe('style', () => {
+  it('round-trips every line type and drawing way', () => {
+    for (const type of LINE_TYPES)
+      for (const way of DRAWING_WAYS) {
+        const s: Style = {
+          ...DEFAULT_STYLE,
+          color: '#0a1b2c',
+          opacity: 40,
+          thickness: 9,
+          type,
+          gap: type === 'solid' ? 0 : 6,
+          part: type === 'dashed' || type === 'diagonal' ? 12 : 0,
+          way,
+          amount: way === 'exact' || way === 'corners' ? 35 : 0,
+        }
+        expect(roundTrip(s).back).toEqual(s)
+      }
+  })
+
+  it('round-trips the arrows and the zoom flag', () => {
+    for (const [start, end] of [[true, false], [false, true], [true, true]]) {
+      const s: Style = { ...DEFAULT_STYLE, fixedWidth: true, arrow: { start, end, style: 3, size: 14 } }
+      expect(roundTrip(s).back).toEqual(s)
+    }
+  })
+
+  it('writes only what applies', () => {
+    // flags, 3 colour bytes, opacity, thickness, type, way, amount
+    expect(roundTrip(DEFAULT_STYLE).size).toBe(1 + 3 + 1 + 1 + 1 + 1 + 1)
+    expect(roundTrip({ ...DEFAULT_STYLE, way: 'straight' }).size).toBe(1 + 3 + 1 + 1 + 1 + 1)
+  })
+
+  it('ignores the fields that do not apply', () => {
+    expect(roundTrip({ ...DEFAULT_STYLE, gap: 5, part: 5, arrow: { start: false, end: false, style: 2, size: 9 } }).back).toEqual(DEFAULT_STYLE)
+  })
+})

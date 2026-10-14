@@ -43,6 +43,7 @@ export const PANELS: PanelRegistry = {
     icon: LuMap,
     component: lazy(() => import('./features/projects/MapPanel')),
     draggable: true,
+    fill: true,
   },
   note: {
     title: (id) => findObject(id)?.name ?? 'Note',

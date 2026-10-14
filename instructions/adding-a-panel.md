@@ -50,6 +50,8 @@ note: {
 - `component` receives `{ id }` and renders **no `<main>`** (AppLayout has the only one).
 - `lazy()` loads the panel's code only when it's first shown.
 - `draggable: false` = can be opened, but never combined with others.
+- `fill: true` = the panel gets the whole area at a definite height (no page padding, no scrolling), for
+  content that sizes itself to it, like the map editor. Leave it out for normal pages and lists.
 
 ### 2. Put the button next to the element, anywhere
 

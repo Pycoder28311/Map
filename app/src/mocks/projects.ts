@@ -35,6 +35,9 @@ export const isNoteLike = (kind?: string) => kind === 'note' || kind === 'articl
  * One sidebar object. All of them live in one flat list in document order (a project, then its
  * children), each naming its parent: moving one is a single field change (like the Zen sidebar).
  */
+/** One line of a checklist note */
+export type ChecklistItem = { id: string; text: string; done: boolean }
+
 export type MockObject = {
   id: string
   kind: ObjectKind
@@ -50,6 +53,10 @@ export type MockObject = {
   description?: string
   /** A note's or article's text */
   text?: string
+  /** A note in checklist mode: its items (an empty list is an empty checklist); undefined: plain text */
+  items?: ChecklistItem[]
+  /** A map that is a branch (or has branches): the id of its branch group, the first map of it */
+  branchOf?: string
   /** When it was made (ms since 1970): Sort by Newest / Oldest */
   createdAt: number
   /** How many liked it (mock), and whether the user did */
@@ -88,6 +95,12 @@ export const PROJECTS: { id: string; name: string; description: string; maps: { 
     description: 'Where the team works.',
     maps: [{ id: 'm5', name: 'Offices' }],
   },
+]
+
+const SHOPPING: ChecklistItem[] = [
+  { id: 'i1', text: 'Bread', done: false },
+  { id: 'i2', text: 'Milk', done: true },
+  { id: 'i3', text: 'Coffee', done: false },
 ]
 
 /** Notes: objects without a parent (the sidebar's Notes section) */
@@ -132,7 +145,7 @@ export const SEED_OBJECTS: MockObject[] = [
       ...EXTRAS.filter((c) => c.parentId === e.id).map((c): MockObject => ({ ...base, ...stamp(), ...c, locked: lockedFor(c.kind) })),
     ]),
   ]),
-  ...NOTES.map((n): MockObject => ({ ...base, ...stamp(), id: n.id, kind: 'note', name: n.name, parentId: null, locked: true })),
+  ...NOTES.map((n): MockObject => ({ ...base, ...stamp(), id: n.id, kind: 'note', name: n.name, parentId: null, locked: true, ...(n.id === 'n1' ? { items: SHOPPING } : {}) })),
   ...EXTRAS.filter((e) => e.parentId === null).map((e): MockObject => ({ ...base, ...stamp(), ...e, locked: lockedFor(e.kind) })),
 ]
 

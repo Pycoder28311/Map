@@ -11,6 +11,7 @@ import {
   panelAt,
   rearrange,
   removePanel,
+  replacePanel,
   single,
   slotOf,
   swapPanels,
@@ -98,6 +99,12 @@ export function useWorkspace() {
       if (layout && hasPanel(layout, panel)) return
       const combine = layout !== null && isDraggable(panel) && layout.panels.every(isDraggable)
       go(addPanel(combine ? layout : null, panel))
+    },
+    /** Shows `to` where `from` is (a map opening its branch); beside the others when `from` is not one of the panes */
+    replace: (from: PanelRef, to: PanelRef) => {
+      const next = layout && replacePanel(layout, from, to)
+      if (next) go(next, { glide: false })
+      else if (!layout || !hasPanel(layout, to)) go(addPanel(null, to))
     },
     /** A new panel (e.g. a sidebar item) dropped on an edge of a slot (one of dropSpots) */
     dropNew: (panel: PanelRef, slot: Slot, spot: DropSpot) => {

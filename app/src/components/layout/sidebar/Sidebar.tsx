@@ -1,6 +1,7 @@
-import { useRef, type CSSProperties } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
 import { useDragSurface } from '../../../features/drag/surfaces'
 import { useFocusMode } from '../../../features/focus/FocusMode'
+import { useLinkPick } from '../../../features/links/linkPick'
 import LiftedRow from '../../ui/tree/LiftedRow'
 import SidebarDropProvider from './SidebarDrop'
 import SidebarTree from './SidebarTree'
@@ -39,13 +40,22 @@ export default function Sidebar() {
     const navRef = useRef<HTMLElement>(null)
     // Over the sidebar, a dragged object (from anywhere) floats as a lifted sidebar row
     useDragSurface('sidebar', navRef, (item) => <LiftedRow label={item.label} icon={item.icon} origin={item.grab} className={ROW_W} />)
-    const { isWide, pinned, drawerOpen, closeDrawer } = useSidebar()
+    const { isWide, pinned, drawerOpen, closeDrawer, setPeeking } = useSidebar()
+    // Linking a map object to notes: kept open, so their link icons can be clicked
+    const picking = useLinkPick() !== null
     const peek = useHoverIntent({ enabled: isWide && !pinned, openDelay: PEEK_OPEN_DELAY, closeDelay: PEEK_CLOSE_DELAY })
+
+    // Shared, so what sits next to it (the map editor's tool panel) can move aside while it lies over the page
+    const peeking = peek.open || (picking && isWide && !pinned)
+    useEffect(() => {
+        setPeeking(peeking)
+        return () => setPeeking(false)
+    }, [peeking, setPeeking])
 
     // Focus mode (the navbar's Zoom): slid away entirely
     const { on: hidden } = useFocusMode()
     const space = hidden ? '0px' : isWide ? (pinned ? FULL : RAIL) : '0px'
-    const open = !hidden && (isWide ? pinned || peek.open : drawerOpen)
+    const open = !hidden && (isWide ? pinned || peek.open || picking : drawerOpen || picking)
     const width = hidden ? '0px' : open ? FULL : isWide ? RAIL : '0px'
     // Lying over the page (peek or drawer): a shadow separates it
     const floating = open && !(isWide && pinned)

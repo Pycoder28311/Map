@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { LuPlus, LuX } from 'react-icons/lu'
+import { usePageInset } from '../../lib/pageInset'
 import { useTimeout } from '../../lib/useTimeout'
 import { KIND_LABEL } from '../../mocks/projects'
 import { useOpenLayout } from '../objects/ListRows'
@@ -37,6 +38,7 @@ export default function CreateFab() {
   const closeTimer = useTimeout()
   const toastTimer = useTimeout()
   const openLayout = useOpenLayout()
+  const inset = usePageInset()
 
   const show = useCallback(() => {
     closeTimer.clear()
@@ -72,10 +74,10 @@ export default function CreateFab() {
 
   return (
     <>
-      {mounted && <CreateModal key={session} closing={!open} onCreated={onCreated} />}
+      {mounted && <CreateModal key={session} closing={!open} inset={inset} onCreated={onCreated} />}
 
       {/* In the modal's footer corner (24px from the page's edges). A fixed size: both faces say their word without moving */}
-      <div className="absolute end-6 bottom-6 z-[21] h-11 w-36 [perspective:600px]">
+      <div style={{ insetInlineEnd: `calc(1.5rem + ${inset}px)` }} className="absolute bottom-6 z-[21] h-11 w-36 transition-[inset-inline-end] duration-200 ease-out [perspective:600px] motion-reduce:transition-none">
         {made && !open && (
           <p
             role="status"

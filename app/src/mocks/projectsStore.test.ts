@@ -8,10 +8,12 @@ import {
   linksOf,
   unlinkNote,
   createMap,
+  createBranch,
   createArticle,
   createObjectOf,
   reorderChildren,
   toggleLike,
+  updateNote,
   createNote,
   createProject,
   deleteObject,
@@ -33,7 +35,12 @@ const project = (id: string) => getProjects().find((p) => p.id === id)!
 const mapIds = (projectId: string) => project(projectId).maps.map((m) => m.id)
 const order = () => getObjects().map((o) => o.id)
 
-beforeEach(resetMockProjects)
+import { resetBoards } from '../features/board/boardStore'
+
+beforeEach(() => {
+  resetMockProjects()
+  resetBoards()
+})
 
 describe('projectsStore', () => {
   it('derives projects with their children from the flat list', () => {
@@ -241,5 +248,51 @@ describe('projectsStore', () => {
     expect(linksOf('n1').map((o) => o.id)).toEqual(['m1'])
     deleteObject('p2')
     expect(linksOf('n2')).toEqual([])
+  })
+})
+
+describe('updateNote', () => {
+  beforeEach(() => resetMockProjects())
+
+  it('merges the fields given', () => {
+    updateNote('n2', { text: 'Hello', items: [{ id: 'x', text: 'a', done: false }] })
+    const note = findObject('n2')!
+    expect(note.text).toBe('Hello')
+    expect(note.items).toHaveLength(1)
+    expect(note.name).toBe('Ideas')
+  })
+
+  it('ignores an unknown id', () => {
+    expect(() => updateNote('nope', { text: 'x' })).not.toThrow()
+  })
+})
+
+describe('branches and copies of a map', () => {
+  it('a branch is a copy next to the map, with its board, and both are marked', async () => {
+    const { changeObjects, getBoard } = await import('../features/board/boardStore')
+    changeObjects('m1', { add: [{ kind: 'point', name: 'A', links: [], anchor: { x: 1, y: 1 }, label: 'other', icon: 'pin', color: '#dc2626' }] })
+    const id = createBranch('m1', 'Try 2')!
+    expect(id).toBeTruthy()
+    expect(mapIds('p1').slice(0, 2)).toEqual(['m1', id])
+    expect(findObject(id)).toMatchObject({ name: 'Try 2', branchOf: 'm1' })
+    expect(findObject('m1')?.branchOf).toBe('m1')
+    expect(getBoard(id).objects).toHaveLength(1)
+    changeObjects(id, { remove: [getBoard(id).objects[0].id] })
+    expect(getBoard('m1').objects).toHaveLength(1)
+  })
+  it('a branch of a branch joins the same group; only maps branch', () => {
+    const b = createBranch('m1', 'B')!
+    const c = createBranch(b, 'C')!
+    expect(findObject(c)?.branchOf).toBe('m1')
+    expect(createBranch('p1', 'x')).toBeUndefined()
+  })
+  it('duplicating a map copies its board; deleting it forgets the board', async () => {
+    const { changeObjects, getBoard } = await import('../features/board/boardStore')
+    changeObjects('m1', { add: [{ kind: 'point', name: 'A', links: [], anchor: { x: 1, y: 1 }, label: 'other', icon: 'pin', color: '#dc2626' }] })
+    duplicateObject('m1')
+    const copy = getObjects().find((o) => o.name === `${findObject('m1')!.name} (copy)`)!
+    expect(getBoard(copy.id).objects).toHaveLength(1)
+    deleteObject(copy.id)
+    expect(getBoard(copy.id).objects).toHaveLength(0)
   })
 })

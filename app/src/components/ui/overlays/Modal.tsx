@@ -12,7 +12,7 @@ const SIZES = {
 // Centred over a dimmed, blurred page. Opening: fades in and grows from 95% (@starting-style); closing
 // is instant, since the content unmounts then
 const DIALOG =
-  'm-auto w-[calc(100%-2rem)] max-h-[calc(100%-2rem)] overflow-hidden rounded-(--card-radius) bg-surface p-0 shadow-xl ' +
+  'm-auto w-[calc(100%-2rem)] max-h-[calc(100%-2rem)] overflow-hidden rounded-(--card-radius) p-0 shadow-xl ' +
   'transition-[opacity,scale] duration-200 ease-out starting:open:opacity-0 starting:open:scale-95 ' +
   'backdrop:bg-overlay/30 backdrop:backdrop-blur-sm backdrop:transition-opacity backdrop:duration-200 starting:open:backdrop:opacity-0 ' +
   'motion-reduce:transition-none motion-reduce:backdrop:transition-none'
@@ -26,6 +26,10 @@ type Props = {
   /** Actions at the bottom, e.g. Cancel / Save buttons */
   footer?: ReactNode
   size?: keyof typeof SIZES
+  /** No header and no padding: the content draws everything (it should have its own Close); `title` stays as the screen-reader name */
+  bare?: boolean
+  /** The dialog's background classes (default: the surface) */
+  className?: string
 }
 
 /**
@@ -38,7 +42,7 @@ type Props = {
  *   const [open, setOpen] = useState(false)
  *   <Modal open={open} onClose={() => setOpen(false)} title="Rename">…</Modal>
  */
-export default function Modal({ open, onClose, title, children, footer, size = 'md' }: Props) {
+export default function Modal({ open, onClose, title, children, footer, size = 'md', bare = false, className = '' }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   // The press started on the backdrop (not e.g. a text selection that ended there)
@@ -78,18 +82,24 @@ export default function Modal({ open, onClose, title, children, footer, size = '
       }}
       onPointerDown={onPointerDown}
       onClick={onBackdrop}
-      className={`${DIALOG} ${SIZES[size]}`}
+      className={`${DIALOG} ${SIZES[size]} ${className || 'bg-surface'}`}
     >
       {open && (
         <div className="flex max-h-[calc(100vh-2rem)] flex-col">
+          {bare ? (
+            <h2 id={titleId} className="sr-only">
+              {title}
+            </h2>
+          ) : (
           <header className="flex shrink-0 items-center gap-(--btn-gap) border-b border-line py-2 pr-2 pl-4">
             <h2 id={titleId} className="truncate text-body font-medium">
               {title}
             </h2>
             <IconButton icon={LuX} label="Close" onClick={onClose} className="ml-auto" />
           </header>
+          )}
 
-          <div className="min-h-0 flex-1 overflow-auto p-4">{children}</div>
+          <div className={`min-h-0 flex-1 overflow-auto ${bare ? '' : 'p-4'}`}>{children}</div>
 
           {footer && (
             <footer className="flex shrink-0 justify-end gap-(--btn-gap) border-t border-line px-4 py-3">

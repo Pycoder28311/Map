@@ -8,6 +8,7 @@ import {
   moveEdges,
   movePanel,
   swapPanels,
+  replacePanel,
   removePanel,
   single,
   slotOf,
@@ -246,5 +247,18 @@ describe('lines with halves (2×2)', () => {
   it('rejoins halves halfway on reset', () => {
     expect(resetSplit({ x: 0.3, y: 0.5, x2: 0.5 }, 'x-bottom')).toEqual({ x: 0.4, y: 0.5 })
     expect(resetSplit({ x: 0.3, y: 0.4, y2: 0.6 }, 'xy')).toEqual({ x: 0.5, y: 0.5 })
+  })
+})
+
+describe('replacePanel', () => {
+  const m1 = { type: 'map', id: 'm1' }
+  const m2 = { type: 'map', id: 'm2' }
+  const note = { type: 'note', id: 'n1' }
+  it('puts the new panel in the old one’s place', () => {
+    expect(replacePanel({ template: '2-cols', panels: [m1, note] }, m1, m2)).toEqual({ template: '2-cols', panels: [m2, note] })
+  })
+  it('does nothing when the panel is missing or the new one is already open', () => {
+    expect(replacePanel(single(note), m1, m2)).toBeNull()
+    expect(replacePanel({ template: '2-cols', panels: [m1, m2] }, m1, m2)).toBeNull()
   })
 })

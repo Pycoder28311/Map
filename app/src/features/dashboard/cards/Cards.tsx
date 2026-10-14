@@ -1,9 +1,11 @@
-import type { CSSProperties } from 'react'
-import { LuFileText, LuMapPin } from 'react-icons/lu'
+import { useState } from 'react'
+import { LuFileText } from 'react-icons/lu'
 import { findObject } from '../../../mocks/projects'
-import { linksOf, useMockObjects } from '../../../mocks/projectsStore'
+import { useMockObjects } from '../../../mocks/projectsStore'
 import { KIND_ICON } from '../../../mocks/sidebarTree'
-import { hueOf, placeholderArt } from '../../objects/placeholderArt'
+import { placeholderArt } from '../../objects/placeholderArt'
+import MapPreview from './MapPreview'
+import MapZoomModal from './MapZoomModal'
 import CardShell, { COMMENT_SIZE, type CardProps } from './CardShell'
 
 const DATE = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' })
@@ -79,31 +81,17 @@ function ArticleCard(props: CardProps) {
   )
 }
 
-/** A map: a map-like preview (a faint grid and a pin, tinted by its id), its project and links */
+/** A map: its picture fills the card, its name at the bottom; on hover Open, select, zoom and ⋯ */
 function MapCard(props: CardProps) {
   const { object } = props
-  const hue = hueOf(object.id)
-  const preview: CSSProperties = {
-    backgroundColor: `color-mix(in oklch, hsl(${hue} 50% 60%) 14%, var(--surface-muted))`,
-    backgroundImage: 'linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px)',
-    backgroundSize: '16px 16px',
-  }
-  const project = object.parentId ? findObject(object.parentId)?.name : undefined
-  const links = linksOf(object.id).length
+  const [zoomed, setZoomed] = useState(false)
   return (
-    <CardShell {...props}>
-      {(name) => (
-        <>
-          <div style={preview} className="flex h-24 shrink-0 items-center justify-center rounded-(--btn-radius)">
-            <LuMapPin className="size-7 drop-shadow-sm" style={{ color: `hsl(${hue} 65% 45%)` }} />
-          </div>
-          <KindName kind="map" name={name} />
-          <p className="truncate px-0.5 pe-12 text-small text-fg-subtle">
-            {[project, links > 0 ? `${links} linked` : null].filter(Boolean).join(' · ') || 'Map'}
-          </p>
-        </>
-      )}
-    </CardShell>
+    <>
+      <CardShell {...props} variant="media" onZoom={() => setZoomed(true)}>
+        {() => <MapPreview id={object.id} className="size-full" />}
+      </CardShell>
+      <MapZoomModal object={object} open={zoomed} onClose={() => setZoomed(false)} />
+    </>
   )
 }
 

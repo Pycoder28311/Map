@@ -1,4 +1,4 @@
-import { useId, useState, type KeyboardEvent } from 'react'
+import { useId, useRef, useState, type KeyboardEvent } from 'react'
 import { LuPlus } from 'react-icons/lu'
 import { findObject, KIND_LABEL } from '../../mocks/projects'
 import { getObjects, useMockObjects } from '../../mocks/projectsStore'
@@ -10,9 +10,8 @@ import { CREATE_KINDS, eligibleFor, type CreateKind, type Path } from './place'
 import { useCurrentPlace } from './useCurrentPlace'
 
 // Full class strings so Tailwind can detect them at build time.
-const FIELD =
-  'w-full rounded-(--field-radius) border border-line-strong bg-surface px-(--field-px) py-2 text-body text-fg outline-none transition-colors ' +
-  'placeholder:text-fg-subtle focus:border-fg-subtle'
+// A field inside the title + body group (the group draws the border)
+const INNER = 'w-full bg-transparent px-(--field-px) text-body text-fg outline-none placeholder:text-fg-subtle'
 // The modal's Create: the floating button's Create face (CreateFab), same size, green and rounded
 const CREATE_BUTTON =
   'inline-flex h-11 w-36 cursor-pointer items-center justify-center gap-2 rounded-[calc(var(--corner-lg)+4px)] bg-create text-base font-medium text-create-fg ' +
@@ -28,6 +27,8 @@ let lastKind: CreateKind = 'note'
 type Props = {
   /** Closing (the button flipped back): it shrinks back behind the button */
   closing: boolean
+  /** Space (px) the page's own sidebar takes at the right: the modal stays left of it */
+  inset: number
   /** It made something: what and where (the button flips back and says so) */
   onCreated: (made: { id: string; kind: CreateKind; name: string; where: string | null }) => void
 }
@@ -38,7 +39,7 @@ type Props = {
  * created inside it. The page behind never changes. Mounted fresh each time it opens, so a cancelled
  * draft is gone and the path starts from the page's own place.
  */
-export default function CreateModal({ closing, onCreated }: Props) {
+export default function CreateModal({ closing, inset, onCreated }: Props) {
   const current = useCurrentPlace()
   useMockObjects() // names and existence follow changes
   const formId = useId()
@@ -56,6 +57,9 @@ export default function CreateModal({ closing, onCreated }: Props) {
   const last = path.length ? (findObject(path.at(-1)) ?? null) : null
   const fit = eligibleFor(kind, last)
 
+  const titleRef = useRef<HTMLInputElement>(null)
+  const bodyRef = useRef<HTMLTextAreaElement>(null)
+  const hasBody = kind === 'note' || kind === 'article' || kind === 'object'
   const canCreate = title.trim() !== '' && fit.ok
 
   const create = () => {
@@ -91,7 +95,8 @@ export default function CreateModal({ closing, onCreated }: Props) {
       onKeyDown={onKeyDown}
       // Its bottom right corner is right by the floating button, which sits in the footer's corner as the
       // modal's own bottom right button (CreateFab); the modal grows out of it and shrinks back into it
-      className={`absolute end-3 bottom-3 z-20 flex max-h-[calc(100%-1.5rem)] w-[min(34rem,calc(100%-2rem))] origin-bottom-right flex-col overflow-hidden rounded-(--card-radius) border-[3px] border-fg/30 bg-surface shadow-[var(--lift-shadow),0_24px_60px_rgb(0_0_0/0.25)] motion-reduce:animate-none ${
+      style={{ insetInlineEnd: `calc(0.75rem + ${inset}px)`, maxWidth: `calc(100% - 1.5rem - ${inset}px)` }}
+      className={`absolute bottom-3 z-20 flex max-h-[calc(100%-1.5rem)] w-[min(34rem,calc(100%-2rem))] origin-bottom-right flex-col overflow-hidden rounded-(--card-radius) border-[3px] border-fg/30 bg-surface shadow-[var(--lift-shadow),0_24px_60px_rgb(0_0_0/0.25)] motion-reduce:animate-none ${
         closing ? 'animate-create-unpop' : 'animate-create-pop'
       }`}
     >
@@ -134,35 +139,50 @@ export default function CreateModal({ closing, onCreated }: Props) {
             create()
           }}
         >
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={`${KIND_LABEL[kind]} name`}
-            aria-label="Name"
-            maxLength={100}
-            autoFocus
-            className={`${FIELD} font-medium`}
-          />
-          {(kind === 'note' || kind === 'article') && (
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder={kind === 'note' ? 'Take a note…' : 'Write an article…'}
-              aria-label="Text"
-              rows={5}
-              className={`${FIELD} min-h-24 resize-none`}
+          {/* Title and body: two fields drawn as one, split by a line; ↓ / Enter and ↑ move between them */}
+          <div className="flex flex-col overflow-hidden rounded-(--field-radius) border border-line-strong bg-surface transition-colors focus-within:border-fg-subtle">
+            <input
+              ref={titleRef}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (!hasBody || e.nativeEvent.isComposing) return
+                if (e.key === 'ArrowDown' || (e.key === 'Enter' && !e.ctrlKey && !e.metaKey)) {
+                  e.preventDefault()
+                  bodyRef.current?.focus()
+                  bodyRef.current?.setSelectionRange(0, 0)
+                }
+              }}
+              placeholder={`${KIND_LABEL[kind]} name`}
+              aria-label="Name"
+              maxLength={100}
+              autoFocus
+              className={`${INNER} py-2 font-medium`}
             />
-          )}
-          {kind === 'object' && (
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description"
-              aria-label="Description"
-              rows={3}
-              className={`${FIELD} resize-none`}
-            />
-          )}
+            {hasBody && (
+              <>
+                <hr className="m-0 border-0 border-t border-line-strong" />
+                <textarea
+                  ref={bodyRef}
+                  value={kind === 'object' ? description : text}
+                  onChange={(e) => (kind === 'object' ? setDescription : setText)(e.target.value)}
+                  onKeyDown={(e) => {
+                    const { selectionStart, selectionEnd } = e.currentTarget
+                    if (e.key === 'ArrowUp' && selectionStart === 0 && selectionEnd === 0) {
+                      e.preventDefault()
+                      const end = titleRef.current?.value.length ?? 0
+                      titleRef.current?.focus()
+                      titleRef.current?.setSelectionRange(end, end)
+                    }
+                  }}
+                  placeholder={kind === 'note' ? 'Take a note…' : kind === 'article' ? 'Write an article…' : 'Description'}
+                  aria-label={kind === 'object' ? 'Description' : 'Text'}
+                  rows={kind === 'object' ? 3 : 5}
+                  className={`${INNER} min-h-20 resize-none py-2`}
+                />
+              </>
+            )}
+          </div>
           {!fit.ok && <p className="text-small text-danger">{fit.why}</p>}
         </form>
       </div>

@@ -18,6 +18,9 @@ export type SidebarState = {
     /** ☰: pin/unpin on wide screens, open/close the drawer on narrow ones */
     toggle: () => void
     closeDrawer: () => void
+    /** Wide screens, unpinned: the rail is open over the page while hovered (set by Sidebar; the map editor's tool panel moves aside) */
+    peeking: boolean
+    setPeeking: (open: boolean) => void
 }
 
 export const SidebarContext = createContext<SidebarState | null>(null)

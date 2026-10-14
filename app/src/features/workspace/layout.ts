@@ -355,6 +355,12 @@ export function movePanel(layout: WorkspaceLayout, from: Slot, target: { slot: S
   return next
 }
 
+/** `from` replaced by `to` at its place (a map showing another map): null when `from` is not there or `to` already is */
+export function replacePanel(layout: WorkspaceLayout, from: PanelRef, to: PanelRef): WorkspaceLayout | null {
+  if (!hasPanel(layout, from) || hasPanel(layout, to)) return null
+  return { template: layout.template, panels: layout.panels.map((p) => (panelKey(p) === panelKey(from) ? to : p)) }
+}
+
 /**
  * Swaps two panels' places (a pane dropped on another's centre, a border's swap button): the shape
  * and sizes of the layout stay, each panel takes the other's place

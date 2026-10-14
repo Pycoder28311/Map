@@ -2,6 +2,7 @@
 // sidebar objects (projects, maps, notes). Nothing is saved: a reload starts again from the seed data.
 // Replaced by API calls later (same function names, async then); the UI only uses what's exported here.
 import { useSyncExternalStore } from 'react'
+import { copyBoard, dropBoard } from '../features/board/boardStore'
 import { canPlace, isNoteLike, SEED_OBJECTS, type MockMap, type MockObject, type MockProject, type ObjectKind } from './projects'
 
 type State = {
@@ -175,6 +176,12 @@ export function renameObject(id: string, name: string) {
   set({ objects: getObjects().map((o) => (o.id === id ? { ...o, name } : o)) })
 }
 
+/** Changes a note's (or article's) title, text and/or checklist items */
+export function updateNote(id: string, patch: Partial<Pick<MockObject, 'name' | 'text' | 'items'>>) {
+  if (!has(id)) return
+  set({ objects: getObjects().map((o) => (o.id === id ? { ...o, ...patch } : o)) })
+}
+
 /** A copy of the object and everything under it (new ids) right after it; the copy is named "(copy)" */
 export function duplicateObject(id: string) {
   const objects = getObjects()
@@ -193,6 +200,33 @@ export function duplicateObject(id: string) {
     }))
   const at = endOfSubtree(objects, id)
   set({ objects: [...objects.slice(0, at), ...copies, ...objects.slice(at)] })
+  // A copied map opens with what is drawn on the original
+  for (const [old, copy] of newIds) if (objects.find((o) => o.id === old)?.kind === 'map') copyBoard(old, copy)
+}
+
+/** The next object after `id` among its siblings */
+const nextSibling = (id: string) => {
+  const objects = getObjects()
+  const parentId = objects.find((o) => o.id === id)?.parentId
+  const siblings = objects.filter((o) => o.parentId === parentId)
+  return siblings[siblings.findIndex((o) => o.id === id) + 1]
+}
+
+/**
+ * A branch of a map, like a branch of a chat: a copy of it, with everything drawn on it, next to it. They keep to one
+ * branch group (`branchOf`). Returns the new map's id (undefined for anything that is not a visible map).
+ */
+export function createBranch(mapId: string, name: string) {
+  const map = getObjects().find((o) => o.id === mapId)
+  if (!map || map.kind !== 'map' || map.archived) return undefined
+  const root = map.branchOf ?? map.id
+  const before = nextSibling(mapId)
+  const id = createObjectOf('map', map.parentId, name)
+  if (!id) return undefined
+  if (before) moveObject(id, { parentId: map.parentId, beforeId: before.id })
+  set({ objects: getObjects().map((o) => (o.id === id || o.id === mapId ? { ...o, branchOf: root } : o)) })
+  copyBoard(mapId, id)
+  return id
 }
 
 /**
@@ -261,6 +295,7 @@ export function emptyTrash() {
   const objects = getObjects()
   const ids = new Set(getArchived().flatMap((o) => [...subtreeIds(objects, o.id)]))
   if (ids.size === 0) return
+  ids.forEach(dropBoard)
   set({ objects: objects.filter((o) => !ids.has(o.id)), pins: getPins().filter((p) => !ids.has(p)), links: withoutLinksOf(ids) })
 }
 
@@ -269,6 +304,7 @@ export function deleteObject(id: string) {
   const objects = getObjects()
   if (!has(id)) return
   const ids = subtreeIds(objects, id)
+  ids.forEach(dropBoard)
   set({ objects: objects.filter((o) => !ids.has(o.id)), pins: getPins().filter((p) => !ids.has(p)), links: withoutLinksOf(ids) })
 }
 

@@ -58,8 +58,14 @@ export default function Pane({ slot, panel, box }: Props) {
       // Hovered: a blue border (not while something is dragged: the drop previews show then)
       className={`relative flex min-h-[50vh] ${PLACED} min-w-0 flex-col overflow-hidden bg-surface shadow-lg transition-[opacity,border-color] duration-150 lg:min-h-0 ${isDragging ? 'opacity-50' : ''} ${dragging ? '' : HOVER}`}
     >
-      <div className="min-h-0 flex-1 overflow-auto">
-        <PanelContent component={def.component} id={panel.id} />
+      <div className={`min-h-0 flex-1 ${def.fill ? 'overflow-hidden' : 'overflow-auto'}`}>
+        {def.fill ? (
+          <div className="h-full">
+            <PanelContent component={def.component} id={panel.id} />
+          </div>
+        ) : (
+          <PanelContent component={def.component} id={panel.id} />
+        )}
       </div>
 
       {/* Only meaningful when combined with other panels */}

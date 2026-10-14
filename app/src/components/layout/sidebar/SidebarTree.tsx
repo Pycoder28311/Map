@@ -2,9 +2,11 @@ import { useMemo, useState, type ComponentProps } from 'react'
 import { LuPlus, LuUnlink } from 'react-icons/lu'
 import LayoutsSection from '../../../features/layouts/LayoutsSection'
 import { useLinkNode } from '../../../features/links/linkNode'
+import { useLinkPick } from '../../../features/links/linkPick'
 import PanelDragLink from '../../../features/workspace/PanelDragLink'
 import { useWorkspace } from '../../../features/workspace/useWorkspace'
 import { useObjectActions } from '../../../features/objects/useObjectActions'
+import { isNoteLike } from '../../../mocks/projects'
 import { isLinkTarget, renameObject, useLinks, useMockObjects, usePins } from '../../../mocks/projectsStore'
 import { buildSidebarSections, DASHBOARD_NODE, type SidebarItem } from '../../../mocks/sidebarTree'
 import { NOTES_END } from './SidebarNotes'
@@ -30,6 +32,7 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
     const links = useLinks()
     const { pinned, projects, notes, items } = useMemo(() => buildSidebarSections(objects, pins, links), [objects, pins, links])
     const linkNodeFor = useLinkNode()
+    const picking = useLinkPick() !== null
     const workspace = useWorkspace()
     const drop = useSidebarDrop()
     const lidOpen = useLids()
@@ -94,8 +97,9 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
         // Projects, maps and object cards take links: a link node slides out while a note is dragged (features/links)
         linkNode: (node) => {
             const item = items.get(node.id)
-            if (!item || !isLinkTarget(item.kind)) return undefined
-            return linkNodeFor(item.id, node.id.startsWith('pin:') ? 'pin' : 'sidebar', item.name)
+            // Linking a map object: the notes and articles take the node; else the targets of dragged notes (projects, maps…)
+            if (!item || !(picking ? isNoteLike(item.kind) : isLinkTarget(item.kind))) return undefined
+            return linkNodeFor(item.id, node.id.startsWith('pin:') ? 'pin' : 'sidebar', item.name, item.kind)
         },
     })
 

@@ -32,6 +32,8 @@ type Props = {
   active?: boolean
   size?: keyof typeof SIZE
   className?: string
+  /** Makes it a button too (e.g. picking a link target by a click); `active` then shows whether it is on */
+  onPick?: () => void
 }
 
 /**
@@ -39,17 +41,23 @@ type Props = {
  * shown, grows when targeted, and is where a dropped object falls in (data-drop-icon). Place it with
  * `className` (e.g. absolute at a row's end).
  */
-export default function DropIcon({ id, dropKey, data, icon: Icon, label, state, active = false, size = 'row', className = '' }: Props) {
+export default function DropIcon({ id, dropKey, data, icon: Icon, label, state, active = false, size = 'row', className = '', onPick }: Props) {
   const { setNodeRef } = useDroppable({ id, data: { priority: 3, ...data }, disabled: state !== 'shown' })
   const lidOpen = useLidOpen(dropKey)
   return (
     <span
       ref={setNodeRef}
-      role="img"
+      role={onPick ? 'button' : 'img'}
       aria-label={label}
+      aria-pressed={onPick ? active : undefined}
       aria-hidden={state === 'hidden'}
+      tabIndex={onPick && state === 'shown' ? 0 : undefined}
+      // On a row: the click is the node's own, never the row's (which would open the page)
+      onClick={onPick && ((e) => { e.preventDefault(); e.stopPropagation(); onPick() })}
+      onPointerDown={onPick && ((e) => e.stopPropagation())}
+      onKeyDown={onPick && ((e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onPick() } })}
       data-drop-icon={dropKey}
-      className={`flex items-center justify-center rounded-full border border-line-strong bg-surface text-fg shadow-sm transition-[translate,opacity,scale,background-color,border-color,color] duration-200 ease-out motion-reduce:transition-none ${SIZE[size]} ${STATE[state]} ${active || lidOpen ? ACTIVE : ''} ${className}`}
+      className={`flex items-center justify-center rounded-full border border-line-strong bg-surface text-fg shadow-sm transition-[translate,opacity,scale,background-color,border-color,color] duration-200 ease-out motion-reduce:transition-none ${SIZE[size]} ${STATE[state]} ${active || lidOpen ? ACTIVE : ''} ${onPick ? 'cursor-pointer' : ''} ${className}`}
     >
       <Icon className="size-(--btn-icon-size)" />
     </span>

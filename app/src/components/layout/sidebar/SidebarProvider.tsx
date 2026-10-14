@@ -19,6 +19,7 @@ function loadPinned() {
 export default function SidebarProvider({ children }: { children: ReactNode }) {
     const isWide = useMediaQuery(WIDE)
     const [pinned, setPinned] = useState(loadPinned)
+    const [peeking, setPeeking] = useState(false)
     const { pathname } = useLocation()
     // The drawer remembers the page it was opened on, so following a link in it closes it
     const [drawerPage, setDrawerPage] = useState<string | null>(null)
@@ -53,6 +54,8 @@ export default function SidebarProvider({ children }: { children: ReactNode }) {
                 expanded: isWide ? pinned : drawerOpen,
                 toggle,
                 closeDrawer: () => setDrawerOpen(false),
+                peeking,
+                setPeeking,
             }}
         >
             {children}
