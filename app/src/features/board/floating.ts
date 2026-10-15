@@ -21,3 +21,5 @@ export function usePeekShift() {
 
 /** The width (px) of the editor's right sidebar (SidePanel's w-80): the Create button keeps this far from the page's edge while it is open */
 export const SIDE_PANEL_PX = 320
+/** The wider one of a point (the Point tool's, or a selected point's: sidebar/common/SidePanel's `wide`, 26rem) */
+export const SIDE_PANEL_WIDE_PX = 416

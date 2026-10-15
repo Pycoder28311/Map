@@ -19,13 +19,13 @@ export default function LinePenSidebar() {
       <div className="flex flex-col gap-3">
         <LineColourSection {...section} title={shapeActive ? 'Border colour' : 'Basic'} minThickness={shapeActive ? 0 : 1} />
         <LineTypeSection {...section} />
-        <LineWaySection {...section} shapeActive={shapeActive} onWayPicked={() => setPen({ shape: null })} />
-        <LineArrowsSection {...section} />
         <ShapeSection
           value={{ shape: pen.shape, param: pen.param, fill: pen.fill }}
           onChange={(patch: ShapeChange) => setPen(patch)}
           onClear={() => setPen({ shape: null })}
         />
+        <LineWaySection {...section} shapeActive={shapeActive} onWayPicked={() => setPen({ shape: null })} />
+        <LineArrowsSection {...section} />
         <LineStrokeSection {...section} />
         <LineShadowSection {...section} />
       </div>

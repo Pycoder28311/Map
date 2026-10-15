@@ -102,7 +102,7 @@ export default function Presenter({ mapId, onClose }: { mapId: string; onClose: 
             const p = pageStyle(style, i, current, maps.length)
             return (
               <div key={m.id} aria-hidden={i !== current} className={`${p.className} bg-surface`} style={p.style}>
-                {near && <BoardCanvas board={getBoard(m.id)} interactive={i === current} />}
+                {near && <BoardCanvas mapId={m.id} board={getBoard(m.id)} interactive={i === current} />}
               </div>
             )
           })}

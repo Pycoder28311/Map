@@ -3,6 +3,7 @@ import SidePanel from '../common/SidePanel'
 import BorderFillSection from './BorderFillSection'
 import BorderBasicSection from './BorderBasicSection'
 import BorderShapeSection from './BorderShapeSection'
+import BorderTypeSection from './BorderTypeSection'
 import BorderWaySection from './BorderWaySection'
 
 /** The Border tool's sidebar: what the next area is drawn with (not undoable, not part of any map) */
@@ -14,6 +15,7 @@ export default function BorderPenSidebar() {
       <h2 className="text-heading">Border</h2>
       <div className="flex flex-col gap-3">
         <BorderBasicSection {...section} />
+        <BorderTypeSection {...section} />
         <BorderWaySection {...section} extraWays={<BorderShapeSection {...section} />} />
         <BorderFillSection {...section} />
       </div>

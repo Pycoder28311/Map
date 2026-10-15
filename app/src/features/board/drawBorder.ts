@@ -1,6 +1,6 @@
 // A drawn stroke, a set of clicked corners or a dragged shape becomes a border (ready for mergeBorders / addObject).
 // Pure (drawBorder.test.ts).
-import { simplify } from '../projects/strokeCodec'
+import { thin } from '../projects/strokeCodec'
 import { canSelect } from './layers'
 import { flattenedOf } from './pathGeometry'
 import { snapToRing } from './polygon'
@@ -38,8 +38,9 @@ const make = (points: Point[], style: Style, fill: Fill | null, closed: boolean 
 }
 
 /** The mouse-like way: the path of the pointer. Its ends are joined only when it comes back within `closeWithin` of where it started */
-export function borderFromStroke(stroke: Point[], style: Style, fill: Fill | null, closeWithin = CLOSE): Made | null {
-  return make(simplify(stroke, 1), { ...style, way: 'exact' }, fill, 'auto', closeWithin)
+export function borderFromStroke(stroke: Point[], style: Style, fill: Fill | null, closeWithin = CLOSE, scale = 1): Made | null {
+  // The tolerance is a screen pixel: zoomed in, more points are kept
+  return make(thin(stroke, 1 / scale), { ...style, way: 'exact' }, fill, 'auto', closeWithin)
 }
 
 /** The linear way: the corners clicked, in order; `closed`: the first corner was clicked again, so the ends are joined */

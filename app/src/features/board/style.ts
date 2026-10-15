@@ -22,6 +22,7 @@ const ARROW_START = 2
 const ARROW_END = 4
 const HAS_STROKE = 8
 const HAS_SHADOW = 16
+const HAS_SOFTNESS = 32
 
 /** '#rrggbb' as three bytes */
 export function writeColor(w: Writer, color: string) {
@@ -40,7 +41,7 @@ const indexOf = <T extends string>(list: readonly T[], value: T) => Math.max(0, 
 
 /** Only what applies is written (no gap for a solid line, no arrow look without an arrow, no amount for straight) */
 export function writeStyle(w: Writer, s: Style) {
-  w.byte((s.fixedWidth ? FIXED_WIDTH : 0) | (s.arrow.start ? ARROW_START : 0) | (s.arrow.end ? ARROW_END : 0) | (s.stroke ? HAS_STROKE : 0) | (s.shadow ? HAS_SHADOW : 0))
+  w.byte((s.fixedWidth ? FIXED_WIDTH : 0) | (s.arrow.start ? ARROW_START : 0) | (s.arrow.end ? ARROW_END : 0) | (s.stroke ? HAS_STROKE : 0) | (s.shadow ? HAS_SHADOW : 0) | (s.softness ? HAS_SOFTNESS : 0))
   writeColor(w, s.color)
   w.byte(s.opacity)
   w.int(s.thickness)
@@ -65,6 +66,7 @@ export function writeStyle(w: Writer, s: Style) {
     w.int(s.shadow.blur)
     w.int(s.shadow.distance)
   }
+  if (s.softness) w.byte(s.softness)
 }
 
 export function readStyle(r: Reader): Style {
@@ -85,5 +87,9 @@ export function readStyle(r: Reader): Style {
   const amount = way === 'exact' || way === 'corners' ? r.byte() : 0
   const stroke = (flags & HAS_STROKE) !== 0 ? { color: readColor(r), width: r.int(), opacity: r.byte() } : undefined
   const shadow = (flags & HAS_SHADOW) !== 0 ? { color: readColor(r), blur: r.int(), distance: r.int() } : undefined
-  return { color, opacity, thickness, fixedWidth: (flags & FIXED_WIDTH) !== 0, type, gap, part, arrow, way, amount, ...(stroke ? { stroke } : {}), ...(shadow ? { shadow } : {}) }
+  const softness = (flags & HAS_SOFTNESS) !== 0 ? r.byte() : undefined
+  return { color, opacity, thickness, fixedWidth: (flags & FIXED_WIDTH) !== 0, type, gap, part, arrow, way, amount, ...(stroke ? { stroke } : {}), ...(shadow ? { shadow } : {}), ...(softness ? { softness } : {}) }
 }
+
+/** How round the corners of a path are: its own softness, or for the exact way of older maps the `amount` that was the softness then */
+export const softnessOf = (s: Style) => s.softness ?? (s.way === 'exact' ? s.amount : 0)

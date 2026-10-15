@@ -9,7 +9,8 @@ import { TOOLS, type Tool, type ToolId } from './tools'
 type Props = { mapId: string; tool: ToolId; onTool: (tool: ToolId) => void }
 
 // Bigger buttons than the rest of the editor's: the tools are what is used all the time
-const BIG = 'size-11! [&>svg]:size-6!'
+// Their corners follow the bar's own, less its padding (2px), so they sit concentric inside it
+const BIG = 'size-11! rounded-[calc(var(--card-radius)-2px)]! [&>svg]:size-6!'
 
 /**
  * The tools, then undo and redo. On the page it is centred on the page like the navbar's Recent History above it (so it does not

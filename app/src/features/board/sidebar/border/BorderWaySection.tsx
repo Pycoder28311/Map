@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import RangeField from '../../../../components/ui/fields/RangeField'
 import { waySample } from '../../samples'
 import StyleSample from '../../StyleSample'
 import SidebarSection from '../common/SidebarSection'
@@ -10,7 +9,7 @@ type Props = BorderSectionProps & {
   extraWays?: ReactNode
 }
 
-/** The ways to draw a border: mouse-like (with its softness bar) and linear */
+/** The ways to draw a border: mouse-like and linear */
 export default function BorderWaySection({ value, onChange, extraWays }: Props) {
   const { style, shape } = value
   const ways = [
@@ -26,11 +25,6 @@ export default function BorderWaySection({ value, onChange, extraWays }: Props) 
               <StyleSample object={waySample(way.id, style, 100, 30)} width={100} height={30} />
               <span className="text-body">{way.label}</span>
             </button>
-            {way.on && way.id === 'exact' && (
-              <div className="mt-1.5 ps-2">
-                <RangeField label="Softness" value={style.amount} min={0} max={100} onLive={(amount) => onChange({ style: { ...style, amount } }, false)} onCommit={(amount) => onChange({ style: { ...style, amount } }, true)} />
-              </div>
-            )}
           </li>
         ))}
         {extraWays}

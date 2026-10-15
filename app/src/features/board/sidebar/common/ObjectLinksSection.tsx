@@ -2,11 +2,11 @@ import { LuX } from 'react-icons/lu'
 import IconButton from '../../../../components/ui/buttons/IconButton'
 import { toggleSidebarLink } from '../../../links/linkPick'
 import { linkName } from '../../linkName'
-import LinkObjectsButton from '../../LinkObjectsButton'
+import AddNoteForm from './AddNoteForm'
 import type { ReactNode } from 'react'
 import type { BoardObject } from '../../types'
 
-/** What the object is linked to, with the "Link to other objects" button (or the kind's own `action` in its place) */
+/** What the object is linked to, with the form that adds a note or an article (or the kind's own `action` in its place) */
 export default function ObjectLinksSection({ mapId, object, board, action }: { mapId: string; object: BoardObject; board: BoardObject[]; action?: ReactNode }) {
   // Nothing to show, no line either
   if (object.links.length === 0 && action === null) return null
@@ -22,7 +22,7 @@ export default function ObjectLinksSection({ mapId, object, board, action }: { m
           ))}
         </ul>
       )}
-      {action === undefined ? <LinkObjectsButton mapId={mapId} objectId={object.id} /> : action}
+      {action === undefined ? <AddNoteForm mapId={mapId} objectId={object.id} /> : action}
     </div>
   )
 }

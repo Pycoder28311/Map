@@ -51,6 +51,30 @@ export function simplify(stroke: Point[], tolerance = TOLERANCE): Point[] {
   return points.filter((_, i) => keep[i])
 }
 
+/**
+ * The stroke thinned the way a pen moving along it would: a point stays only where the path has left a strip of `tolerance`
+ * on each side of the line from the last point kept through the first point after it (Reumann–Witkowski). Unlike `simplify`,
+ * what is kept never changes as the stroke grows: the thinning of a stroke is the start of the thinning of any longer one,
+ * apart from its last point, which is always there. So a line drawn live is already the line that is saved.
+ */
+export function thin(stroke: Point[], tolerance = TOLERANCE): Point[] {
+  const points = stroke.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) }))
+  if (points.length < 3) return points
+  const out = [points[0]]
+  // The strip's line runs from the last point kept through `through`
+  let through = 1
+  for (let i = 2; i < points.length; i++) {
+    if (distance(points[i], out[out.length - 1], points[through]) > tolerance) {
+      out.push(points[i - 1])
+      through = i
+    }
+  }
+  const last = points[points.length - 1]
+  const kept = out[out.length - 1]
+  if (kept.x !== last.x || kept.y !== last.y) out.push(last)
+  return out
+}
+
 /* ─────────────── Binary ─────────────── */
 
 export class Writer {

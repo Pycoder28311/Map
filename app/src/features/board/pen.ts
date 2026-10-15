@@ -58,7 +58,7 @@ export const setTextPen = text.set
 export const useTextPen = text.use
 
 /** What the next pin starts with */
-export type PointPen = { label: PointLabel; icon: PinIcon; color: string }
+export type PointPen = { label: PointLabel; icon: PinIcon; color: string; /** The picture on top of the pin's sidebar (an image id; absent: none) */ banner?: string }
 const point = penStore<PointPen>({ ...POINT_DEFAULT })
 export const getPointPen = point.get
 export const setPointPen = point.set

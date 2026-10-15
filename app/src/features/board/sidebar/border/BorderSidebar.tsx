@@ -5,6 +5,7 @@ import BorderDescriptionSection from './BorderDescriptionSection'
 import BorderFillSection from './BorderFillSection'
 import LineEditButtons from '../line/LineEditButtons'
 import BorderBasicSection from './BorderBasicSection'
+import BorderTypeSection from './BorderTypeSection'
 import BorderWaySection from './BorderWaySection'
 
 type Props = ObjectFrameContext & {
@@ -24,6 +25,7 @@ export default function BorderSidebar({ object, apply, ...context }: Props) {
     <ObjectFrame object={object} actions={['focus']} {...context}>
       <div className="flex flex-col gap-3">
         <BorderBasicSection {...section} after={<LineEditButtons mode={context.mode} onSplit={context.onSplit} onErase={context.onErase} splitLabel="Split" />} />
+        <BorderTypeSection {...section} />
         <BorderWaySection {...section} />
         {!object.open && <BorderFillSection {...section} />}
         <BorderDescriptionSection text={object.description ?? ''} onSave={(description) => apply({ description }, true)} />

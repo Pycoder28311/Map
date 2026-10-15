@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { decode, encode, Reader, simplify, type Point } from './strokeCodec'
+import { decode, encode, Reader, simplify, thin, type Point } from './strokeCodec'
 
 const pts = (...xy: [number, number][]): Point[] => xy.map(([x, y]) => ({ x, y }))
 
@@ -49,5 +49,30 @@ describe('Reader', () => {
 
   it('throws on a count larger than the bytes left', () => {
     expect(() => decode(Uint8Array.from([100]))).toThrow(RangeError)
+  })
+})
+
+describe('thin', () => {
+  const wave: Point[] = Array.from({ length: 60 }, (_, i) => ({ x: i * 5, y: Math.round(Math.sin(i / 4) * 30 + (i % 3)) }))
+
+  it('keeps the ends, drops points on a straight stretch and keeps the corners', () => {
+    expect(thin(pts([0, 0], [5, 0], [10, 0], [20, 0]))).toEqual(pts([0, 0], [20, 0]))
+    expect(thin(pts([0, 0], [50, 0], [100, 0], [100, 50], [100, 100]))).toEqual(pts([0, 0], [100, 0], [100, 100]))
+    expect(thin(pts([1.4, 2.6]))).toEqual(pts([1, 3]))
+  })
+
+  it('never changes what it kept as the stroke grows: a live line is the saved line', () => {
+    let kept = thin(wave.slice(0, 2), 2)
+    for (let n = 3; n <= wave.length; n++) {
+      const next = thin(wave.slice(0, n), 2)
+      // Everything but the last point of the shorter one is still there, in place
+      expect(next.slice(0, kept.length - 1)).toEqual(kept.slice(0, -1))
+      kept = next
+    }
+    expect(kept.at(-1)).toEqual(wave.at(-1))
+  })
+
+  it('stays within about the tolerance of the stroke', () => {
+    expect(thin(wave, 2).length).toBeLessThan(wave.length)
   })
 })

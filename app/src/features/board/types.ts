@@ -38,6 +38,8 @@ export type Style = {
   stroke?: { color: string; width: number; opacity: number }
   /** A shadow: its colour, how soft it is and how far it falls (down and right, board units). Absent: none */
   shadow?: { color: string; blur: number; distance: number }
+  /** How round the corners of the path are, 0–100 (whatever the drawing way). Absent: none, except that the exact way's `amount` is its softness (older maps) */
+  softness?: number
 }
 
 /** A point's curve handles (Figma vectors), as offsets from the point */

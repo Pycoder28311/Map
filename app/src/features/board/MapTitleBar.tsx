@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, type CSSProperties } from 'react'
 import { LuPencil } from 'react-icons/lu'
 import IconButton from '../../components/ui/buttons/IconButton'
 import { findObject } from '../../mocks/projects'
@@ -9,12 +9,13 @@ import { useWorkspace } from '../workspace/useWorkspace'
 import { FLOAT, ROUNDER, usePeekShift } from './floating'
 
 /** Top left: the map's name (a click lists the project's maps, MapPicker; its pencil makes it an input: Enter or leaving it renames, Esc undoes), the map's actions (branches, layers, screenshot, share) */
-export default function MapTitleBar({ mapId, onPickObject }: { mapId: string; onPickObject: (id: number) => void }) {
+export default function MapTitleBar({ mapId, onPickObject, editorWidth }: { mapId: string; onPickObject: (id: number) => void; editorWidth?: number }) {
   const shift = usePeekShift()
-  // Never reaches the tool panel: it is right-aligned (25rem wide with its gaps) or centred (half of it, 13.5rem, plus the gaps)
+  // Never reaches the tool panel: it is right-aligned (25rem wide with its gaps) or centred (half of it, 13.5rem, plus the gaps).
+  // Measured on the whole editor, sidebar included (`--editor-w`), not on the board's area: that one changes while a sidebar opens, and the bar must not
   const fit = useWorkspace().isPane({ type: 'map', id: mapId })
-    ? 'max-w-[calc(100%-25rem)] @5xl:max-w-[calc(50%-13.5rem)]'
-    : 'max-w-[calc(100%-25rem)] xl:max-w-[calc(50%-13.5rem)]'
+    ? 'max-w-[calc(var(--editor-w,100%)-25rem)] @5xl:max-w-[calc(var(--editor-w,100%)/2-13.5rem)]'
+    : 'max-w-[calc(var(--editor-w,100%)-25rem)] xl:max-w-[calc(var(--editor-w,100%)/2-13.5rem)]'
   const object = findObject(mapId)
   // The big name is the map's own (the first map of its branch group), whichever branch is open; the branch has its own button
   const title = findObject(object?.branchOf) ?? object
@@ -32,7 +33,7 @@ export default function MapTitleBar({ mapId, onPickObject }: { mapId: string; on
   }
 
   return (
-    <div data-board-title className={`absolute start-3 top-3 flex h-12.5 items-center ${fit} ps-2 pe-2 ${FLOAT} ${ROUNDER} ${shift}`}>
+    <div data-board-title style={editorWidth ? ({ '--editor-w': `${editorWidth}px` } as CSSProperties) : undefined} className={`absolute start-3 top-3 flex h-12.5 items-center ${fit} ps-2 pe-2 ${FLOAT} ${ROUNDER} ${shift}`}>
       {draft === null ? (
         // Both in one grid cell (no positioning: the picker's popover hangs from the bar): the pencil shows over the name's end while hovered
         <div className="group grid">

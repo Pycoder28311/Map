@@ -2,8 +2,8 @@
 // meanwhile (it joins the board only when the drawing is finished, in one undo step). The pure parts are in drawLine.ts,
 // drawBorder.ts and borders.ts.
 import { useRef, useState, type RefObject } from 'react'
-import { simplify } from '../projects/strokeCodec'
 import { addObject, changeObjects } from './boardStore'
+import { thin } from '../projects/strokeCodec'
 import { borderFromCorners, borderFromShape, borderFromStroke, snapToBorders } from './drawBorder'
 import { mergeBorders } from './borders'
 import { drawLine, drawShape, isPlain } from './drawLine'
@@ -58,7 +58,8 @@ export function useDrawTool({ mapId, board, view, canvas, repaint, onCreated }: 
   /** A border that is not finished: it shows as the open line it is until it is let go */
   const borderDraft = (points: Point[]): StyledObject | null => {
     const pen = getBorderPen()
-    const thinned = points.length > 2 ? simplify(points, 1) : points
+    // Thinned the way the finished border is (`thin` keeps what it kept as the stroke grows), so what shows now is what will be saved
+    const thinned = pen.style.way === 'exact' ? thin(points, 1 / scale) : points
     return thinned.length ? ({ id: 0, kind: 'line', layer: LAYER_MAIN, name: '', links: [], style: pen.style, points: thinned } as LineObject) : null
   }
 
@@ -91,11 +92,11 @@ export function useDrawTool({ mapId, board, view, canvas, repaint, onCreated }: 
       const pen = getBorderPen()
       const box = shapeBox(keys)
       if (shapeDrag.current && box) return finishBorder(borderFromShape(box.box, pen.shape!, pen.param, pen.style, pen.fill), keys.alt)
-      if (stroke.current) return finishBorder(borderFromStroke(stroke.current, pen.style, pen.fill, CLOSE_PX / scale), keys.alt)
+      if (stroke.current) return finishBorder(borderFromStroke(stroke.current, pen.style, pen.fill, CLOSE_PX / scale, scale), keys.alt)
       return
     }
     const pen = getPen()
-    const made = shapeDrag.current ? shapeBox(keys) : stroke.current ? drawLine(stroke.current, pen.style) : null
+    const made = shapeDrag.current ? shapeBox(keys) : stroke.current ? drawLine(stroke.current, pen.style, scale) : null
     if (made) onCreated([addObject(mapId, made)])
   }
 
@@ -145,7 +146,7 @@ export function useDrawTool({ mapId, board, view, canvas, repaint, onCreated }: 
     stroke.current = [whole(start)]
     if (forBorder.current) setDraft(borderDraft(stroke.current))
     else if (isPlain(pen.style)) drawSegment(start, { x: start.x + 0.01, y: start.y })
-    else setDraft({ id: 0, ...drawLine(stroke.current, pen.style) } as StyledObject)
+    else setDraft({ id: 0, ...drawLine(stroke.current, pen.style, scale) } as StyledObject)
     return true
   }
 
@@ -170,7 +171,7 @@ export function useDrawTool({ mapId, board, view, canvas, repaint, onCreated }: 
     stroke.current.push(to)
     if (forBorder.current) setDraft(borderDraft(stroke.current))
     else if (isPlain(getPen().style)) drawSegment(from, to)
-    else setDraft({ id: 0, ...drawLine(stroke.current, getPen().style) } as StyledObject)
+    else setDraft({ id: 0, ...drawLine(stroke.current, getPen().style, scale) } as StyledObject)
   }
 
   /** The pointer moved over the board with nothing held: a linear border's next edge follows it */

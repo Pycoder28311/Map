@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { Reader, Writer } from '../projects/strokeCodec'
-import { DEFAULT_STYLE, readStyle, writeStyle } from './style'
+import { DEFAULT_STYLE, readStyle, softnessOf, writeStyle } from './style'
 import { DRAWING_WAYS, LINE_TYPES, type Style } from './types'
 
 const roundTrip = (s: Style) => {
@@ -43,6 +43,15 @@ describe('style', () => {
     expect(roundTrip(s).back).toEqual(s)
     expect(roundTrip({ ...DEFAULT_STYLE, shadow: s.shadow }).back).toEqual({ ...DEFAULT_STYLE, shadow: s.shadow })
     expect(roundTrip({ ...DEFAULT_STYLE, stroke: s.stroke }).back).toEqual({ ...DEFAULT_STYLE, stroke: s.stroke })
+  })
+
+  it('round-trips the softness, and reads an exact line\'s old amount as its softness', () => {
+    const s: Style = { ...DEFAULT_STYLE, softness: 40 }
+    expect(roundTrip(s).back).toEqual(s)
+    expect(softnessOf(s)).toBe(40)
+    expect(softnessOf({ ...DEFAULT_STYLE, amount: 35 })).toBe(35)
+    expect(softnessOf({ ...DEFAULT_STYLE, way: 'straight', amount: 0 })).toBe(0)
+    expect(softnessOf({ ...DEFAULT_STYLE, way: 'corners', amount: 45 })).toBe(0)
   })
 
   it('writes only what applies', () => {

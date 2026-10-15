@@ -3,11 +3,12 @@
 import { autoHandles } from './bezier'
 import type { Patch } from './changes'
 import { lineFromStroke } from './paths'
+import { softnessOf } from './style'
 import { LAYER_MAIN, type LineObject, type Point, type ShapeObject, type ShapeType, type Style } from './types'
 
 const MIN_BOX = 4
 
-/** How far a dropped point may be from the line, per way (board units; bigger = fewer, smoother points) */
+/** How far a dropped point may be from the line, per way (screen pixels, at zoom 1 board units; bigger = fewer, smoother points) */
 const TOLERANCE = { exact: 1, rounded: 8, straight: 0, corners: 6 } as const
 
 /** What `style.amount` starts at when a way is picked: corners' degrees; the others have nothing or start sharp */
@@ -28,9 +29,12 @@ export function cornersOf(points: Point[], degrees: number): Point[] {
   return out
 }
 
-/** The line a stroke makes (ready for addObject) */
-export function drawLine(stroke: Point[], style: Style): Omit<LineObject, 'id'> {
-  const base = lineFromStroke(stroke, style, TOLERANCE[style.way] || 1)
+/**
+ * The line a stroke makes (ready for addObject). Its points are thinned as the pen goes (`thin`), so drawn live it is already this line.
+ * The tolerance is in screen pixels, so it is divided by the view's `scale`: zoomed in, more points are kept and the line stays smooth
+ */
+export function drawLine(stroke: Point[], style: Style, scale = 1): Omit<LineObject, 'id'> {
+  const base = lineFromStroke(stroke, style, (TOLERANCE[style.way] || 1) / scale)
   switch (style.way) {
     case 'exact':
       return base
@@ -61,7 +65,8 @@ export function lineStylePatch(line: LineObject, style: Style): Patch {
 }
 
 /** Whether the pointer path can be drawn as the pencil always was (one segment at a time, nothing to work out) */
-export const isPlain = (style: Style) => style.way === 'exact' && style.type === 'solid' && style.amount === 0 && !style.arrow.start && !style.arrow.end
+export const isPlain = (style: Style) =>
+  style.way === 'exact' && style.type === 'solid' && softnessOf(style) === 0 && !style.stroke && !style.shadow && !style.arrow.start && !style.arrow.end
 
 type ShapePen = { shape: ShapeType; param: number; style: Style; fill: ShapeObject['fill'] }
 

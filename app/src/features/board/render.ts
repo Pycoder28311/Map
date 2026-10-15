@@ -9,6 +9,7 @@ import { fontOf, LINE_HEIGHT } from './textLayout'
 import { flattenedOf, isClosed, softened, trimEnds } from './pathGeometry'
 import { PIN_BODY, PIN_HEIGHT, PIN_ICON_PATHS, PIN_WIDTH } from './pinIcons'
 import { areaOf } from './polygon'
+import { softnessOf } from './style'
 import { strokeParts, type Parts } from './strokeParts'
 import type { Board, BoardObject, Point, PointObject, Style, TextObject } from './types'
 import { BOARD, type Size, type Viewport } from './viewport'
@@ -17,8 +18,8 @@ import { BOARD, type Size, type Viewport } from './viewport'
 export function drawStroke(ctx: CanvasRenderingContext2D, points: Point[], style: Style, scale: number, closed = false) {
   ctx.globalAlpha = style.opacity / 100
   ctx.strokeStyle = style.color
-  // "Same width as I zoom": the stroke keeps its screen width
-  ctx.lineWidth = style.fixedWidth ? style.thickness / scale : style.thickness
+  // What is drawn with the pen (a line or a border) keeps its screen width at any zoom
+  ctx.lineWidth = style.thickness / scale
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
   ctx.beginPath()
@@ -46,9 +47,9 @@ function pathOf(ctx: CanvasRenderingContext2D, line: Point[], closed: boolean) {
   if (line.length === 1) ctx.lineTo(line[0].x + 0.01, line[0].y)
 }
 
-function strokeStyle(ctx: CanvasRenderingContext2D, style: Style, scale: number, extraPx = 0) {
+function strokeStyle(ctx: CanvasRenderingContext2D, style: Style, scale: number, fixed: boolean, extraPx = 0) {
   ctx.strokeStyle = style.color
-  ctx.lineWidth = (style.fixedWidth ? style.thickness / scale : style.thickness) + extraPx / scale
+  ctx.lineWidth = (fixed ? style.thickness / scale : style.thickness) + extraPx / scale
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
 }
@@ -237,10 +238,13 @@ export function paintObject(ctx: CanvasRenderingContext2D, o: BoardObject, scale
   if (o.kind === 'point') return paintPoint(ctx, o, hovered)
   if (o.kind !== 'line' && o.kind !== 'border' && o.kind !== 'shape') return
   const style = o.style
-  const unit = style.fixedWidth ? 1 / scale : 1
+  // A line and a border are as thick on the screen at any zoom (their thickness is in pixels); a shape's outline follows its own setting
+  const fixed = o.kind !== 'shape' || style.fixedWidth
+  const unit = fixed ? 1 / scale : 1
   const closed = isClosed(o)
   const flat = flattenedOf(o)
-  let outline = o.kind === 'line' && style.way === 'exact' ? softened(flat, style.amount) : o.kind === 'border' && style.way === 'exact' ? softened(flat, style.amount, closed) : flat
+  const soft = softnessOf(style)
+  let outline = soft > 0 ? softened(flat, soft, closed) : flat
 
   // The inside: an area's is lighter still while it is hovered
   const inside = o.kind === 'shape' ? o.fill : o.kind === 'border' && closed ? (o.fill ?? (hovered ? { color: style.color, opacity: 8 } : null)) : null
@@ -270,13 +274,13 @@ export function paintObject(ctx: CanvasRenderingContext2D, o: BoardObject, scale
 
   // What is stroked, in which colour: one outline, or an area's runs of different colours
   const strokes: { parts: Parts; color: string }[] =
-    o.kind === 'border' && o.edges?.length && !o.handles && style.amount === 0
+    o.kind === 'border' && o.edges?.length && !o.handles && soft === 0
       ? colourRuns(o.points, edgeColours(o)).map((run) => ({ parts: strokeParts(run.line, style, unit, false), color: run.color }))
       : [{ parts: strokeParts(outline, style, unit, closed), color: style.color }]
   // `colour` paints every run in that one colour (the stroke round the line); `reach` is how much wider than the line (board units, both sides together)
   const strokeAll = (extraPx: number, alpha: number, colour?: string, reach = 0) => {
     ctx.globalAlpha = alpha
-    strokeStyle(ctx, style, scale, extraPx)
+    strokeStyle(ctx, style, scale, fixed, extraPx)
     ctx.lineWidth += reach * unit
     for (const { parts, color } of strokes) {
       ctx.strokeStyle = colour ?? color
@@ -324,8 +328,19 @@ export function paintObject(ctx: CanvasRenderingContext2D, o: BoardObject, scale
   if (o.kind === 'border' && closed) paintLabel(ctx, flat, namedByText ? '' : o.name, o.description, style.color, style.opacity)
 }
 
-/** The white sheet, then every object bottom to top, then `extra` (what is being drawn, not in the board yet) */
-export function paintBoard(ctx: CanvasRenderingContext2D, board: Board, view: Viewport, size: Size, dpr: number, extra: BoardObject[] = [], hover: number | null = null, editing: number | null = null) {
+/** The picture over the whole sheet, covering it (the part that does not fit is cut off, equally at both sides) */
+function paintBackground(ctx: CanvasRenderingContext2D, image: CanvasImageSource, view: Viewport) {
+  const w = (image as HTMLImageElement).naturalWidth
+  const h = (image as HTMLImageElement).naturalHeight
+  if (!w || !h) return
+  const ratio = BOARD.width / BOARD.height
+  const sw = w / h > ratio ? h * ratio : w
+  const sh = w / h > ratio ? h : w / ratio
+  ctx.drawImage(image, (w - sw) / 2, (h - sh) / 2, sw, sh, view.x, view.y, BOARD.width * view.scale, BOARD.height * view.scale)
+}
+
+/** The white sheet, then the background picture if there is one, then every object bottom to top, then `extra` (what is being drawn, not in the board yet) */
+export function paintBoard(ctx: CanvasRenderingContext2D, board: Board, view: Viewport, size: Size, dpr: number, extra: BoardObject[] = [], hover: number | null = null, editing: number | null = null, background: CanvasImageSource | null = null) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   ctx.clearRect(0, 0, size.w, size.h)
 
@@ -336,6 +351,7 @@ export function paintBoard(ctx: CanvasRenderingContext2D, board: Board, view: Vi
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(view.x, view.y, BOARD.width * view.scale, BOARD.height * view.scale)
   ctx.restore()
+  if (background) paintBackground(ctx, background, view)
 
   applyView(ctx, view, dpr)
   // The areas whose name is a text object paint no label of their own

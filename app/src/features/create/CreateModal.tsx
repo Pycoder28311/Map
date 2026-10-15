@@ -96,7 +96,7 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
       // Its bottom right corner is right by the floating button, which sits in the footer's corner as the
       // modal's own bottom right button (CreateFab); the modal grows out of it and shrinks back into it
       style={{ insetInlineEnd: `calc(0.75rem + ${inset}px)`, maxWidth: `calc(100% - 1.5rem - ${inset}px)` }}
-      className={`absolute bottom-3 z-20 flex max-h-[calc(100%-1.5rem)] w-[min(34rem,calc(100%-2rem))] origin-bottom-right flex-col overflow-hidden rounded-(--card-radius) border-[3px] border-fg/30 bg-surface shadow-[var(--lift-shadow),0_24px_60px_rgb(0_0_0/0.25)] motion-reduce:animate-none ${
+      className={`absolute bottom-3 z-20 flex h-[min(44rem,calc(100%-1.5rem))] w-[min(28rem,calc(100%-2rem))] origin-bottom-right flex-col overflow-hidden rounded-(--card-radius) border-[3px] border-fg/30 bg-surface shadow-[var(--lift-shadow),0_24px_60px_rgb(0_0_0/0.25)] motion-reduce:animate-none ${
         closing ? 'animate-create-unpop' : 'animate-create-pop'
       }`}
     >
@@ -140,7 +140,7 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
           }}
         >
           {/* Title and body: two fields drawn as one, split by a line; ↓ / Enter and ↑ move between them */}
-          <div className="flex flex-col overflow-hidden rounded-(--field-radius) border border-line-strong bg-surface transition-colors focus-within:border-fg-subtle">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-(--field-radius) border border-line-strong bg-surface transition-colors focus-within:border-fg-subtle">
             <input
               ref={titleRef}
               value={title}
@@ -161,7 +161,7 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
             />
             {hasBody && (
               <>
-                <hr className="m-0 border-0 border-t border-line-strong" />
+                <hr className="mx-1.5 my-0 border-0 border-t border-line-strong" />
                 <textarea
                   ref={bodyRef}
                   value={kind === 'object' ? description : text}
@@ -178,7 +178,7 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
                   placeholder={kind === 'note' ? 'Take a note…' : kind === 'article' ? 'Write an article…' : 'Description'}
                   aria-label={kind === 'object' ? 'Description' : 'Text'}
                   rows={kind === 'object' ? 3 : 5}
-                  className={`${INNER} min-h-20 resize-none py-2`}
+                  className={`${INNER} min-h-20 flex-1 resize-none py-2`}
                 />
               </>
             )}

@@ -39,7 +39,7 @@ type Props = ObjectFrameContext & {
  */
 export default function ObjectFrame({ mapId, object, board, mode, actions, onSplit, onFocus, onErase, onDuplicate, top, header, leading, onShowBoardObject, footerAction, children }: Props) {
   return (
-    <SidePanel label={`${object.kind} options`}>
+    <SidePanel label={`${object.kind} options`} wide={object.kind === 'point'}>
       {top}
       {header === undefined ? <ObjectHeaderRow {...{ mapId, object, board, mode, actions, onSplit, onFocus, onErase, onDuplicate, leading, onShowBoardObject }} /> : header}
       {children}

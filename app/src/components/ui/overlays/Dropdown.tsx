@@ -40,6 +40,8 @@ type Props<T extends string> = {
   label: string
   /** An icon-only trigger instead of the current choice (e.g. ⋯); `label` is then its name */
   triggerIcon?: PlainIcon
+  /** The ▾ floats over the end of the choice, shown only while the pointer (or the keyboard) is on the button; it takes no room, so nothing moves */
+  hoverChevron?: boolean
   className?: string
 }
 
@@ -49,7 +51,7 @@ type Props<T extends string> = {
  *
  *   <Dropdown label="Kind" value={kind} onChange={setKind} options={[{ value: 'note', label: 'Note' }]} />
  */
-export default function Dropdown<T extends string>({ value, options, onChange, label, triggerIcon: TriggerIcon, className = '' }: Props<T>) {
+export default function Dropdown<T extends string>({ value, options, onChange, label, triggerIcon: TriggerIcon, hoverChevron, className = '' }: Props<T>) {
   const id = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -94,11 +96,17 @@ export default function Dropdown<T extends string>({ value, options, onChange, l
           popoverTarget={id}
           aria-haspopup="menu"
           aria-label={`${label}: ${current?.label}`}
-          className={`${TRIGGER} ${className}`}
+          className={`${TRIGGER} ${hoverChevron ? 'group/dropdown relative' : ''} ${className}`}
         >
+          {hoverChevron && (
+            // Floats over the end of the name (in front of it, taking no room of its own), on a veil so the letters under it stay out of the way
+            <span aria-hidden className="pointer-events-none absolute inset-y-0.5 end-0.5 flex items-center rounded-(--btn-close-radius) bg-surface/80 px-0.5 opacity-0 transition-opacity group-hover/dropdown:opacity-100 group-focus-visible/dropdown:opacity-100">
+              <LuChevronDown className="size-4" />
+            </span>
+          )}
           {Icon && <Icon className="size-4" />}
           {current?.label}
-          <LuChevronDown className="size-4" aria-hidden />
+          {!hoverChevron && <LuChevronDown className="size-4" aria-hidden />}
         </button>
       )}
 

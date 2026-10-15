@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useBackground } from '../background'
 import { hitTest } from '../hit'
 import PointCard from '../PointCard'
 import PointView from '../PointView'
@@ -9,7 +10,7 @@ import { fitView, screenToBoard, type Size } from '../viewport'
 const HIT_PX = 8
 
 /** A board to look at, fitted to the box it is in. With `interactive`, a click on a pin opens its card (the visitor's view) */
-export default function BoardCanvas({ board, paint = true, interactive = false, onShowBoardObject }: { board: Board; paint?: boolean; interactive?: boolean; onShowBoardObject?: (id: number) => void }) {
+export default function BoardCanvas({ mapId, board, paint = true, interactive = false, onShowBoardObject }: { mapId: string; board: Board; paint?: boolean; interactive?: boolean; onShowBoardObject?: (id: number) => void }) {
   const box = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const [size, setSize] = useState<Size | null>(null)
@@ -25,6 +26,7 @@ export default function BoardCanvas({ board, paint = true, interactive = false, 
     return () => observer.disconnect()
   }, [])
 
+  const background = useBackground(mapId)
   const view = size ? fitView(size) : null
   useEffect(() => {
     const el = canvas.current
@@ -33,7 +35,7 @@ export default function BoardCanvas({ board, paint = true, interactive = false, 
     const dpr = window.devicePixelRatio || 1
     el.width = Math.round(size.w * dpr)
     el.height = Math.round(size.h * dpr)
-    paintBoard(ctx, board, view, size, dpr)
+    paintBoard(ctx, board, view, size, dpr, [], null, null, background)
   })
 
   const point = open ? board.objects.find((o) => o.id === open.id) : undefined

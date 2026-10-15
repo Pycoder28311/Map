@@ -1,5 +1,6 @@
 import RangeField from '../../../../components/ui/fields/RangeField'
 import { typeSample } from '../../samples'
+import { softnessOf } from '../../style'
 import StyleSample from '../../StyleSample'
 import { LINE_TYPES, type Style } from '../../types'
 import SidebarSection from '../common/SidebarSection'
@@ -13,6 +14,8 @@ const TYPE_DEFAULT: Record<Style['type'], { gap: number; part: number }> = { sol
 export default function LineTypeSection(props: StyleSectionProps) {
   const { style } = props
   const set = styleSetter(props)
+  // Softness is the path's own now; the exact way's old `amount` (its softness before) is folded into it, so there is one number
+  const setSoftness = (softness: number, commit: boolean) => set({ softness: softness > 0 ? softness : undefined, ...(style.way === 'exact' ? { amount: 0 } : {}) }, commit)
   const pickType = (type: Style['type']) => {
     const d = TYPE_DEFAULT[type]
     set({ type, gap: style.gap || d.gap, part: style.part || d.part })
@@ -29,6 +32,7 @@ export default function LineTypeSection(props: StyleSectionProps) {
           </li>
         ))}
       </ul>
+      <RangeField label="Softness" value={softnessOf(style)} min={0} max={100} onLive={(v) => setSoftness(v, false)} onCommit={(v) => setSoftness(v, true)} />
       {style.type !== 'solid' && (
         <div className="flex flex-col gap-1.5">
           <RangeField label="Gap size" value={style.gap} min={1} max={60} onLive={(gap) => set({ gap }, false)} onCommit={(gap) => set({ gap })} />

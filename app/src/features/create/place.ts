@@ -3,9 +3,9 @@
 import { canPlace, KIND_LABEL, type MockObject, type ObjectKind } from '../../mocks/projects'
 import { isLinkTarget } from '../../mocks/projectsStore'
 
-/** The five kinds that can be created (a project has its own flow) */
+/** The five kinds that can be created (a project has its own flow), in the order of the Create modal's tabs */
 export type CreateKind = Exclude<ObjectKind, 'project'>
-export const CREATE_KINDS: CreateKind[] = ['object', 'article', 'note', 'map', 'folder']
+export const CREATE_KINDS: CreateKind[] = ['note', 'article', 'object', 'map', 'folder']
 
 /** A place: object ids from the top (e.g. a project) down to the last (e.g. a folder). []: no place / the top level */
 export type Path = string[]

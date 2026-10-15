@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { changeObjects, canRedo, canUndo, redo, undo, useBoard } from './boardStore'
 import { applyChange } from './changes'
-import { LuGalleryHorizontal } from 'react-icons/lu'
+import { LuGalleryHorizontal, LuX } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
+import IconButton from '../../components/ui/buttons/IconButton'
 import Presenter from './presenter/Presenter'
 import { FLOAT } from './floating'
 import { setTextZoom } from './bounds'
@@ -11,8 +12,6 @@ import { newPoint } from './drawPoint'
 import { getPointPen } from './pen'
 import PointPenSidebar from './sidebar/point/PointPenSidebar'
 import VisitorLayer from './VisitorLayer'
-import { setPageInset } from '../../lib/pageInset'
-import { SIDE_PANEL_PX } from './floating'
 import AreaNameInput from './AreaNameInput'
 import { nameArea } from './areaName'
 import BorderPenSidebar from './sidebar/border/BorderPenSidebar'
@@ -20,9 +19,10 @@ import LinePenSidebar from './sidebar/line/LinePenSidebar'
 import { boundsOf, unionBounds } from './bounds'
 import { getLinkPick, startLinkPick, stopLinkPick } from '../links/linkPick'
 import { paintBoard } from './render'
+import { removeBackground, useBackground, useHasBackground } from './background'
 import { toolOfKey, type ToolId } from './tools'
 import type { BoardObject, Point } from './types'
-import { boardToScreen, insideBoard, screenToBoard, zoomFactorOf, type Size } from './viewport'
+import { BOARD, boardToScreen, insideBoard, screenToBoard, zoomFactorOf, type Size } from './viewport'
 import LinkPickBar from './LinkPickBar'
 import MapTitleBar from './MapTitleBar'
 import { clearSelection, select, useSelection } from './selection'
@@ -30,6 +30,7 @@ import { buttonsFor, type BoxAction } from './selectionButtons'
 import PathEditor from './PathEditor'
 import SelectionBox from './SelectionBox'
 import SelectionPanel, { type StylePreview } from './sidebar/SelectionPanel'
+import SidebarSlot from './sidebar/common/SidebarSlot'
 import ToolPanel from './ToolPanel'
 import { finishEditing } from './activeEditor'
 import Notice from './Notice'
@@ -113,6 +114,8 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
   })
   // What is painted: the board, or while a gesture runs, the board as it would be
   // What the Line and Border tools are drawing right now (not in the board until the drawing is finished)
+  const background = useBackground(mapId)
+  const hasBackground = useHasBackground(mapId)
   const draw = useDrawTool({ mapId, board, view, canvas, repaint: () => setRepaint((n) => n + 1), onCreated: selectCreated })
   const text = useTextTool({ mapId, board, view })
   // The visitor's view: no tools, a click on a pin opens its card
@@ -171,11 +174,15 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
     const frame = requestAnimationFrame(() => {
       el.width = Math.round(size.w * dpr)
       el.height = Math.round(size.h * dpr)
-      paintBoard(ctx, shown, view, size, dpr, draw.draft ? [draw.draft] : [], tool === 'mouse' ? mouse.hovered : null, text.editing?.id ?? null)
+      // Its CSS size goes with its new bitmap in this same frame (the `painted` state only catches up a render later): the picture is
+      // never shown stretched or squeezed in between, which is what showed as the board's width changing while the sidebar slides
+      el.style.width = `${size.w}px`
+      el.style.height = `${size.h}px`
+      paintBoard(ctx, shown, view, size, dpr, draw.draft ? [draw.draft] : [], tool === 'mouse' ? mouse.hovered : null, text.editing?.id ?? null, background)
       setPainted((p) => (p && p.w === size.w && p.h === size.h ? p : size))
     })
     return () => cancelAnimationFrame(frame)
-  }, [shown, view, size, repaint, draw.draft, tool, mouse.hovered, text.editing?.id])
+  }, [shown, view, size, repaint, draw.draft, tool, mouse.hovered, text.editing?.id, background])
 
   // The wheel zooms toward the pointer (not passive: it must stop the page scrolling)
   useEffect(() => {
@@ -414,10 +421,8 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
 
   // The sidebar on the right: the options of the Line tool, or of what is selected
   const sidebar = visitor ? null : tool === 'text' && textSelected ? 'selection' : tool === 'line' || tool === 'border' || tool === 'text' || tool === 'point' ? 'pen' : tool === 'mouse' && mouse.selected.length > 0 ? 'selection' : null
-  useEffect(() => {
-    setPageInset(sidebar ? SIDE_PANEL_PX : 0)
-    return () => setPageInset(0)
-  }, [sidebar])
+  // A point's sidebar is wider
+  const wideSidebar = sidebar === 'pen' ? tool === 'point' : sidebar === 'selection' && mouse.selected.length === 1 && mouse.selected[0].kind === 'point'
 
   return (
     <div ref={outer} className="flex h-full min-h-48 overflow-hidden">
@@ -443,6 +448,17 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
           style={painted ? { width: painted.w, height: painted.h } : undefined}
           className={`absolute start-0 top-0 touch-none ${painted ? '' : 'size-full'} ${cursor}`}
         />
+        {!visitor && hasBackground && view && size && (
+          // At the top right of the sheet (kept inside the page when the sheet's corner is out of it)
+          <IconButton
+            icon={LuX}
+            label="Remove the background"
+            title="Remove the background picture"
+            onClick={() => removeBackground(mapId)}
+            style={{ left: Math.min(Math.max(8, view.x + BOARD.width * view.scale - 40), size.w - 40), top: Math.min(Math.max(8, view.y + 8), size.h - 40) }}
+            className="absolute z-10 bg-surface/85 text-fg shadow-md hover:bg-surface"
+          />
+        )}
         {mouse.marquee && view && <Marquee rect={mouse.marquee} view={view} />}
         {mouse.mode === 'erase' && mouse.cursorAt && (
           <span
@@ -490,6 +506,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         )}
         <MapTitleBar
           mapId={mapId}
+          editorWidth={fullSize?.w}
           onPickObject={(id) => {
             pickTool('mouse')
             select(mapId, [id])
@@ -525,28 +542,34 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         )}
         {view && <ZoomControls scale={view.scale} onZoom={(f) => zoom(f)} onFit={fit} />}
       </div>
-      {!visitor && (tool === 'mouse' || textSelected) && (
-        <SelectionPanel
-          mapId={mapId}
-          selected={mouse.selected}
-          board={board.objects}
-          mode={mouse.mode}
-          onSplit={() => mouse.setMode(mouse.mode === 'split' ? 'select' : 'split')}
-          onFocus={focusSelected}
-          onErase={() => mouse.setMode(mouse.mode === 'erase' ? 'select' : 'erase')}
-          onDuplicate={mouse.duplicateSelected}
-          onPreview={setStylePreview}
-          onShowBoardObject={(id) => {
-            select(mapId, [id])
-            const target = board.objects.find((o) => o.id === id)
-            if (target) focusOn(boundsOf(target))
-          }}
-        />
-      )}
-      {!visitor && tool === 'line' && <LinePenSidebar />}
-      {!visitor && tool === 'border' && <BorderPenSidebar />}
-      {!visitor && tool === 'text' && !textSelected && <TextPenSidebar mapId={mapId} />}
-      {!visitor && tool === 'point' && <PointPenSidebar />}
+      <SidebarSlot open={sidebar !== null} wide={wideSidebar}>
+        {sidebar === 'selection' ? (
+          <SelectionPanel
+            mapId={mapId}
+            selected={mouse.selected}
+            board={board.objects}
+            mode={mouse.mode}
+            onSplit={() => mouse.setMode(mouse.mode === 'split' ? 'select' : 'split')}
+            onFocus={focusSelected}
+            onErase={() => mouse.setMode(mouse.mode === 'erase' ? 'select' : 'erase')}
+            onDuplicate={mouse.duplicateSelected}
+            onPreview={setStylePreview}
+            onShowBoardObject={(id) => {
+              select(mapId, [id])
+              const target = board.objects.find((o) => o.id === id)
+              if (target) focusOn(boundsOf(target))
+            }}
+          />
+        ) : tool === 'line' ? (
+          <LinePenSidebar />
+        ) : tool === 'border' ? (
+          <BorderPenSidebar />
+        ) : tool === 'text' ? (
+          <TextPenSidebar mapId={mapId} />
+        ) : tool === 'point' ? (
+          <PointPenSidebar />
+        ) : null}
+      </SidebarSlot>
     </div>
   )
 }

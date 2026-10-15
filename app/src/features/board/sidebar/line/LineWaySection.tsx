@@ -38,7 +38,6 @@ export default function LineWaySection({ shapeActive = false, onWayPicked, ...pr
               )
             })}
           </ul>
-          {!shapeActive && style.way === 'exact' && <RangeField label="Softness" value={style.amount} min={0} max={100} onLive={(amount) => set({ amount }, false)} onCommit={(amount) => set({ amount })} />}
           {!shapeActive && style.way === 'corners' && <RangeField label="Corner degrees" value={style.amount} min={5} max={170} suffix="°" onLive={(amount) => set({ amount }, false)} onCommit={(amount) => set({ amount })} />}
         </SidebarSection>
   )
