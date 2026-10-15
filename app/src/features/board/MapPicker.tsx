@@ -11,7 +11,7 @@ const BRANCH =
   'relative ps-4 before:absolute before:start-0 before:top-0 before:h-full before:w-0.5 before:bg-line ' +
   'last:before:h-1/2 after:absolute after:start-0 after:top-1/2 after:h-0.5 after:w-2 after:bg-line'
 
-/** The map's name; a click lists the maps of its project (those with branches show them in a tree under them) */
+/** The map's name ; a click lists the maps of its project (those with branches show them in a tree under them) */
 export default function MapPicker({ mapId, name }: { mapId: string; name: string }) {
   const objects = useMockObjects()
   const workspace = useWorkspace()

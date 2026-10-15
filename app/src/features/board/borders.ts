@@ -12,7 +12,7 @@ export function areaAt(board: Board, p: Point): BorderObject | null {
   const order = drawOrder(board)
   for (let i = order.length - 1; i >= 0; i--) {
     const o = order[i]
-    if (o.kind === 'border' && canSelect(o) && containsPoint(flattenedOf(o), p)) return o
+    if (o.kind === 'border' && !o.open && canSelect(o) && containsPoint(flattenedOf(o), p)) return o
   }
   return null
 }
@@ -146,11 +146,13 @@ const sameLink = (a: Link, b: Link) => a.to === b.to && a.id === b.id
  * cannot be made reliably): the drawn border is simply added. `id` is the surviving border, or null when added.
  */
 export function mergeBorders(board: Board, drawn: Omit<BorderObject, 'id'>, tolerance: number): { change: Change; id: number | null } {
+  // An open border is a line: nothing to merge it with
+  if (drawn.open) return { change: { add: [drawn] }, id: null }
   const reach = { x: Math.min(...drawn.points.map((p) => p.x)) - tolerance, y: Math.min(...drawn.points.map((p) => p.y)) - tolerance, w: 0, h: 0 }
   reach.w = Math.max(...drawn.points.map((p) => p.x)) + tolerance - reach.x
   reach.h = Math.max(...drawn.points.map((p) => p.y)) + tolerance - reach.y
   const candidates = board.objects
-    .filter((o): o is BorderObject => o.kind === 'border' && canSelect(o))
+    .filter((o): o is BorderObject => o.kind === 'border' && !o.open && canSelect(o))
     .filter((o) => {
       const b = boundsOf(o)
       return b.x <= reach.x + reach.w && reach.x <= b.x + b.w && b.y <= reach.y + reach.h && reach.y <= b.y + b.h

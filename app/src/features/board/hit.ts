@@ -35,8 +35,8 @@ export function hitPart(o: BoardObject, p: Point, tolerance: number): Part | nul
     case 'border': {
       const ring = flattenedOf(o)
       const reach = Math.max(o.style.thickness / 2, tolerance)
-      if (segmentsOf(ring, true).some(([a, b]) => distanceToSegment(p, a, b) <= reach)) return 'edge'
-      return containsPoint(ring, p) ? 'inside' : null
+      if (segmentsOf(ring, !o.open).some(([a, b]) => distanceToSegment(p, a, b) <= reach)) return 'edge'
+      return !o.open && containsPoint(ring, p) ? 'inside' : null
     }
     case 'shape': {
       const outline = flattenedOf(o)
@@ -87,7 +87,7 @@ export function segmentTouchesRect(a: Point, b: Point, r: Rect) {
 export function objectsInRect(board: Board, rect: Rect): BoardObject[] {
   return board.objects.filter((o) => {
     if (!canSelect(o)) return false
-    if (o.kind === 'line' || o.kind === 'border') return segmentsOf(flattenedOf(o), o.kind === 'border').some(([a, b]) => segmentTouchesRect(a, b, rect))
+    if (o.kind === 'line' || o.kind === 'border') return segmentsOf(flattenedOf(o), o.kind === 'border' && !o.open).some(([a, b]) => segmentTouchesRect(a, b, rect))
     return boundsIntersect(boundsOf(o), rect)
   })
 }

@@ -1,0 +1,67 @@
+import ColourField from '../../../../components/ui/fields/ColourField'
+import RangeField from '../../../../components/ui/fields/RangeField'
+import { NumberField } from '../../NumberBox'
+import CaptionedRow from '../common/CaptionedRow'
+import CheckField from '../../../../components/ui/fields/CheckField'
+import SidebarSection, { openSection } from '../common/SidebarSection'
+import type { TextSource } from './textSource'
+import { CURVE_MAX } from '../../textCurve'
+
+
+/** The text sidebar's Stroke (colour, intensity, opacity), Shadow (colour, blur, distance) and Curveness (a bar) sections: numbers, not sliders, except the bar */
+export default function TextEffectsSection({ source }: { source: TextSource }) {
+  const { value, onLive, onChange: onCommit } = source
+  return (
+    <>
+      <SidebarSection
+        id="stroke"
+        title="Stroke"
+        leading={
+          <CheckField
+            label=""
+            aria-label="Stroke"
+            checked={value.strokeWidth > 0}
+            onChange={(on) => {
+              onCommit({ strokeWidth: on ? 2 : 0 })
+              if (on) openSection('stroke')
+            }}
+          />
+        }
+      >
+        <CaptionedRow
+          fields={[
+            { label: 'Colour', node: <ColourField wide label="Stroke colour" value={value.strokeColor} onLive={(strokeColor) => onLive({ strokeColor })} onCommit={(strokeColor) => onCommit({ strokeColor })} /> },
+            { label: 'Intensity', node: <NumberField hideLabel label="Intensity" value={value.strokeWidth} min={0} max={20} onCommit={(strokeWidth) => onCommit({ strokeWidth })} /> },
+            { label: 'Opacity', node: <NumberField hideLabel label="Opacity" suffix="%" value={value.strokeOpacity} min={1} max={100} onCommit={(strokeOpacity) => onCommit({ strokeOpacity })} /> },
+          ]}
+        />
+      </SidebarSection>
+      <SidebarSection
+        id="shadow"
+        title="Shadow"
+        leading={
+          <CheckField
+            label=""
+            aria-label="Shadow"
+            checked={value.shadowBlur > 0 || value.shadowDistance > 0}
+            onChange={(on) => {
+              onCommit(on ? { shadowBlur: 4, shadowDistance: 3 } : { shadowBlur: 0, shadowDistance: 0 })
+              if (on) openSection('shadow')
+            }}
+          />
+        }
+      >
+        <CaptionedRow
+          fields={[
+            { label: 'Colour', node: <ColourField wide label="Shadow colour" value={value.shadowColor} onLive={(shadowColor) => onLive({ shadowColor })} onCommit={(shadowColor) => onCommit({ shadowColor })} /> },
+            { label: 'Blur', node: <NumberField hideLabel label="Blur" value={value.shadowBlur} min={0} max={40} onCommit={(shadowBlur) => onCommit({ shadowBlur })} /> },
+            { label: 'Distance', node: <NumberField hideLabel label="Distance" value={value.shadowDistance} min={0} max={40} onCommit={(shadowDistance) => onCommit({ shadowDistance })} /> },
+          ]}
+        />
+      </SidebarSection>
+      <SidebarSection id="curveness" title="Curveness">
+        <RangeField hideLabel label="Curveness" value={value.curve} min={-CURVE_MAX} max={CURVE_MAX} onLive={(curve) => onLive({ curve })} onCommit={(curve) => onCommit({ curve })} />
+      </SidebarSection>
+    </>
+  )
+}

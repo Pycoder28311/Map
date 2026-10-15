@@ -78,10 +78,10 @@ function halfOf(line: LineObject, points: Point[], handles?: Handle[]): Draft & 
 }
 
 /**
- * A border cut open at the place nearest `p`: a line (same style, links, name and layer) that starts and ends there and
+ * An area cut open at the place nearest `p`: an open border (same style, links, name and layer) that starts and ends there and
  * runs round the outline in between. A place between two points becomes the line's two ends.
  */
-export function splitBorder(border: BorderObject, p: Point): (Draft & { kind: 'line' }) | null {
+export function splitBorder(border: BorderObject, p: Point): (Draft & { kind: 'border' }) | null {
   const { points } = border
   if (points.length < 3) return null
   const near = nearestOnPath([...points, points[0]], p)
@@ -93,10 +93,18 @@ export function splitBorder(border: BorderObject, p: Point): (Draft & { kind: 'l
   if (same(cut, points[i])) run = [...points.slice(i), ...points.slice(0, i), points[i]]
   else if (same(cut, points[(i + 1) % n])) run = [...points.slice((i + 1) % n), ...points.slice(0, (i + 1) % n), points[(i + 1) % n]]
   else run = [cut, ...points.slice(i + 1), ...points.slice(0, i + 1), cut]
-  return lineFromBorder(border, run)
+  return pieceOfBorder(border, run)
 }
 
-/** The line an area becomes when it is opened or erased: same layer, name, links and style, no inside */
-export function lineFromBorder(border: BorderObject, points: Point[]): Draft & { kind: 'line' } {
-  return { kind: 'line', layer: border.layer, name: border.name, links: border.links, style: border.style, points }
+/** What an area becomes when it is opened or erased: an open border (same layer, name, links, style and description), no inside */
+export function pieceOfBorder(border: BorderObject, points: Point[]): Draft & { kind: 'border' } {
+  return { kind: 'border', layer: border.layer, name: border.name, links: border.links, style: border.style, fill: null, description: border.description, points, open: true }
+}
+
+/** An open border cut at the place nearest `p`, like a line: two open borders with its name, links and style */
+export function splitOpenBorder(border: BorderObject, p: Point): [Draft & { kind: 'border' }, Draft & { kind: 'border' }] | null {
+  const halves = splitLine({ ...border, kind: 'line' } as unknown as LineObject, p)
+  if (!halves) return null
+  const piece = (half: Draft & { kind: 'line' }): Draft & { kind: 'border' } => ({ ...half, kind: 'border', fill: null, description: border.description, open: true })
+  return [piece(halves[0]), piece(halves[1])]
 }

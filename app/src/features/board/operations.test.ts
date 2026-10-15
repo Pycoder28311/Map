@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { applyChange } from './changes'
 import { boundsOf } from './bounds'
-import { DUPLICATE_OFFSET, flip, moveBy, resizeTo, rotateBy } from './operations'
+import { DUPLICATE_OFFSET, flip, moveBy, resizeAndTurn, resizeTo, rotateBy } from './operations'
 import { DEFAULT_STYLE } from './style'
 import { border, boardOf, line, pts, text } from './testing'
 import { duplicate } from './operations'
@@ -35,6 +35,48 @@ describe('operations', () => {
     const start = { x: 0, y: 0, w: 100, h: 100 }
     const { board: b } = applyChange(board(), resizeTo(board().objects, start, { x: -500, y: 900 }, false))
     expect(boundsOf(b.objects[0]).w).toBeGreaterThan(0)
+  })
+
+  it('moves a corner handle exactly onto the pointer', () => {
+    const start = { x: 0, y: 0, w: 100, h: 100 }
+    const corner = line(9, pts([100, 0]), { style: thin })
+    const now = { x: 60, y: -80 }
+    const { board: b } = applyChange(boardOf(corner), resizeAndTurn([corner], start, now, false))
+    const moved = b.objects[0]
+    if (moved.kind !== 'line') throw new Error('a line')
+    expect(moved.points[0]).toEqual(now)
+  })
+
+  it('does not turn when the pointer stays on the diagonal, and then scales evenly', () => {
+    const start = { x: 0, y: 0, w: 100, h: 100 }
+    const corner = line(9, pts([100, 0]), { style: thin })
+    const { board: b } = applyChange(boardOf(corner), resizeAndTurn([corner], start, { x: 200, y: -100 }, false))
+    const moved = b.objects[0]
+    if (moved.kind !== 'line') throw new Error('a line')
+    expect(moved.points[0]).toEqual({ x: 200, y: -100 })
+  })
+
+  it('snaps the turn to 15 degrees while Shift is held', () => {
+    const start = { x: 0, y: 0, w: 100, h: 100 }
+    const corner = line(9, pts([100, 0]), { style: thin })
+    const turned = (shift: boolean) => {
+      const out = applyChange(boardOf(corner), resizeAndTurn([corner], start, { x: 100, y: -5 }, shift)).board.objects[0]
+      if (out.kind !== 'line') throw new Error('a line')
+      return out.points[0]
+    }
+    expect(turned(false)).toEqual({ x: 100, y: -5 })
+    expect(turned(true)).not.toEqual({ x: 100, y: -5 })
+  })
+
+  it('turns one text and changes how wide it wraps, without scaling its letters', () => {
+    const t = text(7, { text: 'hello world', anchor: { x: 0, y: 0 }, width: 100, size: 20 })
+    const b0 = boundsOf(t)
+    const { board: b } = applyChange(boardOf(t), resizeAndTurn([t], b0, { x: b0.x + b0.w + 60, y: b0.y - 5 }, false))
+    const out = b.objects[0]
+    if (out.kind !== 'text') throw new Error('a text')
+    expect(out.size).toBe(20)
+    expect(out.width).toBeGreaterThan(100)
+    expect(out.rotation).not.toBe(0)
   })
 
   it('snaps a turn to 15 degrees', () => {

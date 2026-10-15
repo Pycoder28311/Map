@@ -25,13 +25,15 @@ type Props = {
   canvas: RefObject<HTMLCanvasElement | null>
   /** The canvas was drawn on outside the board (the pencil's segments): repaint it */
   repaint: () => void
+  /** What a finished drawing added (to select it) */
+  onCreated: (ids: number[]) => void
 }
 
 type Keys = { shift: boolean; alt: boolean }
 
 const whole = (p: Point): Point => ({ x: Math.round(p.x), y: Math.round(p.y) })
 
-export function useDrawTool({ mapId, board, view, canvas, repaint }: Props) {
+export function useDrawTool({ mapId, board, view, canvas, repaint, onCreated }: Props) {
   const [draft, setDraft] = useState<StyledObject | null>(null)
   const [linearOpen, setLinearOpen] = useState(false)
   // A freehand stroke or a dragged shape in progress (what a pointer hold makes)
@@ -53,20 +55,20 @@ export function useDrawTool({ mapId, board, view, canvas, repaint }: Props) {
 
   const scale = view?.scale ?? 1
 
-  /** A border that is not finished: its inside already shows (an open set of points is a line until there are three) */
+  /** A border that is not finished: it shows as the open line it is until it is let go */
   const borderDraft = (points: Point[]): StyledObject | null => {
     const pen = getBorderPen()
     const thinned = points.length > 2 ? simplify(points, 1) : points
-    if (thinned.length < 3) return thinned.length ? ({ id: 0, kind: 'line', layer: LAYER_MAIN, name: '', links: [], style: pen.style, points: thinned } as LineObject) : null
-    return { id: 0, kind: 'border', layer: LAYER_MAIN, name: '', links: [], style: pen.style, fill: pen.fill, description: '', points: thinned } as BorderObject
+    return thinned.length ? ({ id: 0, kind: 'line', layer: LAYER_MAIN, name: '', links: [], style: pen.style, points: thinned } as LineObject) : null
   }
 
   /** The finished drawing for the border tool, snapped to what is near and merged into the areas it touches (Alt: not merged) */
   const finishBorder = (made: Omit<BorderObject, 'id'> | null, alt: boolean) => {
     if (!made) return
     const snapped = { ...made, points: snapToBorders(made.points, board, SNAP_PX / scale).map(whole) }
-    if (alt) return void addObject(mapId, snapped)
-    changeObjects(mapId, mergeBorders(board, snapped, MERGE_PX / scale).change)
+    if (alt) return onCreated([addObject(mapId, snapped)])
+    const added = changeObjects(mapId, mergeBorders(board, snapped, MERGE_PX / scale).change)
+    if (added.length > 0) onCreated(added)
   }
 
   const drawSegment = (from: Point, to: Point) => {
@@ -89,17 +91,18 @@ export function useDrawTool({ mapId, board, view, canvas, repaint }: Props) {
       const pen = getBorderPen()
       const box = shapeBox(keys)
       if (shapeDrag.current && box) return finishBorder(borderFromShape(box.box, pen.shape!, pen.param, pen.style, pen.fill), keys.alt)
-      if (stroke.current) return finishBorder(borderFromStroke(stroke.current, pen.style, pen.fill), keys.alt)
+      if (stroke.current) return finishBorder(borderFromStroke(stroke.current, pen.style, pen.fill, CLOSE_PX / scale), keys.alt)
       return
     }
     const pen = getPen()
     const made = shapeDrag.current ? shapeBox(keys) : stroke.current ? drawLine(stroke.current, pen.style) : null
-    if (made) addObject(mapId, made)
+    if (made) onCreated([addObject(mapId, made)])
   }
 
-  const finishLinear = (alt: boolean) => {
+  /** `closed`: the first corner was clicked again; Enter or a double-click leaves the ends apart */
+  const finishLinear = (alt: boolean, closed: boolean) => {
     const pen = getBorderPen()
-    const made = borderFromCorners(corners.current, pen.style, pen.fill)
+    const made = borderFromCorners(corners.current, pen.style, pen.fill, closed)
     dropDraft()
     finishBorder(made, alt)
   }
@@ -125,7 +128,7 @@ export function useDrawTool({ mapId, board, view, canvas, repaint }: Props) {
       if (first && corners.current.length >= 3) {
         const f = { x: view.x + first.x * view.scale, y: view.y + first.y * view.scale }
         if (Math.hypot(f.x - at.x, f.y - at.y) <= CLOSE_PX) {
-          finishLinear(keys.alt)
+          finishLinear(keys.alt, true)
           return false
         }
       }
@@ -194,13 +197,13 @@ export function useDrawTool({ mapId, board, view, canvas, repaint }: Props) {
 
   /** A double-click closes a linear border */
   const doubleClick = (alt: boolean) => {
-    if (corners.current.length >= 3) finishLinear(alt)
+    if (corners.current.length >= 2) finishLinear(alt, false)
   }
 
   /** Enter closes a linear border, Backspace takes back its last corner, Esc drops it. True when the key was used */
   const handleKey = (key: string, alt: boolean): boolean => {
     if (corners.current.length === 0) return false
-    if (key === 'enter') finishLinear(alt)
+    if (key === 'enter') finishLinear(alt, false)
     else if (key === 'backspace') {
       corners.current = corners.current.slice(0, -1)
       if (corners.current.length === 0) dropDraft()

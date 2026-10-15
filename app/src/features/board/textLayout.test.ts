@@ -61,3 +61,41 @@ describe('layoutOf', () => {
     expect(layoutOf(t, measure)).toBe(layoutOf(t, measure))
   })
 })
+
+describe('justify', () => {
+  // Ten wide a character, in a box 60 wide: "aa bb" fits, "aa bb cc" does not
+  const tens: Measure = (_font, t) => t.length * 10
+  const laid = (align: 'left' | 'justify', width = 60) => layoutText({ runs: [{ text: 'aa bb cc dd' }], width, size: 10, align }, tens)
+
+  it('stretches the spaces of a wrapped line to the box width', () => {
+    const first = laid('justify').lines[0]
+    expect(first.fragments.map((f) => f.text).join('').trim()).toBe('aa bb')
+    const bb = first.fragments.find((f) => f.text === 'bb')!
+    expect(bb.x + 20).toBeCloseTo(60)
+  })
+
+  it('leaves the last line of the paragraph alone (in one piece, from the left)', () => {
+    const lines = laid('justify').lines
+    const last = lines[lines.length - 1]
+    expect(last.fragments.map((f) => f.text).join('')).toBe('cc dd')
+    expect(last.fragments.map((f) => f.x)).toEqual([0])
+  })
+
+  it('does nothing without a wrapping width, and not for left', () => {
+    expect(laid('justify', 0).lines[0].fragments).toHaveLength(1)
+    expect(laid('left').lines[0].fragments.map((f) => f.x)).toEqual([0])
+  })
+})
+
+describe('line gap', () => {
+  const tens: Measure = (_font, t) => t.length * 10
+  const lines = (lineGap?: number) => layoutText({ runs: [{ text: 'a\nb\nc' }], width: 0, size: 10, align: 'left', lineGap }, tens)
+
+  it('puts the extra space between the lines, not before the first or after the last', () => {
+    const plain = lines()
+    const gapped = lines(6)
+    expect(gapped.lines[0].y).toBe(0)
+    expect(gapped.lines[1].y - gapped.lines[0].y).toBeCloseTo(plain.lines[1].y - plain.lines[0].y + 6)
+    expect(gapped.height).toBeCloseTo(plain.height + 2 * 6)
+  })
+})

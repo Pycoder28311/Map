@@ -55,10 +55,10 @@ describe('eraseChange on a curved line', () => {
 describe('eraseObject on a border', () => {
   const area = border(3, pts([0, 0], [100, 0], [100, 100], [0, 100]), { name: 'A' })
 
-  it('turns what is left of the outline into lines', () => {
+  it('turns what is left of the outline into open borders', () => {
     const change = eraseObject(area, [{ x: 50, y: 0 }], 10)
     expect(change.remove).toEqual([3])
-    expect(change.add!.every((d) => d.kind === 'line')).toBe(true)
+    expect(change.add!.every((d) => d.kind === 'border' && d.open === true)).toBe(true)
     expect(change.add![0]).toMatchObject({ name: 'A' })
   })
 

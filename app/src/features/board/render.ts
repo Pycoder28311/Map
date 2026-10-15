@@ -1,9 +1,10 @@
 // Paints a board on the editor's canvas (crisp at any zoom: redrawn with the view's transform, never a scaled bitmap).
 import { ARROW_HEADS, arrowHead, endTangents, headInset } from './arrows'
 import { colourRuns, edgeColours, labelPoint, wrapWords } from './borders'
-import { textBox } from './bounds'
+import { bendAbove, boxPads, textLayoutBox } from './bounds'
 import { drawOrder } from './layers'
 import { layoutOfText, measure } from './measureText'
+import { placeOnArc } from './textCurve'
 import { fontOf, LINE_HEIGHT } from './textLayout'
 import { flattenedOf, isClosed, softened, trimEnds } from './pathGeometry'
 import { PIN_BODY, PIN_HEIGHT, PIN_ICON_PATHS, PIN_WIDTH } from './pinIcons'
@@ -77,30 +78,119 @@ function paintLabel(ctx: CanvasRenderingContext2D, ring: Point[], name: string, 
   ctx.restore()
 }
 
+/** The frame round a text (a w × h box at the origin): a square, or only its corners */
+function paintFrame(ctx: CanvasRenderingContext2D, o: TextObject, w: number, h: number) {
+  const colour = o.boxColor ?? o.color
+  ctx.save()
+  ctx.lineJoin = 'miter'
+  ctx.lineWidth = Math.max(1, o.size / 14)
+  ctx.strokeStyle = colour
+  if (o.boxShape === 'corners') {
+    // Only the corners: a short bracket in each, a quarter of the shorter side long
+    const n = Math.min(w, h) / 4
+    ctx.beginPath()
+    for (const [x, y, dx, dy] of [[0, 0, 1, 1], [w, 0, -1, 1], [w, h, -1, -1], [0, h, 1, -1]]) {
+      ctx.moveTo(x + dx * n, y)
+      ctx.lineTo(x, y)
+      ctx.lineTo(x, y + dy * n)
+    }
+    ctx.stroke()
+  } else ctx.strokeRect(0, 0, w, h)
+  ctx.restore()
+}
+
 /** A text: each fragment in its own font and colour, the box turned about its centre. Lines sit on a common baseline */
-function paintText(ctx: CanvasRenderingContext2D, o: TextObject) {
+function paintText(ctx: CanvasRenderingContext2D, o: TextObject, scale: number) {
   const layout = layoutOfText(o)
   if (layout.lines.every((l) => l.fragments.length === 0)) return
-  const box = textBox(o)
+  const box = textLayoutBox(o)
+  const curve = o.curve ?? 0
   ctx.save()
+  // Keeping its size on the screen: drawn at its size over scale, about its corner
+  if (o.fixedSize) {
+    ctx.translate(o.anchor.x, o.anchor.y)
+    ctx.scale(1 / scale, 1 / scale)
+    ctx.translate(-o.anchor.x, -o.anchor.y)
+  }
   ctx.translate(box.x + box.w / 2, box.y + box.h / 2)
   ctx.rotate((o.rotation * Math.PI) / 180)
   ctx.translate(-box.w / 2, -box.h / 2)
   ctx.globalAlpha = o.opacity / 100
+  const pads = boxPads(o)
+  if (o.boxed) paintFrame(ctx, o, box.w, box.h)
+  ctx.translate(pads.x, pads.y + bendAbove(o))
   ctx.textBaseline = 'alphabetic'
   ctx.textAlign = 'left'
+  ctx.lineJoin = 'round'
+  // The canvas's shadow is in screen pixels, not board units: this much is a board unit now
+  const pixel = Math.hypot(ctx.getTransform().a, ctx.getTransform().b)
+  const shadowed = (o.shadowBlur ?? 0) > 0 || (o.shadowDistance ?? 0) > 0
+  const width = layout.width
   for (const line of layout.lines) {
-    const size = line.height / LINE_HEIGHT
+    const size = line.size
     // The baseline of a line of `size`: its text is 1.2 × size tall, centred in the line, the letters sit 0.95 of that down
-    const baseline = line.y + (line.height - size * 1.2) / 2 + size * 0.95
+    const baseline = line.y + (size * LINE_HEIGHT - size * 1.2) / 2 + size * 0.95
     for (const f of line.fragments) {
       const font = fontOf(f.run, f.run.size)
       ctx.font = font
-      ctx.fillStyle = f.run.color ?? o.color
-      ctx.fillText(f.text, f.x, baseline)
-      if (f.run.underline || f.run.strike) {
-        const width = measure(font, f.text.replace(/\s+$/, ''))
-        ctx.fillRect(f.x, f.run.underline ? baseline + f.run.size * 0.12 : baseline - f.run.size * 0.3, width, Math.max(1, f.run.size / 16))
+      const fill = f.run.color ?? o.color
+      // Draws `text` with its left end at (x, 0), its underline and strikethrough under it
+      const gap = f.run.spacing ?? 0
+      const draw = (text: string, x: number) => {
+        if (shadowed) {
+          ctx.shadowColor = o.shadowColor ?? '#000000'
+          ctx.shadowBlur = (o.shadowBlur ?? 0) * pixel
+          ctx.shadowOffsetX = ctx.shadowOffsetY = (o.shadowDistance ?? 0) * pixel
+        }
+        if ((o.strokeWidth ?? 0) > 0) {
+          ctx.strokeStyle = o.strokeColor ?? '#000000'
+          ctx.lineWidth = o.strokeWidth!
+          const alpha = ctx.globalAlpha
+          ctx.globalAlpha = alpha * ((o.strokeOpacity ?? 100) / 100)
+          ctx.strokeText(text, x, 0)
+          ctx.globalAlpha = alpha
+          // The fill over the stroke's inner half (the shadow is already made by the stroke)
+          ctx.shadowColor = 'transparent'
+        }
+        ctx.fillStyle = fill
+        ctx.fillText(text, x, 0)
+        ctx.shadowColor = 'transparent'
+        if (f.run.underline || f.run.strike) {
+          const length = measure(font, text.replace(/\s+$/, '')) + gap * Array.from(text.replace(/\s+$/, '')).length
+          const thickness = Math.max(1, f.run.size / 16)
+          if (f.run.underline) {
+            ctx.fillStyle = f.run.underlineColor ?? fill
+            ctx.fillRect(x, f.run.size * 0.12, length, thickness)
+          }
+          if (f.run.strike) {
+            ctx.fillStyle = f.run.strikeColor ?? fill
+            ctx.fillRect(x, -f.run.size * 0.3, length, thickness)
+          }
+        }
+      }
+      if (curve === 0 && gap === 0) {
+        ctx.save()
+        ctx.translate(0, baseline)
+        draw(f.text, f.x)
+        ctx.restore()
+        continue
+      }
+      // Bent or spaced: each letter on its own, put on the arc and turned with it when bent
+      let x = f.x
+      for (const letter of f.text) {
+        const w = measure(font, letter)
+        ctx.save()
+        if (curve === 0) {
+          ctx.translate(0, baseline)
+          draw(letter, x)
+        } else {
+          const at = placeOnArc(curve, width, baseline, x + w / 2 - width / 2)
+          ctx.translate(at.x, at.y)
+          ctx.rotate(at.angle)
+          draw(letter, -w / 2)
+        }
+        ctx.restore()
+        x += w + gap
       }
     }
   }
@@ -143,22 +233,29 @@ export function paintPoint(ctx: CanvasRenderingContext2D, o: PointObject, hovere
 
 /** One object of any path kind (line, border, shape): fill, line type, arrows, name, and a halo when hovered */
 export function paintObject(ctx: CanvasRenderingContext2D, o: BoardObject, scale: number, hovered = false, namedByText = false) {
-  if (o.kind === 'text') return paintText(ctx, o)
+  if (o.kind === 'text') return paintText(ctx, o, scale)
   if (o.kind === 'point') return paintPoint(ctx, o, hovered)
   if (o.kind !== 'line' && o.kind !== 'border' && o.kind !== 'shape') return
   const style = o.style
   const unit = style.fixedWidth ? 1 / scale : 1
   const closed = isClosed(o)
   const flat = flattenedOf(o)
-  let outline = o.kind === 'line' && style.way === 'exact' ? softened(flat, style.amount) : o.kind === 'border' && style.way === 'exact' ? softened(flat, style.amount, true) : flat
+  let outline = o.kind === 'line' && style.way === 'exact' ? softened(flat, style.amount) : o.kind === 'border' && style.way === 'exact' ? softened(flat, style.amount, closed) : flat
 
   // The inside: an area's is lighter still while it is hovered
-  const inside = o.kind === 'shape' ? o.fill : o.kind === 'border' ? (o.fill ?? (hovered ? { color: style.color, opacity: 8 } : null)) : null
+  const inside = o.kind === 'shape' ? o.fill : o.kind === 'border' && closed ? (o.fill ?? (hovered ? { color: style.color, opacity: 8 } : null)) : null
   if (inside) {
     pathOf(ctx, outline, true)
     ctx.globalAlpha = (o.kind === 'border' && hovered ? Math.min(60, inside.opacity * 2) : inside.opacity) / 100
     ctx.fillStyle = inside.color
+    if (style.shadow) {
+      const pixel = Math.hypot(ctx.getTransform().a, ctx.getTransform().b)
+      ctx.shadowColor = style.shadow.color
+      ctx.shadowBlur = style.shadow.blur * pixel
+      ctx.shadowOffsetX = ctx.shadowOffsetY = style.shadow.distance * pixel
+    }
     ctx.fill()
+    ctx.shadowColor = 'transparent'
   }
   if (style.thickness <= 0 && o.kind === 'shape') {
     ctx.globalAlpha = 1
@@ -176,11 +273,13 @@ export function paintObject(ctx: CanvasRenderingContext2D, o: BoardObject, scale
     o.kind === 'border' && o.edges?.length && !o.handles && style.amount === 0
       ? colourRuns(o.points, edgeColours(o)).map((run) => ({ parts: strokeParts(run.line, style, unit, false), color: run.color }))
       : [{ parts: strokeParts(outline, style, unit, closed), color: style.color }]
-  const strokeAll = (extraPx: number, alpha: number) => {
+  // `colour` paints every run in that one colour (the stroke round the line); `reach` is how much wider than the line (board units, both sides together)
+  const strokeAll = (extraPx: number, alpha: number, colour?: string, reach = 0) => {
     ctx.globalAlpha = alpha
     strokeStyle(ctx, style, scale, extraPx)
+    ctx.lineWidth += reach * unit
     for (const { parts, color } of strokes) {
-      ctx.strokeStyle = color
+      ctx.strokeStyle = colour ?? color
       for (const line of parts.lines) {
         pathOf(ctx, line, parts.closed)
         ctx.stroke()
@@ -188,7 +287,21 @@ export function paintObject(ctx: CanvasRenderingContext2D, o: BoardObject, scale
     }
   }
   if (hovered) strokeAll(HALO_PX, (style.opacity / 100) * 0.25)
+  // The shadow is made by the outermost thing painted: the stroke round the line, else the line itself
+  const shadow = style.shadow
+  if (shadow) {
+    // The canvas's shadow is in screen pixels, not board units
+    const pixel = Math.hypot(ctx.getTransform().a, ctx.getTransform().b)
+    ctx.shadowColor = shadow.color
+    ctx.shadowBlur = shadow.blur * pixel
+    ctx.shadowOffsetX = ctx.shadowOffsetY = shadow.distance * pixel
+  }
+  if (style.stroke) {
+    strokeAll(0, (style.opacity / 100) * (style.stroke.opacity / 100), style.stroke.color, style.stroke.width * 2)
+    ctx.shadowColor = 'transparent'
+  }
   strokeAll(0, style.opacity / 100)
+  ctx.shadowColor = 'transparent'
 
   if (arrows) {
     ctx.globalAlpha = style.opacity / 100
@@ -208,7 +321,7 @@ export function paintObject(ctx: CanvasRenderingContext2D, o: BoardObject, scale
     }
   }
   ctx.globalAlpha = 1
-  if (o.kind === 'border') paintLabel(ctx, flat, namedByText ? '' : o.name, o.description, style.color, style.opacity)
+  if (o.kind === 'border' && closed) paintLabel(ctx, flat, namedByText ? '' : o.name, o.description, style.color, style.opacity)
 }
 
 /** The white sheet, then every object bottom to top, then `extra` (what is being drawn, not in the board yet) */

@@ -8,7 +8,7 @@ import { newNameText, runsPatch, textChange } from './areaName'
 import { getTextPen } from './pen'
 import { HIT_PX } from './useMouseTool'
 import { insideBoard, screenToBoard, type Viewport } from './viewport'
-import { select } from './selection'
+import { clearSelection, getSelection, select } from './selection'
 import type { Board, Point, TextObject, TextRun } from './types'
 import { LAYER_MAIN } from './types'
 
@@ -36,9 +36,13 @@ export function useTextTool({ mapId, board, view }: Props) {
     const p = screenToBoard(view, at)
     const existing = textAt(board, p, HIT_PX / view.scale)
     if (existing) {
-      edit(existing)
+      // A click selects a text (its box and sidebar show, as with the Mouse tool); a click on the selected one types in it
+      if (getSelection(mapId).has(existing.id)) edit(existing)
+      else select(mapId, [existing.id])
       return false
     }
+    // A click on bare board lets go of what was selected, then starts a new text
+    clearSelection(mapId)
     if (!insideBoard(p)) return false
     drag.current = { from: p, to: p }
     setBox(null)

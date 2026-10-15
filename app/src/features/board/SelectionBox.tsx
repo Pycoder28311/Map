@@ -18,8 +18,8 @@ type Props = {
   /** Buttons that cannot be used now, e.g. split on a selection that has no line */
   disabled?: BoxAction[]
   onAction: (action: BoxAction) => void
-  /** The resize and rotate handles are dragged: they start a gesture instead of clicking */
-  onHandle: (action: 'resize' | 'rotate', e: PointerEvent) => void
+  /** The resize handle is dragged (it also turns): it starts a gesture instead of clicking */
+  onHandle: (action: 'resize', e: PointerEvent) => void
 }
 
 /** The dashed rectangle around the selection and its buttons. It never turns: it fits what is inside (map.md) */
@@ -33,14 +33,10 @@ export default function SelectionBox({ bounds, view, buttons, splitting, disable
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-visible" data-no-drag>
-      <div style={{ left, top, width: w, height: h }} className="absolute border-2 border-dashed border-accent">
-        {buttons.some((b) => b.action === 'rotate') && (
-          // The line from the top edge up to the rotate handle
-          <span aria-hidden style={{ height: 18 + BUTTON_SIZE / 2 }} className="absolute start-1/2 bottom-full w-px -translate-x-1/2 bg-accent/60" />
-        )}
+      <div style={{ left, top, width: w, height: h }} className="absolute border-2 border-dashed border-blue-500">
         {buttons.map((b) => {
           const c = buttonCentre(b.corner, b.order, w, h)
-          const handle = b.action === 'resize' || b.action === 'rotate'
+          const handle = b.action === 'resize'
           return (
             <span key={b.action} style={{ left: c.x - BUTTON_SIZE / 2, top: c.y - BUTTON_SIZE / 2, width: BUTTON_SIZE, height: BUTTON_SIZE }} className="pointer-events-auto absolute">
               <HoverInfo title={b.label} text={b.info} shortcut={b.shortcut} side="top">
@@ -50,8 +46,8 @@ export default function SelectionBox({ bounds, view, buttons, splitting, disable
                   variant={b.action === 'split' && splitting ? 'primary' : 'secondary'}
                   aria-pressed={b.action === 'split' ? splitting : undefined}
                   disabled={disabled.includes(b.action)}
-                  className={`size-full rounded-full border border-line shadow-sm ${handle ? 'cursor-nwse-resize touch-none' : ''} ${b.action === 'rotate' ? '!cursor-grab' : ''}`}
-                  onPointerDown={handle ? (e) => { e.preventDefault(); e.stopPropagation(); onHandle(b.action as 'resize' | 'rotate', e) } : undefined}
+                  className={`size-full rounded-full border border-line shadow-sm ${handle ? 'cursor-nwse-resize touch-none' : ''}`}
+                  onPointerDown={handle ? (e) => { e.preventDefault(); e.stopPropagation(); onHandle('resize', e) } : undefined}
                   onClick={handle ? undefined : () => onAction(b.action)}
                 />
               </HoverInfo>

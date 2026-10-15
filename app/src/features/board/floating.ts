@@ -3,6 +3,9 @@ import { useSidebar } from '../../components/layout/sidebar/useSidebar'
 /** The look of the editor's floating pieces (name bar, tool panel, zoom control) */
 export const FLOAT = 'rounded-(--card-radius) border border-line bg-surface shadow-lg'
 
+/** The two big top bars (title bar, tool panel): rounder corners, for them and their buttons (set as the theme's variables, so what hangs under them follows) */
+export const ROUNDER = '[--card-radius:1.5rem] [--btn-radius:1rem] [--btn-close-radius:1rem]'
+
 // Full class strings so Tailwind can detect them at build time
 const SHIFT = 'transition-transform duration-(--sidebar-duration) ease-out motion-reduce:transition-none'
 const SHIFTED = 'translate-x-[calc(var(--sidebar-w)-var(--sidebar-rail))]'

@@ -1,9 +1,9 @@
 // The buttons around the selection box (map.md): which, where, and what they say. Pure (selectionButtons.test.ts).
-import { LuCopy, LuFlipHorizontal2, LuFlipVertical2, LuLink, LuMoveDiagonal2, LuRotateCw, LuSplit, LuTextCursorInput, LuX } from 'react-icons/lu'
+import { LuCopy, LuFlipHorizontal2, LuFlipVertical2, LuLink, LuMoveDiagonal2, LuSplit, LuTextCursorInput, LuX } from 'react-icons/lu'
 import type { PlainIcon } from '../../components/ui/icons/IconSlot'
 import type { BoardObject } from './types'
 
-export type BoxAction = 'flipH' | 'flipV' | 'resize' | 'rotate' | 'split' | 'duplicate' | 'remove' | 'link' | 'description'
+export type BoxAction = 'flipH' | 'flipV' | 'resize' | 'split' | 'duplicate' | 'remove' | 'link' | 'description'
 
 /**
  * Where on the box a button sits. Each corner's buttons run away from the box, so they never cover each other:
@@ -27,8 +27,7 @@ export type BoxButton = {
 const BUTTON: Record<BoxAction, Omit<BoxButton, 'corner' | 'order'>> = {
   flipH: { action: 'flipH', icon: LuFlipHorizontal2, label: 'Flip horizontally', info: 'Mirror left and right.' },
   flipV: { action: 'flipV', icon: LuFlipVertical2, label: 'Flip vertically', info: 'Mirror top and bottom.' },
-  resize: { action: 'resize', icon: LuMoveDiagonal2, label: 'Resize', info: 'Drag to change the size, to any ratio. Shift keeps the ratio.' },
-  rotate: { action: 'rotate', icon: LuRotateCw, label: 'Rotate', info: 'Drag around the middle. Shift turns in steps of 15°.' },
+  resize: { action: 'resize', icon: LuMoveDiagonal2, label: 'Resize', info: 'Drag to change the size and turn it at the same time, about the opposite corner. Shift turns in steps of 15°. Alt changes the size to any ratio without turning.' },
   split: { action: 'split', icon: LuSplit, label: 'Split', info: 'Click it, then click the point of the line to cut it in two.', shortcut: 'Double-click' },
   duplicate: { action: 'duplicate', icon: LuCopy, label: 'Duplicate', info: 'Make a copy next to it.', shortcut: 'Ctrl+D' },
   remove: { action: 'remove', icon: LuX, label: 'Remove', info: 'Take it off the map. Undo brings it back.', shortcut: 'Delete' },
@@ -42,17 +41,17 @@ const at = (action: BoxAction, corner: Corner, order = 0): BoxButton => ({ ...BU
 export function buttonsFor(selected: BoardObject[]): BoxButton[] {
   if (selected.length === 0) return []
   if (selected.length > 1) {
-    return [at('flipH', 'tl'), at('flipV', 'tl', 1), at('resize', 'tr'), at('duplicate', 'tr', 1), at('remove', 'br'), at('rotate', 'top')]
+    return [at('flipH', 'tl'), at('flipV', 'tl', 1), at('resize', 'tr'), at('duplicate', 'tr', 1), at('remove', 'br')]
   }
   switch (selected[0].kind) {
     case 'line':
-      return [at('flipH', 'tl'), at('flipV', 'tl', 1), at('resize', 'tr'), at('split', 'tr', 1), at('duplicate', 'tr', 2), at('remove', 'br'), at('link', 'bl'), at('rotate', 'top')]
+      return [at('flipH', 'tl'), at('flipV', 'tl', 1), at('resize', 'tr'), at('split', 'tr', 1), at('duplicate', 'tr', 2), at('remove', 'br'), at('link', 'bl')]
     case 'border':
-      return [at('resize', 'tr'), at('split', 'tr', 1), at('link', 'tru'), at('remove', 'br'), at('description', 'bl'), at('rotate', 'top')]
+      return [at('resize', 'tr'), at('split', 'tr', 1), at('link', 'tru'), at('remove', 'br'), at('description', 'bl')]
     case 'shape':
-      return [at('flipH', 'tl'), at('flipV', 'tl', 1), at('resize', 'tr'), at('duplicate', 'tr', 1), at('remove', 'br'), at('link', 'bl'), at('rotate', 'top')]
+      return [at('flipH', 'tl'), at('flipV', 'tl', 1), at('resize', 'tr'), at('duplicate', 'tr', 1), at('remove', 'br'), at('link', 'bl')]
     case 'text':
-      return [at('resize', 'tr'), at('duplicate', 'tr', 1), at('remove', 'br'), at('link', 'bl'), at('rotate', 'top')]
+      return [at('resize', 'tr'), at('duplicate', 'tr', 1), at('remove', 'br'), at('link', 'bl')]
     case 'point':
       return [at('duplicate', 'tr'), at('remove', 'br'), at('link', 'bl')]
   }

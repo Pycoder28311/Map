@@ -2,7 +2,7 @@
 import type { Change } from './changes'
 import { simplify } from '../projects/strokeCodec'
 import { flattenedOf } from './pathGeometry'
-import { lineFromBorder } from './split'
+import { pieceOfBorder } from './split'
 import type { BorderObject, LineObject, Point } from './types'
 
 /** How close the points of the path are made before erasing, as a part of the radius (so the circle can't step over one) */
@@ -54,16 +54,17 @@ export function eraseChange(line: LineObject, pieces: Point[][]): Change {
   return { remove: [id], add: pieces.map((points) => ({ ...rest, points, handles: undefined, style: flatStyle(line) })) }
 }
 
-/** What is left of a border after the eraser: its pieces as lines (an area with a hole in its outline is no area), or nothing */
+/** What is left of a border after the eraser: its pieces as open borders (an area with a hole in its outline is no area), or nothing */
 export function eraseBorderChange(border: BorderObject, pieces: Point[][], source: Point[]): Change {
   if (pieces.length === 1 && pieces[0] === source) return {}
-  return { remove: [border.id], add: pieces.map((points) => lineFromBorder(border, points)) }
+  return { remove: [border.id], add: pieces.map((points) => pieceOfBorder(border, points)) }
 }
 
 /** The eraser's circle (`radius`) having passed over `centres`, on a line or a border */
 export function eraseObject(o: LineObject | BorderObject, centres: Point[], radius: number): Change {
   if (o.kind === 'line') return eraseChange(o, eraseFromPath(flattenedOf(o), centres, radius))
   const ring = flattenedOf(o)
-  const source = [...ring, ring[0]]
+  // An open border has no closing edge
+  const source = o.open ? ring : [...ring, ring[0]]
   return eraseBorderChange(o, eraseFromPath(source, centres, radius), source)
 }

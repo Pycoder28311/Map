@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { splitBorder, splitLine } from './split'
+import { splitBorder, splitLine, splitOpenBorder } from './split'
 import { border, line, pts } from './testing'
 
 describe('splitLine', () => {
@@ -52,20 +52,33 @@ describe('splitLine on a curve', () => {
 describe('splitBorder', () => {
   const square = border(1, pts([0, 0], [100, 0], [100, 100], [0, 100]), { name: 'Area', links: [{ to: 'sidebar', id: 'n1' }], fill: { color: '#000000', opacity: 20 } })
 
-  it('opens the outline into a line that starts and ends at the cut', () => {
+  it('opens the outline into an open border that starts and ends at the cut', () => {
     const l = splitBorder(square, { x: 50, y: 0 })!
-    expect(l.kind).toBe('line')
+    expect(l.kind).toBe('border')
+    expect(l.open).toBe(true)
+    expect(l.fill).toBeNull()
     expect(l.points[0]).toEqual({ x: 50, y: 0 })
     expect(l.points.at(-1)).toEqual({ x: 50, y: 0 })
     expect(l.points).toHaveLength(6)
     expect(l.name).toBe('Area')
     expect(l.links).toHaveLength(1)
-    expect('fill' in l).toBe(false)
   })
 
   it('cuts at a corner when that is nearest', () => {
     const l = splitBorder(square, { x: 101, y: 101 })!
     expect(l.points[0]).toEqual({ x: 100, y: 100 })
     expect(l.points).toHaveLength(5)
+  })
+})
+
+describe('splitOpenBorder', () => {
+  it('cuts it like a line, into two open borders with its name and links', () => {
+    const open = border(1, pts([0, 0], [100, 0], [200, 0]), { open: true, name: 'Road', links: [{ to: 'sidebar', id: 'n1' }] })
+    const [a, b] = splitOpenBorder(open, { x: 100, y: 0 })!
+    expect(a).toMatchObject({ kind: 'border', open: true, name: 'Road' })
+    expect(b).toMatchObject({ kind: 'border', open: true, name: 'Road' })
+    expect(a.points.at(-1)).toEqual({ x: 100, y: 0 })
+    expect(b.points[0]).toEqual({ x: 100, y: 0 })
+    expect(a.links).toHaveLength(1)
   })
 })

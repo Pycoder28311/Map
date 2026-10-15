@@ -34,6 +34,10 @@ export type Style = {
   way: (typeof DRAWING_WAYS)[number]
   /** exact: softness 0–100; corners: the corner degrees; 0 for the others */
   amount: number
+  /** An outline round the line: its colour, how far it reaches out of the line on each side (board units) and its opacity 1–100. Absent: none */
+  stroke?: { color: string; width: number; opacity: number }
+  /** A shadow: its colour, how soft it is and how far it falls (down and right, board units). Absent: none */
+  shadow?: { color: string; blur: number; distance: number }
 }
 
 /** A point's curve handles (Figma vectors), as offsets from the point */
@@ -75,6 +79,8 @@ export type EdgeRun = { from: number; color: string }
 export type BorderObject = Base & {
   kind: 'border'
   style: Style
+  /** The border's ends are not joined: it is a line that can be given a name and a description, not an area (no inside, nothing merges with it) */
+  open?: boolean
   /** The area's inside; null: none */
   fill: Fill | null
   /** Shown under the area's name */
@@ -95,7 +101,12 @@ export type ShapeObject = Base & {
 }
 /** A stretch of text with its own marks; what a mark leaves out comes from the text object (colour, size) */
 export type TextRun = { text: string; bold?: boolean; italic?: boolean; underline?: boolean; strike?: boolean; color?: string; size?: number }
-export type TextAlign = 'left' | 'center' | 'right'
+/** A run as it is laid out: with the text object's own font and weight added (never saved) */
+export type LaidRun = TextRun & { weight?: number; family?: string; oblique?: boolean; underlineColor?: string; strikeColor?: string; spacing?: number }
+/** The frames a text can sit in. Saved as the index, so new ones are only ever added at the end */
+export const BOX_SHAPES = ['square', 'corners'] as const
+export type BoxShape = (typeof BOX_SHAPES)[number]
+export type TextAlign = 'left' | 'center' | 'right' | 'justify'
 export type TextObject = Base & {
   kind: 'text'
   /** The top-left corner of its box (before rotation) */
@@ -117,6 +128,41 @@ export type TextObject = Base & {
   attach?: number
   /** Is the name of the area it is attached to */
   isName?: boolean
+  /** The text keeps its size on the screen as the map is zoomed (absent: it grows and shrinks with the map) */
+  fixedSize?: boolean
+  /** The font, as an index into fonts.ts (absent: the first, the system's) */
+  font?: number
+  /** CSS weight 100–900 of all the text (absent: 400); a bold mark on a stretch makes it at least 700 */
+  weight?: number
+  /** Marks of the whole text, on top of those of its runs */
+  italic?: boolean
+  underline?: boolean
+  strike?: boolean
+  /** The italic slants the letters (oblique) instead of the font's own italic shapes */
+  oblique?: boolean
+  /** The colours of the underline and the strikethrough (absent: the text's colour) */
+  underlineColor?: string
+  strikeColor?: string
+  /** An outline round the letters: its colour (absent: black) and width (absent or 0: none) */
+  strokeColor?: string
+  strokeWidth?: number
+  /** 1–100, on top of the text's own opacity (absent: 100) */
+  strokeOpacity?: number
+  /** A shadow: its colour (absent: black), how soft it is and how far it falls (down and right). Absent or both 0: none */
+  shadowColor?: string
+  shadowBlur?: number
+  shadowDistance?: number
+  /** The text sits inside a square drawn round it, in `boxColor` (absent: the text's colour) */
+  boxed?: boolean
+  /** What the frame looks like (absent: a square) */
+  boxShape?: BoxShape
+  boxColor?: string
+  /** Extra space between the lines (board units; absent or 0: the font's own)  */
+  lineGap?: number
+  /** Extra space after every letter (board units; absent or 0: the font's own) */
+  spacing?: number
+  /** -100…100: bends the text along an arc (0 or absent: straight; textCurve.ts) */
+  curve?: number
 }
 /** The runs of a text (its plain text as one run when it has none) */
 export const runsOf = (o: TextObject): TextRun[] => o.runs ?? [{ text: o.text }]

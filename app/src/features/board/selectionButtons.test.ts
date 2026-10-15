@@ -8,17 +8,17 @@ const actions = (objects: Parameters<typeof buttonsFor>[0]) => buttonsFor(object
 
 describe('buttonsFor', () => {
   it('gives a line the full set', () => {
-    expect(actions([line(1, pts([0, 0]))])).toEqual(['duplicate', 'flipH', 'flipV', 'link', 'remove', 'resize', 'rotate', 'split'])
+    expect(actions([line(1, pts([0, 0]))])).toEqual(['duplicate', 'flipH', 'flipV', 'link', 'remove', 'resize', 'split'])
   })
 
   it('gives a border no flips and no duplicate, and puts its link above the top-right button', () => {
     const border = border_(1, pts([0, 0]))
-    expect(actions([border])).toEqual(['description', 'link', 'remove', 'resize', 'rotate', 'split'])
+    expect(actions([border])).toEqual(['description', 'link', 'remove', 'resize', 'split'])
     expect(buttonsFor([border]).find((b) => b.action === 'link')!.corner).toBe('tru')
   })
 
   it('gives several objects no split and no link', () => {
-    expect(actions([line(1, pts([0, 0])), shape(2)])).toEqual(['duplicate', 'flipH', 'flipV', 'remove', 'resize', 'rotate'])
+    expect(actions([line(1, pts([0, 0])), shape(2)])).toEqual(['duplicate', 'flipH', 'flipV', 'remove', 'resize'])
   })
 
   it('gives a shape no split, and a point only the basics', () => {
@@ -41,6 +41,6 @@ describe('buttonsFor', () => {
 
 describe('text buttons', () => {
   it('can resize and turn, copy, remove and link, but not flip or split', () => {
-    expect(actions([text(1)])).toEqual(['duplicate', 'link', 'remove', 'resize', 'rotate'])
+    expect(actions([text(1)])).toEqual(['duplicate', 'link', 'remove', 'resize'])
   })
 })

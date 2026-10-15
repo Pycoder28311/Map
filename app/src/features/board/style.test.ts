@@ -38,6 +38,13 @@ describe('style', () => {
     }
   })
 
+  it('round-trips the stroke and the shadow', () => {
+    const s: Style = { ...DEFAULT_STYLE, stroke: { color: '#ff0000', width: 4, opacity: 60 }, shadow: { color: '#112233', blur: 8, distance: 5 } }
+    expect(roundTrip(s).back).toEqual(s)
+    expect(roundTrip({ ...DEFAULT_STYLE, shadow: s.shadow }).back).toEqual({ ...DEFAULT_STYLE, shadow: s.shadow })
+    expect(roundTrip({ ...DEFAULT_STYLE, stroke: s.stroke }).back).toEqual({ ...DEFAULT_STYLE, stroke: s.stroke })
+  })
+
   it('writes only what applies', () => {
     // flags, 3 colour bytes, opacity, thickness, type, way, amount
     expect(roundTrip(DEFAULT_STYLE).size).toBe(1 + 3 + 1 + 1 + 1 + 1 + 1)

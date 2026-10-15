@@ -53,6 +53,32 @@ export function resizeTo(objects: BoardObject[], start: Rect, now: Point, keepRa
   return transformAll(objects, scaleAbout(anchor, sx, sy))
 }
 
+/**
+ * The top-right handle dragged to `now`, sizing and turning together about the box's bottom-left corner: the handle follows the
+ * pointer, so the distance to the corner sets the (equal) scale and the angle around it the turn (snapped to ROTATE_SNAP degrees
+ * when asked). One text alone is not scaled: its width follows the pointer, as with a plain resize, and it turns.
+ */
+export function resizeAndTurn(objects: BoardObject[], start: Rect, now: Point, snap: boolean): Change {
+  const anchor = { x: start.x, y: start.y + start.h }
+  const corner = { x: start.x + start.w, y: start.y }
+  const from = { x: corner.x - anchor.x, y: corner.y - anchor.y }
+  const to = { x: now.x - anchor.x, y: now.y - anchor.y }
+  const step = (ROTATE_SNAP * Math.PI) / 180
+  let turn = Math.atan2(to.y, to.x) - Math.atan2(from.y, from.x)
+  if (snap) turn = Math.round(turn / step) * step
+  const scale = Math.max(Math.hypot(to.x, to.y) / Math.max(Math.hypot(from.x, from.y), 1), MIN_SIZE / Math.max(Math.hypot(from.x, from.y), 1))
+  if (objects.length === 1 && objects[0].kind === 'text') {
+    // The pointer as it would be with no turn gives the width
+    const cos = Math.cos(-turn)
+    const sin = Math.sin(-turn)
+    const level = { x: anchor.x + to.x * cos - to.y * sin, y: anchor.y + to.x * sin + to.y * cos }
+    const t = objects[0]
+    const width = Math.max(MIN_TEXT_WIDTH, Math.round(Math.max(t.width, textBox(t).w) * (Math.max(MIN_SIZE, level.x - anchor.x) / Math.max(start.w, 1))))
+    return transformAll([{ ...t, width }], rotateAbout(anchor, turn))
+  }
+  return transformAll(objects, compose(rotateAbout(anchor, turn), scaleAbout(anchor, scale, scale)))
+}
+
 /** Turned by `radians` about `centre` (snapped to ROTATE_SNAP degrees when asked) */
 export function rotateBy(objects: BoardObject[], centre: Point, radians: number, snap: boolean): Change {
   const step = (ROTATE_SNAP * Math.PI) / 180

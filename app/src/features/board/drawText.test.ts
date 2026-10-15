@@ -20,8 +20,13 @@ describe('textFromGesture', () => {
   })
 
   it('takes the pen', () => {
-    const t = newText({ x: 0, y: 0 }, 0, { size: 40, color: '#ff0000', align: 'center', opacity: 50 })
-    expect(t).toMatchObject({ size: 40, color: '#ff0000', align: 'center', opacity: 50 })
+    const t = newText({ x: 0, y: 0 }, 0, { size: 40, color: '#ff0000', align: 'center', opacity: 50, fixedSize: true, font: 3, weight: 600, italic: true, underline: true, strike: true, oblique: true, underlineColor: '#ff0000', strikeColor: '#00ff00', strokeColor: '#101010', strokeWidth: 2, strokeOpacity: 60, shadowColor: '#202020', shadowBlur: 3, shadowDistance: 4, curve: 30, spacing: 3, boxed: true, boxShape: 'corners', lineGap: 6, boxColor: '#0000ff', rotation: 15 })
+    expect(t).toMatchObject({ size: 40, color: '#ff0000', align: 'center', opacity: 50, fixedSize: true, font: 3, weight: 600, italic: true, underline: true, strike: true, oblique: true, underlineColor: '#ff0000', strikeColor: '#00ff00', strokeColor: '#101010', strokeWidth: 2, strokeOpacity: 60, shadowColor: '#202020', shadowBlur: 3, shadowDistance: 4, curve: 30, spacing: 3, boxed: true, boxShape: 'corners', lineGap: 6, boxColor: '#0000ff', rotation: 15 })
+  })
+
+  it('leaves out what the pen has at its defaults', () => {
+    const t = newText({ x: 0, y: 0 }, 0, { size: 24, color: '#111827', align: 'left', opacity: 100, fixedSize: false, font: 0, weight: 400, italic: false, underline: false, strike: false, oblique: false, underlineColor: null, strikeColor: null, strokeColor: '#000000', strokeWidth: 0, strokeOpacity: 100, shadowColor: '#000000', shadowBlur: 0, shadowDistance: 0, curve: 0, spacing: 0, boxed: false, boxShape: 'square', lineGap: 0, boxColor: null, rotation: 0 })
+    for (const key of ['fixedSize', 'font', 'weight', 'italic', 'underline', 'strike', 'oblique', 'underlineColor', 'strikeColor', 'strokeColor', 'strokeWidth', 'strokeOpacity', 'shadowColor', 'shadowBlur', 'shadowDistance', 'curve', 'spacing', 'boxed', 'boxShape', 'lineGap', 'boxColor']) expect(t).not.toHaveProperty(key)
   })
 })
 

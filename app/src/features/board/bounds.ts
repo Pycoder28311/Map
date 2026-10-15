@@ -2,6 +2,7 @@
 import { flattenedOf } from './pathGeometry'
 import { PIN_HEIGHT, PIN_WIDTH } from './pinIcons'
 import { layoutOfText } from './measureText'
+import { sagitta } from './textCurve'
 import type { BoardObject, Point, TextObject } from './types'
 
 export type Rect = { x: number; y: number; w: number; h: number }
@@ -30,10 +31,36 @@ const rectOf = (points: Point[], pad = 0): Rect => {
   return { x, y, w: Math.max(...xs) + pad - x, h: Math.max(...ys) + pad - y }
 }
 
-/** A text's box before it is turned: its top-left corner and what its layout needs */
-export function textBox(o: TextObject): Rect {
+/** The map's zoom as the editor shows it: a text that keeps its size on the screen (`fixedSize`) takes this much less of the map when zoomed in */
+let zoom = 1
+export const setTextZoom = (scale: number) => {
+  zoom = scale > 0 ? scale : 1
+}
+
+/** A text's box at its own size, before it is turned: its top-left corner and what its layout needs */
+export function textLayoutBox(o: TextObject): Rect {
   const layout = layoutOfText(o)
-  return { x: o.anchor.x, y: o.anchor.y, w: Math.max(layout.width, o.width, 1), h: layout.height }
+  const w = Math.max(layout.width, o.width, 1)
+  // Bent text needs room for the bend: below for a rainbow, above for a smile
+  const bend = sagitta(o.curve ?? 0, w)
+  const pad = boxPads(o)
+  return { x: o.anchor.x - pad.x, y: o.anchor.y - pad.y - ((o.curve ?? 0) < 0 ? bend : 0), w: w + 2 * pad.x, h: layout.height + bend + 2 * pad.y }
+}
+
+/** The room between a framed text and its frame */
+export const boxPads = (o: TextObject) => {
+  const pad = o.boxed ? Math.round(o.size * 0.4) : 0
+  return { x: pad, y: pad }
+}
+
+/** How far the straight layout sits below the top of its box (the room above a smile-shaped text) */
+export const bendAbove = (o: TextObject) => ((o.curve ?? 0) < 0 ? sagitta(o.curve ?? 0, Math.max(layoutOfText(o).width, o.width, 1)) : 0)
+
+/** A text's box as it is on the map now: the same, shrunk about its corner while zoomed in when it keeps its size on the screen */
+export function textBox(o: TextObject): Rect {
+  const box = textLayoutBox(o)
+  const k = o.fixedSize ? 1 / zoom : 1
+  return k === 1 ? box : { ...box, w: box.w * k, h: box.h * k }
 }
 
 /** The rectangle around an object (a path: its points and half its thickness) */

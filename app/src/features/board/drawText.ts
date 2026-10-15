@@ -14,7 +14,16 @@ type Draft = Omit<TextObject, 'id'>
 
 /** An empty text for the pen, its box starting at `anchor` and wrapping at `width` (0: it grows as it is typed) */
 export function newText(anchor: Point, width: number, pen: TextPen): Draft {
-  return { kind: 'text', layer: LAYER_MAIN, name: '', links: [], anchor: { x: Math.round(anchor.x), y: Math.round(anchor.y) }, text: '', width, rotation: 0, align: pen.align, size: pen.size, color: pen.color, opacity: pen.opacity }
+  return { kind: 'text', layer: LAYER_MAIN, name: '', links: [], anchor: { x: Math.round(anchor.x), y: Math.round(anchor.y) }, text: '', width, rotation: Math.round(pen.rotation), align: pen.align, size: pen.size, color: pen.color, opacity: pen.opacity, ...(pen.fixedSize ? { fixedSize: true } : {}), ...(pen.font ? { font: pen.font } : {}), ...(pen.weight !== 400 ? { weight: pen.weight } : {}), ...(pen.italic ? { italic: true } : {}), ...(pen.underline ? { underline: true } : {}), ...(pen.strike ? { strike: true } : {}), ...(pen.oblique ? { oblique: true } : {}), ...(pen.underlineColor ? { underlineColor: pen.underlineColor } : {}), ...(pen.strikeColor ? { strikeColor: pen.strikeColor } : {}),
+    ...(pen.strokeWidth > 0 ? { strokeColor: pen.strokeColor, strokeWidth: pen.strokeWidth, ...(pen.strokeOpacity !== 100 ? { strokeOpacity: pen.strokeOpacity } : {}) } : {}),
+    ...(pen.shadowBlur > 0 || pen.shadowDistance > 0 ? { shadowColor: pen.shadowColor, shadowBlur: pen.shadowBlur, shadowDistance: pen.shadowDistance } : {}),
+    ...(pen.curve !== 0 ? { curve: pen.curve } : {}),
+    ...(pen.spacing !== 0 ? { spacing: pen.spacing } : {}),
+    ...(pen.lineGap > 0 ? { lineGap: pen.lineGap } : {}),
+    ...(pen.boxed ? { boxed: true } : {}),
+    ...(pen.boxed && pen.boxShape !== 'square' ? { boxShape: pen.boxShape } : {}),
+    ...(pen.boxed && pen.boxColor ? { boxColor: pen.boxColor } : {}),
+  }
 }
 
 /** The text a click or a drag from `from` to `to` starts */

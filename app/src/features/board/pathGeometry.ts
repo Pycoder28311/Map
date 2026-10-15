@@ -28,7 +28,7 @@ export function flattenedOf(o: BoardObject): Point[] {
 }
 
 /** Whether the outline is a ring (its last point joins its first) */
-export const isClosed = (o: BoardObject) => o.kind === 'border' || o.kind === 'shape'
+export const isClosed = (o: BoardObject) => o.kind === 'shape' || (o.kind === 'border' && !o.open)
 
 const CORNER_STEPS = 6
 

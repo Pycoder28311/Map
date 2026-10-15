@@ -1,4 +1,4 @@
-// The Mouse tool: select, move, marquee, resize, rotate, split and erase. A small state machine over the pure geometry
+// The Mouse tool: select, move, marquee, resize (which turns too), split and erase. A small state machine over the pure geometry
 // (hit.ts, operations.ts, split.ts, erase.ts). A gesture previews on a copy of the board (applyChange) and commits once
 // when the pointer lifts (changeObjects), so it is one undo step. Moves are followed on `window`, so a gesture that starts
 // on a box button keeps going wherever the pointer is.
@@ -10,9 +10,9 @@ import { densify, eraseObject } from './erase'
 import { hitTestPart, objectsInRect } from './hit'
 import { findJunction, joinLines, type Junction } from './join'
 import { hitPathPoint, moveHandle, movePoint } from './pathEdit'
-import { duplicate, flip as flipObjects, moveBy, remove, resizeTo, rotateBy } from './operations'
+import { duplicate, flip as flipObjects, moveBy, remove, resizeAndTurn, resizeTo } from './operations'
 import { clearSelection, getSelection, select, toggleSelected, useSelection } from './selection'
-import { splitBorder, splitLine } from './split'
+import { splitBorder, splitLine, splitOpenBorder } from './split'
 import type { Board, BoardObject, BorderObject, LineObject, Point } from './types'
 import { screenToBoard, type Viewport } from './viewport'
 
@@ -32,7 +32,6 @@ type Gesture =
   | { type: 'move'; startBoard: Point; snapshot: BoardObject[] }
   | { type: 'marquee'; startBoard: Point; base: number[] }
   | { type: 'resize'; start: Rect; snapshot: BoardObject[] }
-  | { type: 'rotate'; centre: Point; startAngle: number; snapshot: BoardObject[] }
   | { type: 'erase'; centres: Point[]; snapshot: (LineObject | BorderObject)[] }
   | { type: 'vertex'; index: number; line: LineObject | BorderObject; startBoard: Point }
   | { type: 'handle'; index: number; side: 'in' | 'out'; line: LineObject | BorderObject; alt: boolean }
@@ -148,10 +147,9 @@ export function useMouseTool({ mapId, board, view, toLocal }: Props) {
       const rect = rectFrom(g.startBoard, p)
       setMarquee(rect)
       select(latest.current.mapId, [...g.base, ...objectsInRect(board, rect).map((o) => o.id)])
-    } else if (g.type === 'resize') show(resizeTo(g.snapshot, g.start, p, e.shiftKey))
-    else if (g.type === 'rotate') {
-      const angle = Math.atan2(p.y - g.centre.y, p.x - g.centre.x) - g.startAngle
-      show(rotateBy(g.snapshot, g.centre, angle, e.shiftKey))
+    } else if (g.type === 'resize') {
+      // Dragging the handle sizes and turns about the opposite corner; Alt sizes to any ratio without turning
+      show(e.altKey ? resizeTo(g.snapshot, g.start, p, false) : resizeAndTurn(g.snapshot, g.start, p, e.shiftKey))
     } else if (g.type === 'erase') {
       const radius = ERASER_PX / view.scale
       const last = g.centres[g.centres.length - 1]
@@ -188,13 +186,14 @@ export function useMouseTool({ mapId, board, view, toLocal }: Props) {
 
   const splitAt = (target: LineObject | BorderObject, p: Point) => {
     const { mapId } = latest.current
-    if (target.kind === 'border') {
+    if (target.kind === 'border' && !target.open) {
       // An area opens into a line starting and ending at the cut
       const opened = splitBorder(target, p)
       if (opened) select(mapId, changeObjects(mapId, { remove: [target.id], add: [opened] }))
       return
     }
-    const halves = splitLine(target, p)
+    // An open border splits like a line (its pieces are open borders)
+    const halves = target.kind === 'border' ? splitOpenBorder(target, p) : splitLine(target, p)
     if (!halves) return
     select(mapId, changeObjects(mapId, { remove: [target.id], add: halves }))
   }
@@ -266,7 +265,7 @@ export function useMouseTool({ mapId, board, view, toLocal }: Props) {
     const tolerance = HIT_PX / view.scale
     const top = hitTestPart(board, p, tolerance)
     setHovered(top?.object.id ?? null)
-    watchNameless(top?.object.kind === 'border' && top.object.name === '' ? top.object.id : null, toLocal(e.clientX, e.clientY))
+    watchNameless(top?.object.kind === 'border' && !top.object.open && top.object.name === '' ? top.object.id : null, toLocal(e.clientX, e.clientY))
     setJunction(findJunction(board, p, tolerance))
     const { editable, activePoint } = latest.current
     setOverPoint(!!editable && !!hitPathPoint(editable, p, tolerance, activePoint))
@@ -286,16 +285,6 @@ export function useMouseTool({ mapId, board, view, toLocal }: Props) {
     const start = unionBounds(latest.current.selected)
     if (!start || gesture.current) return
     gesture.current = { type: 'resize', start, snapshot: latest.current.selected }
-    listen()
-  }
-
-  /** The box's rotate handle was pressed (`e`: where) */
-  const beginRotate = (e: { clientX: number; clientY: number }) => {
-    const b = unionBounds(latest.current.selected)
-    if (!b || gesture.current) return
-    const centre = { x: b.x + b.w / 2, y: b.y + b.h / 2 }
-    const p = boardPoint(e)
-    gesture.current = { type: 'rotate', centre, startAngle: Math.atan2(p.y - centre.y, p.x - centre.x), snapshot: latest.current.selected }
     listen()
   }
 
@@ -332,7 +321,6 @@ export function useMouseTool({ mapId, board, view, toLocal }: Props) {
     hover,
     doubleClick,
     beginResize,
-    beginRotate,
     cancel,
     flip: (axis: 'h' | 'v') => void changeObjects(mapId, flipObjects(latest.current.selected, axis)),
     duplicateSelected: () => select(mapId, changeObjects(mapId, duplicate(latest.current.selected))),

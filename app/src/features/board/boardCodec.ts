@@ -4,7 +4,7 @@
 //   body    := id layer name(text) linkCount link*  <the kind's part>
 //   link    := 0 id(text) | 1 id(number)
 //   line   := style path                       path := flags(bit 0: handles) then the strokeCodec's path, then 4 numbers per point
-//   border := style path [extras]              extras (only when there are any) := flags(bit 0 fill, 1 description, 2 edge runs)
+//   border := style path [extras]              extras (only when there are any) := flags(bit 0 fill, 1 description, 2 edge runs, 3 open: the ends are not joined)
 //                                              [fill] [description(text)] [runCount (from colour)*]
 //   shape   := style shapeType x y w h rotation param fillFlag [r g b opacity]
 //   text    := x y text [extras]       text is '' when runs follow (they carry the words)
@@ -17,6 +17,7 @@
 import { readPath, Reader, writePath, Writer } from '../projects/strokeCodec'
 import { readColor, readStyle, writeColor, writeStyle } from './style'
 import { POINT_DEFAULT } from './pointLabels'
+import { WEIGHT_NORMAL } from './fonts'
 import { TEXT_DEFAULT } from './textDefaults'
 import {
   KIND_NUMBER,
@@ -32,6 +33,7 @@ import {
   type Link,
   type Point,
   type TextAlign,
+  BOX_SHAPES,
   type TextObject,
   type TextRun,
   type ObjectKind,
@@ -42,6 +44,7 @@ const HANDLES = 1
 const HAS_FILL = 1
 const HAS_DESCRIPTION = 2
 const HAS_EDGES = 4
+const IS_OPEN = 8
 
 export class UnsupportedBoardVersion extends Error {
   constructor(version: number) {
@@ -100,7 +103,7 @@ function readFillValue(r: Reader): Fill {
   return { color: readColor(r), opacity: r.byte() }
 }
 
-const ALIGNS: TextAlign[] = ['left', 'center', 'right']
+const ALIGNS: TextAlign[] = ['left', 'center', 'right', 'justify']
 const RUN_FLAGS = { bold: 1, italic: 2, underline: 4, strike: 8, color: 16, size: 32 } as const
 
 function writePoint(w: Writer, o: PointObject) {
@@ -136,6 +139,10 @@ function writeText(w: Writer, o: TextObject) {
   // The runs carry the words; the plain text is made again when it is read
   w.str(runs ? '' : o.text)
   const style = o.size !== TEXT_DEFAULT.size || o.color !== TEXT_DEFAULT.color || o.opacity !== TEXT_DEFAULT.opacity
+  // What came later than the first bits: a second byte (bit 128 of the first says it is there)
+  const extras =
+    (o.fixedSize ? 1 : 0) | (o.font ? 2 : 0) | (o.weight !== undefined && o.weight !== WEIGHT_NORMAL ? 4 : 0) | (o.italic ? 8 : 0) | (o.underline ? 16 : 0) | (o.strike ? 32 : 0) | (o.oblique ? 64 : 0) | (o.underlineColor ? 128 : 0) | (o.strikeColor ? 256 : 0) |
+    ((o.strokeWidth ?? 0) > 0 ? 512 : 0) | ((o.shadowBlur ?? 0) > 0 || (o.shadowDistance ?? 0) > 0 ? 1024 : 0) | (o.curve ? 2048 : 0) | (o.spacing ? 4096 : 0) | (o.boxed ? 8192 : 0) | (o.boxed && o.boxColor ? 16384 : 0) | (o.boxed && o.boxShape && o.boxShape !== 'square' ? 32768 : 0) | (o.lineGap ? 65536 : 0)
   const flags =
     (o.width !== TEXT_DEFAULT.width ? 1 : 0) |
     (o.rotation !== TEXT_DEFAULT.rotation ? 2 : 0) |
@@ -143,7 +150,8 @@ function writeText(w: Writer, o: TextObject) {
     (o.align !== TEXT_DEFAULT.align ? 8 : 0) |
     (runs ? 16 : 0) |
     (o.attach !== undefined ? 32 : 0) |
-    (o.isName ? 64 : 0)
+    (o.isName ? 64 : 0) |
+    (extras ? 128 : 0)
   if (flags === 0) return
   w.byte(flags)
   if (flags & 1) w.int(o.width)
@@ -167,6 +175,35 @@ function writeText(w: Writer, o: TextObject) {
     }
   }
   if (flags & 32) w.int(o.attach!)
+  if (flags & 128) {
+    w.int(extras)
+    if (extras & 2) w.byte(o.font!)
+    if (extras & 4) w.int(o.weight!)
+    if (extras & 128) writeColor(w, o.underlineColor!)
+    if (extras & 256) writeColor(w, o.strikeColor!)
+    if (extras & 512) {
+      writeColor(w, o.strokeColor ?? '#000000')
+      w.int(o.strokeWidth!)
+      w.byte(o.strokeOpacity ?? 100)
+    }
+    if (extras & 1024) {
+      writeColor(w, o.shadowColor ?? '#000000')
+      w.int(o.shadowBlur ?? 0)
+      w.int(o.shadowDistance ?? 0)
+    }
+    if (extras & 2048) w.int(o.curve!)
+    if (extras & 4096) w.int(o.spacing!)
+    if (extras & 16384) writeColor(w, o.boxColor!)
+    if (extras & 32768) w.byte(BOX_SHAPES.indexOf(o.boxShape!))
+    if (extras & 65536) w.int(o.lineGap!)
+  }
+}
+
+function readStroke(r: Reader) {
+  const strokeColor = readColor(r)
+  const strokeWidth = r.int()
+  const strokeOpacity = r.byte()
+  return { strokeColor, strokeWidth, ...(strokeOpacity !== 100 ? { strokeOpacity } : {}) }
 }
 
 function readText(r: Reader): Omit<TextObject, 'id' | 'layer' | 'name' | 'links' | 'kind'> {
@@ -203,7 +240,37 @@ function readText(r: Reader): Omit<TextObject, 'id' | 'layer' | 'name' | 'links'
     text = runs.map((x) => x.text).join('')
   }
   const attach = flags & 32 ? r.int() : undefined
-  return { anchor, text, ...(runs ? { runs } : {}), width, rotation, align, size, color, opacity, ...(attach !== undefined ? { attach } : {}), ...(flags & 64 ? { isName: true } : {}) }
+  const extras = flags & 128 ? r.int() : 0
+  const font = extras & 2 ? r.byte() : undefined
+  const weight = extras & 4 ? r.int() : undefined
+  const underlineColor = extras & 128 ? readColor(r) : undefined
+  const strikeColor = extras & 256 ? readColor(r) : undefined
+  const stroke = extras & 512 ? readStroke(r) : undefined
+  const shadow = extras & 1024 ? { shadowColor: readColor(r), shadowBlur: r.int(), shadowDistance: r.int() } : undefined
+  const curve = extras & 2048 ? r.int() : undefined
+  const spacing = extras & 4096 ? r.int() : undefined
+  const boxColor = extras & 16384 ? readColor(r) : undefined
+  const boxShape = extras & 32768 ? BOX_SHAPES[r.byte()] : undefined
+  const lineGap = extras & 65536 ? r.int() : undefined
+  if (extras & 32768 && !boxShape) throw new RangeError('Unknown text frame')
+  return { anchor, text, ...(runs ? { runs } : {}), width, rotation, align, size, color, opacity, ...(attach !== undefined ? { attach } : {}), ...(flags & 64 ? { isName: true } : {}), ...(extras & 1 ? { fixedSize: true } : {}),
+    ...(font ? { font } : {}),
+    ...(weight !== undefined ? { weight } : {}),
+    ...(extras & 8 ? { italic: true } : {}),
+    ...(extras & 16 ? { underline: true } : {}),
+    ...(extras & 32 ? { strike: true } : {}),
+    ...(extras & 64 ? { oblique: true } : {}),
+    ...(underlineColor ? { underlineColor } : {}),
+    ...(strikeColor ? { strikeColor } : {}),
+    ...stroke,
+    ...shadow,
+    ...(curve ? { curve } : {}),
+    ...(spacing ? { spacing } : {}),
+    ...(extras & 8192 ? { boxed: true } : {}),
+    ...(boxColor ? { boxColor } : {}),
+    ...(boxShape ? { boxShape } : {}),
+    ...(lineGap ? { lineGap } : {}),
+  }
 }
 
 function writeRecord(o: BoardObject): Writer {
@@ -221,7 +288,7 @@ function writeRecord(o: BoardObject): Writer {
       writeStyle(w, o.style)
       writePathWithHandles(w, o.points, o.handles)
       const edges = o.edges ?? []
-      const flags = (o.fill ? HAS_FILL : 0) | (o.description ? HAS_DESCRIPTION : 0) | (edges.length ? HAS_EDGES : 0)
+      const flags = (o.fill ? HAS_FILL : 0) | (o.description ? HAS_DESCRIPTION : 0) | (edges.length ? HAS_EDGES : 0) | (o.open ? IS_OPEN : 0)
       // Nothing extra: the bytes are what they were before areas existed
       if (flags === 0) break
       w.byte(flags)
@@ -286,7 +353,7 @@ function readRecord(kind: ObjectKind, r: Reader): BoardObject {
       const description = flags & HAS_DESCRIPTION ? r.str() : ''
       const edges: EdgeRun[] = []
       if (flags & HAS_EDGES) for (let n = r.count(4); n > 0; n--) edges.push({ from: r.int(), color: readColor(r) })
-      return { ...base, kind, style, ...path, fill, description, ...(edges.length ? { edges } : {}) }
+      return { ...base, kind, style, ...path, fill, description, ...(edges.length ? { edges } : {}), ...(flags & IS_OPEN ? { open: true } : {}) }
     }
     case 'shape': {
       const style = readStyle(r)

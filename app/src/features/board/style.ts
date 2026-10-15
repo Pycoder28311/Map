@@ -20,6 +20,8 @@ export const PENCIL_STYLE: Style = DEFAULT_STYLE
 const FIXED_WIDTH = 1
 const ARROW_START = 2
 const ARROW_END = 4
+const HAS_STROKE = 8
+const HAS_SHADOW = 16
 
 /** '#rrggbb' as three bytes */
 export function writeColor(w: Writer, color: string) {
@@ -38,7 +40,7 @@ const indexOf = <T extends string>(list: readonly T[], value: T) => Math.max(0, 
 
 /** Only what applies is written (no gap for a solid line, no arrow look without an arrow, no amount for straight) */
 export function writeStyle(w: Writer, s: Style) {
-  w.byte((s.fixedWidth ? FIXED_WIDTH : 0) | (s.arrow.start ? ARROW_START : 0) | (s.arrow.end ? ARROW_END : 0))
+  w.byte((s.fixedWidth ? FIXED_WIDTH : 0) | (s.arrow.start ? ARROW_START : 0) | (s.arrow.end ? ARROW_END : 0) | (s.stroke ? HAS_STROKE : 0) | (s.shadow ? HAS_SHADOW : 0))
   writeColor(w, s.color)
   w.byte(s.opacity)
   w.int(s.thickness)
@@ -53,6 +55,16 @@ export function writeStyle(w: Writer, s: Style) {
   }
   w.byte(indexOf(DRAWING_WAYS, s.way))
   if (s.way === 'exact' || s.way === 'corners') w.byte(s.amount)
+  if (s.stroke) {
+    writeColor(w, s.stroke.color)
+    w.int(s.stroke.width)
+    w.byte(s.stroke.opacity)
+  }
+  if (s.shadow) {
+    writeColor(w, s.shadow.color)
+    w.int(s.shadow.blur)
+    w.int(s.shadow.distance)
+  }
 }
 
 export function readStyle(r: Reader): Style {
@@ -71,5 +83,7 @@ export function readStyle(r: Reader): Style {
   const way = DRAWING_WAYS[r.byte()]
   if (!way) throw new RangeError('Unknown drawing way')
   const amount = way === 'exact' || way === 'corners' ? r.byte() : 0
-  return { color, opacity, thickness, fixedWidth: (flags & FIXED_WIDTH) !== 0, type, gap, part, arrow, way, amount }
+  const stroke = (flags & HAS_STROKE) !== 0 ? { color: readColor(r), width: r.int(), opacity: r.byte() } : undefined
+  const shadow = (flags & HAS_SHADOW) !== 0 ? { color: readColor(r), blur: r.int(), distance: r.int() } : undefined
+  return { color, opacity, thickness, fixedWidth: (flags & FIXED_WIDTH) !== 0, type, gap, part, arrow, way, amount, ...(stroke ? { stroke } : {}), ...(shadow ? { shadow } : {}) }
 }

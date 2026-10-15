@@ -20,7 +20,8 @@ export default function BranchesPopout({ mapId }: { mapId: string }) {
   const map = group.find((o) => o.id === mapId)
   const main = !map || map.branchOf === undefined || map.branchOf === map.id
   const current = main ? 'main' : map.name
-  // The text while the branch is being renamed (only a branch, the main one is the map and is renamed in its title); null: not renaming
+
+  // The text while the branch is being renamed (only a branch: the main one is the map, renamed by its big name); null: not renaming
   const [draft, setDraft] = useState<string | null>(null)
   const cancelled = useRef(false)
   const commit = () => {
@@ -70,7 +71,15 @@ export default function BranchesPopout({ mapId }: { mapId: string }) {
         ) : (
           // One grid cell, no positioning (the popover hangs from the bar): the pencil shows over the name's end while hovered
           <div className="group grid">
-            <Button className="col-start-1 row-start-1" variant={open ? 'secondary' : 'ghost'} icon={LuGitBranch} aria-expanded={open} aria-label={group.length > 1 ? `Branches, now on ${current}` : 'Create branch'} title={group.length > 1 ? 'Branches' : 'Create branch'} onClick={() => setOpen(!open)}>
+            <Button
+              className="col-start-1 row-start-1"
+              variant={open ? 'secondary' : 'ghost'}
+              icon={LuGitBranch}
+              aria-expanded={open}
+              aria-label={group.length > 1 ? `Branches, now on ${current}` : 'Create branch'}
+              title={group.length > 1 ? 'Branches' : 'Create branch'}
+              onClick={() => setOpen(!open)}
+            >
               <span className="max-w-32 truncate">{group.length > 1 ? current : 'Create branch'}</span>
             </Button>
             {!main && (

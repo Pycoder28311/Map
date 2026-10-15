@@ -6,7 +6,7 @@ import { renameObject } from '../../mocks/projectsStore'
 import MapActions from './MapActions'
 import MapPicker from './MapPicker'
 import { useWorkspace } from '../workspace/useWorkspace'
-import { FLOAT, usePeekShift } from './floating'
+import { FLOAT, ROUNDER, usePeekShift } from './floating'
 
 /** Top left: the map's name (a click lists the project's maps, MapPicker; its pencil makes it an input: Enter or leaving it renames, Esc undoes), the map's actions (branches, layers, screenshot, share) */
 export default function MapTitleBar({ mapId, onPickObject }: { mapId: string; onPickObject: (id: number) => void }) {
@@ -32,7 +32,7 @@ export default function MapTitleBar({ mapId, onPickObject }: { mapId: string; on
   }
 
   return (
-    <div data-board-title className={`absolute start-3 top-3 flex h-15 items-center ${fit} ps-2 pe-2 ${FLOAT} ${shift}`}>
+    <div data-board-title className={`absolute start-3 top-3 flex h-12.5 items-center ${fit} ps-2 pe-2 ${FLOAT} ${ROUNDER} ${shift}`}>
       {draft === null ? (
         // Both in one grid cell (no positioning: the picker's popover hangs from the bar): the pencil shows over the name's end while hovered
         <div className="group grid">

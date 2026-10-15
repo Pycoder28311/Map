@@ -1,14 +1,12 @@
 import { useState } from 'react'
-import { LuHexagon, LuLayers, LuMapPin, LuShapes, LuSpline, LuType } from 'react-icons/lu'
+import { LuLayers } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
-import type { PlainIcon } from '../../components/ui/icons/IconSlot'
 import BarPopover from './BarPopover'
 import { useBoard } from './boardStore'
 import { layerLabel, layerList } from './layers'
 import { useSelection } from './selection'
-import type { ObjectKind } from './types'
+import { KIND_ICON } from './layerIcons'
 
-const KIND_ICON: Record<ObjectKind, PlainIcon> = { line: LuSpline, border: LuHexagon, shape: LuShapes, text: LuType, point: LuMapPin }
 
 /**
  * The layers button of the title bar (its last one): a list of everything on the board, top first, like Figma's or Penpot's.

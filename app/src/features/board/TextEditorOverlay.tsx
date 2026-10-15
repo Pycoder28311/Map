@@ -2,6 +2,7 @@ import type { Editor } from '@tiptap/react'
 import { useCallback, useEffect, useRef } from 'react'
 import RichTextEditor from '../../components/ui/editors/RichTextEditor'
 import { KEEP_EDITING, setActiveEditor, setFinisher } from './activeEditor'
+import { WEIGHT_NORMAL, stackOf } from './fonts'
 import { docToRuns, runsToDoc, type Doc } from './richText'
 import { LINE_HEIGHT } from './textLayout'
 import { runsOf, type TextObject, type TextRun } from './types'
@@ -50,7 +51,7 @@ export default function TextEditorOverlay({ text, view, onCommit, onCancel }: Pr
   return (
     <div
       data-no-drag
-      style={{ left: at.x, top: at.y, transform: `scale(${view.scale})`, transformOrigin: 'top left' }}
+      style={{ left: at.x, top: at.y, transform: `scale(${text.fixedSize ? 1 : view.scale})`, transformOrigin: 'top left' }}
       className="pointer-events-auto absolute z-10"
       onKeyDown={(e) => {
         e.stopPropagation()
@@ -64,8 +65,13 @@ export default function TextEditorOverlay({ text, view, onCommit, onCancel }: Pr
         style={{
           width: wraps ? text.width : undefined,
           minWidth: 2,
-          font: `400 ${text.size}px system-ui, sans-serif`,
-          lineHeight: LINE_HEIGHT,
+          font: `${text.italic ? (text.oblique ? 'oblique ' : 'italic ') : ''}${text.weight ?? WEIGHT_NORMAL} ${text.size}px ${stackOf(text.font)}`,
+          letterSpacing: text.spacing ? `${text.spacing}px` : undefined,
+          WebkitTextStroke: (text.strokeWidth ?? 0) > 0 ? `${text.strokeWidth}px ${text.strokeColor ?? '#000000'}` : undefined,
+          textShadow: (text.shadowBlur ?? 0) > 0 || (text.shadowDistance ?? 0) > 0 ? `${text.shadowDistance ?? 0}px ${text.shadowDistance ?? 0}px ${text.shadowBlur ?? 0}px ${text.shadowColor ?? '#000000'}` : undefined,
+          textDecorationColor: (text.underline ? text.underlineColor : text.strikeColor) ?? undefined,
+          textDecoration: [text.underline && 'underline', text.strike && 'line-through'].filter(Boolean).join(' ') || undefined,
+          lineHeight: text.lineGap ? `calc(${LINE_HEIGHT}em + ${text.lineGap}px)` : LINE_HEIGHT,
           color: text.color,
           opacity: text.opacity / 100,
           textAlign: text.align,

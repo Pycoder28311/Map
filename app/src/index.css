@@ -3,3 +3,8 @@
 @import "./styles/tokens.css";
 @import "./styles/typography.css";
 @import "./styles/animations.css";
+
+/* Number inputs can be scrubbed (components/ui/fields/numberScrub.ts): the double arrows while the pointer is over one, until it has the focus to type in */
+input[type='number']:not(:focus):not(:disabled) {
+  cursor: ew-resize;
+}

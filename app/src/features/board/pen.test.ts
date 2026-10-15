@@ -16,8 +16,8 @@ describe('pen', () => {
 })
 
 describe('border pen', () => {
-  it('starts with a light inside and is separate from the line pen', () => {
-    expect(getBorderPen().fill).toEqual({ color: getBorderPen().style.color, opacity: 20 })
+  it('starts with no inside and is separate from the line pen', () => {
+    expect(getBorderPen().fill).toBeNull()
     setBorderPen({ shape: 'hexagon' })
     expect(getPen().shape).toBeNull()
     resetPen()

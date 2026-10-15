@@ -5,17 +5,18 @@ import { LuGalleryHorizontal } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import Presenter from './presenter/Presenter'
 import { FLOAT } from './floating'
+import { setTextZoom } from './bounds'
 import { hitTest } from './hit'
 import { newPoint } from './drawPoint'
 import { getPointPen } from './pen'
-import PointPenPanel from './PointPenPanel'
+import PointPenSidebar from './sidebar/point/PointPenSidebar'
 import VisitorLayer from './VisitorLayer'
 import { setPageInset } from '../../lib/pageInset'
 import { SIDE_PANEL_PX } from './floating'
 import AreaNameInput from './AreaNameInput'
 import { nameArea } from './areaName'
-import BorderPenPanel from './BorderPenPanel'
-import PenPanel from './PenPanel'
+import BorderPenSidebar from './sidebar/border/BorderPenSidebar'
+import LinePenSidebar from './sidebar/line/LinePenSidebar'
 import { boundsOf, unionBounds } from './bounds'
 import { getLinkPick, startLinkPick, stopLinkPick } from '../links/linkPick'
 import { paintBoard } from './render'
@@ -28,14 +29,14 @@ import { clearSelection, select, useSelection } from './selection'
 import { buttonsFor, type BoxAction } from './selectionButtons'
 import PathEditor from './PathEditor'
 import SelectionBox from './SelectionBox'
-import SelectionPanel, { type StylePreview } from './SelectionPanel'
+import SelectionPanel, { type StylePreview } from './sidebar/SelectionPanel'
 import ToolPanel from './ToolPanel'
 import { finishEditing } from './activeEditor'
 import Notice from './Notice'
 import { rectFrom } from './bounds'
 import { textAt } from './drawText'
 import TextEditorOverlay from './TextEditorOverlay'
-import TextPenPanel from './TextPenPanel'
+import TextPenSidebar from './sidebar/text/TextPenSidebar'
 import { useDrawTool } from './useDrawTool'
 import { useTextTool } from './useTextTool'
 import { ERASER_PX, HIT_PX, useMouseTool } from './useMouseTool'
@@ -98,6 +99,8 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
   // The editor's whole width, whatever the sidebar takes: the untouched view is fitted to it, so the board stays where it is
   const [fullSize, setFullSize] = useState<Size | null>(null)
   const { view, zoom, pan, fit, actualSize, focusOn } = useViewport(mapId, size, fullSize)
+  // Texts that keep their size on the screen need the zoom to know how much of the map they take (hit tests, selection)
+  setTextZoom(view?.scale ?? 1)
   const selection = useSelection(mapId)
   const mouse = useMouseTool({
     mapId,
@@ -110,7 +113,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
   })
   // What is painted: the board, or while a gesture runs, the board as it would be
   // What the Line and Border tools are drawing right now (not in the board until the drawing is finished)
-  const draw = useDrawTool({ mapId, board, view, canvas, repaint: () => setRepaint((n) => n + 1) })
+  const draw = useDrawTool({ mapId, board, view, canvas, repaint: () => setRepaint((n) => n + 1), onCreated: selectCreated })
   const text = useTextTool({ mapId, board, view })
   // The visitor's view: no tools, a click on a pin opens its card
   const [visitor] = useState(false)
@@ -242,6 +245,8 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
       return mouse.begin(e)
     }
     if (e.button === 0 && tool === 'text') {
+      // A press on an existing text works as with the Mouse tool: it selects it, and a drag moves it (its box and buttons are there too)
+      if (textAt(board, screenToBoard(view, at), HIT_PX / view.scale)) return mouse.begin(e)
       if (text.begin(at)) setMode('draw')
       return
     }
@@ -288,7 +293,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
     if (emptyStart.current && e.type === 'pointerup' && modeRef.current === 'none') clearSelection(mapId)
     emptyStart.current = null
     if (start && !visitor && view && modeRef.current === 'none' && e.type === 'pointerup') {
-      changeObjects(mapId, { add: [newPoint(screenToBoard(view, start), getPointPen())] })
+      selectCreated(changeObjects(mapId, { add: [newPoint(screenToBoard(view, start), getPointPen())] }))
     }
     if (modeRef.current === 'draw') {
       if (tool === 'text') text.end()
@@ -321,7 +326,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
       }
       return
     }
-    if (key === 'enter' && tool === 'mouse' && mouse.selected.length === 1 && mouse.selected[0].kind === 'text') {
+    if (key === 'enter' && (tool === 'mouse' || tool === 'text') && mouse.selected.length === 1 && mouse.selected[0].kind === 'text') {
       e.preventDefault()
       return text.edit(mouse.selected[0])
     }
@@ -348,6 +353,13 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
     }
   }
 
+  /** What was just drawn or placed is selected, as the Mouse tool's (its sidebar and box show at once) */
+  function selectCreated(ids: number[]) {
+    if (ids.length === 0) return
+    pickTool('mouse')
+    select(mapId, ids)
+  }
+
   const pickTool = (next: ToolId) => {
     finishEditing()
     draw.cancel()
@@ -356,7 +368,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
     mouse.setMode('select')
   }
 
-  /** Double-click with the Mouse tool: a text is edited in place, anything else is the tool's own (cut a line) */
+  /** Double-click with the Mouse or Text tool: a text is edited in place; with the Mouse tool anything else is the tool's own (cut a line) */
   const onMouseDoubleClick = (e: { clientX: number; clientY: number }) => {
     if (view) {
       const box = root.current!.getBoundingClientRect()
@@ -366,7 +378,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         return text.edit(hit)
       }
     }
-    mouse.doubleClick(e)
+    if (tool === 'mouse') mouse.doubleClick(e)
   }
 
   const onBoxAction = (action: BoxAction) => {
@@ -381,7 +393,9 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
   }
   const focusSelected = () => boxBounds && focusOn(boxBounds)
   const onlyPaths = mouse.selected.length > 0 && mouse.selected.every((o) => o.kind === 'line' || o.kind === 'border')
-  const showBox = !visitor && tool === 'mouse' && boxBounds && view && !text.editing
+  // With the Text tool a selected text shows its box with all its buttons and its own sidebar, just as with the Mouse tool
+  const textSelected = tool === 'text' && mouse.selected.length > 0 && mouse.selected.every((o) => o.kind === 'text')
+  const showBox = !visitor && (tool === 'mouse' || textSelected) && boxBounds && view && !text.editing
 
   const cursor =
     mode === 'pan'
@@ -399,7 +413,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
                 : ''
 
   // The sidebar on the right: the options of the Line tool, or of what is selected
-  const sidebar = visitor ? null : tool === 'line' || tool === 'border' || tool === 'text' || tool === 'point' ? 'pen' : tool === 'mouse' && mouse.selected.length > 0 ? 'selection' : null
+  const sidebar = visitor ? null : tool === 'text' && textSelected ? 'selection' : tool === 'line' || tool === 'border' || tool === 'text' || tool === 'point' ? 'pen' : tool === 'mouse' && mouse.selected.length > 0 ? 'selection' : null
   useEffect(() => {
     setPageInset(sidebar ? SIDE_PANEL_PX : 0)
     return () => setPageInset(0)
@@ -423,7 +437,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
           onPointerMove={onMove}
           onPointerUp={onUp}
           onPointerCancel={onUp}
-          onDoubleClick={(e) => (visitor ? undefined : tool === 'mouse' ? onMouseDoubleClick(e) : tool === 'border' && draw.doubleClick(e.altKey))}
+          onDoubleClick={(e) => (visitor ? undefined : tool === 'mouse' || tool === 'text' ? onMouseDoubleClick(e) : tool === 'border' && draw.doubleClick(e.altKey))}
           // Its CSS size is the size it was painted for, not the page's: when the page changes size (the sidebar) the old picture stays as it
           // was, cut off, for the frames until the new one is painted, instead of being squeezed to the new box
           style={painted ? { width: painted.w, height: painted.h } : undefined}
@@ -450,7 +464,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
             splitting={mouse.mode === 'split'}
             disabled={onlyPaths ? [] : ['split']}
             onAction={onBoxAction}
-            onHandle={(action, e) => (action === 'resize' ? mouse.beginResize() : mouse.beginRotate(e))}
+            onHandle={() => mouse.beginResize()}
           />
         )}
         {tool === 'mouse' && view && (
@@ -511,7 +525,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         )}
         {view && <ZoomControls scale={view.scale} onZoom={(f) => zoom(f)} onFit={fit} />}
       </div>
-      {!visitor && tool === 'mouse' && (
+      {!visitor && (tool === 'mouse' || textSelected) && (
         <SelectionPanel
           mapId={mapId}
           selected={mouse.selected}
@@ -529,10 +543,10 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
           }}
         />
       )}
-      {!visitor && tool === 'line' && <PenPanel />}
-      {!visitor && tool === 'border' && <BorderPenPanel />}
-      {!visitor && tool === 'text' && <TextPenPanel />}
-      {!visitor && tool === 'point' && <PointPenPanel />}
+      {!visitor && tool === 'line' && <LinePenSidebar />}
+      {!visitor && tool === 'border' && <BorderPenSidebar />}
+      {!visitor && tool === 'text' && !textSelected && <TextPenSidebar mapId={mapId} />}
+      {!visitor && tool === 'point' && <PointPenSidebar />}
     </div>
   )
 }
