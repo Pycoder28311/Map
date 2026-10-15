@@ -5,7 +5,6 @@ import { LuGalleryHorizontal } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import Presenter from './presenter/Presenter'
 import { FLOAT } from './floating'
-import TopRightBar from './TopRightBar'
 import { hitTest } from './hit'
 import { newPoint } from './drawPoint'
 import { getPointPen } from './pen'
@@ -114,7 +113,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
   const draw = useDrawTool({ mapId, board, view, canvas, repaint: () => setRepaint((n) => n + 1) })
   const text = useTextTool({ mapId, board, view })
   // The visitor's view: no tools, a click on a pin opens its card
-  const [visitor, setVisitor] = useState(false)
+  const [visitor] = useState(false)
   const [presenting, setPresenting] = useState(false)
   // The pointer is over the grey around the board's sheet (a drag there pans)
   const [offBoard, setOffBoard] = useState(false)
@@ -483,17 +482,6 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         {tool === 'text' && text.box && view && <Marquee rect={rectFrom(text.box.from, text.box.to)} view={view} />}
         {text.notice && <Notice text={text.notice} onDismiss={text.dismissNotice} />}
         <LinkPickBar mapId={mapId} board={board.objects} />
-        <TopRightBar
-          mapId={mapId}
-          visitor={visitor}
-          onVisitor={() => {
-            finishEditing()
-            draw.cancel()
-            clearSelection(mapId)
-            setOpenPin(null)
-            setVisitor(!visitor)
-          }}
-        />
         {!visitor && !text.editing && (
           <Button variant="ghost" icon={LuGalleryHorizontal} onClick={() => setPresenting(true)} className={`absolute start-1/2 bottom-3 -translate-x-1/2 ${FLOAT}`}>
             Maps

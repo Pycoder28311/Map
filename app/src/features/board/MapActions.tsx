@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LuCamera, LuEye, LuPencil, LuShare2 } from 'react-icons/lu'
+import { LuCamera, LuShare2 } from 'react-icons/lu'
 import IconButton from '../../components/ui/buttons/IconButton'
 import HoverInfo from '../../components/ui/overlays/HoverInfo'
 import { findObject } from '../../mocks/projects'
@@ -7,10 +7,7 @@ import ShareOptions from '../share/ShareOptions'
 import BarPopover from './BarPopover'
 import BranchesPopout from './BranchesPopout'
 import { getBoard } from './boardStore'
-import { FLOAT } from './floating'
 import { snapshotBlob } from './snapshot'
-
-type Props = { mapId: string; visitor: boolean; onVisitor: () => void }
 
 /** A picture of the map's content, downloaded as `<name>.png` */
 async function downloadScreenshot(mapId: string) {
@@ -24,8 +21,8 @@ async function downloadScreenshot(mapId: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-/** Top right: branches, share, screenshot, and the visitor's view. In the visitor's view only the way back stays */
-export default function TopRightBar({ mapId, visitor, onVisitor }: Props) {
+/** The map's actions, inside the title bar: branches, screenshot, and share (last, at the right) */
+export default function MapActions({ mapId }: { mapId: string }) {
   const [sharing, setSharing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -43,10 +40,11 @@ export default function TopRightBar({ mapId, visitor, onVisitor }: Props) {
   }
 
   return (
-    <div data-board-bar className={`absolute end-3 top-3 flex items-center gap-0.5 p-1 ${FLOAT}`}>
-      {!visitor && (
-        <>
+    <>
           <BranchesPopout mapId={mapId} />
+          <HoverInfo title="Screenshot" text={error ?? 'Download a picture of what is on the map.'} side="bottom">
+            <IconButton icon={LuCamera} label="Take a screenshot" disabled={busy} onClick={shoot} />
+          </HoverInfo>
           <BarPopover
             open={sharing}
             onOpenChange={setSharing}
@@ -59,14 +57,6 @@ export default function TopRightBar({ mapId, visitor, onVisitor }: Props) {
           >
             <ShareOptions id={mapId} />
           </BarPopover>
-          <HoverInfo title="Screenshot" text={error ?? 'Download a picture of what is on the map.'} side="bottom">
-            <IconButton icon={LuCamera} label="Take a screenshot" disabled={busy} onClick={shoot} />
-          </HoverInfo>
-        </>
-      )}
-      <HoverInfo title={visitor ? 'Back to editing' : 'View as visitor'} text={visitor ? 'Show the tools again.' : 'See the map as a visitor does: pins open their cards.'} side="bottom">
-        <IconButton icon={visitor ? LuPencil : LuEye} label={visitor ? 'Back to editing' : 'View as visitor'} variant={visitor ? 'secondary' : 'ghost'} aria-pressed={visitor} onClick={onVisitor} />
-      </HoverInfo>
-    </div>
+    </>
   )
 }

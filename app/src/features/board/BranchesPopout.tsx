@@ -33,8 +33,8 @@ export default function BranchesPopout({ mapId }: { mapId: string }) {
       onOpenChange={setOpen}
       label="Map branches"
       trigger={
-        <Button variant={open ? 'secondary' : 'ghost'} icon={LuGitBranch} aria-expanded={open} onClick={() => setOpen(!open)}>
-          Branches{group.length > 1 ? ` ${group.length}` : ''}
+        <Button variant={open ? 'secondary' : 'ghost'} icon={LuGitBranch} aria-expanded={open} aria-label="Branches" title="Branches" onClick={() => setOpen(!open)}>
+          {group.length > 1 ? group.length : null}
         </Button>
       }
     >

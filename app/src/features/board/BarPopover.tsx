@@ -10,7 +10,7 @@ type Props = {
   children: ReactNode
 }
 
-/** A panel hanging under a button of the top-right bar, right edges aligned. A click outside it or Esc closes it */
+/** A panel hanging under the floating bar that holds its button (the nearest positioned ancestor): left edges aligned, never wider than the bar, a gap below it. A click outside it or Esc closes it */
 export default function BarPopover({ trigger, open, onOpenChange, label, children }: Props) {
   const root = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -29,10 +29,10 @@ export default function BarPopover({ trigger, open, onOpenChange, label, childre
     }
   }, [open, onOpenChange])
   return (
-    <div ref={root} className="relative">
+    <div ref={root}>
       {trigger}
       {open && (
-        <div role="dialog" aria-label={label} className="absolute end-0 top-full z-20 mt-2 w-72 rounded-(--card-radius) border border-line bg-surface p-2 shadow-xl">
+        <div role="dialog" aria-label={label} className={`absolute start-0 top-full z-20 mt-2 w-72 max-w-full rounded-(--card-radius) border border-line bg-surface p-2 shadow-xl`}>
           {children}
         </div>
       )}

@@ -53,6 +53,8 @@ type Props = {
   effects?: IconEffects
   /** Groups of actions, a line between them */
   groups: TreeMenuGroup[]
+  /** A floating bar to hang under instead of the trigger: its left edge, its width as the most, below it (not left of it) */
+  anchor?: () => Element | null
 }
 
 /**
@@ -62,7 +64,7 @@ type Props = {
  * the trigger, moved left by the menu's corner radius (--menu-radius). Closes on a pick, a click outside, Esc, scrolling
  * or resizing (it would no longer sit under its trigger).
  */
-export default function TreeMenu({ label, show = 'always', bg, effects, groups }: Props) {
+export default function TreeMenu({ label, show = 'always', bg, effects, groups, anchor }: Props) {
   const id = useId()
   const count = groups.reduce((n, group) => n + group.length, 0)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -76,13 +78,15 @@ export default function TreeMenu({ label, show = 'always', bg, effects, groups }
     const trigger = triggerRef.current
     if (e.newState !== 'open' || !trigger) return
     const menu = e.currentTarget
-    const rect = trigger.getBoundingClientRect()
+    const rect = (anchor?.() ?? trigger).getBoundingClientRect()
     const style = getComputedStyle(menu)
-    const left = Math.max(EDGE, rect.left - (parseFloat(style.borderTopLeftRadius) || 0))
+    // Under a bar: its own left edge, not moved left of it
+    const left = anchor ? rect.left : Math.max(EDGE, rect.left - (parseFloat(style.borderTopLeftRadius) || 0))
+    if (anchor) menu.style.maxWidth = `${rect.width}px`
     const top = rect.bottom + (parseFloat(style.getPropertyValue('--menu-offset')) || 0)
     menu.style.left = `${left}px`
     menu.style.top = `${top}px`
-    setTriggerOrigin(menu, rect, left, top)
+    setTriggerOrigin(menu, trigger.getBoundingClientRect(), left, top)
   }
 
   // While open: close on scroll / resize (listening only then)

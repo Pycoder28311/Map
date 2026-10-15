@@ -18,9 +18,12 @@ export default function ToolPanel({ mapId, tool, onTool }: Props) {
   const canUndo = useCanUndo(mapId)
   const canRedo = useCanRedo(mapId)
   const inPane = useWorkspace().isPane({ type: 'map', id: mapId })
-  const place = inPane ? 'absolute top-3' : 'fixed top-[calc(var(--sidebar-rail)+0.75rem)] z-10'
+  // Right-aligned while there is no room to centre it without touching the name bar (MapTitleBar)
+  const place = inPane
+    ? 'absolute top-3 end-3 @5xl:end-auto @5xl:start-1/2 @5xl:-translate-x-1/2'
+    : 'fixed top-[calc(var(--sidebar-rail)+0.75rem)] z-10 end-3 xl:end-auto xl:start-1/2 xl:-translate-x-1/2'
   return (
-    <div role="toolbar" aria-label="Tools" aria-orientation="horizontal" className={`${place} start-1/2 flex -translate-x-1/2 items-center gap-1.5 p-2 ${FLOAT}`}>
+    <div role="toolbar" aria-label="Tools" aria-orientation="horizontal" className={`${place} flex items-center gap-1.5 p-2 ${FLOAT}`}>
       {TOOLS.map((t) => (
         <IconButton
           key={t.id}

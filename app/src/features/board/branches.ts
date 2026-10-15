@@ -25,3 +25,19 @@ export function siblingMaps(objects: MockObject[], mapId: string): MockObject[] 
   if (map.parentId === null) return [map]
   return objects.filter((o) => o.parentId === map.parentId && o.kind === 'map' && !o.archived)
 }
+
+/** A map of a project's list, with the branches made from it (in the order they were made) */
+export type MapNode = { map: MockObject; branches: MockObject[] }
+
+/** The maps as a tree: each branch group once, its first map on top and the others under it; lone maps have no branches */
+export function mapTree(maps: MockObject[]): MapNode[] {
+  const nodes = new Map<string, MapNode>()
+  for (const map of maps) {
+    const root = map.branchOf ?? map.id
+    const node = nodes.get(root)
+    if (!node) nodes.set(root, { map, branches: [] })
+    else if (map.id === root) nodes.set(root, { map, branches: [node.map, ...node.branches] })
+    else node.branches.push(map)
+  }
+  return [...nodes.values()].map((n) => ({ ...n, branches: [...n.branches].sort((a, b) => a.createdAt - b.createdAt) }))
+}
