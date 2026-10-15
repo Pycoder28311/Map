@@ -6,6 +6,7 @@ import { findObject } from '../../mocks/projects'
 import ShareOptions from '../share/ShareOptions'
 import BarPopover from './BarPopover'
 import BranchesPopout from './BranchesPopout'
+import LayersButton from './LayersButton'
 import { getBoard } from './boardStore'
 import { snapshotBlob } from './snapshot'
 
@@ -21,8 +22,8 @@ async function downloadScreenshot(mapId: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-/** The map's actions, inside the title bar: branches, screenshot, and share (last, at the right) */
-export default function MapActions({ mapId }: { mapId: string }) {
+/** The map's actions, inside the title bar: branches, layers, screenshot, and share (last, at the right) */
+export default function MapActions({ mapId, onPickObject }: { mapId: string; onPickObject: (id: number) => void }) {
   const [sharing, setSharing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -42,6 +43,7 @@ export default function MapActions({ mapId }: { mapId: string }) {
   return (
     <>
           <BranchesPopout mapId={mapId} />
+      <LayersButton mapId={mapId} onPick={onPickObject} />
           <HoverInfo title="Screenshot" text={error ?? 'Download a picture of what is on the map.'} side="bottom">
             <IconButton icon={LuCamera} label="Take a screenshot" disabled={busy} onClick={shoot} />
           </HoverInfo>

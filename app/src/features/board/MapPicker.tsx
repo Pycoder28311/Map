@@ -50,7 +50,7 @@ export default function MapPicker({ mapId, name }: { mapId: string; name: string
           aria-expanded={open}
           aria-haspopup="dialog"
           onClick={() => setOpen(!open)}
-          className="block max-w-[28ch] cursor-pointer truncate rounded-(--btn-close-radius) text-heading focus-visible:outline-2 focus-visible:outline-accent"
+          className="block max-w-[28ch] cursor-pointer truncate rounded-(--btn-close-radius) px-2 py-1 text-heading transition-colors hover:bg-fill focus-visible:outline-2 focus-visible:outline-accent"
         >
           {name}
         </button>

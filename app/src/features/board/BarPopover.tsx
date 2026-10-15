@@ -7,11 +7,13 @@ type Props = {
   onOpenChange: (open: boolean) => void
   /** Its name for screen readers */
   label: string
+  /** As wide as the bar (the default is 18rem, and never wider than the bar) */
+  wide?: boolean
   children: ReactNode
 }
 
 /** A panel hanging under the floating bar that holds its button (the nearest positioned ancestor): left edges aligned, never wider than the bar, a gap below it. A click outside it or Esc closes it */
-export default function BarPopover({ trigger, open, onOpenChange, label, children }: Props) {
+export default function BarPopover({ trigger, open, onOpenChange, label, wide, children }: Props) {
   const root = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!open) return
@@ -32,7 +34,7 @@ export default function BarPopover({ trigger, open, onOpenChange, label, childre
     <div ref={root}>
       {trigger}
       {open && (
-        <div role="dialog" aria-label={label} className={`absolute start-0 top-full z-20 mt-2 w-72 max-w-full rounded-(--card-radius) border border-line bg-surface p-2 shadow-xl`}>
+        <div role="dialog" aria-label={label} className={`absolute start-0 top-full z-20 mt-2 ${wide ? 'w-full' : 'w-72'} max-w-full rounded-(--card-radius) border border-line bg-surface p-2 shadow-xl`}>
           {children}
         </div>
       )}

@@ -474,7 +474,13 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
             onUse={mouse.lockPrompt}
           />
         )}
-        <MapTitleBar mapId={mapId} />
+        <MapTitleBar
+          mapId={mapId}
+          onPickObject={(id) => {
+            pickTool('mouse')
+            select(mapId, [id])
+          }}
+        />
         {!visitor && <ToolPanel mapId={mapId} tool={tool} onTool={pickTool} />}
         {text.editing && view && (
           <TextEditorOverlay key={text.editing.id ?? 'new'} text={text.editing.draft} view={view} onCommit={text.commit} onCancel={text.cancel} />
