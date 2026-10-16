@@ -1,6 +1,7 @@
 import type { Patch } from '../../boardStore'
 import { lineStylePatch } from '../../drawLine'
 import type { LineObject } from '../../types'
+import PointToolButton from '../common/PointToolButton'
 import ObjectFrame, { type ObjectFrameContext } from '../common/ObjectFrame'
 import LineArrowsSection from './LineArrowsSection'
 import LineColourSection from './LineColourSection'
@@ -15,18 +16,27 @@ type Props = ObjectFrameContext & {
   object: LineObject
   /** A held change previews; `commit` saves it as one undo step */
   apply: (patch: Patch, commit: boolean) => void
+  pointTool?: boolean
+  onPointTool?: () => void
 }
 
 /** A selected line's sidebar: colour, opacity and thickness, the four types, the four drawing ways, the arrows, stroke and shadow */
-export default function LineSidebar({ object, apply, ...context }: Props) {
+export default function LineSidebar({ object, apply, pointTool = false, onPointTool, ...context }: Props) {
   const section = { style: object.style, onChange: (style: typeof object.style, commit: boolean) => apply(lineStylePatch(object, style), commit) }
   return (
     <ObjectFrame object={object} header={null} footerAction={null} {...context}>
       <div className="flex flex-col gap-3">
+        {onPointTool && (
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-heading">Line</h2>
+            <PointToolButton on={pointTool} onToggle={onPointTool} what="line" />
+          </div>
+        )}
         <LineTextField mapId={context.mapId} line={object} board={context.board} />
         <LineColourSection
           {...section}
           title="Basic"
+          roads
           after={<LineEditButtons mode={context.mode} onSplit={context.onSplit} onErase={context.onErase} />}
         />
         <LineTypeSection {...section} />

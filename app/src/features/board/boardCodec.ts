@@ -15,6 +15,7 @@
 //                              [label byte] [icon byte] [colour] [banner id(text)] [description(text)]
 // A plain pencil line is the old path plus about 15 bytes.
 import { readPath, Reader, writePath, Writer } from '../projects/strokeCodec'
+import { hasShadow, shadowOffset } from './textShadow'
 import { readColor, readStyle, writeColor, writeStyle } from './style'
 import { POINT_DEFAULT } from './pointLabels'
 import { WEIGHT_NORMAL } from './fonts'
@@ -45,6 +46,7 @@ const HAS_FILL = 1
 const HAS_DESCRIPTION = 2
 const HAS_EDGES = 4
 const IS_OPEN = 8
+const HAS_FILL_LOOK = 16
 
 export class UnsupportedBoardVersion extends Error {
   constructor(version: number) {
@@ -142,7 +144,7 @@ function writeText(w: Writer, o: TextObject) {
   // What came later than the first bits: a second byte (bit 128 of the first says it is there)
   const extras =
     (o.fixedSize ? 1 : 0) | (o.font ? 2 : 0) | (o.weight !== undefined && o.weight !== WEIGHT_NORMAL ? 4 : 0) | (o.italic ? 8 : 0) | (o.underline ? 16 : 0) | (o.strike ? 32 : 0) | (o.oblique ? 64 : 0) | (o.underlineColor ? 128 : 0) | (o.strikeColor ? 256 : 0) |
-    ((o.strokeWidth ?? 0) > 0 ? 512 : 0) | ((o.shadowBlur ?? 0) > 0 || (o.shadowDistance ?? 0) > 0 ? 1024 : 0) | (o.curve ? 2048 : 0) | (o.spacing ? 4096 : 0) | (o.boxed ? 8192 : 0) | (o.boxed && o.boxColor ? 16384 : 0) | (o.boxed && o.boxShape && o.boxShape !== 'square' ? 32768 : 0) | (o.lineGap ? 65536 : 0)
+    ((o.strokeWidth ?? 0) > 0 ? 512 : 0) | (hasShadow(o) ? 1024 | 131072 : 0) | (o.curve ? 2048 : 0) | (o.spacing ? 4096 : 0) | (o.boxed ? 8192 : 0) | (o.boxed && o.boxColor ? 16384 : 0) | (o.boxed && o.boxShape && o.boxShape !== 'square' ? 32768 : 0) | (o.lineGap ? 65536 : 0)
   const flags =
     (o.width !== TEXT_DEFAULT.width ? 1 : 0) |
     (o.rotation !== TEXT_DEFAULT.rotation ? 2 : 0) |
@@ -190,6 +192,8 @@ function writeText(w: Writer, o: TextObject) {
       writeColor(w, o.shadowColor ?? '#000000')
       w.int(o.shadowBlur ?? 0)
       w.int(o.shadowDistance ?? 0)
+      // A separate Y offset (a file from before has one distance, down and right alike)
+      w.int(shadowOffset(o).y)
     }
     if (extras & 2048) w.int(o.curve!)
     if (extras & 4096) w.int(o.spacing!)
@@ -197,6 +201,14 @@ function writeText(w: Writer, o: TextObject) {
     if (extras & 32768) w.byte(BOX_SHAPES.indexOf(o.boxShape!))
     if (extras & 65536) w.int(o.lineGap!)
   }
+}
+
+/** The shadow; `hasY`: its own Y offset follows (a file from before has one distance, down and right alike) */
+function readShadow(r: Reader, hasY: boolean) {
+  const shadowColor = readColor(r)
+  const shadowBlur = r.int()
+  const shadowDistance = r.int()
+  return { shadowColor, shadowBlur, shadowDistance, shadowY: hasY ? r.int() : shadowDistance }
 }
 
 function readStroke(r: Reader) {
@@ -246,7 +258,7 @@ function readText(r: Reader): Omit<TextObject, 'id' | 'layer' | 'name' | 'links'
   const underlineColor = extras & 128 ? readColor(r) : undefined
   const strikeColor = extras & 256 ? readColor(r) : undefined
   const stroke = extras & 512 ? readStroke(r) : undefined
-  const shadow = extras & 1024 ? { shadowColor: readColor(r), shadowBlur: r.int(), shadowDistance: r.int() } : undefined
+  const shadow = extras & 1024 ? readShadow(r, (extras & 131072) !== 0) : undefined
   const curve = extras & 2048 ? r.int() : undefined
   const spacing = extras & 4096 ? r.int() : undefined
   const boxColor = extras & 16384 ? readColor(r) : undefined
@@ -288,7 +300,8 @@ function writeRecord(o: BoardObject): Writer {
       writeStyle(w, o.style)
       writePathWithHandles(w, o.points, o.handles)
       const edges = o.edges ?? []
-      const flags = (o.fill ? HAS_FILL : 0) | (o.description ? HAS_DESCRIPTION : 0) | (edges.length ? HAS_EDGES : 0) | (o.open ? IS_OPEN : 0)
+      const look = !!(o.fill?.texture || o.fill?.image)
+      const flags = (o.fill ? HAS_FILL : 0) | (o.description ? HAS_DESCRIPTION : 0) | (edges.length ? HAS_EDGES : 0) | (o.open ? IS_OPEN : 0) | (look ? HAS_FILL_LOOK : 0)
       // Nothing extra: the bytes are what they were before areas existed
       if (flags === 0) break
       w.byte(flags)
@@ -303,6 +316,10 @@ function writeRecord(o: BoardObject): Writer {
           w.int(run.from)
           writeColor(w, run.color)
         }
+      }
+      if (look) {
+        w.byte(o.fill!.texture ?? 0)
+        w.str(o.fill!.image ?? '')
       }
       break
     }
@@ -353,6 +370,11 @@ function readRecord(kind: ObjectKind, r: Reader): BoardObject {
       const description = flags & HAS_DESCRIPTION ? r.str() : ''
       const edges: EdgeRun[] = []
       if (flags & HAS_EDGES) for (let n = r.count(4); n > 0; n--) edges.push({ from: r.int(), color: readColor(r) })
+      if (flags & HAS_FILL_LOOK) {
+        const texture = r.byte()
+        const image = r.str()
+        if (fill) Object.assign(fill, texture ? { texture } : {}, image ? { image } : {})
+      }
       return { ...base, kind, style, ...path, fill, description, ...(edges.length ? { edges } : {}), ...(flags & IS_OPEN ? { open: true } : {}) }
     }
     case 'shape': {

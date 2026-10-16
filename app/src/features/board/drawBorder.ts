@@ -71,3 +71,40 @@ export function snapToBorders(points: Point[], board: Board, tolerance: number):
     return best
   })
 }
+
+/** The open borders a drawing can connect to: lines (not curved ones) that can be selected */
+export const connectable = (board: Board): BorderObject[] =>
+  board.objects.filter((o): o is BorderObject => o.kind === 'border' && !!o.open && !o.handles && canSelect(o))
+
+/** The end of an open border within `tolerance` (board units) of the point, the nearest one; null when none is near */
+export function snapToEndpoint(p: Point, board: Board, tolerance: number): Point | null {
+  let best: Point | null = null
+  let bestDistance = tolerance
+  for (const o of connectable(board)) {
+    for (const e of [o.points[0], o.points[o.points.length - 1]]) {
+      const d = Math.hypot(e.x - p.x, e.y - p.y)
+      if (d <= bestDistance) {
+        best = e
+        bestDistance = d
+      }
+    }
+  }
+  return best
+}
+
+/** The corner of any other border (area or line, curved ones aside) within `tolerance` of the point, the nearest; null when none is near */
+export function snapToVertex(p: Point, board: Board, tolerance: number): Point | null {
+  let best: Point | null = null
+  let bestDistance = tolerance
+  for (const o of board.objects) {
+    if (o.kind !== 'border' || o.handles || !canSelect(o)) continue
+    for (const v of o.points) {
+      const d = Math.hypot(v.x - p.x, v.y - p.y)
+      if (d <= bestDistance) {
+        best = v
+        bestDistance = d
+      }
+    }
+  }
+  return best
+}

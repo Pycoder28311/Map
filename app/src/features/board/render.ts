@@ -1,7 +1,10 @@
 // Paints a board on the editor's canvas (crisp at any zoom: redrawn with the view's transform, never a scaled bitmap).
+import { hasShadow, shadowOffset } from './textShadow'
 import { ARROW_HEADS, arrowHead, endTangents, headInset } from './arrows'
 import { colourRuns, edgeColours, labelPoint, wrapWords } from './borders'
 import { bendAbove, boxPads, textLayoutBox } from './bounds'
+import { ROADS, roadLayerColour } from './roadTextures'
+import { fillImage, texturePattern } from './fillTextures'
 import { drawOrder } from './layers'
 import { layoutOfText, measure } from './measureText'
 import { placeOnArc } from './textCurve'
@@ -125,7 +128,8 @@ function paintText(ctx: CanvasRenderingContext2D, o: TextObject, scale: number) 
   ctx.lineJoin = 'round'
   // The canvas's shadow is in screen pixels, not board units: this much is a board unit now
   const pixel = Math.hypot(ctx.getTransform().a, ctx.getTransform().b)
-  const shadowed = (o.shadowBlur ?? 0) > 0 || (o.shadowDistance ?? 0) > 0
+  const shadowed = hasShadow(o)
+  const offset = shadowOffset(o)
   const width = layout.width
   for (const line of layout.lines) {
     const size = line.size
@@ -141,7 +145,8 @@ function paintText(ctx: CanvasRenderingContext2D, o: TextObject, scale: number) 
         if (shadowed) {
           ctx.shadowColor = o.shadowColor ?? '#000000'
           ctx.shadowBlur = (o.shadowBlur ?? 0) * pixel
-          ctx.shadowOffsetX = ctx.shadowOffsetY = (o.shadowDistance ?? 0) * pixel
+          ctx.shadowOffsetX = offset.x * pixel
+          ctx.shadowOffsetY = offset.y * pixel
         }
         if ((o.strokeWidth ?? 0) > 0) {
           ctx.strokeStyle = o.strokeColor ?? '#000000'
@@ -232,6 +237,24 @@ export function paintPoint(ctx: CanvasRenderingContext2D, o: PointObject, hovere
   ctx.restore()
 }
 
+/** The picture over the area's whole box (cropped to the outline, never stretched) */
+function paintPicture(ctx: CanvasRenderingContext2D, picture: HTMLImageElement, outline: Point[]) {
+  const xs = outline.map((p) => p.x)
+  const ys = outline.map((p) => p.y)
+  const x = Math.min(...xs)
+  const y = Math.min(...ys)
+  const w = Math.max(...xs) - x
+  const h = Math.max(...ys) - y
+  if (w <= 0 || h <= 0) return
+  const k = Math.max(w / picture.naturalWidth, h / picture.naturalHeight)
+  const dw = picture.naturalWidth * k
+  const dh = picture.naturalHeight * k
+  ctx.save()
+  ctx.clip()
+  ctx.drawImage(picture, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh)
+  ctx.restore()
+}
+
 /** One object of any path kind (line, border, shape): fill, line type, arrows, name, and a halo when hovered */
 export function paintObject(ctx: CanvasRenderingContext2D, o: BoardObject, scale: number, hovered = false, namedByText = false) {
   if (o.kind === 'text') return paintText(ctx, o, scale)
@@ -251,14 +274,17 @@ export function paintObject(ctx: CanvasRenderingContext2D, o: BoardObject, scale
   if (inside) {
     pathOf(ctx, outline, true)
     ctx.globalAlpha = (o.kind === 'border' && hovered ? Math.min(60, inside.opacity * 2) : inside.opacity) / 100
-    ctx.fillStyle = inside.color
+    ctx.fillStyle = texturePattern(ctx, inside.texture, inside.color) ?? inside.color
+    const picture = inside.image ? fillImage(inside.image) : null
+    if (picture) paintPicture(ctx, picture, outline)
     if (style.shadow) {
       const pixel = Math.hypot(ctx.getTransform().a, ctx.getTransform().b)
       ctx.shadowColor = style.shadow.color
       ctx.shadowBlur = style.shadow.blur * pixel
       ctx.shadowOffsetX = ctx.shadowOffsetY = style.shadow.distance * pixel
     }
-    ctx.fill()
+    // A picture is the inside by itself; with a texture, that goes over it
+    if (!picture || inside.texture) ctx.fill()
     ctx.shadowColor = 'transparent'
   }
   if (style.thickness <= 0 && o.kind === 'shape') {
@@ -304,7 +330,26 @@ export function paintObject(ctx: CanvasRenderingContext2D, o: BoardObject, scale
     strokeAll(0, (style.opacity / 100) * (style.stroke.opacity / 100), style.stroke.color, style.stroke.width * 2)
     ctx.shadowColor = 'transparent'
   }
-  strokeAll(0, style.opacity / 100)
+  const road = style.road ? ROADS[style.road] : undefined
+  if (road?.layers.length) {
+    // A road: its layers, widest first, each along the whole line (the shadow only under the first)
+    const base = (fixed ? style.thickness / scale : style.thickness)
+    ctx.globalAlpha = style.opacity / 100
+    ctx.lineJoin = 'round'
+    road.layers.forEach((layer, i) => {
+      const width = base * layer.width
+      ctx.strokeStyle = roadLayerColour(layer, style.color)
+      ctx.lineWidth = width
+      ctx.lineCap = layer.dash ? (layer.cap ?? 'butt') : 'butt'
+      ctx.setLineDash(layer.dash ? layer.dash.map((d) => Math.max(d * base, 0.001)) : [])
+      for (const part of strokes) for (const line of part.parts.lines) {
+        pathOf(ctx, line, part.parts.closed)
+        ctx.stroke()
+      }
+      if (i === 0) ctx.shadowColor = 'transparent'
+    })
+    ctx.setLineDash([])
+  } else strokeAll(0, style.opacity / 100)
   ctx.shadowColor = 'transparent'
 
   if (arrows) {

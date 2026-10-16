@@ -25,10 +25,13 @@ type Props = {
   onDuplicate: () => void
   onShowBoardObject: (id: number) => void
   onPreview: (preview: StylePreview | null) => void
+  /** The Point tool of the Line and Border tools: on, and a way to switch it (a line's and an area's sidebars have its button) */
+  pointTool?: boolean
+  onPointTool?: () => void
 }
 
 /** The panel at the top right: the sidebar of the object's kind for one object, the colours for several, nothing for none */
-export default function SelectionPanel({ selected, onPreview, ...context }: Props) {
+export default function SelectionPanel({ selected, onPreview, pointTool, onPointTool, ...context }: Props) {
   if (selected.length === 0) return null
   if (selected.length > 1) return <SelectionColoursSidebar mapId={context.mapId} selected={selected} />
   const object = selected[0]
@@ -43,9 +46,9 @@ export default function SelectionPanel({ selected, onPreview, ...context }: Prop
     case 'point':
       return <PointSidebar object={object} apply={apply} {...context} />
     case 'line':
-      return <LineSidebar object={object} apply={apply} {...context} />
+      return <LineSidebar object={object} apply={apply} pointTool={pointTool} onPointTool={onPointTool} {...context} />
     case 'border':
-      return <BorderSidebar object={object} apply={apply} {...context} />
+      return <BorderSidebar object={object} apply={apply} pointTool={pointTool} onPointTool={onPointTool} {...context} />
     case 'shape':
       return <ShapeSidebar object={object} apply={apply} {...context} />
     case 'text':

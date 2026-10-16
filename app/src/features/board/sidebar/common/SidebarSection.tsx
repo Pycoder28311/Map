@@ -14,7 +14,7 @@ try {
 }
 
 /** The sections that start open */
-const STARTS_OPEN = new Set(['size', 'font', 'fill', 'line-colour', 'line-type', 'shape', 'pin', 'border-way', 'border-fill', 'border-description'])
+const STARTS_OPEN = new Set(['size', 'font', 'fill', 'line-colour', 'line-type', 'shape', 'pin', 'border-way', 'border-fill', 'border-county', 'border-description'])
 const isOpenNow = (id: string) => chosen[id] ?? STARTS_OPEN.has(id)
 
 function toggleSection(id: string) {

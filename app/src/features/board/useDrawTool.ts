@@ -3,10 +3,14 @@
 // drawBorder.ts and borders.ts.
 import { useRef, useState, type RefObject } from 'react'
 import { addObject, changeObjects } from './boardStore'
+import { applyChange, type Change } from './changes'
+import { hitPathPoint, movePoint } from './pathEdit'
 import { thin } from '../projects/strokeCodec'
-import { borderFromCorners, borderFromShape, borderFromStroke, snapToBorders } from './drawBorder'
-import { mergeBorders } from './borders'
+import { borderFromCorners, borderFromShape, borderFromStroke, snapToBorders, snapToEndpoint, snapToVertex } from './drawBorder'
+import { joinOpenBorders, mergeBorders } from './borders'
 import { drawLine, drawShape, isPlain } from './drawLine'
+import { hitTestPart } from './hit'
+import { HIT_PX } from './useMouseTool'
 import { getBorderPen, getPen } from './pen'
 import { applyView, drawStroke } from './render'
 import { LAYER_MAIN, type Board, type BorderObject, type LineObject, type Point, type StyledObject } from './types'
@@ -36,6 +40,17 @@ const whole = (p: Point): Point => ({ x: Math.round(p.x), y: Math.round(p.y) })
 export function useDrawTool({ mapId, board, view, canvas, repaint, onCreated }: Props) {
   const [draft, setDraft] = useState<StyledObject | null>(null)
   const [linearOpen, setLinearOpen] = useState(false)
+  // The border under the pointer while nothing is being drawn: its points show faintly
+  const [hovered, setHovered] = useState<number | null>(null)
+  // Whether it is on its edge (a press there picks it)
+  const [onEdge, setOnEdge] = useState(false)
+  // The pointer is on a point of the hovered border (a press there drags it), and the border being dragged by one: what it would be
+  const [overVertex, setOverVertex] = useState(false)
+  const [preview, setPreview] = useState<Board | null>(null)
+  const vertex = useRef<{ id: number; index: number } | null>(null)
+  // The point picked with the Point tool (it has the little remove button above it)
+  const [picked, setPicked] = useState<{ id: number; index: number } | null>(null)
+  const pending = useRef<Change | null>(null)
   // A freehand stroke or a dragged shape in progress (what a pointer hold makes)
   const stroke = useRef<Point[] | null>(null)
   const shapeDrag = useRef<{ from: Point; to: Point } | null>(null)
@@ -47,6 +62,9 @@ export function useDrawTool({ mapId, board, view, canvas, repaint, onCreated }: 
   const dropDraft = () => {
     stroke.current = null
     shapeDrag.current = null
+    vertex.current = null
+    pending.current = null
+    setPreview(null)
     corners.current = []
     pointer.current = null
     setLinearOpen(false)
@@ -55,19 +73,44 @@ export function useDrawTool({ mapId, board, view, canvas, repaint, onCreated }: 
 
   const scale = view?.scale ?? 1
 
+  /** The point, whole, pulled onto the end of an open border when it is near one (the border tool only) */
+  const magnet = (p: Point): Point => (forBorder.current && snapToEndpoint(p, board, SNAP_PX / scale)) || whole(p)
+
   /** A border that is not finished: it shows as the open line it is until it is let go */
   const borderDraft = (points: Point[]): StyledObject | null => {
     const pen = getBorderPen()
     // Thinned the way the finished border is (`thin` keeps what it kept as the stroke grows), so what shows now is what will be saved
     const thinned = pen.style.way === 'exact' ? thin(points, 1 / scale) : points
-    return thinned.length ? ({ id: 0, kind: 'line', layer: LAYER_MAIN, name: '', links: [], style: pen.style, points: thinned } as LineObject) : null
+    return thinned.length
+      ? ({
+          id: 0,
+          kind: 'line',
+          layer: LAYER_MAIN,
+          name: '',
+          links: [],
+          style: pen.style,
+          points: thinned,
+        } as LineObject)
+      : null
   }
 
   /** The finished drawing for the border tool, snapped to what is near and merged into the areas it touches (Alt: not merged) */
   const finishBorder = (made: Omit<BorderObject, 'id'> | null, alt: boolean) => {
     if (!made) return
-    const snapped = { ...made, points: snapToBorders(made.points, board, SNAP_PX / scale).map(whole) }
+    const tolerance = SNAP_PX / scale
+    // Corners of other borders pull first (so the two share the very same points), then the outlines of areas
+    const pulled = made.points.map((p) => snapToVertex(p, board, tolerance) ?? p)
+    const ringed = snapToBorders(pulled, board, tolerance)
+    const snapped = {
+      ...made,
+      points: ringed.map((p, i) => whole(pulled[i] !== made.points[i] ? pulled[i] : p)),
+    }
     if (alt) return onCreated([addObject(mapId, snapped)])
+    const joined = joinOpenBorders(board, snapped)
+    if (joined) {
+      const added = changeObjects(mapId, joined)
+      return onCreated(added.length > 0 ? added : joined.update!.map((u) => u.id))
+    }
     const added = changeObjects(mapId, mergeBorders(board, snapped, MERGE_PX / scale).change)
     if (added.length > 0) onCreated(added)
   }
@@ -127,14 +170,18 @@ export function useDrawTool({ mapId, board, view, canvas, repaint, onCreated }: 
       // A linear border: each click is a corner; a click on the first one closes it
       const first = corners.current[0]
       if (first && corners.current.length >= 3) {
-        const f = { x: view.x + first.x * view.scale, y: view.y + first.y * view.scale }
+        const f = {
+          x: view.x + first.x * view.scale,
+          y: view.y + first.y * view.scale,
+        }
         if (Math.hypot(f.x - at.x, f.y - at.y) <= CLOSE_PX) {
           finishLinear(keys.alt, true)
           return false
         }
       }
-      corners.current = [...corners.current, whole(start)]
-      pointer.current = whole(start)
+      const corner = magnet(start)
+      corners.current = [...corners.current, corner]
+      pointer.current = corner
       setLinearOpen(true)
       linearDraft()
       return false
@@ -143,16 +190,48 @@ export function useDrawTool({ mapId, board, view, canvas, repaint, onCreated }: 
       shapeDrag.current = { from: start, to: start }
       return true
     }
-    stroke.current = [whole(start)]
+    stroke.current = [magnet(start)]
     if (forBorder.current) setDraft(borderDraft(stroke.current))
     else if (isPlain(pen.style)) drawSegment(start, { x: start.x + 0.01, y: start.y })
-    else setDraft({ id: 0, ...drawLine(stroke.current, pen.style, scale) } as StyledObject)
+    else
+      setDraft({
+        id: 0,
+        ...drawLine(stroke.current, pen.style, scale),
+      } as StyledObject)
+    return true
+  }
+
+  /** A press on a point of the hovered border picks it up to move it. True when it did (the pointer then holds it) */
+  const beginVertex = (at: Point): boolean => {
+    if (!view || linearOpen || hovered === null) return false
+    const border = board.objects.find((o) => o.id === hovered)
+    if (border?.kind !== 'border' && border?.kind !== 'line') return false
+    const ref = hitPathPoint(border, screenToBoard(view, at), HIT_PX / scale, null)
+    if (ref?.kind !== 'point') return false
+    vertex.current = { id: border.id, index: ref.index }
+    setPicked(vertex.current)
     return true
   }
 
   /** The pointer moved while it holds a stroke or a shape */
   const move = (at: Point, keys: Keys) => {
     if (!view) return
+    if (vertex.current) {
+      const { id, index } = vertex.current
+      const border = board.objects.find((o) => o.id === id)
+      if (border?.kind !== 'border' && border?.kind !== 'line') return
+      // It lands on a corner of another border when near one (its own corner it left does not count)
+      const others = {
+        ...board,
+        objects: board.objects.filter((o) => o.id !== id),
+      }
+      const p = clampToBoard(screenToBoard(view, at))
+      const to = snapToVertex(p, others, SNAP_PX / scale) ?? p
+      pending.current = {
+        update: [{ id, patch: movePoint(border, index, to) }],
+      }
+      return setPreview(applyChange(board, pending.current).board)
+    }
     const p = clampToBoard(screenToBoard(view, at))
     if (shapeDrag.current) {
       shapeDrag.current.to = p
@@ -167,22 +246,45 @@ export function useDrawTool({ mapId, board, view, canvas, repaint, onCreated }: 
     }
     if (!stroke.current) return
     const from = stroke.current.at(-1)!
-    const to = whole(p)
+    const to = magnet(p)
     stroke.current.push(to)
     if (forBorder.current) setDraft(borderDraft(stroke.current))
     else if (isPlain(getPen().style)) drawSegment(from, to)
-    else setDraft({ id: 0, ...drawLine(stroke.current, getPen().style, scale) } as StyledObject)
+    else
+      setDraft({
+        id: 0,
+        ...drawLine(stroke.current, getPen().style, scale),
+      } as StyledObject)
   }
 
   /** The pointer moved over the board with nothing held: a linear border's next edge follows it */
-  const hover = (at: Point) => {
-    if (!view || corners.current.length === 0) return
-    pointer.current = whole(clampToBoard(screenToBoard(view, at)))
-    linearDraft()
+  const hover = (at: Point, toolId: 'line' | 'border') => {
+    if (!view) return
+    if (toolId === 'border' && corners.current.length > 0) {
+      if (hovered !== null) setHovered(null)
+      pointer.current = magnet(clampToBoard(screenToBoard(view, at)))
+      return linearDraft()
+    }
+    const top = hitTestPart(board, screenToBoard(view, at), HIT_PX / scale)
+    const own = top?.object.kind === toolId ? top : null
+    const id = own?.object.id ?? null
+    const edge = own?.part === 'edge'
+    if (id !== hovered) setHovered(id)
+    if (edge !== onEdge) setOnEdge(edge)
+    const border = own?.object
+    const over = !!border && (border.kind === 'border' || border.kind === 'line') && hitPathPoint(border, screenToBoard(view, at), HIT_PX / scale, null)?.kind === 'point'
+    if (over !== overVertex) setOverVertex(over)
   }
 
   /** The hold ended: the drawing is made (a drag that made nothing makes nothing) */
   const end = (keys: Keys) => {
+    if (vertex.current) {
+      if (pending.current) changeObjects(mapId, pending.current)
+      vertex.current = null
+      pending.current = null
+      setPreview(null)
+      return repaint()
+    }
     finishShapeOrStroke(keys)
     stroke.current = null
     shapeDrag.current = null
@@ -214,5 +316,20 @@ export function useDrawTool({ mapId, board, view, canvas, repaint, onCreated }: 
     return true
   }
 
-  return { draft, linearOpen, begin, move, hover, end, cancel, doubleClick, handleKey }
+  return {
+    draft,
+    linearOpen,
+    hovered,
+    onEdge,
+    overVertex,
+    preview,
+    beginVertex,
+    begin,
+    move,
+    hover,
+    end,
+    cancel,
+    doubleClick,
+    handleKey,
+  }
 }

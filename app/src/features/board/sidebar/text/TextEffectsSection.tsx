@@ -8,7 +8,7 @@ import type { TextSource } from './textSource'
 import { CURVE_MAX } from '../../textCurve'
 
 
-/** The text sidebar's Stroke (colour, intensity, opacity), Shadow (colour, blur, distance) and Curveness (a bar) sections: numbers, not sliders, except the bar */
+/** The text sidebar's Stroke (colour, intensity, opacity), Shadow (colour, size, x and y offset) and Curveness (a bar) sections: numbers, not sliders, except the bar */
 export default function TextEffectsSection({ source }: { source: TextSource }) {
   const { value, onLive, onChange: onCommit } = source
   return (
@@ -43,9 +43,9 @@ export default function TextEffectsSection({ source }: { source: TextSource }) {
           <CheckField
             label=""
             aria-label="Shadow"
-            checked={value.shadowBlur > 0 || value.shadowDistance > 0}
+            checked={value.shadowBlur > 0 || value.shadowDistance !== 0 || value.shadowY !== 0}
             onChange={(on) => {
-              onCommit(on ? { shadowBlur: 4, shadowDistance: 3 } : { shadowBlur: 0, shadowDistance: 0 })
+              onCommit(on ? { shadowBlur: 4, shadowDistance: 3, shadowY: 3 } : { shadowBlur: 0, shadowDistance: 0, shadowY: 0 })
               if (on) openSection('shadow')
             }}
           />
@@ -54,8 +54,9 @@ export default function TextEffectsSection({ source }: { source: TextSource }) {
         <CaptionedRow
           fields={[
             { label: 'Colour', node: <ColourField wide label="Shadow colour" value={value.shadowColor} onLive={(shadowColor) => onLive({ shadowColor })} onCommit={(shadowColor) => onCommit({ shadowColor })} /> },
-            { label: 'Blur', node: <NumberField hideLabel label="Blur" value={value.shadowBlur} min={0} max={40} onCommit={(shadowBlur) => onCommit({ shadowBlur })} /> },
-            { label: 'Distance', node: <NumberField hideLabel label="Distance" value={value.shadowDistance} min={0} max={40} onCommit={(shadowDistance) => onCommit({ shadowDistance })} /> },
+            { label: 'Size', node: <NumberField hideLabel label="Size" value={value.shadowBlur} min={0} max={40} onCommit={(shadowBlur) => onCommit({ shadowBlur })} /> },
+            { label: 'X offset', node: <NumberField hideLabel label="X offset" value={value.shadowDistance} min={-40} max={40} onCommit={(shadowDistance) => onCommit({ shadowDistance })} /> },
+            { label: 'Y offset', node: <NumberField hideLabel label="Y offset" value={value.shadowY} min={-40} max={40} onCommit={(shadowY) => onCommit({ shadowY })} /> },
           ]}
         />
       </SidebarSection>

@@ -20,7 +20,7 @@ export default function ShapeSidebar({ object, apply, ...context }: Props) {
     <ObjectFrame object={object} {...context}>
       <div className="flex flex-col gap-3">
         <ShapeSection value={object} onChange={(patch: ShapeChange, commit) => apply(patch, commit)} rotation={object.rotation} onRotation={(rotation) => apply({ rotation }, true)} />
-        <LineColourSection {...outline} title="Border colour" minThickness={0} />
+        <LineColourSection {...outline} title="Border colour" minThickness={0} roads />
         <LineTypeSection {...outline} />
         <LineStrokeSection {...outline} />
         <LineShadowSection {...outline} />

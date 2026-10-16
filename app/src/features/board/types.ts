@@ -40,6 +40,8 @@ export type Style = {
   shadow?: { color: string; blur: number; distance: number }
   /** How round the corners of the path are, 0–100 (whatever the drawing way). Absent: none, except that the exact way's `amount` is its softness (older maps) */
   softness?: number
+  /** A road texture painted along the line: an index into the roads (roadTextures.ts). Absent or 0: none */
+  road?: number
 }
 
 /** A point's curve handles (Figma vectors), as offsets from the point */
@@ -75,7 +77,14 @@ export type Base = {
 export type LineObject = Base & { kind: 'line'; style: Style } & Path
 /** Always closed: the last point joins the first */
 /** A fill: the inside of a shape or an area */
-export type Fill = { color: string; opacity: number }
+export type Fill = {
+  color: string
+  opacity: number
+  /** An index into the textures (fillTextures.ts); absent or 0: solid */
+  texture?: number
+  /** The id of a picture in the image store that fills the area */
+  image?: string
+}
 /** Per-edge colours of an area that came from borders of different colours: from point `from` on, edges are `color` */
 export type EdgeRun = { from: number; color: string }
 export type BorderObject = Base & {
@@ -150,10 +159,13 @@ export type TextObject = Base & {
   strokeWidth?: number
   /** 1–100, on top of the text's own opacity (absent: 100) */
   strokeOpacity?: number
-  /** A shadow: its colour (absent: black), how soft it is and how far it falls (down and right). Absent or both 0: none */
+  /** A shadow: its colour (absent: black), how soft it is (its size) and how far it falls. Absent or all 0: none */
   shadowColor?: string
   shadowBlur?: number
+  /** How far the shadow falls right (the X offset; negative: left) */
   shadowDistance?: number
+  /** How far it falls down (the Y offset; negative: up). Absent: as far as `shadowDistance` (older texts) */
+  shadowY?: number
   /** The text sits inside a square drawn round it, in `boxColor` (absent: the text's colour) */
   boxed?: boolean
   /** What the frame looks like (absent: a square) */

@@ -11,13 +11,15 @@ type Props = {
   /** A hovered line that is not selected: its points show faintly */
   hovered: LineObject | BorderObject | null
   junction: Junction | null
+  /** The next side of a path being continued: from its last point to where the pointer is (board points) */
+  tail?: { from: { x: number; y: number }; to: { x: number; y: number } } | null
 }
 
 const POINT = 8
 const KNOB = 4.5
 
 /** The map's overlay for editing a line: its points, the curve knobs of the active one, and the mark where two lines can join */
-export default function PathEditor({ view, line, active, hovered, junction }: Props) {
+export default function PathEditor({ view, line, active, hovered, junction, tail }: Props) {
   const at = (p: { x: number; y: number }) => boardToScreen(view, p)
   const shown = line ?? hovered
   return (
@@ -50,6 +52,9 @@ export default function PathEditor({ view, line, active, hovered, junction }: Pr
             </>
           )
         })()}
+      {tail && (
+        <line x1={at(tail.from).x} y1={at(tail.from).y} x2={at(tail.to).x} y2={at(tail.to).y} className="stroke-accent" strokeWidth={1.5} strokeDasharray="4 4" />
+      )}
       {junction && (() => {
         const s = at(junction.at)
         return <circle cx={s.x} cy={s.y} r={10} className="fill-accent/20 stroke-accent" strokeWidth={2} />

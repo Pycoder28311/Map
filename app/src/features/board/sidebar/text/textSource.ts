@@ -1,5 +1,6 @@
 import { useEditorState } from '@tiptap/react'
 import { useActiveEditor } from '../../activeEditor'
+import { shadowOffset } from '../../textShadow'
 import { runsPatch } from '../../areaName'
 import { updateObject, type Patch } from '../../boardStore'
 import { WEIGHT_BOLD, WEIGHT_NORMAL } from '../../fonts'
@@ -51,6 +52,7 @@ export function textValueOf(text: TextObject): TextValue {
     shadowColor: text.shadowColor ?? '#000000',
     shadowBlur: text.shadowBlur ?? 0,
     shadowDistance: text.shadowDistance ?? 0,
+    shadowY: shadowOffset(text).y,
     curve: text.curve ?? 0,
     spacing: text.spacing ?? 0,
     boxed: text.boxed ?? false,

@@ -1,6 +1,8 @@
 // Editing a line's points and curve handles on the map (Figma-like). Pure (pathEdit.test.ts).
 import type { Patch } from './changes'
-import type { Handle, Point } from './types'
+import { edgeColours, edgeRuns } from './borders'
+import { distanceToSegment } from './hit'
+import type { BorderObject, Handle, LineObject, Point } from './types'
 
 /** What the point editor needs of a line or a border */
 type PathLike = { points: Point[]; handles?: Handle[] }
@@ -59,3 +61,55 @@ export function moveHandle(line: PathLike, index: number, side: 'in' | 'out', to
   })
   return { handles }
 }
+
+/** The least points a path keeps: a ring needs three, a line two */
+export const minPoints = (o: LineObject | BorderObject) => (o.kind === 'border' && !o.open ? 3 : 2)
+
+/** The path without point `index` (its handle and edge colour go with it); null when it would be left with too few points */
+export function removePoint(o: LineObject | BorderObject, index: number): Patch | null {
+  if (index < 0 || index >= o.points.length || o.points.length <= minPoints(o)) return null
+  const patch: Patch = { points: o.points.filter((_, i) => i !== index) }
+  if (o.handles) patch.handles = o.handles.filter((_, i) => i !== index)
+  if (o.kind === 'border' && o.edges?.length) {
+    const runs = edgeRuns(edgeColours(o).filter((_, i) => i !== index), o.style.color)
+    patch.edges = runs.length ? runs : undefined
+  }
+  return patch
+}
+
+/** The path with a new point at `to` as point `index` (the others after it move on): its handle is none, its edge has the colour of the one it splits */
+export function insertPoint(o: LineObject | BorderObject, index: number, to: Point): Patch {
+  const at = { x: whole(to.x), y: whole(to.y) }
+  const patch: Patch = { points: [...o.points.slice(0, index), at, ...o.points.slice(index)] }
+  if (o.handles) patch.handles = [...o.handles.slice(0, index), NONE, ...o.handles.slice(index)]
+  if (o.kind === 'border' && o.edges?.length) {
+    const colours = edgeColours(o)
+    const runs = edgeRuns([...colours.slice(0, index), colours[Math.max(0, index - 1)], ...colours.slice(index)], o.style.color)
+    patch.edges = runs.length ? runs : undefined
+  }
+  return patch
+}
+
+/** Where a click on the path's side puts a new point: the index it gets and the nearest spot on that side (the corners are joined by straight sides) */
+export function pointOnSide(o: LineObject | BorderObject, p: Point): { index: number; at: Point } | null {
+  const n = o.points.length
+  const closed = o.kind === 'border' && !o.open
+  let best: { index: number; at: Point } | null = null
+  let bestDistance = Infinity
+  for (let i = 0; i < (closed ? n : n - 1); i++) {
+    const a = o.points[i]
+    const b = o.points[(i + 1) % n]
+    const d = distanceToSegment(p, a, b)
+    if (d >= bestDistance) continue
+    const dx = b.x - a.x
+    const dy = b.y - a.y
+    const len = dx * dx + dy * dy
+    const t = len === 0 ? 0 : Math.min(1, Math.max(0, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len))
+    best = { index: i + 1, at: { x: a.x + t * dx, y: a.y + t * dy } }
+    bestDistance = d
+  }
+  return best
+}
+
+/** Where a new point goes when the path is continued from point `picked`: after it, or before it when it is the first end of a line */
+export const continueIndex = (o: LineObject | BorderObject, picked: number) => (o.kind === 'border' && !o.open ? picked + 1 : picked === 0 && o.points.length > 1 ? 0 : picked + 1)

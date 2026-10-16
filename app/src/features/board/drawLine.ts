@@ -66,7 +66,7 @@ export function lineStylePatch(line: LineObject, style: Style): Patch {
 
 /** Whether the pointer path can be drawn as the pencil always was (one segment at a time, nothing to work out) */
 export const isPlain = (style: Style) =>
-  style.way === 'exact' && style.type === 'solid' && softnessOf(style) === 0 && !style.stroke && !style.shadow && !style.arrow.start && !style.arrow.end
+  style.way === 'exact' && style.type === 'solid' && softnessOf(style) === 0 && !style.stroke && !style.shadow && !style.road && !style.arrow.start && !style.arrow.end
 
 type ShapePen = { shape: ShapeType; param: number; style: Style; fill: ShapeObject['fill'] }
 

@@ -1,5 +1,6 @@
 import type { Editor } from '@tiptap/react'
 import { useCallback, useEffect, useRef } from 'react'
+import { hasShadow, shadowOffset } from './textShadow'
 import RichTextEditor from '../../components/ui/editors/RichTextEditor'
 import { KEEP_EDITING, setActiveEditor, setFinisher } from './activeEditor'
 import { WEIGHT_NORMAL, stackOf } from './fonts'
@@ -68,7 +69,7 @@ export default function TextEditorOverlay({ text, view, onCommit, onCancel }: Pr
           font: `${text.italic ? (text.oblique ? 'oblique ' : 'italic ') : ''}${text.weight ?? WEIGHT_NORMAL} ${text.size}px ${stackOf(text.font)}`,
           letterSpacing: text.spacing ? `${text.spacing}px` : undefined,
           WebkitTextStroke: (text.strokeWidth ?? 0) > 0 ? `${text.strokeWidth}px ${text.strokeColor ?? '#000000'}` : undefined,
-          textShadow: (text.shadowBlur ?? 0) > 0 || (text.shadowDistance ?? 0) > 0 ? `${text.shadowDistance ?? 0}px ${text.shadowDistance ?? 0}px ${text.shadowBlur ?? 0}px ${text.shadowColor ?? '#000000'}` : undefined,
+          textShadow: hasShadow(text) ? `${shadowOffset(text).x}px ${shadowOffset(text).y}px ${text.shadowBlur ?? 0}px ${text.shadowColor ?? '#000000'}` : undefined,
           textDecorationColor: (text.underline ? text.underlineColor : text.strikeColor) ?? undefined,
           textDecoration: [text.underline && 'underline', text.strike && 'line-through'].filter(Boolean).join(' ') || undefined,
           lineHeight: text.lineGap ? `calc(${LINE_HEIGHT}em + ${text.lineGap}px)` : LINE_HEIGHT,

@@ -12,7 +12,7 @@ const START_OPACITY = 20
 export default function BorderFillSection({ value, onChange }: BorderSectionProps) {
   const { fill } = value
   const colour = fill?.color ?? value.style.color
-  const withColour = (color: string, commit: boolean) => onChange({ fill: { color, opacity: fill?.opacity ?? START_OPACITY } }, commit)
+  const withColour = (color: string, commit: boolean) => onChange({ fill: { ...fill, color, opacity: fill?.opacity ?? START_OPACITY } }, commit)
   return (
     <SidebarSection id="border-fill" title="Fill">
       <ColourOpacityRow
@@ -21,7 +21,7 @@ export default function BorderFillSection({ value, onChange }: BorderSectionProp
         onColourCommit={(color) => withColour(color, true)}
         opacity={fill?.opacity ?? 0}
         minOpacity={0}
-        onOpacity={(opacity) => onChange({ fill: opacity > 0 ? { color: colour, opacity } : null }, true)}
+        onOpacity={(opacity) => onChange({ fill: opacity > 0 || fill?.texture || fill?.image ? { ...fill, color: colour, opacity } : null }, true)}
       />
     </SidebarSection>
   )

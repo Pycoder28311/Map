@@ -187,3 +187,41 @@ export function mergeBorders(board: Board, drawn: Omit<BorderObject, 'id'>, tole
     id: survivor.id,
   }
 }
+
+const same = (a: Point, b: Point) => a.x === b.x && a.y === b.y
+
+/**
+ * A drawn open border whose end sits exactly on the end of other open borders (snapped there) becomes one border with them,
+ * in one change: the one with the lowest id stays (its name, style, links) and the rest go. When the ends of the result meet
+ * it is closed, an area. Null when it touches no open border.
+ */
+export function joinOpenBorders(board: Board, drawn: Omit<BorderObject, 'id'>): Change | null {
+  if (!drawn.open) return null
+  const pool = board.objects.filter((o): o is BorderObject => o.kind === 'border' && !!o.open && !o.handles && canSelect(o))
+  let points = drawn.points
+  const used: BorderObject[] = []
+  for (let found = true; found; ) {
+    found = false
+    for (const c of pool) {
+      if (used.includes(c)) continue
+      const first = c.points[0]
+      const last = c.points[c.points.length - 1]
+      const end = points[points.length - 1]
+      if (same(end, first)) points = [...points, ...c.points.slice(1)]
+      else if (same(end, last)) points = [...points, ...[...c.points].reverse().slice(1)]
+      else if (same(points[0], last)) points = [...c.points, ...points.slice(1)]
+      else if (same(points[0], first)) points = [...[...c.points].reverse(), ...points.slice(1)]
+      else continue
+      used.push(c)
+      found = true
+    }
+  }
+  if (used.length === 0) return null
+  const closed = points.length > 3 && same(points[0], points[points.length - 1])
+  if (closed) points = points.slice(0, -1)
+  const [survivor, ...rest] = used.sort((a, b) => a.id - b.id)
+  const patch = closed
+    ? { points, edges: undefined, open: undefined, fill: survivor.fill ?? drawn.fill }
+    : { points, edges: undefined }
+  return { update: [{ id: survivor.id, patch }], remove: rest.map((o) => o.id) }
+}

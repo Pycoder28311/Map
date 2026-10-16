@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { changeObjects, canRedo, canUndo, redo, undo, useBoard } from './boardStore'
 import { applyChange } from './changes'
-import { LuGalleryHorizontal, LuX } from 'react-icons/lu'
+import { LuGalleryHorizontal, LuTrash2, LuX } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
 import Presenter from './presenter/Presenter'
 import { FLOAT } from './floating'
 import { setTextZoom } from './bounds'
-import { hitTest } from './hit'
+import { hitTest, hitTestPart } from './hit'
+import { continueIndex, insertPoint, pointOnSide, removePoint } from './pathEdit'
 import { newPoint } from './drawPoint'
-import { getPointPen } from './pen'
+import { getBorderPen, getPen, getPointPen } from './pen'
+import { defaultFill } from './drawBorder'
 import PointPenSidebar from './sidebar/point/PointPenSidebar'
 import VisitorLayer from './VisitorLayer'
 import AreaNameInput from './AreaNameInput'
@@ -19,10 +21,11 @@ import LinePenSidebar from './sidebar/line/LinePenSidebar'
 import { boundsOf, unionBounds } from './bounds'
 import { getLinkPick, startLinkPick, stopLinkPick } from '../links/linkPick'
 import { paintBoard } from './render'
+import { useFillImages } from './fillTextures'
 import { removeBackground, useBackground, useHasBackground } from './background'
 import { toolOfKey, type ToolId } from './tools'
-import type { BoardObject, Point } from './types'
-import { BOARD, boardToScreen, insideBoard, screenToBoard, zoomFactorOf, type Size } from './viewport'
+import { LAYER_MAIN, type BoardObject, type BorderObject, type LineObject, type Point } from './types'
+import { BOARD, boardToScreen, clampToBoard, insideBoard, screenToBoard, zoomFactorOf, type Size } from './viewport'
 import LinkPickBar from './LinkPickBar'
 import MapTitleBar from './MapTitleBar'
 import { clearSelection, select, useSelection } from './selection'
@@ -38,6 +41,7 @@ import { rectFrom } from './bounds'
 import { textAt } from './drawText'
 import TextEditorOverlay from './TextEditorOverlay'
 import TextPenSidebar from './sidebar/text/TextPenSidebar'
+import { toolCursor } from './toolCursors'
 import { useDrawTool } from './useDrawTool'
 import { useTextTool } from './useTextTool'
 import { ERASER_PX, HIT_PX, useMouseTool } from './useMouseTool'
@@ -52,6 +56,12 @@ const isTyping = (target: EventTarget) =>
   target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
 
 const asPath = (o: BoardObject | undefined) => (o?.kind === 'line' || o?.kind === 'border' ? o : null)
+/** The line or border (as the tool is) whose points show under the Point tool, whatever way it was drawn */
+/** The tool each kind of object is edited with */
+const TOOL_OF = { point: 'point', line: 'line', shape: 'line', border: 'border', text: 'text' } as const
+/** Whether an object of this kind is what the tool works on */
+const isOwn = (tool: string, kind: string) => (tool === 'line' ? kind === 'line' || kind === 'shape' : tool === kind)
+const asOf = (tool: 'line' | 'border', o: BoardObject | undefined) => (o?.kind === tool ? o : null)
 /** A hovered line or area that is not the one being edited and has points to show (its way is not exact) */
 const hoveredPath = (o: BoardObject | undefined, editing: number | undefined) =>
   (o?.kind === 'line' || o?.kind === 'border') && o.id !== editing && o.style.way !== 'exact' ? o : null
@@ -93,6 +103,14 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
   // The size the canvas was last painted for (its CSS size follows it, never the page's)
   const [painted, setPainted] = useState<Size | null>(null)
   const [tool, setTool] = useState<ToolId>('line')
+  // The pointer is over something the Point or Text tool can pick
+  const [overOwn, setOverOwn] = useState(false)
+  // The Point tool of the Line and Border tools is on: the points of lines or borders show and can be moved (and nothing is drawn)
+  const [pointMode, setPointMode] = useState(false)
+  // What the Mouse tool picked is edited with that kind's own tool (its sidebar, its pointer); a click on bare board lets go of it and goes back to the Mouse tool
+  const [toolSelected, setToolSelected] = useState(false)
+  // Where the pointer is (board) while a point is picked: the next side of the path follows it
+  const [tailTo, setTailTo] = useState<Point | null>(null)
   const [space, setSpace] = useState(false)
   const [mode, setModeState] = useState<Mode>('none')
   // Bumped to repaint when something was drawn on the canvas that is not in the board (a cancelled stroke)
@@ -115,8 +133,16 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
   // What is painted: the board, or while a gesture runs, the board as it would be
   // What the Line and Border tools are drawing right now (not in the board until the drawing is finished)
   const background = useBackground(mapId)
+  const fillImages = useFillImages()
   const hasBackground = useHasBackground(mapId)
-  const draw = useDrawTool({ mapId, board, view, canvas, repaint: () => setRepaint((n) => n + 1), onCreated: selectCreated })
+  const draw = useDrawTool({
+    mapId,
+    board,
+    view,
+    canvas,
+    repaint: () => setRepaint((n) => n + 1),
+    onCreated: selectCreated,
+  })
   const text = useTextTool({ mapId, board, view })
   // The visitor's view: no tools, a click on a pin opens its card
   const [visitor] = useState(false)
@@ -130,13 +156,32 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
   const emptyStart = useRef<Point | null>(null)
   const [stylePreview, setStylePreview] = useState<StylePreview | null>(null)
   const shown = useMemo(() => {
-    const base = mouse.preview ?? board
+    const base = mouse.preview ?? draw.preview ?? board
     return stylePreview
       ? applyChange(base, {
           update: [{ id: stylePreview.id, patch: stylePreview.patch }],
         }).board
       : base
-  }, [mouse.preview, board, stylePreview])
+  }, [mouse.preview, draw.preview, board, stylePreview])
+  // The point picked with the Point tool, in what is shown (while it is dragged, where it is now)
+  const pickedFound = draw.picked ? shown.objects.find((o) => o.id === draw.picked!.id) : undefined
+  const pickedObject = pointMode && (pickedFound?.kind === 'line' || pickedFound?.kind === 'border') && pickedFound.kind === tool && draw.picked!.index < pickedFound.points.length ? pickedFound : null
+  const pickedPoint = pickedObject ? pickedObject.points[draw.picked!.index] : null
+  const selectedKey = mouse.selected.map((o) => o.id).join(',')
+  useEffect(() => {
+    if (visitor) return
+    const one = mouse.selected.length === 1 ? mouse.selected[0] : null
+    if (tool === 'mouse' && one) {
+      setTool(TOOL_OF[one.kind])
+      setToolSelected(true)
+    } else if (toolSelected && mouse.selected.length === 0) {
+      setToolSelected(false)
+      setPointMode(false)
+      setTool('mouse')
+    }
+    // Only a change of what is selected moves between tools (picking a tool by hand keeps the selection and the tool picked)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedKey])
   const boxObjects = shown.objects.filter((o) => selection.has(o.id))
   const boxBounds = unionBounds(boxObjects)
 
@@ -178,11 +223,21 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
       // never shown stretched or squeezed in between, which is what showed as the board's width changing while the sidebar slides
       el.style.width = `${size.w}px`
       el.style.height = `${size.h}px`
-      paintBoard(ctx, shown, view, size, dpr, draw.draft ? [draw.draft] : [], tool === 'mouse' ? mouse.hovered : null, text.editing?.id ?? null, background)
+      paintBoard(
+        ctx,
+        shown,
+        view,
+        size,
+        dpr,
+        draw.draft ? [draw.draft] : [],
+        tool === 'mouse' ? mouse.hovered : tool === 'border' && !draw.draft ? draw.hovered : null,
+        text.editing?.id ?? null,
+        background,
+      )
       setPainted((p) => (p && p.w === size.w && p.h === size.h ? p : size))
     })
     return () => cancelAnimationFrame(frame)
-  }, [shown, view, size, repaint, draw.draft, tool, mouse.hovered, text.editing?.id, background])
+  }, [shown, view, size, repaint, draw.draft, tool, mouse.hovered, draw.hovered, text.editing?.id, background, fillImages])
 
   // The wheel zooms toward the pointer (not passive: it must stop the page scrolling)
   useEffect(() => {
@@ -230,12 +285,23 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
     }
     // Off the board's sheet, a drag moves the whole view, whatever the tool
     if (e.button === 0 && !insideBoard(screenToBoard(view, at))) return setMode('pan')
-    if (visitor) return e.button === 0 ? (pinStart.current = at, undefined) : undefined
+    if (visitor) return e.button === 0 ? ((pinStart.current = at), undefined) : undefined
+    if (e.button === 0 && toolSelected && tool !== 'mouse' && !pointMode) {
+      // With the tool of what was picked, a press that is not on one of that kind lets it go and returns to the Mouse tool
+      const p = screenToBoard(view, at)
+      const top = hitTestPart(board, p, HIT_PX / view.scale)
+      const own = tool === 'text' ? !!textAt(board, p, HIT_PX / view.scale) : tool === 'point' ? top?.object.kind === 'point' : !!top && top.part === 'edge' && isOwn(tool, top.object.kind)
+      if (!own) {
+        clearSelection(mapId)
+        pickTool('mouse')
+        return
+      }
+    }
     if (e.button === 0 && tool === 'point') {
       const found = hitTest(board, screenToBoard(view, at), HIT_PX / view.scale)
       if (found?.kind === 'point') {
-        // An existing pin is picked, not covered: the Mouse tool takes over
-        pickTool('mouse')
+        // An existing pin is picked, not covered
+        setToolSelected(true)
         return mouse.begin(e)
       }
       pinStart.current = at
@@ -244,7 +310,8 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
     if (e.button === 0 && tool === 'mouse') {
       // A drag on bare board moves the view (Shift or Ctrl drags a selection rectangle); a click on it clears the selection
       const plain = !e.shiftKey && !e.ctrlKey && !e.metaKey
-      const bare = plain && mouse.mode === 'select' && !mouse.overPoint && !mouse.junction && !hitTest(board, screenToBoard(view, at), HIT_PX / view.scale)
+      const bare =
+        plain && mouse.mode === 'select' && !mouse.overPoint && !mouse.junction && !hitTest(board, screenToBoard(view, at), HIT_PX / view.scale)
       if (bare) {
         emptyStart.current = at
         return
@@ -253,11 +320,57 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
     }
     if (e.button === 0 && tool === 'text') {
       // A press on an existing text works as with the Mouse tool: it selects it, and a drag moves it (its box and buttons are there too)
-      if (textAt(board, screenToBoard(view, at), HIT_PX / view.scale)) return mouse.begin(e)
+      if (textAt(board, screenToBoard(view, at), HIT_PX / view.scale)) {
+        setToolSelected(true)
+        return mouse.begin(e)
+      }
       if (text.begin(at)) setMode('draw')
       return
     }
     if (e.button === 0 && (tool === 'line' || tool === 'border')) {
+      // With the Point tool: a press on a point picks it (and a drag moves it); on a side of a line or border it puts a new point there; on
+      // the bare board, with a point picked, it continues the path from that point (like a ruler: each click adds the next point)
+      if (pointMode) {
+        // The last point of an open border, and its first point pressed: the ring is closed (it is an area now)
+        if (pickedObject?.kind === 'border' && pickedObject.open && pickedObject.points.length >= 3 && draw.picked?.index === pickedObject.points.length - 1) {
+          const first = pickedObject.points[0]
+          const here = screenToBoard(view, at)
+          if (Math.hypot(first.x - here.x, first.y - here.y) <= HIT_PX / view.scale) {
+            changeObjects(mapId, { update: [{ id: pickedObject.id, patch: { open: undefined, fill: pickedObject.fill ?? getBorderPen().fill ?? defaultFill(pickedObject.style) } }] })
+            return draw.setPicked(null)
+          }
+        }
+        if (draw.beginVertex(at)) return setMode('draw')
+        const p = screenToBoard(view, at)
+        const top = hitTestPart(board, p, HIT_PX / view.scale)
+        if (top && top.part === 'edge' && top.object.kind === tool) {
+          const o = top.object as LineObject | BorderObject
+          const side = pointOnSide(o, p)
+          if (!side) return
+          changeObjects(mapId, { update: [{ id: o.id, patch: insertPoint(o, side.index, side.at) }] })
+          return draw.setPicked({ id: o.id, index: side.index })
+        }
+        if (pickedObject && draw.picked) {
+          const index = continueIndex(pickedObject, draw.picked.index)
+          changeObjects(mapId, { update: [{ id: pickedObject.id, patch: insertPoint(pickedObject, index, clampToBoard(p)) }] })
+          return draw.setPicked({ id: pickedObject.id, index })
+        }
+        // Bare board and nothing picked: a new line (Line tool) or border (Border tool) starts here, point by point
+        const start = { x: Math.round(clampToBoard(p).x), y: Math.round(clampToBoard(p).y) }
+        const pen = tool === 'line' ? getPen() : getBorderPen()
+        const style = { ...pen.style, way: 'straight' as const, amount: 0 }
+        const base = { layer: LAYER_MAIN, name: '', links: [], style, points: [start] }
+        const [id] = changeObjects(mapId, { add: [tool === 'line' ? { kind: 'line' as const, ...base } : { kind: 'border' as const, ...base, open: true, fill: pen.fill, description: '' }] })
+        if (id !== undefined) draw.setPicked({ id, index: 0 })
+        return
+      }
+      // A press on the edge of an existing line (Line tool) or border (Border tool) picks it, as with pins: the Mouse tool takes over.
+      // Not while a linear border is being clicked out: its corners may land on an edge
+      const top = draw.linearOpen ? null : hitTestPart(board, screenToBoard(view, at), HIT_PX / view.scale)
+      if (top && top.part === 'edge' && isOwn(tool, top.object.kind)) {
+        setToolSelected(true)
+        return mouse.begin(e)
+      }
       if (draw.begin(at, tool, { shift: e.shiftKey, alt: e.altKey })) setMode('draw')
     }
   }
@@ -266,7 +379,13 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
     const before = pointers.current.get(e.pointerId)
     if (view && modeRef.current === 'none') setOffBoard(!insideBoard(screenToBoard(view, pointOf(e))))
     if (!visitor && tool === 'mouse' && modeRef.current === 'none') mouse.hover(e)
-    if (tool === 'border' && modeRef.current === 'none') draw.hover(pointOf(e))
+    if ((tool === 'border' || tool === 'line') && modeRef.current === 'none') draw.hover(pointOf(e), tool)
+    if (pointMode && draw.picked && view && modeRef.current === 'none') setTailTo(screenToBoard(view, pointOf(e)))
+    if ((tool === 'point' || tool === 'text') && modeRef.current === 'none' && view) {
+      const p = screenToBoard(view, pointOf(e))
+      const over = tool === 'point' ? hitTest(board, p, HIT_PX / view.scale)?.kind === 'point' : !!textAt(board, p, HIT_PX / view.scale)
+      if (over !== overOwn) setOverOwn(over)
+    }
     if (!before) return
     const at = pointOf(e)
     pointers.current.set(e.pointerId, at)
@@ -300,7 +419,11 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
     if (emptyStart.current && e.type === 'pointerup' && modeRef.current === 'none') clearSelection(mapId)
     emptyStart.current = null
     if (start && !visitor && view && modeRef.current === 'none' && e.type === 'pointerup') {
-      selectCreated(changeObjects(mapId, { add: [newPoint(screenToBoard(view, start), getPointPen())] }))
+      selectCreated(
+        changeObjects(mapId, {
+          add: [newPoint(screenToBoard(view, start), getPointPen())],
+        }),
+      )
     }
     if (modeRef.current === 'draw') {
       if (tool === 'text') text.end()
@@ -316,6 +439,14 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
     const key = e.key.toLowerCase()
     // A visitor can only look: zoom and move
     if (visitor && !['+', '=', '-', '0', '1', ' ', 'escape'].includes(key)) return
+    if (pointMode && pickedObject && draw.picked && ['escape', 'enter', 'delete', 'backspace'].includes(key)) {
+      if (key === 'delete' || key === 'backspace') {
+        const patch = removePoint(pickedObject, draw.picked.index)
+        if (patch) changeObjects(mapId, { update: [{ id: pickedObject.id, patch }] })
+      }
+      dropPicked()
+      return e.preventDefault()
+    }
     if (tool === 'border' && draw.handleKey(key, e.altKey)) return e.preventDefault()
     if (mod) {
       if (key === 'd' && mouse.selected.length > 0) {
@@ -367,10 +498,25 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
     select(mapId, ids)
   }
 
+  /** Lets go of the picked point; a path that was only started (a single point) is not kept */
+  const dropPicked = () => {
+    if (pickedObject && pickedObject.points.length < 2) changeObjects(mapId, { remove: [pickedObject.id] })
+    draw.setPicked(null)
+  }
+
+  const togglePointTool = () => {
+    if (pointMode) dropPicked()
+    setPointMode((on) => !on)
+  }
+
   const pickTool = (next: ToolId) => {
+    dropPicked()
     finishEditing()
     draw.cancel()
     setTool(next)
+    setPointMode(false)
+    setToolSelected(false)
+    draw.setPicked(null)
     setStylePreview(null)
     mouse.setMode('select')
   }
@@ -379,7 +525,14 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
   const onMouseDoubleClick = (e: { clientX: number; clientY: number }) => {
     if (view) {
       const box = root.current!.getBoundingClientRect()
-      const hit = textAt(board, screenToBoard(view, { x: e.clientX - box.left, y: e.clientY - box.top }), HIT_PX / view.scale)
+      const hit = textAt(
+        board,
+        screenToBoard(view, {
+          x: e.clientX - box.left,
+          y: e.clientY - box.top,
+        }),
+        HIT_PX / view.scale,
+      )
       if (hit) {
         select(mapId, [hit.id])
         return text.edit(hit)
@@ -402,27 +555,50 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
   const onlyPaths = mouse.selected.length > 0 && mouse.selected.every((o) => o.kind === 'line' || o.kind === 'border')
   // With the Text tool a selected text shows its box with all its buttons and its own sidebar, just as with the Mouse tool
   const textSelected = tool === 'text' && mouse.selected.length > 0 && mouse.selected.every((o) => o.kind === 'text')
-  const showBox = !visitor && (tool === 'mouse' || textSelected) && boxBounds && view && !text.editing
+  const showBox = !visitor && (tool === 'mouse' || ((toolSelected || textSelected) && !pointMode)) && boxBounds && view && !text.editing
 
+  // The hand over what the tool can pick (a press there selects it); else the tool's own pointer
+  const overPick =
+    (tool === 'line' || tool === 'border' ? draw.onEdge && !draw.linearOpen && draw.hovered !== null : overOwn) &&
+    (tool === 'line' || tool === 'border' || tool === 'point' || tool === 'text')
   const cursor =
     mode === 'pan'
       ? 'cursor-grabbing'
       : space || offBoard
         ? 'cursor-grab'
-        : tool === 'line' || tool === 'border' || tool === 'point' || mouse.mode === 'split'
+        : mouse.mode === 'split'
           ? 'cursor-crosshair'
-          : mouse.mode === 'erase'
-            ? 'cursor-none'
-            : mouse.overPoint
-              ? 'cursor-move'
-              : mouse.over
-                ? 'cursor-pointer'
-                : ''
+          : pointMode && draw.overVertex
+            ? 'cursor-pointer'
+            : overPick
+              ? 'cursor-pointer'
+              : tool === 'text'
+                ? 'cursor-text'
+                : mouse.mode === 'erase'
+                  ? 'cursor-none'
+                  : mouse.overPoint
+                    ? 'cursor-move'
+                    : mouse.over
+                      ? 'cursor-pointer'
+                      : ''
+  const cursorStyle =
+    !overPick && !pointMode && mode !== 'pan' && !space && !offBoard && mouse.mode !== 'split'
+      ? toolCursor(tool)
+      : undefined
 
   // The sidebar on the right: the options of the Line tool, or of what is selected
-  const sidebar = visitor ? null : tool === 'text' && textSelected ? 'selection' : tool === 'line' || tool === 'border' || tool === 'text' || tool === 'point' ? 'pen' : tool === 'mouse' && mouse.selected.length > 0 ? 'selection' : null
+  const sidebar = visitor
+    ? null
+    : toolSelected && mouse.selected.length > 0
+      ? 'selection'
+      : tool === 'line' || tool === 'border' || tool === 'text' || tool === 'point'
+        ? 'pen'
+        : tool === 'mouse' && mouse.selected.length > 0
+          ? 'selection'
+          : null
   // A point's sidebar is wider
-  const wideSidebar = sidebar === 'pen' ? tool === 'point' : sidebar === 'selection' && mouse.selected.length === 1 && mouse.selected[0].kind === 'point'
+  const wideSidebar =
+    sidebar === 'pen' ? tool === 'point' : sidebar === 'selection' && mouse.selected.length === 1 && mouse.selected[0].kind === 'point'
 
   return (
     <div ref={outer} className="flex h-full min-h-48 overflow-hidden">
@@ -442,10 +618,15 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
           onPointerMove={onMove}
           onPointerUp={onUp}
           onPointerCancel={onUp}
-          onDoubleClick={(e) => (visitor ? undefined : tool === 'mouse' || tool === 'text' ? onMouseDoubleClick(e) : tool === 'border' && draw.doubleClick(e.altKey))}
+          onDoubleClick={(e) =>
+            visitor ? undefined : tool === 'mouse' || tool === 'text' ? onMouseDoubleClick(e) : tool === 'border' && draw.doubleClick(e.altKey)
+          }
           // Its CSS size is the size it was painted for, not the page's: when the page changes size (the sidebar) the old picture stays as it
           // was, cut off, for the frames until the new one is painted, instead of being squeezed to the new box
-          style={painted ? { width: painted.w, height: painted.h } : undefined}
+          style={{
+            ...(painted ? { width: painted.w, height: painted.h } : {}),
+            ...(cursorStyle ? { cursor: cursorStyle } : {}),
+          }}
           className={`absolute start-0 top-0 touch-none ${painted ? '' : 'size-full'} ${cursor}`}
         />
         {!visitor && hasBackground && view && size && (
@@ -455,7 +636,10 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
             label="Remove the background"
             title="Remove the background picture"
             onClick={() => removeBackground(mapId)}
-            style={{ left: Math.min(Math.max(8, view.x + BOARD.width * view.scale - 40), size.w - 40), top: Math.min(Math.max(8, view.y + 8), size.h - 40) }}
+            style={{
+              left: Math.min(Math.max(8, view.x + BOARD.width * view.scale - 40), size.w - 40),
+              top: Math.min(Math.max(8, view.y + 8), size.h - 40),
+            }}
             className="absolute z-10 bg-surface/85 text-fg shadow-md hover:bg-surface"
           />
         )}
@@ -495,6 +679,40 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
             junction={mouse.junction}
           />
         )}
+        {pointMode && (tool === 'border' || tool === 'line') && view && !draw.draft && (
+          <>
+            {shown.objects
+              .filter((o) => o.kind === tool && o.id !== pickedObject?.id)
+              .map((o) => (
+                <PathEditor key={o.id} view={view} line={null} active={null} hovered={asOf(tool, o)} junction={null} />
+              ))}
+            {pickedObject && (
+              <PathEditor
+                view={view}
+                line={pickedObject}
+                active={draw.picked!.index}
+                hovered={null}
+                junction={null}
+                tail={tailTo && pickedPoint && mode === 'none' ? { from: pickedPoint, to: tailTo } : null}
+              />
+            )}
+          </>
+        )}
+        {pointMode && pickedObject && pickedPoint && view && (
+          // Above the picked point; it follows the point while that is dragged
+          <IconButton
+            icon={LuTrash2}
+            label="Remove point"
+            disabled={!removePoint(pickedObject, draw.picked!.index)}
+            onClick={() => {
+              const patch = removePoint(pickedObject, draw.picked!.index)
+              if (patch) changeObjects(mapId, { update: [{ id: pickedObject.id, patch }] })
+              draw.setPicked(null)
+            }}
+            className="absolute z-10 -translate-x-1/2 -translate-y-full bg-surface/90 text-fg shadow-md hover:bg-surface"
+            style={{ left: boardToScreen(view, pickedPoint).x, top: boardToScreen(view, pickedPoint).y - 10 }}
+          />
+        )}
         {tool === 'mouse' && mouse.areaPrompt && (
           <AreaNameInput
             key={mouse.areaPrompt.id}
@@ -520,11 +738,24 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         {text.notice && <Notice text={text.notice} onDismiss={text.dismissNotice} />}
         <LinkPickBar mapId={mapId} board={board.objects} />
         {!visitor && !text.editing && (
-          <Button variant="ghost" icon={LuGalleryHorizontal} onClick={() => setPresenting(true)} className={`absolute start-1/2 bottom-3 -translate-x-1/2 ${FLOAT}`}>
+          <Button
+            variant="ghost"
+            icon={LuGalleryHorizontal}
+            onClick={() => setPresenting(true)}
+            className={`absolute start-1/2 bottom-3 -translate-x-1/2 ${FLOAT}`}
+          >
             Maps
           </Button>
         )}
-        {presenting && <Presenter mapId={mapId} onClose={() => { setPresenting(false); root.current?.focus() }} />}
+        {presenting && (
+          <Presenter
+            mapId={mapId}
+            onClose={() => {
+              setPresenting(false)
+              root.current?.focus()
+            }}
+          />
+        )}
         {visitor && view && size && (
           <VisitorLayer
             board={board}
@@ -546,6 +777,8 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         {sidebar === 'selection' ? (
           <SelectionPanel
             mapId={mapId}
+            pointTool={pointMode}
+            onPointTool={togglePointTool}
             selected={mouse.selected}
             board={board.objects}
             mode={mouse.mode}
@@ -561,9 +794,9 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
             }}
           />
         ) : tool === 'line' ? (
-          <LinePenSidebar />
+          <LinePenSidebar pointTool={pointMode} onPointTool={togglePointTool} />
         ) : tool === 'border' ? (
-          <BorderPenSidebar />
+          <BorderPenSidebar pointTool={pointMode} onPointTool={togglePointTool} />
         ) : tool === 'text' ? (
           <TextPenSidebar mapId={mapId} />
         ) : tool === 'point' ? (

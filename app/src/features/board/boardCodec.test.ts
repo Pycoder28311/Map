@@ -86,6 +86,11 @@ describe('encodeBoard / decodeBoard', () => {
 describe('areas (borders with extras)', () => {
   const plain: BoardObject = { ...base, id: 1, kind: 'border', style: DEFAULT_STYLE, fill: null, description: '', points: pts([0, 0], [100, 0], [100, 100]) }
 
+  it('round-trips a fill with a texture and a picture', () => {
+    const area: BoardObject = { ...plain, fill: { color: '#336699', opacity: 40, texture: 3, image: 'img7' } }
+    expect(decodeBoard(encodeBoard({ nextId: 2, objects: [area] })).objects[0]).toEqual(area)
+  })
+
   it('round-trips a fill, a description and colour runs', () => {
     const area: BoardObject = { ...plain, name: 'Αττική', fill: { color: '#336699', opacity: 25 }, description: 'The region ☀', edges: [{ from: 0, color: '#ff0000' }, { from: 2, color: '#00ff00' }] }
     expect(roundTrip({ nextId: 2, objects: [area] }).objects).toEqual([area])
@@ -147,6 +152,7 @@ describe('text extras', () => {
       shadowColor: '#445566',
       shadowBlur: 4,
       shadowDistance: 2,
+      shadowY: -3,
       curve: -40,
       spacing: 2,
       boxed: true,

@@ -1,4 +1,5 @@
 import { useBoard } from '../../boardStore'
+import { hasShadow } from '../../textShadow'
 import { stackOf } from '../../fonts'
 import SidebarSection from '../common/SidebarSection'
 import { distinctStyles, fullStyle, type TextStyle } from '../../textStyles'
@@ -17,7 +18,7 @@ type Props = {
 function Sample({ style, text }: { style: TextStyle; text: string }) {
   const s = fullStyle(style)
   const stroke = s.strokeWidth > 0
-  const shadow = s.shadowBlur > 0 || s.shadowDistance > 0
+  const shadow = hasShadow(s)
   return (
     <span
       className="min-w-0 flex-1 truncate text-fg"
@@ -30,7 +31,7 @@ function Sample({ style, text }: { style: TextStyle; text: string }) {
         opacity: s.opacity / 100,
         textDecoration: [s.underline && 'underline', s.strike && 'line-through'].filter(Boolean).join(' ') || undefined,
         WebkitTextStroke: stroke ? `${Math.min(2, s.strokeWidth / 4)}px ${s.strokeColor}` : undefined,
-        textShadow: shadow ? `${Math.min(3, s.shadowDistance)}px ${Math.min(3, s.shadowDistance)}px ${Math.min(4, s.shadowBlur)}px ${s.shadowColor}` : undefined,
+        textShadow: shadow ? `${Math.max(-3, Math.min(3, s.shadowDistance))}px ${Math.max(-3, Math.min(3, s.shadowY))}px ${Math.min(4, s.shadowBlur)}px ${s.shadowColor}` : undefined,
         letterSpacing: s.spacing ? `${Math.min(6, s.spacing)}px` : undefined,
         outline: s.boxed ? `1px solid ${s.boxColor ?? s.color}` : undefined,
         outlineOffset: 2,

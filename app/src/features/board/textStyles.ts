@@ -5,7 +5,7 @@ import type { Board, BoxShape, TextAlign, TextObject } from './types'
 /** Everything the text sidebar sets, except where the text is, what it says, and how it is turned */
 export const STYLE_KEYS = [
   'size', 'color', 'opacity', 'align', 'fixedSize', 'font', 'weight', 'italic', 'underline', 'strike', 'oblique', 'underlineColor', 'strikeColor',
-  'strokeColor', 'strokeWidth', 'strokeOpacity', 'shadowColor', 'shadowBlur', 'shadowDistance', 'curve', 'spacing', 'boxed', 'boxShape', 'boxColor', 'lineGap',
+  'strokeColor', 'strokeWidth', 'strokeOpacity', 'shadowColor', 'shadowBlur', 'shadowDistance', 'shadowY', 'curve', 'spacing', 'boxed', 'boxShape', 'boxColor', 'lineGap',
 ] as const
 
 type Key = (typeof STYLE_KEYS)[number]
@@ -34,6 +34,7 @@ export type FullStyle = {
   shadowColor: string
   shadowBlur: number
   shadowDistance: number
+  shadowY: number
   curve: number
   spacing: number
   boxed: boolean
@@ -62,6 +63,7 @@ export const STYLE_DEFAULTS: FullStyle = {
   shadowColor: '#000000',
   shadowBlur: 0,
   shadowDistance: 0,
+  shadowY: 0,
   curve: 0,
   spacing: 0,
   boxed: false,
@@ -87,7 +89,7 @@ export function styleOf(source: TextStyle): TextStyle {
   const off = {
     strokeColor: full.strokeWidth === 0,
     strokeOpacity: full.strokeWidth === 0,
-    shadowColor: full.shadowBlur === 0 && full.shadowDistance === 0,
+    shadowColor: full.shadowBlur === 0 && full.shadowDistance === 0 && full.shadowY === 0,
     underlineColor: !full.underline,
     strikeColor: !full.strike,
     oblique: !full.italic,

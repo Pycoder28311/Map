@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useBackground } from '../background'
+import { useFillImages } from '../fillTextures'
 import { hitTest } from '../hit'
 import PointCard from '../PointCard'
 import PointView from '../PointView'
@@ -27,6 +28,7 @@ export default function BoardCanvas({ mapId, board, paint = true, interactive = 
   }, [])
 
   const background = useBackground(mapId)
+  useFillImages()
   const view = size ? fitView(size) : null
   useEffect(() => {
     const el = canvas.current

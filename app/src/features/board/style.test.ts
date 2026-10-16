@@ -45,6 +45,11 @@ describe('style', () => {
     expect(roundTrip({ ...DEFAULT_STYLE, stroke: s.stroke }).back).toEqual({ ...DEFAULT_STYLE, stroke: s.stroke })
   })
 
+  it('round-trips a road texture', () => {
+    const s: Style = { ...DEFAULT_STYLE, road: 3 }
+    expect(roundTrip(s).back).toEqual(s)
+  })
+
   it('round-trips the softness, and reads an exact line\'s old amount as its softness', () => {
     const s: Style = { ...DEFAULT_STYLE, softness: 40 }
     expect(roundTrip(s).back).toEqual(s)
