@@ -16,7 +16,7 @@ export default function LinePenSidebar({ pointTool, onPointTool }: { pointTool: 
   const shapeActive = pen.shape !== null
   return (
     <SidePanel label="Line options">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-col gap-2">
         <h2 className="text-heading">Line</h2>
         <PointToolButton on={pointTool} onToggle={onPointTool} what="line" />
       </div>

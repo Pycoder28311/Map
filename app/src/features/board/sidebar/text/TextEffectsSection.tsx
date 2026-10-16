@@ -1,9 +1,8 @@
 import ColourField from '../../../../components/ui/fields/ColourField'
-import RangeField from '../../../../components/ui/fields/RangeField'
+import ValueBar from '../../../../components/ui/fields/ValueBar'
 import { NumberField } from '../../NumberBox'
 import CaptionedRow from '../common/CaptionedRow'
-import CheckField from '../../../../components/ui/fields/CheckField'
-import SidebarSection, { openSection } from '../common/SidebarSection'
+import SidebarSection from '../common/SidebarSection'
 import type { TextSource } from './textSource'
 import { CURVE_MAX } from '../../textCurve'
 
@@ -16,17 +15,11 @@ export default function TextEffectsSection({ source }: { source: TextSource }) {
       <SidebarSection
         id="stroke"
         title="Stroke"
-        leading={
-          <CheckField
-            label=""
-            aria-label="Stroke"
-            checked={value.strokeWidth > 0}
-            onChange={(on) => {
-              onCommit({ strokeWidth: on ? 2 : 0 })
-              if (on) openSection('stroke')
-            }}
-          />
-        }
+        check={{
+          checked: value.strokeWidth > 0,
+          label: 'Stroke',
+          onChange: (on) => onCommit({ strokeWidth: on ? 2 : 0 }),
+        }}
       >
         <CaptionedRow
           fields={[
@@ -39,17 +32,11 @@ export default function TextEffectsSection({ source }: { source: TextSource }) {
       <SidebarSection
         id="shadow"
         title="Shadow"
-        leading={
-          <CheckField
-            label=""
-            aria-label="Shadow"
-            checked={value.shadowBlur > 0 || value.shadowDistance !== 0 || value.shadowY !== 0}
-            onChange={(on) => {
-              onCommit(on ? { shadowBlur: 4, shadowDistance: 3, shadowY: 3 } : { shadowBlur: 0, shadowDistance: 0, shadowY: 0 })
-              if (on) openSection('shadow')
-            }}
-          />
-        }
+        check={{
+          checked: value.shadowBlur > 0 || value.shadowDistance !== 0 || value.shadowY !== 0,
+          label: 'Shadow',
+          onChange: (on) => onCommit(on ? { shadowBlur: 4, shadowDistance: 3, shadowY: 3 } : { shadowBlur: 0, shadowDistance: 0, shadowY: 0 }),
+        }}
       >
         <CaptionedRow
           fields={[
@@ -61,7 +48,18 @@ export default function TextEffectsSection({ source }: { source: TextSource }) {
         />
       </SidebarSection>
       <SidebarSection id="curveness" title="Curveness">
-        <RangeField hideLabel label="Curveness" value={value.curve} min={-CURVE_MAX} max={CURVE_MAX} onLive={(curve) => onLive({ curve })} onCommit={(curve) => onCommit({ curve })} />
+        <ValueBar
+          hideLabel
+          label="Curveness"
+          value={value.curve}
+          min={-CURVE_MAX}
+          max={CURVE_MAX}
+          defaultValue={0}
+          presets={[-100, -50, -25, 0, 25, 50, 100]}
+          grid={{ rows: 2, columns: 4 }}
+          onLive={(curve) => onLive({ curve })}
+          onCommit={(curve) => onCommit({ curve })}
+        />
       </SidebarSection>
     </>
   )

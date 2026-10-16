@@ -57,7 +57,7 @@ export default function ObjectHeaderRow({ mapId, object, board, mode, actions = 
   const button = (action: HeaderAction): ReactNode => {
     const enabled = CAN[action](object)
     const spec = {
-      split: { icon: LuSplit, label: 'Split', text: 'Click it, then click the point of the line to cut it in two. Double-clicking a line does the same.', on: onSplit, pressed: mode === 'split' },
+      split: { icon: LuSplit, label: 'Split', text: 'Click it, then click the point of the line to cut it in two.', on: onSplit, pressed: mode === 'split' },
       focus: { icon: LuFocus, label: 'Focus', text: 'Zoom the map to this object.', on: onFocus, pressed: false },
       duplicate: { icon: LuCopy, label: 'Duplicate', text: 'Make a copy of this object next to it.', on: onDuplicate ?? (() => {}), pressed: false },
       eraser: { icon: LuEraser, label: 'Eraser', text: 'Drag over the object to erase the parts under the circle.', on: onErase, pressed: mode === 'erase' },

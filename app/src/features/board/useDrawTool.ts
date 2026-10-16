@@ -111,8 +111,11 @@ export function useDrawTool({ mapId, board, view, canvas, repaint, onCreated }: 
       const added = changeObjects(mapId, joined)
       return onCreated(added.length > 0 ? added : joined.update!.map((u) => u.id))
     }
-    const added = changeObjects(mapId, mergeBorders(board, snapped, MERGE_PX / scale).change)
+    const merged = mergeBorders(board, snapped, MERGE_PX / scale)
+    const added = changeObjects(mapId, merged.change)
+    // Merged into an area that was there: that area is what the drawing became
     if (added.length > 0) onCreated(added)
+    else if (merged.id !== null) onCreated([merged.id])
   }
 
   const drawSegment = (from: Point, to: Point) => {
@@ -298,9 +301,11 @@ export function useDrawTool({ mapId, board, view, canvas, repaint, onCreated }: 
     if (had) repaint()
   }
 
-  /** A double-click closes a linear border */
-  const doubleClick = (alt: boolean) => {
-    if (corners.current.length >= 2) finishLinear(alt, false)
+  /** A double-click closes a linear border. True when it did */
+  const doubleClick = (alt: boolean): boolean => {
+    if (corners.current.length < 2) return false
+    finishLinear(alt, false)
+    return true
   }
 
   /** Enter closes a linear border, Backspace takes back its last corner, Esc drops it. True when the key was used */
@@ -322,6 +327,8 @@ export function useDrawTool({ mapId, board, view, canvas, repaint, onCreated }: 
     hovered,
     onEdge,
     overVertex,
+    picked,
+    setPicked,
     preview,
     beginVertex,
     begin,

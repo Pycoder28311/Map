@@ -1,5 +1,5 @@
 import { LuRotateCw } from 'react-icons/lu'
-import RangeField from '../../../../components/ui/fields/RangeField'
+import ValueBar, { spreadPresets } from '../../../../components/ui/fields/ValueBar'
 import NumberBox, { JOINED } from '../../NumberBox'
 import ShapeGrid from '../../ShapeGrid'
 import { SHAPE_PARAM, shapeParamDefault } from '../../shapes'
@@ -32,7 +32,19 @@ export default function ShapeSection({ value, onChange, onClear, rotation, onRot
       <ShapeGrid value={shape} onPick={(next) => onChange({ shape: next, param: shapeParamDefault(next) }, true)} onClear={onClear} />
       {shape && (
         <>
-          {spec && <RangeField label={spec.label} value={value.param} min={spec.min} max={spec.max} onLive={(param) => onChange({ param }, false)} onCommit={(param) => onChange({ param }, true)} />}
+          {spec && (
+            <ValueBar
+              label={spec.label}
+              value={value.param}
+              min={spec.min}
+              max={spec.max}
+              defaultValue={spec.default}
+              presets={spreadPresets(spec.min, spec.max)}
+              grid={{ rows: 2, columns: 3 }}
+              onLive={(param) => onChange({ param }, false)}
+              onCommit={(param) => onChange({ param }, true)}
+            />
+          )}
           {onRotation && rotation !== undefined && (
             <label className={`${JOINED} min-w-20`} title="Turn the shape (degrees)">
               <span className="flex items-center p-1">

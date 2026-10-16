@@ -4,7 +4,8 @@ import { LuEllipsis } from 'react-icons/lu'
 import Dropdown from '../../../../components/ui/overlays/Dropdown'
 import SidebarSection from '../common/SidebarSection'
 import type { TextSource } from './textSource'
-import RangeField from '../../../../components/ui/fields/RangeField'
+import ValueBar from '../../../../components/ui/fields/ValueBar'
+import { TEXT_DEFAULT } from '../../textDefaults'
 import Button from '../../../../components/ui/buttons/Button'
 
 /** What Small, Medium and Big set (board units) */
@@ -73,7 +74,17 @@ export default function TextSizeSection({ source }: Props) {
           onChange={(n) => onCommit(Number(n))}
         />
       </div>
-      <RangeField hideLabel hideValue label="Size" value={size} min={MIN} max={MAX} onLive={onLive} onCommit={onCommit} />
+      <ValueBar
+        label="Size"
+        value={size}
+        min={MIN}
+        max={MAX}
+        defaultValue={TEXT_DEFAULT.size}
+        presets={[8, 12, 16, 24, 32, 48, 72, 128]}
+        grid={{ rows: 2, columns: 4 }}
+        onLive={onLive}
+        onCommit={onCommit}
+      />
       <CheckField label="Same size as I zoom" checked={fixed} onChange={onFixed} />
     </SidebarSection>
   )

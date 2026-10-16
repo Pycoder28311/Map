@@ -1,5 +1,5 @@
 import { LuShapes } from 'react-icons/lu'
-import RangeField from '../../../../components/ui/fields/RangeField'
+import ValueBar, { spreadPresets } from '../../../../components/ui/fields/ValueBar'
 import ShapeGrid from '../../ShapeGrid'
 import { SHAPE_PARAM, shapeParamDefault } from '../../shapes'
 import { ROW, pick, type BorderSectionProps } from './borderRows'
@@ -22,7 +22,19 @@ export default function BorderShapeSection({ value, onChange }: BorderSectionPro
       {shape && (
         <div className="mt-1.5 flex flex-col gap-2 ps-2">
           <ShapeGrid value={shape} onPick={(next) => onChange({ shape: next, param: shapeParamDefault(next) }, true)} />
-          {spec && <RangeField label={spec.label} value={param} min={spec.min} max={spec.max} onLive={(next) => onChange({ param: next }, false)} onCommit={(next) => onChange({ param: next }, true)} />}
+          {spec && (
+            <ValueBar
+              label={spec.label}
+              value={param}
+              min={spec.min}
+              max={spec.max}
+              defaultValue={spec.default}
+              presets={spreadPresets(spec.min, spec.max)}
+              grid={{ rows: 2, columns: 3 }}
+              onLive={(next) => onChange({ param: next }, false)}
+              onCommit={(next) => onChange({ param: next }, true)}
+            />
+          )}
         </div>
       )}
     </li>

@@ -28,7 +28,7 @@ const DRAG_PX = 3
 export type Mode = 'select' | 'split' | 'erase'
 
 type Gesture =
-  | { type: 'press'; id: number | null; start: Point; startBoard: Point; wasSelected: boolean; base: number[] }
+  | { type: 'press'; id: number | null; start: Point; startBoard: Point; wasSelected: boolean; base: number[]; /** A plain click on bare board (no drag) lets go of the selection */ clearOnClick?: boolean }
   | { type: 'move'; startBoard: Point; snapshot: BoardObject[] }
   | { type: 'marquee'; startBoard: Point; base: number[] }
   | { type: 'resize'; start: Rect; snapshot: BoardObject[] }
@@ -162,6 +162,7 @@ export function useMouseTool({ mapId, board, view, toLocal }: Props) {
     const g = gesture.current
     const change = pending.current
     const { mapId, selected } = latest.current
+    if (g?.type === 'press' && g.clearOnClick) clearSelection(mapId)
     if (g?.type === 'press' && g.id !== null && g.wasSelected && getSelection(mapId).size > 1) select(mapId, [g.id])
     if (change && g) {
       const added = changeObjects(mapId, change)
@@ -249,8 +250,8 @@ export function useMouseTool({ mapId, board, view, toLocal }: Props) {
       gesture.current = { type: 'press', id: marqueeInstead ? null : hit.id, start: latest.current.toLocal(e.clientX, e.clientY), startBoard: p, wasSelected, base: [] }
     } else {
       const base = additive ? [...getSelection(mapId)] : []
-      if (!additive) clearSelection(mapId)
-      gesture.current = { type: 'press', id: null, start: latest.current.toLocal(e.clientX, e.clientY), startBoard: p, wasSelected: false, base }
+      // Pressing bare board does not let go yet: a drag draws a rectangle (which then picks the selection), only a click unselects
+      gesture.current = { type: 'press', id: null, start: latest.current.toLocal(e.clientX, e.clientY), startBoard: p, wasSelected: false, base, clearOnClick: !additive }
     }
     listen()
   }

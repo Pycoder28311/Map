@@ -154,6 +154,8 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
   const pinStart = useRef<Point | null>(null)
   // The same for a press on bare board with the Mouse tool
   const emptyStart = useRef<Point | null>(null)
+  /** A press on the edge of an object of the tool's own kind: a click selects it, a drag draws a new one from there */
+  const edgeStart = useRef<{ at: Point; id: number } | null>(null)
   const [stylePreview, setStylePreview] = useState<StylePreview | null>(null)
   const shown = useMemo(() => {
     const base = mouse.preview ?? draw.preview ?? board
@@ -171,7 +173,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
   useEffect(() => {
     if (visitor) return
     const one = mouse.selected.length === 1 ? mouse.selected[0] : null
-    if (tool === 'mouse' && one) {
+    if (one && (tool === 'mouse' || tool === TOOL_OF[one.kind])) {
       setTool(TOOL_OF[one.kind])
       setToolSelected(true)
     } else if (toolSelected && mouse.selected.length === 0) {
@@ -361,15 +363,18 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         const style = { ...pen.style, way: 'straight' as const, amount: 0 }
         const base = { layer: LAYER_MAIN, name: '', links: [], style, points: [start] }
         const [id] = changeObjects(mapId, { add: [tool === 'line' ? { kind: 'line' as const, ...base } : { kind: 'border' as const, ...base, open: true, fill: pen.fill, description: '' }] })
-        if (id !== undefined) draw.setPicked({ id, index: 0 })
+        if (id !== undefined) {
+          select(mapId, [id])
+          draw.setPicked({ id, index: 0 })
+        }
         return
       }
-      // A press on the edge of an existing line (Line tool) or border (Border tool) picks it, as with pins: the Mouse tool takes over.
-      // Not while a linear border is being clicked out: its corners may land on an edge
+      // A press on the edge of an existing line (Line tool) or border (Border tool): an instant click picks it (the Mouse tool takes over),
+      // holding and moving draws a new one from there. Not while a linear border is being clicked out: its corners may land on an edge
       const top = draw.linearOpen ? null : hitTestPart(board, screenToBoard(view, at), HIT_PX / view.scale)
       if (top && top.part === 'edge' && isOwn(tool, top.object.kind)) {
-        setToolSelected(true)
-        return mouse.begin(e)
+        edgeStart.current = { at, id: top.object.id }
+        return
       }
       if (draw.begin(at, tool, { shift: e.shiftKey, alt: e.altKey })) setMode('draw')
     }
@@ -389,6 +394,18 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
     if (!before) return
     const at = pointOf(e)
     pointers.current.set(e.pointerId, at)
+    const edge = edgeStart.current
+    if (edge && modeRef.current === 'none') {
+      if (Math.hypot(at.x - edge.at.x, at.y - edge.at.y) < 4) return
+      edgeStart.current = null
+      if (tool === 'line' || tool === 'border') {
+        if (draw.begin(edge.at, tool, { shift: e.shiftKey, alt: e.altKey })) {
+          setMode('draw')
+          draw.move(at, { shift: e.shiftKey, alt: e.altKey })
+        }
+      }
+      return
+    }
     const start = pinStart.current ?? emptyStart.current
     if (start && modeRef.current === 'none') {
       if (Math.hypot(at.x - start.x, at.y - start.y) < 4) return
@@ -418,6 +435,12 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
     pinStart.current = null
     if (emptyStart.current && e.type === 'pointerup' && modeRef.current === 'none') clearSelection(mapId)
     emptyStart.current = null
+    const edge = edgeStart.current
+    edgeStart.current = null
+    if (edge && e.type === 'pointerup' && modeRef.current === 'none') {
+      select(mapId, [edge.id])
+      setToolSelected(true)
+    }
     if (start && !visitor && view && modeRef.current === 'none' && e.type === 'pointerup') {
       selectCreated(
         changeObjects(mapId, {
@@ -538,7 +561,21 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         return text.edit(hit)
       }
     }
-    if (tool === 'mouse') mouse.doubleClick(e)
+    if (tool === 'mouse') toPointTool(e)
+  }
+
+  /** Double-click on a line or border: it is selected and the Point tool is on, to move its points */
+  const toPointTool = (e: { clientX: number; clientY: number }) => {
+    if (!view) return
+    const box = root.current!.getBoundingClientRect()
+    const p = screenToBoard(view, { x: e.clientX - box.left, y: e.clientY - box.top })
+    const hit = hitTestPart(board, p, HIT_PX / view.scale)?.object
+    if (hit?.kind !== 'line' && hit?.kind !== 'border') return
+    draw.cancel()
+    select(mapId, [hit.id])
+    setTool(TOOL_OF[hit.kind])
+    setToolSelected(true)
+    setPointMode(true)
   }
 
   const onBoxAction = (action: BoxAction) => {
@@ -619,7 +656,11 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
           onPointerUp={onUp}
           onPointerCancel={onUp}
           onDoubleClick={(e) =>
-            visitor ? undefined : tool === 'mouse' || tool === 'text' ? onMouseDoubleClick(e) : tool === 'border' && draw.doubleClick(e.altKey)
+            visitor
+              ? undefined
+              : tool === 'mouse' || tool === 'text'
+                ? onMouseDoubleClick(e)
+                : (tool === 'border' && draw.doubleClick(e.altKey)) || ((tool === 'border' || tool === 'line') && !draw.draft && toPointTool(e))
           }
           // Its CSS size is the size it was painted for, not the page's: when the page changes size (the sidebar) the old picture stays as it
           // was, cut off, for the frames until the new one is painted, instead of being squeezed to the new box

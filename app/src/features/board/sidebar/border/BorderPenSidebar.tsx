@@ -14,7 +14,7 @@ export default function BorderPenSidebar({ pointTool, onPointTool }: { pointTool
   const section = { value: pen, onChange: (patch: Parameters<typeof setBorderPen>[0]) => setBorderPen(patch) }
   return (
     <SidePanel label="Border options">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-col gap-2">
         <h2 className="text-heading">Border</h2>
         <PointToolButton on={pointTool} onToggle={onPointTool} what="border" />
       </div>

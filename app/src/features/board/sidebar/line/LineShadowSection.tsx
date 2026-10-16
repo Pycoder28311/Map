@@ -1,8 +1,7 @@
-import CheckField from '../../../../components/ui/fields/CheckField'
 import ColourField from '../../../../components/ui/fields/ColourField'
 import { NumberField } from '../../NumberBox'
 import CaptionedRow from '../common/CaptionedRow'
-import SidebarSection, { openSection } from '../common/SidebarSection'
+import SidebarSection from '../common/SidebarSection'
 import { styleSetter, type StyleSectionProps } from './lineRows'
 
 const NONE = { color: '#000000', blur: 0, distance: 0 }
@@ -21,17 +20,11 @@ export default function LineShadowSection(props: StyleSectionProps) {
     <SidebarSection
       id="line-shadow"
       title="Shadow"
-      leading={
-        <CheckField
-          label=""
-          aria-label="Shadow"
-          checked={shadow.blur > 0 || shadow.distance > 0}
-          onChange={(on) => {
-            change(on ? STARTS_AS : { blur: 0, distance: 0 })
-            if (on) openSection('line-shadow')
-          }}
-        />
-      }
+      check={{
+        checked: shadow.blur > 0 || shadow.distance > 0,
+        label: 'Shadow',
+        onChange: (on) => change(on ? STARTS_AS : { blur: 0, distance: 0 }),
+      }}
     >
       <CaptionedRow
         fields={[

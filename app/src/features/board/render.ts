@@ -17,12 +17,23 @@ import { strokeParts, type Parts } from './strokeParts'
 import type { Board, BoardObject, Point, PointObject, Style, TextObject } from './types'
 import { BOARD, type Size, type Viewport } from './viewport'
 
+/** The least a line or border is wide on the screen (px), so it still shows far zoomed out */
+const MIN_WIDTH_PX = 1.5
+
+/**
+ * How wide (screen px) a line or border of this thickness is at this zoom, as roads on Google Maps: it grows and shrinks with the zoom, but
+ * gently (with the square root of the zoom), staying between half and three times the set thickness and never under MIN_WIDTH_PX.
+ */
+export function screenWidth(thickness: number, scale: number): number {
+  if (thickness <= 0) return 0
+  return Math.max(thickness * Math.min(Math.max(Math.sqrt(scale), 0.5), 3), Math.min(thickness, MIN_WIDTH_PX))
+}
+
 /** One path in the context's current transform. A single point is a dot */
 export function drawStroke(ctx: CanvasRenderingContext2D, points: Point[], style: Style, scale: number, closed = false) {
   ctx.globalAlpha = style.opacity / 100
   ctx.strokeStyle = style.color
-  // What is drawn with the pen (a line or a border) keeps its screen width at any zoom
-  ctx.lineWidth = style.thickness / scale
+  ctx.lineWidth = screenWidth(style.thickness, scale) / scale
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
   ctx.beginPath()
@@ -50,9 +61,9 @@ function pathOf(ctx: CanvasRenderingContext2D, line: Point[], closed: boolean) {
   if (line.length === 1) ctx.lineTo(line[0].x + 0.01, line[0].y)
 }
 
-function strokeStyle(ctx: CanvasRenderingContext2D, style: Style, scale: number, fixed: boolean, extraPx = 0) {
+function strokeStyle(ctx: CanvasRenderingContext2D, style: Style, scale: number, unit: number, extraPx = 0) {
   ctx.strokeStyle = style.color
-  ctx.lineWidth = (fixed ? style.thickness / scale : style.thickness) + extraPx / scale
+  ctx.lineWidth = style.thickness * unit + extraPx / scale
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
 }
@@ -261,9 +272,9 @@ export function paintObject(ctx: CanvasRenderingContext2D, o: BoardObject, scale
   if (o.kind === 'point') return paintPoint(ctx, o, hovered)
   if (o.kind !== 'line' && o.kind !== 'border' && o.kind !== 'shape') return
   const style = o.style
-  // A line and a border are as thick on the screen at any zoom (their thickness is in pixels); a shape's outline follows its own setting
+  // A line and a border are as thick on the screen as screenWidth says (their thickness is in pixels at zoom 1); a shape's outline follows its own setting
   const fixed = o.kind !== 'shape' || style.fixedWidth
-  const unit = fixed ? 1 / scale : 1
+  const unit = fixed ? (style.thickness > 0 ? screenWidth(style.thickness, scale) / style.thickness / scale : 1 / scale) : 1
   const closed = isClosed(o)
   const flat = flattenedOf(o)
   const soft = softnessOf(style)
@@ -306,7 +317,7 @@ export function paintObject(ctx: CanvasRenderingContext2D, o: BoardObject, scale
   // `colour` paints every run in that one colour (the stroke round the line); `reach` is how much wider than the line (board units, both sides together)
   const strokeAll = (extraPx: number, alpha: number, colour?: string, reach = 0) => {
     ctx.globalAlpha = alpha
-    strokeStyle(ctx, style, scale, fixed, extraPx)
+    strokeStyle(ctx, style, scale, unit, extraPx)
     ctx.lineWidth += reach * unit
     for (const { parts, color } of strokes) {
       ctx.strokeStyle = colour ?? color
@@ -333,7 +344,7 @@ export function paintObject(ctx: CanvasRenderingContext2D, o: BoardObject, scale
   const road = style.road ? ROADS[style.road] : undefined
   if (road?.layers.length) {
     // A road: its layers, widest first, each along the whole line (the shadow only under the first)
-    const base = (fixed ? style.thickness / scale : style.thickness)
+    const base = style.thickness * unit
     ctx.globalAlpha = style.opacity / 100
     ctx.lineJoin = 'round'
     road.layers.forEach((layer, i) => {

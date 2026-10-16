@@ -14,7 +14,7 @@ const TABS = [
 // A field inside the title + text group (the group draws the border), like the Create modal's
 // The Create modal's tabs: no background until hovered or picked
 const TAB =
-  'flex basis-0 cursor-pointer items-center justify-center gap-2 rounded-(--btn-radius) px-2.5 py-1.5 text-body font-medium whitespace-nowrap transition-[flex-grow,background-color,color] duration-200 ' +
+  'flex basis-0 cursor-pointer items-center justify-center gap-2 rounded-(--btn-radius) border px-2.5 py-1.5 text-body font-medium whitespace-nowrap transition-[flex-grow,background-color,color] duration-200 ' +
   'motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent'
 const INNER = 'w-full bg-transparent px-(--field-px) text-body text-fg outline-none placeholder:text-fg-subtle'
 
@@ -50,7 +50,7 @@ export default function AddNoteForm({ mapId, objectId }: { mapId: string; object
             aria-selected={kind === t.kind}
             onClick={() => setKind(t.kind)}
             // The picked tab is half as wide again as the other (3 parts to 2), the width gliding when the pick changes
-            className={`${TAB} ${kind === t.kind ? 'grow-3 bg-fill-strong text-fg' : 'grow-2 text-fg-muted hover:bg-fill hover:text-fg'}`}
+            className={`${TAB} ${kind === t.kind ? 'grow-3 border-line-strong bg-fill-strong text-fg' : 'grow-2 border-line-strong text-fg-muted hover:bg-fill hover:text-fg'}`}
           >
             <t.icon className="size-(--btn-icon-size) shrink-0" aria-hidden />
             {t.label}

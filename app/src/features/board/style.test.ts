@@ -54,15 +54,15 @@ describe('style', () => {
     const s: Style = { ...DEFAULT_STYLE, softness: 40 }
     expect(roundTrip(s).back).toEqual(s)
     expect(softnessOf(s)).toBe(40)
-    expect(softnessOf({ ...DEFAULT_STYLE, amount: 35 })).toBe(35)
-    expect(softnessOf({ ...DEFAULT_STYLE, way: 'straight', amount: 0 })).toBe(0)
-    expect(softnessOf({ ...DEFAULT_STYLE, way: 'corners', amount: 45 })).toBe(0)
+    expect(softnessOf({ ...DEFAULT_STYLE, softness: undefined, amount: 35 })).toBe(35)
+    expect(softnessOf({ ...DEFAULT_STYLE, softness: undefined, way: 'straight', amount: 0 })).toBe(0)
+    expect(softnessOf({ ...DEFAULT_STYLE, softness: undefined, way: 'corners', amount: 45 })).toBe(0)
   })
 
   it('writes only what applies', () => {
-    // flags, 3 colour bytes, opacity, thickness, type, way, amount
-    expect(roundTrip(DEFAULT_STYLE).size).toBe(1 + 3 + 1 + 1 + 1 + 1 + 1)
-    expect(roundTrip({ ...DEFAULT_STYLE, way: 'straight' }).size).toBe(1 + 3 + 1 + 1 + 1 + 1)
+    // flags, 3 colour bytes, opacity, thickness, type, way, amount, softness
+    expect(roundTrip(DEFAULT_STYLE).size).toBe(1 + 3 + 1 + 1 + 1 + 1 + 1 + 1)
+    expect(roundTrip({ ...DEFAULT_STYLE, way: 'straight' }).size).toBe(1 + 3 + 1 + 1 + 1 + 1 + 1)
   })
 
   it('ignores the fields that do not apply', () => {

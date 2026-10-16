@@ -1,8 +1,7 @@
-import CheckField from '../../../../components/ui/fields/CheckField'
 import ColourField from '../../../../components/ui/fields/ColourField'
 import { NumberField } from '../../NumberBox'
 import CaptionedRow from '../common/CaptionedRow'
-import SidebarSection, { openSection } from '../common/SidebarSection'
+import SidebarSection from '../common/SidebarSection'
 import { styleSetter, type StyleSectionProps } from './lineRows'
 
 const NONE = { color: '#000000', width: 0, opacity: 100 }
@@ -21,17 +20,11 @@ export default function LineStrokeSection(props: StyleSectionProps) {
     <SidebarSection
       id="line-stroke"
       title="Stroke"
-      leading={
-        <CheckField
-          label=""
-          aria-label="Stroke"
-          checked={stroke.width > 0}
-          onChange={(on) => {
-            change({ width: on ? STARTS_AT : 0 })
-            if (on) openSection('line-stroke')
-          }}
-        />
-      }
+      check={{
+        checked: stroke.width > 0,
+        label: 'Stroke',
+        onChange: (on) => change({ width: on ? STARTS_AT : 0 }),
+      }}
     >
       <CaptionedRow
         fields={[

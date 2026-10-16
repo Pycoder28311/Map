@@ -27,7 +27,7 @@ export default function LineSidebar({ object, apply, pointTool = false, onPointT
     <ObjectFrame object={object} header={null} footerAction={null} {...context}>
       <div className="flex flex-col gap-3">
         {onPointTool && (
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col gap-2">
             <h2 className="text-heading">Line</h2>
             <PointToolButton on={pointTool} onToggle={onPointTool} what="line" />
           </div>

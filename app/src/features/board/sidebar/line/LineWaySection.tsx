@@ -1,4 +1,4 @@
-import RangeField from '../../../../components/ui/fields/RangeField'
+import ValueBar from '../../../../components/ui/fields/ValueBar'
 import { WAY_AMOUNT } from '../../drawLine'
 import { waySample } from '../../samples'
 import StyleSample from '../../StyleSample'
@@ -38,7 +38,20 @@ export default function LineWaySection({ shapeActive = false, onWayPicked, ...pr
               )
             })}
           </ul>
-          {!shapeActive && style.way === 'corners' && <RangeField label="Corner degrees" value={style.amount} min={5} max={170} suffix="°" onLive={(amount) => set({ amount }, false)} onCommit={(amount) => set({ amount })} />}
+          {!shapeActive && style.way === 'corners' && (
+            <ValueBar
+              label="Corner degrees"
+              value={style.amount}
+              min={5}
+              max={170}
+              suffix="°"
+              defaultValue={WAY_AMOUNT.corners}
+              presets={[15, 30, 45, 60, 90, 120]}
+              grid={{ rows: 2, columns: 3 }}
+              onLive={(amount) => set({ amount }, false)}
+              onCommit={(amount) => set({ amount })}
+            />
+          )}
         </SidebarSection>
   )
 }

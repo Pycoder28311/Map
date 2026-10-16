@@ -12,10 +12,12 @@ export const DEFAULT_STYLE: Style = {
   arrow: { start: false, end: false, style: 0, size: 0 },
   way: 'exact',
   amount: 0,
+  // Half as soft as it goes
+  softness: 50,
 }
 
 /** What the pencil draws with */
-export const PENCIL_STYLE: Style = DEFAULT_STYLE
+export const PENCIL_STYLE: Style = { ...DEFAULT_STYLE, softness: undefined }
 
 const FIXED_WIDTH = 1
 const ARROW_START = 2

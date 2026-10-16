@@ -7,11 +7,19 @@ const base = { id: 0, layer: LAYER_MAIN, name: '', links: [] as [] }
 
 /** What the sample looks like on a row (the sample's own colour is the theme's text colour, never the line's) */
 const SAMPLE = { thickness: 3, opacity: 100 }
+/** The same, for the lines that show one thing (a type, a way, an arrow): none of the line's road texture, outline or shadow, which would hide it */
+const PLAIN = { ...SAMPLE, road: undefined, stroke: undefined, shadow: undefined }
 
 /** A gently curved line across a `w` × `h` row, drawn with `style`'s type (map.md: "a little curved") */
 export function typeSample(style: Style, w: number, h: number): LineObject {
   const points = [{ x: 8, y: h * 0.7 }, { x: w * 0.5, y: h * 0.3 }, { x: w - 8, y: h * 0.65 }].map(round)
-  return { ...base, kind: 'line', style: { ...style, ...SAMPLE, way: 'rounded', amount: 0, arrow: { start: false, end: false, style: 0, size: 0 } }, points, handles: autoHandles(points) }
+  return { ...base, kind: 'line', style: { ...style, ...PLAIN, way: 'rounded', amount: 0, arrow: { start: false, end: false, style: 0, size: 0 } }, points, handles: autoHandles(points) }
+}
+
+/** A road texture's example: the same gentle curve, thick enough to show the road's layers (None stays a thin plain line) */
+export function roadSample(style: Style, road: number, w: number, h: number): LineObject {
+  const sample = typeSample({ ...style, type: 'solid', gap: 0, part: 0 }, w, h)
+  return road ? { ...sample, style: { ...sample.style, road, thickness: 12 } } : sample
 }
 
 const round = (p: Point): Point => ({ x: Math.round(p.x), y: Math.round(p.y) })
@@ -19,7 +27,7 @@ const round = (p: Point): Point => ({ x: Math.round(p.x), y: Math.round(p.y) })
 /** The way's example: what that way makes of the same wobbly hand movement */
 export function waySample(way: Style['way'], style: Style, w: number, h: number): LineObject {
   const wobble: Point[] = Array.from({ length: 12 }, (_, i) => ({ x: 8 + ((w - 16) * i) / 11, y: h / 2 + Math.sin(i * 1.3) * h * 0.28 }))
-  const common = { ...base, kind: 'line' as const, style: { ...style, ...SAMPLE, type: 'solid' as const, way, arrow: { start: false, end: false, style: 0, size: 0 } } }
+  const common = { ...base, kind: 'line' as const, style: { ...style, ...PLAIN, type: 'solid' as const, way, arrow: { start: false, end: false, style: 0, size: 0 } } }
   switch (way) {
     case 'exact':
       return { ...common, style: { ...common.style, amount: style.way === 'exact' ? style.amount : 0 }, points: wobble.map(round) }
@@ -39,7 +47,7 @@ export function armSample(side: 'start' | 'end', style: Style, w: number, h: num
   return {
     ...base,
     kind: 'line',
-    style: { ...style, ...SAMPLE, type: 'solid', way: 'straight', amount: 0, arrow: { start: side === 'start', end: side === 'end', style: style.arrow.style, size: Math.min(style.arrow.size || 12, h * 0.8) } },
+    style: { ...style, ...PLAIN, type: 'solid', way: 'straight', amount: 0, arrow: { start: side === 'start', end: side === 'end', style: style.arrow.style, size: Math.min(style.arrow.size || 12, h * 0.8) } },
     points: [{ x: 8, y: Math.round(h / 2) }, { x: w - 8, y: Math.round(h / 2) }],
   }
 }
