@@ -34,7 +34,7 @@ export default function Navbar() {
 
     return (
         // As tall as the rail is wide: the ☰ (centred over the rail) is as far from the top as from the left
-        <header className="relative flex h-(--sidebar-rail) items-center gap-2 bg-surface px-2">
+        <header className="relative flex h-(--sidebar-rail) items-center gap-2 bg-surface [background-image:var(--chrome-texture)] px-2">
             {/* Its shadow, and its popouts'; the page's top corners are rounded under it while panes show */}
             <PopoutLayer barHeight="var(--sidebar-rail)" corners={panes ? frameRadiusPx() : 0}>
                 {/* As big as a sidebar row in the rail, right above them; no background */}

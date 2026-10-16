@@ -69,6 +69,8 @@
    --field-px: 12px;
    --field-gap: 8px;
    --field-radius: var(--corner-lg);
+   /* the outline of a bordered field */
+   --field-border-c: var(--line-strong);
 
    /* Tree view (components/ui/tree): how far right each level's (narrower) rows start */
    --tree-indent: 8px;
@@ -88,6 +90,8 @@
    --sidebar-duration: 200ms;
 
    /* Dividers (components/ui/Divider): the line between sections, with or without a label */
+   /* the line itself (themes can make it stronger) */
+   --divider-line: var(--line);
    --divider-h: 24px;
    --divider-gap: 4px;
    /* space above/below a divider in the sidebar */
@@ -96,6 +100,33 @@
    --popout-radius: 16px;
    /* the panel's own bottom corners (the base theme rounds them with the popout radius) */
    --popout-panel-radius: var(--popout-radius);
+   /* a thin line inside the navbar along its bottom edge (a theme turns it on: themes/arcane.css) */
+   --navbar-line-display: none;
+   /* a background image over the navbar's, the sidebar's and the popouts' colour (a texture; none in the base theme) */
+   --chrome-texture: none;
+   /* pixel-art items along the top of the Dashboard (DashboardRelics.tsx): off in the base theme; how strong they are */
+   --decor-display: none;
+   --decor-opacity: 0.5;
+   --decor-filter: none;
+   /* square pixels over the bottom of the sidebar, thinning upward (SidebarPixels.tsx): off in the base theme */
+   --sidebar-pixels-display: none;
+   /* faint pixel chains down the sidebar's inside edges (SidebarChains.tsx): off in the base theme */
+   --sidebar-chains-display: none;
+   --sidebar-chain-color: transparent;
+   --sidebar-pixel-color: transparent;
+   /* the colour the lowest squares take (each square mixes it with --sidebar-pixel-color by its height) */
+   --sidebar-pixel-hot: transparent;
+   /* a smooth glow behind the squares (a CSS background value) */
+   --sidebar-glow: none;
+   /* the embers catching fire when an object is deleted (SidebarPixels.tsx): the squares' flame colours (hot at the bottom) and a stronger glow */
+   --sidebar-fire: transparent;
+   --sidebar-fire-hot: transparent;
+   --sidebar-fire-glow: none;
+   /* a sidebar row's own background (none in the base theme: the sidebar shows through) and its background while hovered */
+   --tree-row-bg: transparent;
+   /* a sidebar row's outline, drawn inside it (a CSS outline value: none in the base theme) */
+   --tree-row-outline: none;
+   --tree-row-hover-bg: var(--fill);
    /* The concave corners joining a popout to its bar (the bar's colour with a quarter circle cut out; fillet-l has its
       cut-out at the bottom left, fillet-r at the bottom right). A theme can draw them another way, see themes/arcane.css */
    --popout-fillet-l: radial-gradient(circle at 0 100%, transparent calc(var(--popout-radius) - 0.5px), var(--surface) var(--popout-radius));

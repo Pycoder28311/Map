@@ -2,6 +2,7 @@ import { useDroppable } from '@dnd-kit/core'
 import { useState, type ComponentProps } from 'react'
 import { LuChevronsDown, LuChevronsUp, LuPlus } from 'react-icons/lu'
 import Button from '../../ui/buttons/Button'
+import { TREE_ROW_LOOK } from '../../ui/buttons/buttonStyles'
 import Divider from '../../ui/Divider'
 import type { TreeNode } from '../../ui/tree/types'
 import TreeView from '../../ui/tree/TreeView'
@@ -51,7 +52,7 @@ export default function SidebarNotes({ nodes, tree, compact, onCreate, dropAtEnd
           aria-expanded={showAll}
           title={showAll ? 'Show less' : `Show ${hidden} more`}
           aria-label={showAll ? 'Show less' : `Show ${hidden} more`}
-          className="mt-1 w-full justify-start overflow-hidden text-fg-muted"
+          className={`mt-1 w-full justify-start overflow-hidden text-fg-muted ${TREE_ROW_LOOK}`}
         >
           {/* Compact (the rail): only the icon, no text at all */}
           {!compact && <span className="whitespace-nowrap">{showAll ? 'Show less' : `Show more (${hidden})`}</span>}

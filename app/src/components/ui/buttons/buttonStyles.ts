@@ -58,6 +58,11 @@ export function buttonClass(variant: ButtonVariant, hasIcon: boolean, extra = ''
   return `${BASE} ${padding} ${VARIANTS[variant]} ${active ? ACTIVE[variant] : ''} ${extra}`
 }
 
+/** The background of a sidebar row (the theme's --tree-row-bg: none in the base theme, a solid colour in others), also for the
+ *  buttons that sit among the rows (Trash, Show more); its hover background keeps that colour instead of going see-through */
+export const TREE_ROW_LOOK =
+  '[background-color:var(--tree-row-bg)] [outline:var(--tree-row-outline)] [outline-offset:-1px] [--btn-ghost-hover-bg:var(--tree-row-hover-bg)] [--hover-fill-bg:var(--tree-row-hover-bg)]'
+
 // ---- Pickable rows / options (a list of choices where one is "selected") ----
 
 /** The selected one of a group of pickable rows or options */

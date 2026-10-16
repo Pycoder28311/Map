@@ -1,5 +1,7 @@
 import { useId, useState, type FormEvent } from 'react'
 import { LuStickyNote } from 'react-icons/lu'
+import { burnDown } from '../../components/layout/sidebar/burnDown'
+import { snapshotRows } from '../../components/ui/tree/rowFlip'
 import Button from '../../components/ui/buttons/Button'
 import TextField from '../../components/ui/fields/TextField'
 import Modal from '../../components/ui/overlays/Modal'
@@ -16,7 +18,7 @@ export type CreateParent = { kind: 'projects' } | { kind: 'notes' } | { kind: 'p
 export type ObjectDialog =
   | { kind: 'create'; parent: CreateParent }
   | { kind: 'move'; item: SidebarItem }
-  | { kind: 'delete'; item: SidebarItem }
+  | { kind: 'delete'; item: SidebarItem; source?: Element | null }
 
 type Props = { dialog: ObjectDialog | null; onClose: () => void }
 
@@ -44,7 +46,7 @@ export default function ObjectDialogs({ dialog, onClose }: Props) {
     case 'move':
       return <MoveDialog item={dialog.item} onClose={onClose} />
     case 'delete':
-      return <DeleteDialog item={dialog.item} onClose={onClose} />
+      return <DeleteDialog item={dialog.item} source={dialog.source} onClose={onClose} />
   }
 }
 
@@ -142,8 +144,8 @@ function MoveDialog({ item, onClose }: { item: SidebarItem; onClose: () => void 
 
 const KIND_NAME = { project: 'project', map: 'map', note: 'note', article: 'article', object: 'object card', folder: 'folder' } as const
 
-/** Asks first; a project goes with everything in it */
-export function DeleteDialog({ item, onClose }: { item: SidebarItem; onClose: () => void }) {
+/** Asks first; a project goes with everything in it. `source`: its sidebar row, which burns down in the embers once deleted */
+export function DeleteDialog({ item, source = null, onClose }: { item: SidebarItem; source?: Element | null; onClose: () => void }) {
   const inside = subtreeIds(getObjects(), item.id).size - 1
 
   return (
@@ -161,6 +163,8 @@ export function DeleteDialog({ item, onClose }: { item: SidebarItem; onClose: ()
             variant="secondary"
             className="text-danger"
             onClick={() => {
+              burnDown(source)
+              snapshotRows()
               deleteObject(item.id)
               onClose()
             }}

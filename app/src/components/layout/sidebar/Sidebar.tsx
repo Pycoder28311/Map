@@ -1,9 +1,11 @@
-import { useEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useDragSurface } from '../../../features/drag/surfaces'
 import { useFocusMode } from '../../../features/focus/FocusMode'
 import { useLinkPick } from '../../../features/links/linkPick'
 import LiftedRow from '../../ui/tree/LiftedRow'
+import SidebarChains, { type Band } from './SidebarChains'
 import SidebarDropProvider from './SidebarDrop'
+import SidebarPixels from './SidebarPixels'
 import SidebarTree from './SidebarTree'
 import TrashBin from './TrashBin'
 import { useHoverIntent } from './useHoverIntent'
@@ -38,12 +40,41 @@ const RAIL_LINE_W = 'w-[calc(2*var(--btn-px)+var(--btn-icon-size)+2*var(--btn-cl
  */
 export default function Sidebar() {
     const navRef = useRef<HTMLElement>(null)
+    // Where the rows are (for the chains, which are fainter along them): the tree and the box that scrolls it
+    const treeRef = useRef<HTMLDivElement>(null)
+    const scrollRef = useRef<HTMLDivElement>(null)
+    const [band, setBand] = useState<Band | null>(null)
     // Over the sidebar, a dragged object (from anywhere) floats as a lifted sidebar row
     useDragSurface('sidebar', navRef, (item) => <LiftedRow label={item.label} icon={item.icon} origin={item.grab} className={ROW_W} />)
     const { isWide, pinned, drawerOpen, closeDrawer, setPeeking } = useSidebar()
     // Linking a map object to notes: kept open, so their link icons can be clicked
     const picking = useLinkPick() !== null
     const peek = useHoverIntent({ enabled: isWide && !pinned, openDelay: PEEK_OPEN_DELAY, closeDelay: PEEK_CLOSE_DELAY })
+
+    useEffect(() => {
+        const nav = navRef.current
+        const tree = treeRef.current
+        const scroll = scrollRef.current
+        if (!nav || !tree || !scroll) return
+        const measure = () => {
+            const base = nav.getBoundingClientRect().top
+            const t = tree.getBoundingClientRect()
+            const s = scroll.getBoundingClientRect()
+            const top = Math.round(Math.max(t.top, s.top) - base)
+            const bottom = Math.round(Math.min(t.bottom, s.bottom) - base)
+            setBand((old) => (bottom <= top ? null : old && old.top === top && old.bottom === bottom ? old : { top, bottom }))
+        }
+        measure()
+        const observer = new ResizeObserver(measure)
+        observer.observe(nav)
+        observer.observe(tree)
+        observer.observe(scroll)
+        scroll.addEventListener('scroll', measure, { passive: true })
+        return () => {
+            observer.disconnect()
+            scroll.removeEventListener('scroll', measure)
+        }
+    }, [])
 
     // Shared, so what sits next to it (the map editor's tool panel) can move aside while it lies over the page
     const peeking = peek.open || (picking && isWide && !pinned)
@@ -77,26 +108,32 @@ export default function Sidebar() {
                 inert={hidden || (!open && !isWide)}
                 {...peek.handlers}
                 style={{ width, '--tree-compact-duration': 'var(--sidebar-duration)' } as CSSProperties}
-                className={`absolute inset-y-0 start-0 overflow-hidden bg-surface transition-[width,box-shadow] ${ANIMATE} ${floating ? 'shadow-xl' : ''}`}
+                className={`absolute isolate inset-y-0 start-0 overflow-hidden bg-surface [background-image:var(--chrome-texture)] transition-[width,box-shadow] ${ANIMATE} ${floating ? 'shadow-xl' : ''}`}
             >
+                {/* Chains and pixels behind everything (a theme turns them on); the pixels in front of the chains */}
+                <SidebarChains band={band} />
+                <SidebarPixels />
                 {/* The sections scroll; the trash bin stays at the bottom. Drops on rows and the bin: SidebarDrop */}
                 <SidebarDropProvider>
                     <div style={{ paddingInline: PX }} className="flex h-full w-(--sidebar-w) flex-col py-(--sidebar-py)">
                         {/* Never scrolls sideways (e.g. while a dragged object is over it): what sticks out is cut, and
                             a sideways scroll from code (the drag's auto-scroll) is undone at once */}
                         <div
+                            ref={scrollRef}
                             onScroll={(e) => {
                                 if (e.currentTarget.scrollLeft !== 0) e.currentTarget.scrollLeft = 0
                             }}
                             className="-mx-1 min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-1"
                         >
-                            <SidebarTree compact={!open} />
+                            <div ref={treeRef}>
+                                <SidebarTree compact={!open} />
+                            </div>
                         </div>
                         <div className="shrink-0 pt-(--divider-gap)">
                             {/* The line above the bin: full width, or in the rail as short as the dividers' (Divider) */}
                             <div
                                 aria-hidden
-                                className={`mb-(--divider-gap) h-px bg-line transition-[width] ${ANIMATE} ${open ? 'w-full' : RAIL_LINE_W}`}
+                                className={`mb-(--divider-gap) h-px bg-(--divider-line) transition-[width] ${ANIMATE} ${open ? 'w-full' : RAIL_LINE_W}`}
                             />
                             <TrashBin compact={!open} />
                         </div>

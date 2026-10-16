@@ -6,6 +6,10 @@
   /* The size of one pixel: the notch of the corners, the thickness of outlines and bevels */
   --pixel: 3px;
 
+  /* Pixel-art items along the top of the Dashboard */
+  --decor-display: flex;
+  --decor-opacity: 0.9;
+
   /* No curves: every radius token is square (the notch below gives the corners their look) */
   --corner-lg: 0px;
   --corner-sm: 0px;

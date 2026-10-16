@@ -58,7 +58,7 @@ export function useObjectActions() {
         // Into the trash (restorable): it falls into the bin
         { label: 'Archive', icon: LuArchive, onClick: () => archiveWithEffect(item.id, element()) },
       ],
-      [{ label: 'Delete', icon: LuTrash2, onClick: () => setDialog({ kind: 'delete', item }), danger: true }],
+      [{ label: 'Delete', icon: LuTrash2, onClick: () => setDialog({ kind: 'delete', item, source: element() }), danger: true }],
     ]
   }
 

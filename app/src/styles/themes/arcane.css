@@ -12,7 +12,8 @@
 
   /* Buttons get a hairline outline */
   --btn-border-w: 1px;
-  --btn-border-c: var(--line-strong);
+  --btn-border-c: var(--popout-line-color);
+  --field-border-c: var(--popout-line-color);
   /* Primary buttons: a hard shadow (no blur) falling to the bottom left, the button's own shape */
   --btn-primary-shadow: -4px 4px 0 0 color-mix(in srgb, var(--accent) 55%, black);
   /* Create buttons: the same hard shadow in a dark green; the raised ones lose their soft look for it */
@@ -50,6 +51,47 @@
      is the panel plus those pieces. */
   --popout-panel-radius: 0px;
   --popout-line-color: #6b7280;
+  /* The navbar gets the same line as the popouts have inside them: along its bottom, 2px up from the edge */
+  --navbar-line-display: block;
+  /* Pixel-art items along the top of the Dashboard */
+  --decor-display: flex;
+  --decor-opacity: 0.55;
+  /* in grays, like the rest of the theme (the items keep their own light and dark tones) */
+  --decor-filter: grayscale(1);
+  /* Square pixels over the bottom of the sidebar, thinning out upward until none are left */
+  --sidebar-pixels-display: block;
+  /* Faint pixel chains down both inside edges of the sidebar, behind the pixels at the bottom */
+  --sidebar-chains-display: block;
+  /* Along the sidebar's rows the chain is fainter (SidebarChains.tsx: DIM) */
+  --sidebar-chain-color: color-mix(in srgb, var(--fg) 9%, transparent);
+  /* Embers: a soft orange glow rises from the bottom of the sidebar, highest at its two sides (where the squares climb
+     too). The squares stand in front of it like ash: dark near the bottom, so the glow shows between them as if it
+     came from behind, fading to a faint gray higher up (each square mixes the two by its height, SidebarPixels.tsx) */
+  --sidebar-pixel-color: color-mix(in srgb, var(--fg) 6%, transparent);
+  --sidebar-pixel-hot: rgb(34 24 18 / 0.26);
+  --sidebar-glow:
+    radial-gradient(90% 70% at 0% 100%, rgb(255 120 36 / 0.14), rgb(255 120 36 / 0.07) 30%, rgb(255 120 36 / 0.025) 60%, transparent 85%),
+    radial-gradient(90% 70% at 100% 100%, rgb(255 120 36 / 0.14), rgb(255 120 36 / 0.07) 30%, rgb(255 120 36 / 0.025) 60%, transparent 85%),
+    radial-gradient(70% 25% at 50% 100%, rgb(255 160 70 / 0.08), rgb(255 160 70 / 0.03) 50%, transparent 90%);
+  /* The embers catch fire when an object is deleted: orange squares, yellow at the bottom, and a brighter glow */
+  --sidebar-fire: rgb(224 108 48);
+  --sidebar-fire-hot: rgb(240 176 90);
+  --sidebar-fire-glow:
+    radial-gradient(90% 62% at 0% 100%, rgb(255 110 30 / 0.4), rgb(255 110 30 / 0.16) 35%, transparent 75%),
+    radial-gradient(90% 62% at 100% 100%, rgb(255 110 30 / 0.4), rgb(255 110 30 / 0.16) 35%, transparent 75%),
+    radial-gradient(70% 30% at 50% 100%, rgb(255 170 60 / 0.35), transparent 85%);
+  /* Sidebar rows are a solid color, not see-through (the current page's row is lighter: --fill) */
+  --tree-row-bg: var(--surface-sunken);
+  --tree-row-hover-bg: var(--surface-sunken);
+  /* ...and outlined with the same light gray as the navbar's line (inside the row, so nothing moves) */
+  --tree-row-outline: 1px solid var(--popout-line-color);
+  /* The lines between the sidebar's sections (Divider) and above the Trash button: stronger than the base ones */
+  --divider-line: #6b7280;
+  /* A very faint grain over the navbar, the sidebar and the popouts: noise drawn in white at about 7% (160px tile that
+     repeats seamlessly). Raise the 0.14 for a stronger one, or set none to turn it off. */
+  --chrome-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0.14 0 0 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --navbar-line-inset: 2px;
+  --popout-line-inset: calc(var(--popout-radius) / 4 + 0.5px);
   --popout-fillet-l: linear-gradient(to bottom left, var(--surface) calc(50% - 0.5px), transparent 50%);
   --popout-fillet-r: linear-gradient(to bottom right, var(--surface) calc(50% - 0.5px), transparent 50%);
 }
@@ -72,15 +114,20 @@
    side, drawn behind the content. --popout-line-inset: its distance from the edge. Its bottom corners are further out than
    the diagonal cuts, so the panel's clip-path hides the tips of the line there; raise the inset to bring them back. */
 :root[data-theme='arcane'] .popout-panel {
-  --popout-line-inset: calc(var(--popout-radius) / 4 + 0.5px);
   --popout-line-width: 1px;
 }
 :root[data-theme='arcane'] .popout-panel::before {
   content: '';
   position: absolute;
-  inset: var(--popout-line-inset);
+  /* from the top edge down: it goes on from the line in the bar (PopoutLayer's BarLine) */
+  inset: 0 var(--popout-line-inset) var(--popout-line-inset);
   z-index: -1;
   pointer-events: none;
   border: var(--popout-line-width) solid var(--popout-line-color);
   border-top: 0;
+}
+
+/* The popouts have the bar's texture too, so they stay one with it */
+:root[data-theme='arcane'] .popout-panel {
+  background-image: var(--chrome-texture);
 }

@@ -35,6 +35,44 @@ const concave = (side: 'left' | 'right', radius?: string): CSSProperties => ({
 })
 
 
+const LINE_INSET = 'var(--popout-line-inset, 2px)'
+const LINE_BOTTOM = 'var(--navbar-line-inset, 2px)'
+const LINE_CLASS = 'pointer-events-none absolute bg-(--popout-line-color)'
+
+/**
+ * The thin line a theme draws inside the bar along its bottom (--navbar-line-display, tokens.css). Where a popout is
+ * open it has a gap, and at the gap's ends it turns down into the line inside the popout (the popout's own inner line,
+ * a theme's .popout-panel::before), so bar and popouts are outlined as one. `edge`: where the layer starts in the bar.
+ */
+function BarLine({ spans, edge }: { spans: OpenSpan[]; edge: number }) {
+  const sorted = [...spans].sort((a, b) => a.left - b.left)
+  const style = { display: 'var(--navbar-line-display)' } as CSSProperties
+  const pieces: { start: string; end: string | null }[] = []
+  let start = '0px'
+  for (const s of sorted) {
+    pieces.push({ start, end: `calc(${edge + s.left}px + ${LINE_INSET} + 1px)` })
+    start = `calc(${edge + s.right}px - ${LINE_INSET} - 1px)`
+  }
+  pieces.push({ start, end: null })
+  return (
+    <>
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          aria-hidden
+          style={{ ...style, left: p.start, bottom: LINE_BOTTOM, ...(p.end ? { width: `max(0px, calc(${p.end} - ${p.start}))` } : { right: 0 }) }}
+          className={`${LINE_CLASS} h-px`}
+        />
+      ))}
+      {/* Down from the line to the bar's edge, where the popout's own line goes on */}
+      {sorted.flatMap((s) => [
+        <span key={`${s.id}-l`} aria-hidden style={{ ...style, left: `calc(${edge + s.left}px + ${LINE_INSET})`, bottom: 0, height: `calc(${LINE_BOTTOM} + 1px)` }} className={`${LINE_CLASS} w-px`} />,
+        <span key={`${s.id}-r`} aria-hidden style={{ ...style, left: `calc(${edge + s.right}px - ${LINE_INSET} - 1px)`, bottom: 0, height: `calc(${LINE_BOTTOM} + 1px)` }} className={`${LINE_CLASS} w-px`} />,
+      ])}
+    </>
+  )
+}
+
 type Props = {
   children: ReactNode
   /** The bar's height (CSS), e.g. var(--sidebar-rail) */
@@ -90,12 +128,14 @@ export default function PopoutLayer({ children, barHeight, corners = 0 }: Props)
   const offsetsKey = JSON.stringify(separate(open))
   // Stable while nothing moves (popouts re-render on every change of it)
   const offsets = useMemo(() => JSON.parse(offsetsKey) as Record<string, number>, [offsetsKey])
-  const joins = bridges(shifted(open, offsets), radius)
+  const placed = shifted(open, offsets)
+  const joins = bridges(placed, radius)
   const value = useMemo(() => ({ el, report, offsets }), [el, report, offsets])
 
   return (
     <PopoutLayerContext.Provider value={value}>
       {children}
+      <BarLine spans={placed} edge={edge} />
       {/* Behind the bar (-z): the bar's shape, the page's corners, the popouts; one shadow for all. Only
           the panels (and bridges) take the pointer */}
       <div

@@ -1,6 +1,9 @@
 import { LuLogOut } from 'react-icons/lu'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/ui/buttons/Button'
+import DashboardRelics from '../../features/dashboard/DashboardRelics'
+import EditIconsPreview from '../../features/dashboard/EditIconsPreview'
+import QuillIconsPreview from '../../features/dashboard/QuillIconsPreview'
 import DashboardColumns from '../../features/dashboard/DashboardColumns'
 import DashboardSections from '../../features/dashboard/DashboardSections'
 import { useDashboardColumns } from '../../features/dashboard/useDashboardColumns'
@@ -24,7 +27,13 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="mx-auto flex max-w-[65rem] flex-col gap-12 px-4 pt-8 pb-24">
+        <div className="relative mx-auto flex max-w-[65rem] flex-col gap-12 px-4 pt-8 pb-24">
+            {/* Pixel-art items along the top (a theme turns them on) */}
+            <DashboardRelics />
+            {/* TEMPORARY: the quill icons to choose from */}
+            <QuillIconsPreview />
+            {/* TEMPORARY: the pencil / edit / create icons to choose from */}
+            <EditIconsPreview />
             {/* The input and the columns share one narrower width, centred over the sections */}
             <div className="mx-auto flex w-full max-w-[54rem] flex-col gap-10">
                 {/* A greeting, then the page's main input, low on the screen with room above them */}

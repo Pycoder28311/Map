@@ -2,7 +2,7 @@ import { useDroppable } from '@dnd-kit/core'
 import { useState } from 'react'
 import { useLayoutsState } from '../../../mocks/layoutsStore'
 import { useMockObjects } from '../../../mocks/projectsStore'
-import { buttonClass } from '../../ui/buttons/buttonStyles'
+import { TREE_ROW_LOOK, buttonClass } from '../../ui/buttons/buttonStyles'
 import { useLidOpen } from '../../ui/tree/swallow'
 import { TRASH_ID, useSidebarDrop } from './sidebarDropState'
 import TrashModal from './TrashModal'
@@ -61,7 +61,7 @@ export default function TrashBin({ compact }: { compact: boolean }) {
         className={buttonClass(
           'ghost',
           true,
-          `relative w-full justify-start text-fg-muted transition-[max-width] duration-(--sidebar-duration) ${compact ? RAIL_ROW : 'max-w-full'} ${over ? 'bg-drop/16 ring-[1.4px] ring-inset ring-drop/55' : ''}`,
+          `relative w-full justify-start text-fg-muted transition-[max-width] duration-(--sidebar-duration) ${compact ? RAIL_ROW : 'max-w-full'} ${over ? 'bg-drop/16 ring-[1.4px] ring-inset ring-drop/55' : TREE_ROW_LOOK}`,
         )}
       >
         <span data-drop-icon={TRASH_ID} className="ms-(--btn-icon-offset-start) flex shrink-0">

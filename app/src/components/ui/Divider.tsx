@@ -42,7 +42,7 @@ export default function Divider({ label, labelTo, action, compact = false, class
         ) : (
           <span className={`shrink-0 text-small font-medium text-fg-muted ${FADE} ${hidden}`}>{label}</span>
         ))}
-      <span aria-hidden className={`h-px flex-1 bg-line ${FADE} ${hidden}`} />
+      <span aria-hidden className={`h-px flex-1 bg-(--divider-line) ${FADE} ${hidden}`} />
       {/* At the row's right edge, in line with the rows' own right icons */}
       {action && (
         <button
@@ -60,7 +60,7 @@ export default function Divider({ label, labelTo, action, compact = false, class
       {/* Compact: the short line in the rail */}
       <span
         aria-hidden
-        className={`absolute start-0 top-1/2 h-px ${RAIL_LINE_W} bg-line ${FADE} ${compact ? '' : 'opacity-0'}`}
+        className={`absolute start-0 top-1/2 h-px ${RAIL_LINE_W} bg-(--divider-line) ${FADE} ${compact ? '' : 'opacity-0'}`}
       />
     </div>
   )

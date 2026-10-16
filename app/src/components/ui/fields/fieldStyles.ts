@@ -7,7 +7,7 @@ const SHELL =
 
 /** The box around the input */
 export const FIELD_VARIANTS = {
-  border: `${SHELL} border border-line-strong transition-colors duration-200 ease-out focus-within:border-fg-subtle`,
+  border: `${SHELL} border border-(--field-border-c) transition-colors duration-200 ease-out focus-within:border-fg-subtle`,
   shadow: `${SHELL} shadow-md focus-within:ring-2 focus-within:ring-fg/10`,
 } as const
 

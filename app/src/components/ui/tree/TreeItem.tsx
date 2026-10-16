@@ -174,7 +174,7 @@ export default function TreeItem({
         {...node.rowData}
         data-row-id={node.id}
         style={{ '--icons-rest': iconsWidth(alwaysShown), '--icons-hover': iconsWidth(right.length) } as CSSProperties}
-        className={`${dropAt === 'into' ? INTO : ''} ${dnd?.draggingId === node.id ? LEFT_BEHIND : ''} group/row relative flex items-center rounded-(--btn-radius) hover-fill [--icons:var(--icons-rest)] hover:[--icons:var(--icons-hover)] has-[:focus-visible]:[--icons:var(--icons-hover)] max-w-[var(--tree-row-max,100%)] transition-[max-width] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none`}
+        className={`${dropAt === 'into' ? INTO : ''} ${dnd?.draggingId === node.id ? LEFT_BEHIND : ''} group/row relative flex items-center rounded-(--btn-radius) hover-fill [background-color:var(--tree-row-bg)] [outline:var(--tree-row-outline)] [outline-offset:-1px] [--hover-fill-bg:var(--tree-row-hover-bg)] [--icons:var(--icons-rest)] hover:[--icons:var(--icons-hover)] has-[:focus-visible]:[--icons:var(--icons-hover)] max-w-[var(--tree-row-max,100%)] transition-[max-width] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none`}
       >
         {state.isFolder && (
           <span data-drop-icon={node.id} className="absolute start-(--btn-px) top-1/2 z-10 flex -translate-y-1/2">
