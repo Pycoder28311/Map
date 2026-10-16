@@ -38,7 +38,7 @@ const HELD = { x: 'active:cursor-col-resize', y: 'active:cursor-row-resize' }
 // The two arrows turn half a turn on hover: the two panels rotate into each other's place
 const ICON = 'size-(--btn-icon-size) transition-[rotate] duration-300 ease-out group-hover/swap:rotate-180 motion-reduce:transition-none'
 // Round, like the panels' island
-const ROUND = { '--btn-close-radius': '9999px' } as CSSProperties
+const ROUND = { '--btn-close-radius': 'var(--radius-pill)' } as CSSProperties
 
 /** Where along the line the middle of a border is */
 const MIDDLE = {

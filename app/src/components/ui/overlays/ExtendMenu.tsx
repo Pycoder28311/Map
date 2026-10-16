@@ -2,13 +2,14 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } f
 import type { ButtonIcon } from '../icons/IconSlot'
 
 // Full class strings so Tailwind can detect them at build time.
-// What the whole thing looks like: the button, and the same colour once it has grown
+// What the whole thing looks like: the button, and the same colour once it has grown. `marks`: the theme's corner
+// marks (styles/cornerMarks.css): always, or only while the pointer is on it or it is open
 const LOOK = {
-  ghost: { closed: 'text-fg hover:bg-fill', open: 'bg-fill text-fg shadow-md', item: 'hover:bg-fill-strong focus-visible:bg-fill-strong' },
-  secondary: { closed: 'bg-fill text-fg hover:bg-fill-strong', open: 'bg-fill-strong text-fg shadow-md', item: 'hover:bg-fill focus-visible:bg-fill' },
+  ghost: { marks: 'corner-marks-hover', closed: 'text-fg hover-fill', open: 'bg-fill text-fg shadow-md', item: 'hover-fill-strong focus-visible:bg-fill-strong' },
+  secondary: { marks: 'corner-marks-hover', closed: 'bg-fill text-fg hover:bg-fill-strong', open: 'bg-fill-strong text-fg shadow-md', item: 'hover:bg-fill focus-visible:bg-fill' },
   // create: a split button (see `padded`): closed, it has no background of its own: each part is its own
   // green button, with the page showing between them. Open: one gray shape, like the other dropdowns
-  create: { closed: 'text-create-fg', open: 'bg-fill text-fg shadow-md', item: 'hover:bg-fill-strong focus-visible:bg-fill-strong' },
+  create: { marks: 'corner-marks', closed: 'text-create-fg [box-shadow:var(--btn-create-shadow)]', open: 'bg-fill text-fg shadow-md', item: 'hover-fill-strong focus-visible:bg-fill-strong' },
 } as const
 // The padding, corners and text of a sidebar row (as tall as one)
 // whitespace-nowrap: the button's text never breaks into lines, whatever width it is given
@@ -142,12 +143,14 @@ export default function ExtendMenu<T extends string>({
         ))}
       </div>
 
-      {/* The button itself: it grows (and wider) over what's beside it, down from the button or up */}
+      {/* The button itself: it grows (and wider) over what's beside it, down from the button or up. Its corner
+          marks (corner-marks) are drawn on this box, so they move out to the corners of the dropdown as it grows */}
       <div
         style={grown}
+        data-open={open}
         // Anchored at the button's centre: growing wider, it extends the same on both sides, and the
         // button's own content (centred) stays where it is
-        className={`absolute ${direction === 'up' ? 'bottom-0 flex-col-reverse' : 'top-0 flex-col'} flex left-1/2 -translate-x-1/2 z-20 overflow-hidden rounded-(--btn-radius) transition-[width,height,background-color,box-shadow] ${GROW} ${open ? look.open : look.closed}`}
+        className={`absolute ${direction === 'up' ? 'bottom-0 flex-col-reverse' : 'top-0 flex-col'} flex left-1/2 -translate-x-1/2 z-20 overflow-hidden rounded-(--btn-radius) ${look.marks} transition-[width,height,background-color,box-shadow] ${GROW} ${open ? look.open : look.closed}`}
       >
         <button
           type="button"

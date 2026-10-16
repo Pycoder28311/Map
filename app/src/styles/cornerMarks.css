@@ -1,0 +1,28 @@
+/* `corner-marks`: small marks in the four corners of a button, drawn from the theme's --btn-corners
+   (tokens.css: none in the base theme). The button must be positioned (relative / absolute). */
+@utility corner-marks {
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: var(--btn-corners);
+  }
+}
+
+/* `corner-marks-hover`: the same, shown only while the pointer is on the button, or (data-open) while its dropdown is open */
+@utility corner-marks-hover {
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: var(--btn-corners);
+    opacity: 0;
+    transition: opacity 150ms ease-out;
+  }
+  &:hover::after,
+  &[data-open='true']::after {
+    opacity: 1;
+  }
+}

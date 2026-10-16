@@ -1,0 +1,86 @@
+/* The "arcane" theme: minimalist with a fantasy feel (hairline borders, barely rounded corners, hard shadows). It only overrides the values of the base theme (colors.css, tokens.css), so every
+   component follows it. Active when <html data-theme="arcane"> (lib/theme.ts); remove the attribute for the base look.
+   To make another theme: copy this file, change the selector's name and the values, add the name to THEMES in lib/theme.ts. */
+:root[data-theme='arcane'] {
+  /* Colors: none, they come from the base theme (colors.css) */
+
+  /* Corners: nearly square, like cut stone */
+  --corner-lg: 0px;
+  --corner-sm: 0px;
+  --corner-xs: 1px;
+  --popout-radius: 10px;
+
+  /* Buttons get a hairline outline */
+  --btn-border-w: 1px;
+  --btn-border-c: var(--line-strong);
+  /* Primary buttons: a hard shadow (no blur) falling to the bottom left, the button's own shape */
+  --btn-primary-shadow: -4px 4px 0 0 color-mix(in srgb, var(--accent) 55%, black);
+  /* Create buttons: the same hard shadow in a dark green; the raised ones lose their soft look for it */
+  --btn-create-shadow: -4px 4px 0 0 color-mix(in srgb, var(--create) 55%, black);
+  --btn-raised-shadow: -4px 4px 0 0 color-mix(in srgb, var(--create) 55%, black);
+  --btn-raised-shadow-active: -2px 2px 0 0 color-mix(in srgb, var(--create) 55%, black);
+  /* ...and in each corner inside them, two short lighter strokes (white at some opacity, so it suits the gray Cancel face
+     too): 8px long, 2px thick, 3px in from the edge */
+  --btn-corners:
+    linear-gradient(rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.55)) left 3px top 3px / 8px 2px no-repeat,
+    linear-gradient(rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.55)) left 3px top 3px / 2px 8px no-repeat,
+    linear-gradient(rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.55)) right 3px top 3px / 8px 2px no-repeat,
+    linear-gradient(rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.55)) right 3px top 3px / 2px 8px no-repeat,
+    linear-gradient(rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.55)) left 3px bottom 3px / 8px 2px no-repeat,
+    linear-gradient(rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.55)) left 3px bottom 3px / 2px 8px no-repeat,
+    linear-gradient(rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.55)) right 3px bottom 3px / 8px 2px no-repeat,
+    linear-gradient(rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.55)) right 3px bottom 3px / 2px 8px no-repeat;
+
+  /* Hover / pressed: the background stays, an inner shadow grows instead (stronger while pressed) */
+  --btn-primary-hover-bg: var(--accent);
+  --btn-secondary-hover-bg: var(--fill);
+  --btn-ghost-hover-bg: transparent;
+  --btn-create-hover-bg: var(--create);
+  --hover-fill-bg: transparent;
+  --hover-fill-strong-bg: transparent;
+  --hover-faint-bg: transparent;
+  --btn-hover-inset-dark: inset 0 0 16px 4px rgb(0 0 0 / 0.4);
+  --btn-active-inset-dark: inset 0 0 22px 8px rgb(0 0 0 / 0.55);
+  --btn-hover-inset-light: inset 0 0 14px 2px rgb(255 255 255 / 0.1);
+  --btn-active-inset-light: inset 0 0 20px 6px rgb(255 255 255 / 0.18);
+
+  /* Bar popouts, diagonal style (cuts of --popout-radius): the bottom corners are cut off diagonally, and where a popout
+     meets its bar a diagonal piece fills the corner (a triangle, in place of the curve). BarPopout sets --cut-*, --ear-*
+     and --foot-* on each popout (which sides are free, which are stuck to an edge); the polygon, at the end of this file,
+     is the panel plus those pieces. */
+  --popout-panel-radius: 0px;
+  --popout-line-color: #6b7280;
+  --popout-fillet-l: linear-gradient(to bottom left, var(--surface) calc(50% - 0.5px), transparent 50%);
+  --popout-fillet-r: linear-gradient(to bottom right, var(--surface) calc(50% - 0.5px), transparent 50%);
+}
+
+/* The popout's shape: the panel plus its diagonal pieces (var()s here are read on the popout itself, where BarPopout sets them) */
+:root[data-theme='arcane'] .popout-panel {
+  clip-path: polygon(
+    calc(0px - var(--ear-l)) 0,
+    calc(100% + var(--ear-r)) 0,
+    100% var(--popout-radius),
+    100% calc(100% - var(--cut-r) + var(--foot-r)),
+    calc(100% - var(--cut-r) - var(--foot-r)) 100%,
+    calc(var(--cut-l) + var(--foot-l)) 100%,
+    0 calc(100% - var(--cut-l) + var(--foot-l)),
+    0 var(--popout-radius)
+  );
+}
+
+/* A thin gray line inside the popout: a plain rectangle (square corners, not following the cut ones) without a top
+   side, drawn behind the content. --popout-line-inset: its distance from the edge. Its bottom corners are further out than
+   the diagonal cuts, so the panel's clip-path hides the tips of the line there; raise the inset to bring them back. */
+:root[data-theme='arcane'] .popout-panel {
+  --popout-line-inset: calc(var(--popout-radius) / 4 + 0.5px);
+  --popout-line-width: 1px;
+}
+:root[data-theme='arcane'] .popout-panel::before {
+  content: '';
+  position: absolute;
+  inset: var(--popout-line-inset);
+  z-index: -1;
+  pointer-events: none;
+  border: var(--popout-line-width) solid var(--popout-line-color);
+  border-top: 0;
+}

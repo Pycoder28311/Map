@@ -12,7 +12,7 @@ const EASE = 'ease-[cubic-bezier(0.05,0.7,0.1,1)]'
 // Hidden: invisible (no hover, no focus) and slid up under the bar's edge (the layer clips it there).
 // Visibility switches at the end of the slide when closing, at once when opening
 const PANEL =
-  `pointer-events-auto absolute top-0 rounded-b-(--popout-radius) bg-surface p-(--popout-p) ` +
+  `pointer-events-auto absolute top-0 popout-panel rounded-b-(--popout-panel-radius) bg-surface p-(--popout-p) ` +
   `transition-[translate,visibility,left,right] duration-(--popout-duration) ${EASE} motion-reduce:duration-0`
 const SHOWN = 'visible translate-y-0'
 const HIDDEN = 'invisible -translate-y-full'
@@ -23,15 +23,18 @@ const CLOSE_DELAY = 150
 // The element whose right edge popouts stick to on the left (the sidebar's box: Sidebar.tsx)
 const START_EDGE = '[data-popout-edge="start"]'
 
-/** The concave corners joining the popout to the bar: the bar's colour with a quarter circle cut out */
+/** The concave corners joining the popout to the bar (the theme draws them: --popout-fillet-*, tokens.css) */
 const ear = (side: 'left' | 'right'): CSSProperties => ({
-  background: `radial-gradient(circle at ${side === 'left' ? '0' : '100%'} 100%, transparent calc(var(--popout-radius) - 0.5px), var(--surface) var(--popout-radius))`,
+  background: side === 'left' ? 'var(--popout-fillet-l)' : 'var(--popout-fillet-r)',
 })
 
 /** Stuck to a vertical edge: the concave corner below the popout, joining its bottom to that edge */
 const edgeEar = (side: 'left' | 'right'): CSSProperties => ({
-  background: `radial-gradient(circle at ${side === 'left' ? '100%' : '0'} 100%, transparent calc(var(--popout-radius) - 0.5px), var(--surface) var(--popout-radius))`,
+  background: side === 'left' ? 'var(--popout-fillet-r)' : 'var(--popout-fillet-l)',
 })
+
+const NONE = '0px'
+const SQUARE = 'var(--popout-radius)'
 
 /**
  * Measured placement in the layer: the panel's left and its right edge's distance from the layer's
@@ -240,6 +243,16 @@ export default function BarPopout({
           : { left: (place?.left ?? 0) + (open ? (layer.offsets[id] ?? 0) : 0) }),
         borderBottomLeftRadius: stuck.start ? 0 : undefined,
         borderBottomRightRadius: stuck.end ? 0 : undefined,
+        // For a theme's clip-path on .popout-panel (themes/arcane.css): per side, a free side has an ear at the top and its bottom
+        // corner cut; a side stuck to an edge has a foot (the edge ear) below instead
+        ...({
+          '--ear-l': stuck.start ? NONE : SQUARE,
+          '--cut-l': stuck.start ? NONE : SQUARE,
+          '--foot-l': stuck.start ? SQUARE : NONE,
+          '--ear-r': stuck.end ? NONE : SQUARE,
+          '--cut-r': stuck.end ? NONE : SQUARE,
+          '--foot-r': stuck.end ? SQUARE : NONE,
+        } as CSSProperties),
       }}
       className={`${PANEL} ${open ? SHOWN : HIDDEN}`}
     >

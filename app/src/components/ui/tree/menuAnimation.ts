@@ -78,7 +78,7 @@ export const SEPARATOR_IN = 'origin-left animate-menu-sep motion-reduce:animate-
 export const DOT_SLOT =
   'pointer-events-none absolute top-[calc(50%-var(--menu-dot)/2)] left-[calc(var(--menu-item-px)+var(--btn-icon-size)/2-var(--menu-dot)/2)] ' +
   'size-(--menu-dot) animate-menu-queue motion-reduce:hidden'
-export const DOT = 'block size-full rounded-full bg-fg animate-menu-dot'
+export const DOT = 'block size-full rounded-(--radius-pill) bg-fg animate-menu-dot'
 
 /**
  * Where the dot lands, the button opens out of it: its background spreads from the dot as a growing

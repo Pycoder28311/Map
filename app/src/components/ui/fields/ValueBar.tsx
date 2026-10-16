@@ -182,7 +182,7 @@ export default function ValueBar({ label, value, min, max, step = 1, suffix = ''
                     role="option"
                     aria-selected={p === shown}
                     onClick={() => settle(p)}
-                    className="flex min-h-(--menu-item-h) cursor-pointer items-center justify-center rounded-(--menu-item-radius) border border-line px-1.5 py-1.5 text-body tabular-nums hover:bg-fill aria-selected:border-accent aria-selected:bg-accent/10"
+                    className="flex min-h-(--menu-item-h) cursor-pointer items-center justify-center rounded-(--menu-item-radius) border border-line px-1.5 py-1.5 text-body tabular-nums hover-fill aria-selected:border-accent aria-selected:bg-accent/10"
                   >
                     {p}
                     {suffix}

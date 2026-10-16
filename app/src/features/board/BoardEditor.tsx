@@ -694,7 +694,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
               width: 2 * ERASER_PX,
               height: 2 * ERASER_PX,
             }}
-            className="pointer-events-none absolute rounded-full border-2 border-fg/70 bg-fg/10"
+            className="pointer-events-none absolute rounded-(--radius-pill) border-2 border-fg/70 bg-fg/10"
           />
         )}
         {showBox && (

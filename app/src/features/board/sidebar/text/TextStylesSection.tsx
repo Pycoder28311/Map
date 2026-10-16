@@ -3,6 +3,7 @@ import { hasShadow } from '../../textShadow'
 import { stackOf } from '../../fonts'
 import SidebarSection from '../common/SidebarSection'
 import { distinctStyles, fullStyle, type TextStyle } from '../../textStyles'
+import { LIST_ITEM } from '../../../../components/ui/buttons/buttonStyles'
 
 type Props = {
   mapId: string
@@ -61,7 +62,7 @@ export default function TextStylesSection({ mapId, exclude, current, apply }: Pr
                 type="button"
                 onClick={() => apply(e.style)}
                 title="Use this look"
-                className="flex w-full cursor-pointer items-center gap-2 rounded-(--corner-sm) px-2 py-1.5 text-start hover:bg-fill"
+                className={LIST_ITEM}
               >
                 <Sample style={e.style} text={e.sample} />
                 {e.count > 1 && <span className="shrink-0 text-small tabular-nums text-fg-subtle">×{e.count}</span>}

@@ -5,12 +5,12 @@
 }
 .value-bar::-webkit-slider-runnable-track {
   height: 6px;
-  border-radius: 3px;
+  border-radius: var(--corner-xs);
   background: linear-gradient(to right, #fff var(--fill), #000 var(--fill));
 }
 .value-bar::-moz-range-track {
   height: 6px;
-  border-radius: 3px;
+  border-radius: var(--corner-xs);
   background: linear-gradient(to right, #fff var(--fill), #000 var(--fill));
 }
 .value-bar::-webkit-slider-thumb {
@@ -18,7 +18,7 @@
   width: 14px;
   height: 14px;
   margin-top: -4px;
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   border: 2px solid #000;
   background: #fff;
   box-shadow: 0 0 0 1px #fff;
@@ -26,7 +26,7 @@
 .value-bar::-moz-range-thumb {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   border: 2px solid #000;
   background: #fff;
   box-shadow: 0 0 0 1px #fff;

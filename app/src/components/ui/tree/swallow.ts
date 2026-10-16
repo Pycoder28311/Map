@@ -158,7 +158,7 @@ function sparks(at: { x: number; y: number }, delay: number) {
       top: `${at.y - size / 2}px`,
       width: `${size}px`,
       height: `${size}px`,
-      borderRadius: '9999px',
+      borderRadius: 'var(--radius-pill)',
       background: 'var(--drop)',
       pointerEvents: 'none',
       zIndex: '1001',

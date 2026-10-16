@@ -4,6 +4,7 @@ import { toggleLike, useMockObjects } from '../../mocks/projectsStore'
 import LinkedList from '../links/LinkedList'
 import type { PanelProps } from '../workspace/types'
 import { placeholderArt } from './placeholderArt'
+import { PILL_BUTTON } from '../../components/ui/buttons/buttonStyles'
 
 const DATE = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 
@@ -25,7 +26,7 @@ export default function ObjectPanel({ id }: PanelProps) {
           type="button"
           onClick={() => toggleLike(object.id)}
           aria-pressed={!!object.liked}
-          className="inline-flex cursor-pointer items-center gap-1 rounded-full px-2 py-1 text-small text-fg-muted hover:bg-fill"
+          className={`${PILL_BUTTON} gap-1 px-2 py-1 text-small text-fg-muted hover-fill`}
         >
           <LuHeart className={`size-4 ${object.liked ? 'fill-danger text-danger' : ''}`} />
           {object.likes}

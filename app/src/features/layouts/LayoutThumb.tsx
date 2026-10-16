@@ -146,7 +146,7 @@ export function TileAction({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className={`flex size-6 cursor-pointer items-center justify-center rounded-full border border-line bg-surface shadow-sm transition-colors hover:bg-fill focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${colour}`}
+      className={`flex size-6 cursor-pointer items-center justify-center rounded-(--radius-pill) border border-line bg-surface shadow-sm transition-colors hover:bg-fill focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${colour}`}
     >
       <Icon className="size-3.5" />
     </button>

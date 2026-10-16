@@ -4,6 +4,7 @@ import type { MockObject, ObjectKind } from '../../mocks/projects'
 import { KIND_ICON } from '../../mocks/sidebarTree'
 import { useObjectDrag } from '../drag/objectDrag'
 import { hasFilters, KINDS, type SearchFilters } from './search'
+import { PILL_BUTTON } from '../../components/ui/buttons/buttonStyles'
 
 const KIND_NAME: Record<ObjectKind, string> = {
   project: 'Projects',
@@ -16,11 +17,11 @@ const KIND_NAME: Record<ObjectKind, string> = {
 
 // Full class strings so Tailwind can detect them at build time.
 const HEADING = 'text-small font-medium uppercase tracking-wide text-fg-subtle'
-const CHECK = 'flex cursor-pointer items-center gap-2 rounded-(--btn-close-radius) px-1.5 py-1 text-body hover:bg-fill'
+const CHECK = 'flex cursor-pointer items-center gap-2 rounded-(--btn-close-radius) px-1.5 py-1 text-body hover-fill'
 const SEGMENT = 'flex-1 cursor-pointer rounded-(--corner-sm) px-2 py-0.5 text-small transition-colors'
 // Open Filters: small, as tall as the chips beside it
 const FILTERS_BUTTON =
-  'inline-flex cursor-pointer items-center gap-1 rounded-full px-2 py-0.5 text-small font-medium transition-colors ' +
+  'inline-flex cursor-pointer items-center gap-1 rounded-(--radius-pill) px-2 py-0.5 text-small font-medium transition-colors ' +
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 
 type Props = {
@@ -160,7 +161,7 @@ export default function SearchPanel({
                 type="button"
                 onClick={c.remove}
                 aria-label={`Remove filter ${c.label}`}
-                className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-fill px-2 py-0.5 text-small hover:bg-fill-strong"
+                className={`${PILL_BUTTON} gap-1 bg-fill px-2 py-0.5 text-small hover:bg-fill-strong`}
               >
                 {c.label}
                 <LuX className="size-3" />

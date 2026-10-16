@@ -95,7 +95,7 @@ export default function ColourPicker({ value, onLive, onCommit }: Props) {
         <span
           aria-hidden
           style={{ left: `${hsv.s * 100}%`, top: `${(1 - hsv.v) * 100}%`, backgroundColor: hex }}
-          className="pointer-events-none absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1px_rgb(0_0_0/0.5)]"
+          className="pointer-events-none absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-(--radius-pill) border-2 border-white shadow-[0_0_0_1px_rgb(0_0_0/0.5)]"
         />
       </div>
       <div
@@ -107,12 +107,12 @@ export default function ColourPicker({ value, onLive, onCommit }: Props) {
         tabIndex={0}
         {...drag((e) => ({ ...hsv, h: within(e).x * 360 }))}
         style={{ backgroundImage: 'linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)' }}
-        className="relative h-3 w-full cursor-pointer touch-none rounded-full"
+        className="relative h-3 w-full cursor-pointer touch-none rounded-(--radius-pill)"
       >
         <span
           aria-hidden
           style={{ left: `${(hsv.h / 360) * 100}%`, backgroundColor: hsvToHex({ h: hsv.h, s: 1, v: 1 }) }}
-          className="pointer-events-none absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1px_rgb(0_0_0/0.5)]"
+          className="pointer-events-none absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-(--radius-pill) border-2 border-white shadow-[0_0_0_1px_rgb(0_0_0/0.5)]"
         />
       </div>
       <div className="flex gap-1">

@@ -1,0 +1,37 @@
+/* Hover / pressed look of rows and quiet buttons that have no background of their own (sidebar rows, menu items, list
+   rows, tabs). The base theme fills the background while hovered; a theme can keep it (--hover-*-bg: transparent) and draw
+   an inner shadow instead (--btn-hover-inset-light / --btn-active-inset-light, tokens.css). The element's own shadow
+   (a shadow-* class) is kept. Use these instead of hover:bg-fill, hover:bg-fill-strong and hover:bg-fg/10. */
+@utility hover-fill {
+  @media (hover: hover) {
+    &:hover {
+      background-color: var(--hover-fill-bg);
+      box-shadow: var(--btn-hover-inset-light), var(--tw-shadow, 0 0 #0000);
+    }
+  }
+  &:active {
+    box-shadow: var(--btn-active-inset-light), var(--tw-shadow, 0 0 #0000);
+  }
+}
+@utility hover-fill-strong {
+  @media (hover: hover) {
+    &:hover {
+      background-color: var(--hover-fill-strong-bg);
+      box-shadow: var(--btn-hover-inset-light), var(--tw-shadow, 0 0 #0000);
+    }
+  }
+  &:active {
+    box-shadow: var(--btn-active-inset-light), var(--tw-shadow, 0 0 #0000);
+  }
+}
+@utility hover-faint {
+  @media (hover: hover) {
+    &:hover {
+      background-color: var(--hover-faint-bg);
+      box-shadow: var(--btn-hover-inset-light), var(--tw-shadow, 0 0 #0000);
+    }
+  }
+  &:active {
+    box-shadow: var(--btn-active-inset-light), var(--tw-shadow, 0 0 #0000);
+  }
+}

@@ -73,7 +73,7 @@ export default function BorderCountySection({ value, onChange }: BorderSectionPr
           <button
             type="button"
             onClick={() => input.current?.click()}
-            className="flex w-full cursor-pointer items-center justify-center gap-1 rounded-(--card-radius) border border-dashed border-line-strong py-3 text-small text-fg-muted hover:bg-fill"
+            className="flex w-full cursor-pointer items-center justify-center gap-1 rounded-(--card-radius) border border-dashed border-line-strong py-3 text-small text-fg-muted hover-fill"
           >
             <LuImagePlus className="size-4" />
             Import image

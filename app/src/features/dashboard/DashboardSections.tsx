@@ -128,7 +128,7 @@ export default function DashboardSections({ columns, projects }: Props) {
               named={row !== 'orphans'}
             />
             {note?.row === row && (
-              <p role="status" className="flex items-center gap-2 self-start rounded-full bg-fill px-3 py-1 text-small text-fg-muted">
+              <p role="status" className="flex items-center gap-2 self-start rounded-(--radius-pill) bg-fill px-3 py-1 text-small text-fg-muted">
                 {note.text}
                 <button type="button" onClick={() => undo(note)} className="cursor-pointer font-medium text-fg underline-offset-2 hover:underline">
                   Undo

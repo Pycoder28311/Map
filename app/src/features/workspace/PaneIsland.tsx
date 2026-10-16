@@ -19,7 +19,7 @@ type Props = {
 }
 
 // Its buttons are round, following the island's own round ends
-const ROUND_BUTTONS = { '--btn-close-radius': '9999px' } as CSSProperties
+const ROUND_BUTTONS = { '--btn-close-radius': 'var(--radius-pill)' } as CSSProperties
 // touch-none: on touch screens, dragging the grip moves the panel instead of scrolling the page
 const GRIP = 'touch-none cursor-grab active:cursor-grabbing'
 
@@ -32,7 +32,7 @@ export default function PaneIsland({ grip: { setRef, attributes }, onDetach, onF
   return (
     <div
       style={ROUND_BUTTONS}
-      className="absolute top-(--island-top) left-1/2 z-10 flex -translate-x-1/2 gap-(--island-gap) rounded-full border border-line bg-surface-sunken p-(--island-p) shadow-md"
+      className="absolute top-(--island-top) left-1/2 z-10 flex -translate-x-1/2 gap-(--island-gap) rounded-(--radius-pill) border border-line bg-surface-sunken p-(--island-p) shadow-md"
     >
       <IconButton
         ref={setRef}

@@ -57,7 +57,7 @@ export default function DropIcon({ id, dropKey, data, icon: Icon, label, state, 
       onPointerDown={onPick && ((e) => e.stopPropagation())}
       onKeyDown={onPick && ((e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onPick() } })}
       data-drop-icon={dropKey}
-      className={`flex items-center justify-center rounded-full border border-line-strong bg-surface text-fg shadow-sm transition-[translate,opacity,scale,background-color,border-color,color] duration-200 ease-out motion-reduce:transition-none ${SIZE[size]} ${STATE[state]} ${active || lidOpen ? ACTIVE : ''} ${onPick ? 'cursor-pointer' : ''} ${className}`}
+      className={`flex items-center justify-center rounded-(--radius-pill) border border-line-strong bg-surface text-fg shadow-sm transition-[translate,opacity,scale,background-color,border-color,color] duration-200 ease-out motion-reduce:transition-none ${SIZE[size]} ${STATE[state]} ${active || lidOpen ? ACTIVE : ''} ${onPick ? 'cursor-pointer' : ''} ${className}`}
     >
       <Icon className="size-(--btn-icon-size)" />
     </span>

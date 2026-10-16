@@ -1,0 +1,80 @@
+/* The "pixel" theme: a blocky game-menu look (Minecraft style). No rounding anywhere: instead every rounded element
+   has its corner pixels cut off (a square notch the size of one pixel, --pixel), buttons get a thick dark outline and a
+   light / dark bevel inside, like the game's buttons. Colors come from the base theme.
+   Active when <html data-theme="pixel"> (lib/theme.ts). To use it: setTheme('pixel') in the browser console. */
+:root[data-theme='pixel'] {
+  /* The size of one pixel: the notch of the corners, the thickness of outlines and bevels */
+  --pixel: 3px;
+
+  /* No curves: every radius token is square (the notch below gives the corners their look) */
+  --corner-lg: 0px;
+  --corner-sm: 0px;
+  --corner-xs: 0px;
+  --radius-pill: 0px;
+  --radius-circle: 0px;
+
+  /* Buttons: a dark outline one pixel thick. Primary and Create buttons are raised like the floating Create button: a light
+     band along the top inside them and a darker one along the bottom (pressed: the bottom band thins, a dark one
+     appears on top, as if pushed in) */
+  --btn-border-w: var(--pixel);
+  --btn-border-c: #000;
+  --btn-primary-shadow: inset 0 var(--pixel) 0 rgb(255 255 255 / 0.3), inset 0 calc(0px - 2 * var(--pixel)) 0 rgb(0 0 0 / 0.24);
+  --btn-create-shadow: var(--btn-primary-shadow);
+  --btn-raised-shadow: var(--btn-primary-shadow);
+  --btn-raised-shadow-active: inset 0 var(--pixel) 0 rgb(255 255 255 / 0.3), inset 0 calc(0px - var(--pixel)) 0 rgb(0 0 0 / 0.24);
+  --btn-active-inset-dark: inset 0 var(--pixel) 0 rgb(0 0 0 / 0.35);
+
+  /* Bar popouts: blocky too (square pixels of --popout-radius): the bottom corners lose one pixel, and where a popout
+     meets its bar one square pixel extends it sideways. BarPopout sets --cut-*, --ear-* and --foot-* on each popout. */
+  --popout-radius: 6px;
+  --popout-panel-radius: 0px;
+  --popout-fillet-l: linear-gradient(var(--surface), var(--surface));
+  --popout-fillet-r: linear-gradient(var(--surface), var(--surface));
+}
+
+/* Every element with rounded corners (rounded-(--…) in its classes) loses its four corner pixels. Left square, with no
+   notch: the ones rounded on one side only (like the split Create button's parts) and the ones whose background shows
+   only while hovered (hover-fill…, the ghost buttons: Sort by, sidebar rows). The outline of a focused element moves
+   inside it, as the clipping would hide it outside. */
+:root[data-theme='pixel']
+  [class*='rounded-(--']:not([class*='rounded-s-']):not([class*='rounded-e-']):not([class*='rounded-b-']):not([class*='hover-fill']):not([class*='hover-faint']):not([class*='--btn-ghost-hover-bg']) {
+  clip-path: polygon(
+    var(--pixel) 0,
+    calc(100% - var(--pixel)) 0,
+    calc(100% - var(--pixel)) var(--pixel),
+    100% var(--pixel),
+    100% calc(100% - var(--pixel)),
+    calc(100% - var(--pixel)) calc(100% - var(--pixel)),
+    calc(100% - var(--pixel)) 100%,
+    var(--pixel) 100%,
+    var(--pixel) calc(100% - var(--pixel)),
+    0 calc(100% - var(--pixel)),
+    0 var(--pixel),
+    var(--pixel) var(--pixel)
+  );
+}
+:root[data-theme='pixel'] [class*='rounded-(--']:focus-visible {
+  outline-offset: calc(0px - 2 * var(--pixel));
+}
+
+/* The popout's shape: the panel plus its square pixels (var()s here are read on the popout itself, where BarPopout sets them) */
+:root[data-theme='pixel'] .popout-panel {
+  clip-path: polygon(
+    calc(0px - var(--ear-l)) 0,
+    calc(100% + var(--ear-r)) 0,
+    calc(100% + var(--ear-r)) var(--popout-radius),
+    100% var(--popout-radius),
+    100% calc(100% - var(--cut-r)),
+    calc(100% - var(--cut-r)) calc(100% - var(--cut-r)),
+    calc(100% - var(--cut-r)) calc(100% + var(--foot-r)),
+    calc(100% - var(--cut-r) - var(--foot-r)) calc(100% + var(--foot-r)),
+    calc(100% - var(--cut-r) - var(--foot-r)) 100%,
+    calc(var(--cut-l) + var(--foot-l)) 100%,
+    calc(var(--cut-l) + var(--foot-l)) calc(100% + var(--foot-l)),
+    var(--cut-l) calc(100% + var(--foot-l)),
+    var(--cut-l) calc(100% - var(--cut-l)),
+    0 calc(100% - var(--cut-l)),
+    0 var(--popout-radius),
+    calc(0px - var(--ear-l)) var(--popout-radius)
+  );
+}

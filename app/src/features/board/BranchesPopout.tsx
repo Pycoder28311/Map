@@ -6,6 +6,7 @@ import { useMockObjects, createBranch, renameObject } from '../../mocks/projects
 import { useWorkspace } from '../workspace/useWorkspace'
 import { branchList, nextBranchName } from './branches'
 import BarPopover from './BarPopover'
+import { LIST_ITEM } from '../../components/ui/buttons/buttonStyles'
 
 const when = (ms: number) => new Date(ms).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 
@@ -98,7 +99,7 @@ export default function BranchesPopout({ mapId }: { mapId: string }) {
               type="button"
               aria-current={o.id === mapId}
               onClick={() => show(o.id)}
-              className="flex w-full cursor-pointer items-center gap-2 rounded-(--corner-sm) px-2 py-1.5 text-start hover:bg-fill"
+              className={LIST_ITEM}
             >
               <LuCheck className={`size-4 shrink-0 ${o.id === mapId ? '' : 'invisible'}`} aria-hidden />
               <span className="min-w-0 flex-1">

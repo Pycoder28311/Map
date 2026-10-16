@@ -5,7 +5,7 @@ import type { PlainIcon } from '../icons/IconSlot'
 // Full class strings so Tailwind can detect them at build time.
 const TRIGGER =
   'inline-flex shrink-0 items-center gap-1 rounded-(--btn-radius) px-2 py-1 text-body text-fg-muted cursor-pointer ' +
-  'transition-colors duration-200 ease-out hover:bg-fill hover:text-fg ' +
+  'transition-colors duration-200 ease-out hover-fill hover:text-fg ' +
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 // A native popover (top layer; closes on a click outside or Esc), UA defaults reset; top/right set on
 // open. It pops out of the trigger's corner (it's aligned to the trigger's right edge, below it)
@@ -15,11 +15,11 @@ const MENU =
 // An icon-only trigger (e.g. ⋯ on a column's label)
 const ICON_TRIGGER =
   'inline-flex shrink-0 items-center justify-center rounded-(--btn-close-radius) p-(--btn-close-p) text-fg-muted cursor-pointer ' +
-  'transition-colors duration-200 ease-out hover:bg-fill hover:text-fg ' +
+  'transition-colors duration-200 ease-out hover-fill hover:text-fg ' +
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 const ITEM =
   'flex h-(--menu-item-h) w-full items-center gap-(--menu-icon-gap) rounded-(--menu-item-radius) px-(--menu-item-px) ' +
-  'text-body cursor-pointer hover:bg-fill focus-visible:bg-fill focus-visible:outline-none aria-checked:font-medium ' +
+  'text-body cursor-pointer hover-fill focus-visible:bg-fill focus-visible:outline-none aria-checked:font-medium ' +
   'disabled:cursor-default disabled:text-fg-muted disabled:hover:bg-transparent'
 
 export type DropdownOption<T extends string> = {

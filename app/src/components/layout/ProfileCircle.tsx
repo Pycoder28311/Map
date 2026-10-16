@@ -17,7 +17,7 @@ export default function ProfileCircle() {
   return (
     <span
       title={user.name}
-      className="inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-fill text-small font-medium text-fg-muted ring-1 ring-line"
+      className="inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-(--radius-pill) bg-fill text-small font-medium text-fg-muted ring-1 ring-line"
     >
       {user.image ? <img src={user.image} alt="" className="size-full object-cover" /> : initialsOf(user.name || user.email)}
     </span>

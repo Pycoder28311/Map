@@ -8,14 +8,15 @@ import CreatePath from './CreatePath'
 import { RAISED } from './buttonLook'
 import { CREATE_KINDS, eligibleFor, type CreateKind, type Path } from './place'
 import { useCurrentPlace } from './useCurrentPlace'
+import { FOCUS_RING } from '../../components/ui/buttons/buttonStyles'
 
 // Full class strings so Tailwind can detect them at build time.
 // A field inside the title + body group (the group draws the border)
 const INNER = 'w-full bg-transparent px-(--field-px) text-body text-fg outline-none placeholder:text-fg-subtle'
 // The modal's Create: the floating button's Create face (CreateFab), same size, green and rounded
 const CREATE_BUTTON =
-  'inline-flex h-11 w-36 cursor-pointer items-center justify-center gap-2 rounded-[calc(var(--corner-lg)+4px)] bg-create text-base font-medium text-create-fg ' +
-  `transition-[background-color,box-shadow,translate] ${RAISED} hover:bg-create-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-create`
+  'corner-marks relative inline-flex h-11 w-36 cursor-pointer items-center justify-center gap-2 rounded-(--corner-xl) bg-create text-base font-medium text-create-fg ' +
+  `transition-[background-color,box-shadow,translate] ${RAISED} hover:bg-(--btn-create-hover-bg) ${FOCUS_RING} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-create`
 // A tab: one of the five kinds, in a row above the form
 const KIND_BUTTON =
   'flex shrink-0 cursor-pointer items-center gap-2 rounded-(--btn-radius) px-2.5 py-1.5 text-start text-body font-medium whitespace-nowrap transition-colors ' +
@@ -120,7 +121,7 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
                   title={ok.ok ? undefined : ok.why}
                   aria-pressed={k === kind}
                   onClick={() => pick(k)}
-                  className={`${KIND_BUTTON} ${k === kind ? 'bg-fill-strong text-fg' : 'text-fg-muted hover:bg-fill hover:text-fg'}`}
+                  className={`${KIND_BUTTON} ${k === kind ? 'bg-fill-strong text-fg' : 'text-fg-muted hover-fill hover:text-fg'}`}
                 >
                   <Icon className="size-(--btn-icon-size) shrink-0" />
                   {KIND_LABEL[k]}

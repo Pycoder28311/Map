@@ -18,7 +18,7 @@ type Props = {
 /** Row button with an icon, a label and an X on the right (e.g. a list item or a tab). From the "Map buttons" theme */
 export default function ClosableButton({ icon, iconAnimation = 'none', children, onClick, onClose, closeLabel = 'Close' }: Props) {
   return (
-    <div className="flex flex-1 min-w-0 items-center gap-(--btn-gap) text-base rounded-(--btn-radius) cursor-pointer px-(--btn-px) py-(--btn-py) transition-colors duration-200 ease-out hover:bg-fill">
+    <div className="flex flex-1 min-w-0 items-center gap-(--btn-gap) text-base rounded-(--btn-radius) cursor-pointer px-(--btn-px) py-(--btn-py) transition-colors duration-200 ease-out hover-fill">
       <button type="button" onClick={onClick} className="group/main flex min-w-0 items-center gap-(--btn-gap) cursor-pointer">
         {icon && <IconSlot icon={icon} animation={iconAnimation} />}
         {children}

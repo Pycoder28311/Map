@@ -11,6 +11,7 @@ import { KIND_ICON } from '../../../mocks/sidebarTree'
 import { useObjectDrag } from '../../drag/objectDrag'
 import type { useLinkNode } from '../../links/linkNode'
 import { toggleSelected, useSelected } from '../../select/selectStore'
+import { PILL_BUTTON } from '../../../components/ui/buttons/buttonStyles'
 
 // Full class strings so Tailwind can detect them at build time.
 // Every card in a row the same size, so it lines up (each kind arranges its own content inside)
@@ -174,7 +175,7 @@ export default function CardShell({ object, menu, onOpen, linkNodeFor, dropActiv
         }}
         aria-pressed={!!object.liked}
         aria-label={object.liked ? 'Unlike' : 'Like'}
-        className="absolute end-2 bottom-2 inline-flex cursor-pointer items-center gap-1 rounded-full bg-surface/80 px-1.5 py-0.5 text-small text-fg-muted hover:text-fg"
+        className={`${PILL_BUTTON} absolute end-2 bottom-2 gap-1 bg-surface/80 px-1.5 py-0.5 text-small text-fg-muted hover:text-fg`}
       >
         <LuHeart className={`size-3.5 ${object.liked ? 'fill-danger text-danger' : ''}`} />
         {object.likes}

@@ -17,7 +17,7 @@ const TOAST_MS = 6000
 // Full class strings so Tailwind can detect them at build time.
 // The two faces of the button, back to back: they never show through each other
 const FACE =
-  'absolute inset-0 flex cursor-pointer items-center justify-center gap-2 rounded-[calc(var(--corner-lg)+4px)] text-base font-medium [backface-visibility:hidden] ' +
+  'absolute inset-0 corner-marks flex cursor-pointer items-center justify-center gap-2 rounded-(--corner-xl) text-base font-medium [backface-visibility:hidden] ' +
   `transition-[background-color,box-shadow,translate] ${RAISED} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`
 
 type Made = { id: string; kind: CreateKind; name: string; where: string | null }
@@ -113,7 +113,7 @@ export default function CreateFab() {
             aria-hidden={open}
             aria-expanded={open}
             aria-controls="create-modal"
-            className={`${FACE} bg-create text-create-fg hover:bg-create-hover`}
+            className={`${FACE} bg-create text-create-fg hover:bg-(--btn-create-hover-bg)`}
           >
             <LuPlus aria-hidden className="size-5" />
             Create

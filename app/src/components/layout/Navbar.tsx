@@ -6,7 +6,7 @@ import ShareButton from '../../features/share/ShareButton'
 import PopoutLayer from '../ui/overlays/PopoutLayer'
 import MenuToggleIcon from '../ui/icons/MenuToggleIcon'
 import ProfileCircle from './ProfileCircle'
-import { FRAME_RADIUS } from '../../features/workspace/paneStyles'
+import { frameRadiusPx } from '../../features/workspace/paneStyles'
 import { useWorkspace } from '../../features/workspace/useWorkspace'
 import { useSidebar } from './sidebar/useSidebar'
 
@@ -36,7 +36,7 @@ export default function Navbar() {
         // As tall as the rail is wide: the ☰ (centred over the rail) is as far from the top as from the left
         <header className="relative flex h-(--sidebar-rail) items-center gap-2 bg-surface px-2">
             {/* Its shadow, and its popouts'; the page's top corners are rounded under it while panes show */}
-            <PopoutLayer barHeight="var(--sidebar-rail)" corners={panes ? FRAME_RADIUS : 0}>
+            <PopoutLayer barHeight="var(--sidebar-rail)" corners={panes ? frameRadiusPx() : 0}>
                 {/* As big as a sidebar row in the rail, right above them; no background */}
                 <button
                     type="button"

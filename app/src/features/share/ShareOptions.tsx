@@ -9,6 +9,7 @@ import { useMockObjects } from '../../mocks/projectsStore'
 import { KIND_ICON } from '../../mocks/sidebarTree'
 import { usePanelRegistry } from '../workspace/registryContext'
 import { shareUrl, socialLinks, type SocialSite } from './shareLinks'
+import { TEXT_BUTTON } from '../../components/ui/buttons/buttonStyles'
 
 const SITES: { site: SocialSite; label: string; icon: IconType }[] = [
   { site: 'x', label: 'X', icon: SiX },
@@ -20,7 +21,7 @@ const SITES: { site: SocialSite; label: string; icon: IconType }[] = [
 
 // Full class strings so Tailwind can detect them at build time.
 const SOCIAL =
-  'inline-flex size-9 items-center justify-center rounded-full bg-fill text-fg-muted transition-colors hover:bg-fill-strong hover:text-fg ' +
+  'inline-flex size-9 items-center justify-center rounded-(--radius-pill) bg-fill text-fg-muted transition-colors hover:bg-fill-strong hover:text-fg ' +
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 
 /** The ways to share one object's link: copy, the device's share sheet, social sites and email. `onChoose` adds "Choose another" */
@@ -82,7 +83,7 @@ export default function ShareOptions({ id, onChoose }: { id: string; onChoose?: 
       </div>
 
       {onChoose && (
-        <button type="button" onClick={onChoose} className="cursor-pointer self-start text-small text-fg-muted hover:text-fg">
+        <button type="button" onClick={onChoose} className={`${TEXT_BUTTON} self-start`}>
           Choose another
         </button>
       )}

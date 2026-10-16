@@ -2,12 +2,10 @@ import { useState } from 'react'
 import { LuChevronDown, LuHistory } from 'react-icons/lu'
 import BarPopout from '../../components/ui/overlays/BarPopout'
 import RecentList from './RecentList'
+import { FOCUS_RING, PILL_BUTTON } from '../../components/ui/buttons/buttonStyles'
 
 // Full class strings so Tailwind can detect them at build time.
-const PILL =
-  'inline-flex w-56 cursor-pointer items-center gap-2 rounded-full bg-surface-muted px-4 py-1.5 text-body text-fg-muted ' +
-  'transition-colors hover:bg-fill hover:text-fg ' +
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+const PILL = `${PILL_BUTTON} w-56 gap-2 bg-surface-muted px-4 py-1.5 text-body text-fg-muted transition-colors hover:bg-fill hover:text-fg ${FOCUS_RING}`
 
 /**
  * The navbar's centre: a "Recent History" pill; a click opens what was opened lately (the last 10,

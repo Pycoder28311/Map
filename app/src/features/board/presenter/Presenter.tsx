@@ -154,7 +154,7 @@ export default function Presenter({ mapId, onClose }: { mapId: string; onClose: 
                     reorder(i, i + (e.key === 'ArrowLeft' ? -1 : 1))
                   }
                 }}
-                className={`flex w-full cursor-grab flex-col gap-1 rounded-(--card-radius) border p-1 text-start ${i === current ? 'border-accent bg-fill' : 'border-line hover:bg-fill'}`}
+                className={`flex w-full cursor-grab flex-col gap-1 rounded-(--card-radius) border p-1 text-start ${i === current ? 'border-accent bg-fill' : 'border-line hover-fill'}`}
               >
                 <span className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-(--corner-sm) bg-white">
                   {picture ? <img src={picture} alt="" draggable={false} className="size-full object-contain" /> : <span className="text-small text-fg-subtle">Empty</span>}

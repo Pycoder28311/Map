@@ -41,7 +41,7 @@ export default function TreeRowIcon({ icon: Icon, folder, toggle }: Props) {
   )
 
   // The arrow's own hover background, like the other tree icons
-  const bg = folder ? 'hover:bg-fg/10' : ''
+  const bg = folder ? 'hover-faint' : ''
 
   if (toggle) {
     return (

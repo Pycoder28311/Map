@@ -4,6 +4,7 @@ import { SHAPE_LABEL, shapeParamDefault } from './shapes'
 import { shapeSample } from './samples'
 import StyleSample from './StyleSample'
 import { SHAPE_TYPES, type ShapeType } from './types'
+import { TEXT_BUTTON, pickClass } from '../../components/ui/buttons/buttonStyles'
 
 type Props = {
   value: ShapeType | null
@@ -34,7 +35,7 @@ export default function ShapeGrid({ value, onPick, onClear }: Props) {
               aria-label="None"
               title="None: draw lines"
               onClick={onClear}
-              className={`flex h-full min-h-12 w-full flex-col items-center justify-center gap-0.5 rounded-(--field-radius) border py-1 transition-colors ${value === null ? 'border-accent bg-accent/10' : 'border-line hover:bg-fill'}`}
+              className={`flex h-full min-h-12 w-full flex-col items-center justify-center gap-0.5 rounded-(--field-radius) border py-1 transition-colors ${pickClass(value === null)}`}
             >
               <LuBan aria-hidden className="size-5 text-fg-muted" />
               <span className="text-small text-fg-muted">None</span>
@@ -49,7 +50,7 @@ export default function ShapeGrid({ value, onPick, onClear }: Props) {
               aria-label={SHAPE_LABEL[shape]}
               title={SHAPE_LABEL[shape]}
               onClick={() => (value === shape && onClear ? onClear() : onPick(shape))}
-              className={`flex w-full items-center justify-center rounded-(--field-radius) border py-1 transition-colors ${value === shape ? 'border-accent bg-accent/10' : 'border-line hover:bg-fill'}`}
+              className={`flex w-full items-center justify-center rounded-(--field-radius) border py-1 transition-colors ${pickClass(value === shape)}`}
             >
               <StyleSample object={shapeSample(shape, 56, 40, shapeParamDefault(shape))} width={56} height={40} />
             </button>
@@ -57,7 +58,7 @@ export default function ShapeGrid({ value, onPick, onClear }: Props) {
         ))}
       </ul>
       {SHAPE_TYPES.length > fit && (
-        <button type="button" aria-expanded={more} onClick={() => setMore(!more)} className="cursor-pointer self-center text-small text-fg-muted hover:text-fg">
+        <button type="button" aria-expanded={more} onClick={() => setMore(!more)} className={`${TEXT_BUTTON} self-center`}>
           {more ? 'Show less' : 'Show more'}
         </button>
       )}

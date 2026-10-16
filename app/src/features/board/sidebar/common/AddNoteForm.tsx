@@ -50,7 +50,7 @@ export default function AddNoteForm({ mapId, objectId }: { mapId: string; object
             aria-selected={kind === t.kind}
             onClick={() => setKind(t.kind)}
             // The picked tab is half as wide again as the other (3 parts to 2), the width gliding when the pick changes
-            className={`${TAB} ${kind === t.kind ? 'grow-3 border-line-strong bg-fill-strong text-fg' : 'grow-2 border-line-strong text-fg-muted hover:bg-fill hover:text-fg'}`}
+            className={`${TAB} ${kind === t.kind ? 'grow-3 border-line-strong bg-fill-strong text-fg' : 'grow-2 border-line-strong text-fg-muted hover-fill hover:text-fg'}`}
           >
             <t.icon className="size-(--btn-icon-size) shrink-0" aria-hidden />
             {t.label}

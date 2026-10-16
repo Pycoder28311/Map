@@ -31,7 +31,7 @@ const MENU =
 // Fixed height: the dots animation computes where each item is from it
 const ITEM =
   'relative flex h-(--menu-item-h) w-full items-center rounded-(--menu-item-radius) px-(--menu-item-px) text-body text-start ' +
-  'cursor-pointer transition-colors duration-150 ease-out hover:bg-fill ' +
+  'cursor-pointer transition-colors duration-150 ease-out hover-fill ' +
   'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent'
 
 // Items and the lines between groups, --menu-gap apart

@@ -23,6 +23,6 @@ export const ICON_SHOW: Record<TreeIconShow, string> = {
 /** A right icon's own background (TreeIconBg) */
 export const ICON_BG: Record<TreeIconBg, string> = {
   none: '',
-  hover: 'hover:bg-fg/10',
+  hover: 'hover-faint',
   always: 'bg-fg/10',
 }

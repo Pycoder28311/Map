@@ -75,7 +75,7 @@ function MarksRow({ source }: { source: TextSource }) {
     <div className="flex flex-wrap items-stretch justify-between gap-1">
         {/* Bold and its weight are one element: one border, the button's end square against the input */}
         <div className={JOINED}>
-          <IconButton icon={LuBold} label="Bold" variant={bold ? 'primary' : 'ghost'} aria-pressed={bold} className="rounded-none! p-1!" onMouseDown={keep} onClick={onBold} />
+          <IconButton icon={LuBold} label="Bold" variant={bold ? 'primary' : 'ghost'} aria-pressed={bold} className="rounded-(--radius-none)! p-1!" onMouseDown={keep} onClick={onBold} />
           <input
             type="number"
             min={WEIGHT_MIN}
@@ -100,7 +100,7 @@ function MarksRow({ source }: { source: TextSource }) {
         </div>
         {/* Italic with how it slants, underline and strikethrough each with its line's colour: one element each */}
         <div className={JOINED}>
-          <IconButton icon={LuItalic} label="Italic (Ctrl+I)" variant={marks.italic ? 'primary' : 'ghost'} aria-pressed={marks.italic} className="rounded-none! p-1!" onMouseDown={keep} onClick={() => onMark('italic')} />
+          <IconButton icon={LuItalic} label="Italic (Ctrl+I)" variant={marks.italic ? 'primary' : 'ghost'} aria-pressed={marks.italic} className="rounded-(--radius-none)! p-1!" onMouseDown={keep} onClick={() => onMark('italic')} />
           <select
             value={oblique ? 'oblique' : 'italic'}
             aria-label="Italic style"
@@ -113,7 +113,7 @@ function MarksRow({ source }: { source: TextSource }) {
         </div>
         {LINES.map((m) => (
           <div key={m.mark} className={JOINED}>
-            <IconButton icon={m.icon} label={m.label} variant={marks[m.mark] ? 'primary' : 'ghost'} aria-pressed={marks[m.mark]} className="rounded-none! p-1!" onMouseDown={keep} onClick={() => onMark(m.mark)} />
+            <IconButton icon={m.icon} label={m.label} variant={marks[m.mark] ? 'primary' : 'ghost'} aria-pressed={marks[m.mark]} className="rounded-(--radius-none)! p-1!" onMouseDown={keep} onClick={() => onMark(m.mark)} />
             <span className="flex border-s border-line-strong">
               <ColourField bare label={`${m.name} colour`} value={lineColors[m.mark]} onLive={() => {}} onCommit={(color) => onLineColor(m.mark, color)} />
             </span>
@@ -142,7 +142,7 @@ function LayoutRows({ source }: { source: TextSource }) {
       <div className="flex flex-wrap items-stretch gap-1">
         <div className={JOINED}>
           {ALIGNS.map((a) => (
-            <IconButton key={a.id} icon={a.icon} label={a.label} variant={align === a.id ? 'primary' : 'ghost'} aria-pressed={align === a.id} className="rounded-none! p-1!" onMouseDown={keep} onClick={() => onAlign(a.id)} />
+            <IconButton key={a.id} icon={a.icon} label={a.label} variant={align === a.id ? 'primary' : 'ghost'} aria-pressed={align === a.id} className="rounded-(--radius-none)! p-1!" onMouseDown={keep} onClick={() => onAlign(a.id)} />
           ))}
         </div>
         <label className={`${JOINED} min-w-20 flex-1`} title="Gap between letters">
@@ -175,7 +175,7 @@ function LayoutRows({ source }: { source: TextSource }) {
           </label>
           {FRAMES.map((f) => (
             <div key={f.id} className={JOINED}>
-              <IconButton icon={f.icon} label={f.label} variant={frame === f.id ? 'primary' : 'ghost'} aria-pressed={frame === f.id} className="rounded-none! p-1!" onMouseDown={keep} onClick={() => onFrame(frame === f.id ? null : f.id)} />
+              <IconButton icon={f.icon} label={f.label} variant={frame === f.id ? 'primary' : 'ghost'} aria-pressed={frame === f.id} className="rounded-(--radius-none)! p-1!" onMouseDown={keep} onClick={() => onFrame(frame === f.id ? null : f.id)} />
               <span className="flex border-s border-line-strong">
                 <ColourField bare label={`${f.label} colour`} value={boxColor} onLive={() => {}} onCommit={onBoxColor} />
               </span>

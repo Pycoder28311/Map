@@ -36,7 +36,7 @@ export default function ForwardLink({ object, onShowBoardObject, board }: Props 
         <ul className="absolute end-0 top-full z-10 mt-1 flex min-w-40 flex-col rounded-(--card-radius) border border-line bg-surface p-1 shadow-lg">
           {links.map((link, i) => (
             <li key={i}>
-              <button type="button" onClick={() => go(link)} className="w-full cursor-pointer truncate rounded-(--corner-sm) px-2 py-1 text-start text-body hover:bg-fill">
+              <button type="button" onClick={() => go(link)} className="w-full cursor-pointer truncate rounded-(--corner-sm) px-2 py-1 text-start text-body hover-fill">
                 {linkName(link, board)}
               </button>
             </li>

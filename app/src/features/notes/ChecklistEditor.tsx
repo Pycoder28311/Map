@@ -38,7 +38,7 @@ function Row({ item, onText, onToggle, onRemove, onEnter, onBackspaceEmpty, inpu
         aria-label="List item"
         className={`min-w-0 flex-1 bg-transparent py-1 text-body outline-none ${item.done ? 'text-fg-subtle line-through' : ''}`}
       />
-      <button type="button" onClick={onRemove} aria-label="Delete item" className="cursor-pointer rounded-full p-1 text-fg-subtle opacity-0 group-hover/item:opacity-100 focus-visible:opacity-100 hover:text-fg">
+      <button type="button" onClick={onRemove} aria-label="Delete item" className="cursor-pointer rounded-(--radius-pill) p-1 text-fg-subtle opacity-0 group-hover/item:opacity-100 focus-visible:opacity-100 hover:text-fg">
         <LuX className="size-3.5" />
       </button>
     </li>

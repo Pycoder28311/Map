@@ -61,7 +61,7 @@ export default function ColourField({ label, value, onLive, onCommit, className 
             : `${wide ? 'h-9 w-full' : 'size-9'} cursor-pointer rounded-(--btn-close-radius) border border-line bg-transparent p-0.5`
         }
       >
-        <span className="block size-full rounded-[3px]" style={{ backgroundColor: held ?? value }} />
+        <span className="block size-full rounded-(--corner-xs)" style={{ backgroundColor: held ?? value }} />
       </button>
       <div id={id} popover="auto" role="dialog" aria-label={`${label} picker`} onBeforeToggle={place} onToggle={(e) => e.newState === 'closed' && setHeld(null)} className={PANEL}>
         <ColourPicker

@@ -94,7 +94,7 @@ export default function LayoutHoverLabels({ tile, template, split, names }: Prop
             // (turned ones start at the curve's end, so they stay on screen)
             translate: `${p.dx < 0 ? '-100%' : p.dx > 0 || p.start ? '0' : '-50%'} ${p.dy < 0 ? '-100%' : p.dy > 0 ? '0' : '-50%'}`,
           }}
-          className="absolute max-w-40 truncate rounded-full border border-line bg-surface px-2 py-0.5 text-small text-fg shadow-sm"
+          className="absolute max-w-40 truncate rounded-(--radius-pill) border border-line bg-surface px-2 py-0.5 text-small text-fg shadow-sm"
         >
           {p.name}
         </span>

@@ -6,6 +6,7 @@ import { useBoard } from './boardStore'
 import { layerLabel, layerList } from './layers'
 import { useSelection } from './selection'
 import { KIND_ICON } from './layerIcons'
+import { LIST_ITEM } from '../../components/ui/buttons/buttonStyles'
 
 
 /**
@@ -43,7 +44,7 @@ export default function LayersButton({ mapId, onPick }: { mapId: string; onPick:
                   type="button"
                   aria-pressed={selection.has(o.id)}
                   onClick={() => onPick(o.id)}
-                  className={`flex w-full cursor-pointer items-center gap-2 rounded-(--corner-sm) px-2 py-1.5 text-start hover:bg-fill ${selection.has(o.id) ? 'bg-fill' : ''}`}
+                  className={`${LIST_ITEM} ${selection.has(o.id) ? 'bg-fill' : ''}`}
                 >
                   <Icon className="size-4 shrink-0 text-fg-muted" aria-hidden />
                   <span className="min-w-0 truncate text-body">{layerLabel(o, board)}</span>

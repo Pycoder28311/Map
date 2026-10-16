@@ -68,7 +68,7 @@ export default function SidebarSection({ id, title, first, fixed, leading: own, 
     <section
       aria-label={title}
       onClick={isOpen ? undefined : toggle}
-      className={`relative -mx-3 -mb-3 flex flex-col gap-3 px-3 pb-3 ${first ? '' : 'pt-[calc(0.75rem+1px)] before:absolute before:inset-x-3 before:top-0 before:h-px before:bg-line'} ${isOpen ? '' : 'group/sec cursor-pointer hover:bg-fill'}`}
+      className={`relative -mx-3 -mb-3 flex flex-col gap-3 px-3 pb-3 ${first ? '' : 'pt-[calc(0.75rem+1px)] before:absolute before:inset-x-3 before:top-0 before:h-px before:bg-line'} ${isOpen ? '' : 'group/sec cursor-pointer hover-fill'}`}
     >
       {/* Open: the title bar lights up under the pointer like the closed section does, from the section's top line to just under the title, edge to edge */}
       <div

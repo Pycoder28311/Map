@@ -14,7 +14,7 @@ type Props = {
 
 const STEP = 0.05
 const HANDLE =
-  'absolute z-10 rounded-full transition-colors duration-150 hover:bg-fg-subtle/40 active:bg-fg-subtle/60 ' +
+  'absolute z-10 rounded-(--radius-pill) transition-colors duration-150 hover:bg-fg-subtle/40 active:bg-fg-subtle/60 ' +
   'focus-visible:bg-fg-subtle/60 focus-visible:outline-none max-lg:hidden'
 
 // Full class strings so Tailwind can detect them at build time.

@@ -18,7 +18,7 @@ export default function PointLinks({ links, board, onShowBoardObject }: { links:
       <ul className="flex flex-wrap gap-1.5">
         {links.map((link, i) => (
           <li key={i}>
-            <button type="button" onClick={() => go(link)} className="cursor-pointer rounded-full border border-line bg-fill px-3 py-1 text-small hover:bg-surface-sunken">
+            <button type="button" onClick={() => go(link)} className="cursor-pointer rounded-(--radius-pill) border border-line bg-fill px-3 py-1 text-small hover:bg-surface-sunken">
               {linkName(link, board)}
             </button>
           </li>

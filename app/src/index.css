@@ -4,6 +4,11 @@
 @import "./styles/typography.css";
 @import "./styles/animations.css";
 @import "./styles/valueBar.css";
+@import "./styles/cornerMarks.css";
+@import "./styles/hoverEffects.css";
+/* Themes: each overrides the base values above; the active one is set in lib/theme.ts */
+@import "./styles/themes/arcane.css";
+@import "./styles/themes/pixel.css";
 
 /* Number inputs can be scrubbed (components/ui/fields/numberScrub.ts): the double arrows while the pointer is over one, until it has the focus to type in */
 input[type='number']:not(:focus):not(:disabled) {

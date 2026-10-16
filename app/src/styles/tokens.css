@@ -3,12 +3,46 @@
    two groups are additions for text buttons and form fields in the same style. */
 :root {
    /* The two corner sizes everything below is built from: change these to change every rounded corner.
-      (The panes' corners are PANE_RADIUS in features/workspace/paneStyles.ts: keep it equal to --corner-lg.) */
-   --corner-lg: 8px;
-   --corner-sm: 6px;
+      (The panes' corners, features/workspace/paneStyles.ts, read --corner-lg too.) */
+   --corner-lg: 0px;
+   --corner-sm: 0px;
+   /* Extra sizes, derived from the two above (or fixed, for tiny swatches) */
+   --corner-xs: 3px;
+   --corner-xl: calc(var(--corner-lg) + 4px);
+   /* Pills and circles: as round as the element allows / a true circle */
+   --radius-pill: 9999px;
+   --radius-circle: 50%;
+   --radius-none: 0px;
 
    --btn-px: 6px;
    --btn-py: 6px;
+   /* outline of text and icon buttons: none in the base theme (themes can draw one) */
+   --btn-border-w: 0px;
+   --btn-border-c: transparent;
+   /* a shadow under primary buttons (box-shadow value): none in the base theme */
+   --btn-primary-shadow: 0 0 #0000;
+   /* the same for the green Create buttons (dashboard rows, the floating one's closed split button) */
+   --btn-create-shadow: 0 0 #0000;
+   /* marks in the corners of the green Create buttons (a CSS background value, see cornerMarks.css): none in the base theme */
+   --btn-corners: none;
+
+   /* Hover / pressed look of the buttons (Button, IconButton, Create buttons). The base theme changes the background
+      (these hover colours) and draws no inner shadow (the 0 0 #0000 ones); a theme can keep the background and draw
+      an inner shadow instead. "dark": on light and green buttons; "light": on gray and see-through ones. */
+   --btn-primary-hover-bg: var(--accent-hover);
+   --btn-secondary-hover-bg: var(--fill-strong);
+   --btn-ghost-hover-bg: var(--fill);
+   --btn-create-hover-bg: var(--create-hover);
+   --hover-fill-bg: var(--fill);
+   --hover-fill-strong-bg: var(--fill-strong);
+   --hover-faint-bg: color-mix(in oklab, var(--fg) 10%, transparent);
+   --btn-hover-inset-dark: 0 0 #0000;
+   --btn-active-inset-dark: 0 0 #0000;
+   --btn-hover-inset-light: 0 0 #0000;
+   --btn-active-inset-light: 0 0 #0000;
+   /* the raised floating / modal Create button (features/create/buttonLook.ts): at rest and while pressed */
+   --btn-raised-shadow: inset 0 2px 0 rgb(255 255 255 / 0.3), inset 0 -4px 0 rgb(0 0 0 / 0.24), 0 6px 16px rgb(0 0 0 / 0.22);
+   --btn-raised-shadow-active: inset 0 2px 0 rgb(255 255 255 / 0.3), inset 0 -2px 0 rgb(0 0 0 / 0.24), 0 3px 8px rgb(0 0 0 / 0.2);
    --btn-radius: var(--corner-lg);
    --btn-icon-size: 16px;
    --btn-icon-offset-start: 4px;
@@ -16,11 +50,13 @@
    --btn-close-radius: var(--corner-sm);
 
    --card-radius: var(--corner-lg);
+   /* a button sitting inside a card-rounded panel (the board's big tool buttons) */
+   --tool-radius: calc(var(--card-radius) - 2px);
 
-  /* Clickable icons (components/ui/icons/iconEffects.ts): grow on hover, shrink while pressed */
-  --icon-hover-scale: 1.12;
-  --icon-click-scale: 0.85;
-  --icon-effect-duration: 150ms;
+   /* Clickable icons (components/ui/icons/iconEffects.ts): grow on hover, shrink while pressed */
+   --icon-hover-scale: 1.12;
+   --icon-click-scale: 0.85;
+   --icon-effect-duration: 150ms;
 
    /* Text buttons (Button): the "pill" of the theme */
    --pill-px: 12px;
@@ -58,6 +94,12 @@
 
    /* Bar popouts (components/ui/overlays/BarPopout): rounded panel growing out of a bar's edge on hover */
    --popout-radius: 16px;
+   /* the panel's own bottom corners (the base theme rounds them with the popout radius) */
+   --popout-panel-radius: var(--popout-radius);
+   /* The concave corners joining a popout to its bar (the bar's colour with a quarter circle cut out; fillet-l has its
+      cut-out at the bottom left, fillet-r at the bottom right). A theme can draw them another way, see themes/arcane.css */
+   --popout-fillet-l: radial-gradient(circle at 0 100%, transparent calc(var(--popout-radius) - 0.5px), var(--surface) var(--popout-radius));
+   --popout-fillet-r: radial-gradient(circle at 100% 100%, transparent calc(var(--popout-radius) - 0.5px), var(--surface) var(--popout-radius));
    --popout-p: 12px;
    --popout-duration: 300ms;
 

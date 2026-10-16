@@ -2,8 +2,14 @@
 // Inline styles (not Tailwind classes) because the gap is also used in the grid's calc().
 import type { CSSProperties } from 'react'
 
-/** Corner rounding of a panel (px): keep it equal to --corner-lg (styles/tokens.css), like the cards */
-export const PANE_RADIUS = 8
+/** Corner rounding of a panel: the cards' --corner-lg (styles/tokens.css), so changing it there rounds the panels too */
+export const PANE_RADIUS = 'var(--corner-lg)'
+
+/** --corner-lg in px, for the few places that need a number (a shape's size); read when called, once the stylesheet is loaded */
+export function paneRadiusPx() {
+  const value = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--corner-lg'))
+  return Number.isFinite(value) ? value : 8
+}
 
 /** Space between two panels (px) */
 export const PANE_GAP = 6
@@ -21,13 +27,16 @@ export const paneStyle: CSSProperties = { borderRadius: PANE_RADIUS, border: PAN
 export const dropPreviewStyle: CSSProperties = { borderRadius: PANE_RADIUS }
 
 /** The area of panels (Workspace): the gap when stacked; --pane-radius rounds the small screens' scroll area */
-export const paneGridStyle: CSSProperties = { gap: PANE_GAP, '--pane-radius': `${PANE_RADIUS}px` } as CSSProperties
+export const paneGridStyle: CSSProperties = { gap: PANE_GAP, '--pane-radius': PANE_RADIUS } as CSSProperties
 
 /**
- * Rounding of the frame around the panels (px), shown only with 2+ panels.
+ * Rounding of the frame around the panels, shown only with 2+ panels.
  * A panel's radius + the inset: the frame's curve then runs parallel to the panel's own corner inside it.
  */
-export const FRAME_RADIUS = PANE_RADIUS + PANE_INSET
+export const FRAME_RADIUS = `calc(${PANE_RADIUS} + ${PANE_INSET}px)`
+
+/** The same in px (PopoutLayer draws the page's corners under the navbar from a number) */
+export const frameRadiusPx = () => paneRadiusPx() + PANE_INSET
 
 /**
  * The rounded frame holding the panels (Workspace); the bars' colour shows around its corners. The

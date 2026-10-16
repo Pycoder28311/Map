@@ -1,6 +1,7 @@
 import { KIND_ICON } from '../../layerIcons'
 import { select } from '../../selection'
 import type { BoardObject } from '../../types'
+import { LIST_ITEM } from '../../../../components/ui/buttons/buttonStyles'
 
 const KIND_NAME = { line: 'Line', border: 'Area', shape: 'Shape', text: 'Text', point: 'Point' } as const
 
@@ -17,7 +18,7 @@ export default function SelectionList({ mapId, selected }: { mapId: string; sele
           const Icon = KIND_ICON[o.kind]
           return (
             <li key={o.id}>
-              <button type="button" onClick={() => select(mapId, [o.id])} className="flex w-full cursor-pointer items-center gap-2 rounded-(--corner-sm) px-2 py-1.5 text-start hover:bg-fill">
+              <button type="button" onClick={() => select(mapId, [o.id])} className={LIST_ITEM}>
                 <Icon className="size-4 shrink-0 text-fg-muted" aria-hidden />
                 <span className="min-w-0 flex-1 truncate text-body">{listName(o)}</span>
               </button>

@@ -52,7 +52,7 @@ export default function Divider({ label, labelTo, action, compact = false, class
           onClick={action.onClick}
           disabled={action.disabled}
           tabIndex={compact ? -1 : undefined}
-          className={`${ICON_EFFECT_GROUP} ${ICON_BOX} ${ICON_BUTTON} hover:bg-fg/10 disabled:opacity-40 ${FADE} ${hidden}`}
+          className={`${ICON_EFFECT_GROUP} ${ICON_BOX} ${ICON_BUTTON} hover-faint disabled:opacity-40 ${FADE} ${hidden}`}
         >
           <action.icon className={`size-(--btn-icon-size) ${iconEffectClass()}`} />
         </button>

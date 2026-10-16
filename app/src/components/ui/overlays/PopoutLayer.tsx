@@ -25,8 +25,13 @@ const START_EDGE = '[data-popout-edge="start"]'
  * A concave corner in the bar's colour (a quarter circle cut out of its bottom `side` corner): under a
  * bridge, against the taller popout; or under the bar, at the page's rounded corners
  */
-const concave = (side: 'left' | 'right', radius = 'var(--popout-radius)'): CSSProperties => ({
-  background: `radial-gradient(circle at ${side === 'left' ? '100%' : '0'} 100%, transparent calc(${radius} - 0.5px), var(--surface) ${radius})`,
+const concave = (side: 'left' | 'right', radius?: string): CSSProperties => ({
+  // No radius (the bridges' ears): the theme's own fillet, like the popouts' ears (--popout-fillet-*, tokens.css)
+  background: radius
+    ? `radial-gradient(circle at ${side === 'left' ? '100%' : '0'} 100%, transparent calc(${radius} - 0.5px), var(--surface) ${radius})`
+    : side === 'left'
+      ? 'var(--popout-fillet-r)'
+      : 'var(--popout-fillet-l)',
 })
 
 

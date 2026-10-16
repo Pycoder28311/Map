@@ -23,7 +23,7 @@ export default function PointToolButton({ on, onToggle, what }: Props) {
           title={t.title}
           aria-selected={on === t.point}
           onClick={() => on !== t.point && onToggle()}
-          className={`${TAB} ${on === t.point ? 'grow-3 border-line-strong bg-fill-strong text-fg' : 'grow-2 border-line-strong text-fg-muted hover:bg-fill hover:text-fg'}`}
+          className={`${TAB} ${on === t.point ? 'grow-3 border-line-strong bg-fill-strong text-fg' : 'grow-2 border-line-strong text-fg-muted hover-fill hover:text-fg'}`}
         >
           <t.icon className="size-(--btn-icon-size) shrink-0" aria-hidden />
           {t.label}

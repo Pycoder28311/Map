@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { LuChevronDown } from 'react-icons/lu'
+import { PICK_ROW_WIDE, pickClass } from '../../../../components/ui/buttons/buttonStyles'
 
 /** `sample` is given the width the example has to fill (it stretches over the row) */
 export type RowOption<T extends string | number> = { value: T; label: string; sample: (width: number) => ReactNode }
@@ -32,7 +33,7 @@ function Stretch({ draw }: { draw: (width: number) => ReactNode }) {
   )
 }
 
-const ROW = 'flex w-full items-center gap-3 rounded-(--field-radius) border px-2 py-1 text-start transition-colors'
+const ROW = PICK_ROW_WIDE
 
 /**
  * One whole row is the picked option (its example and its name) with an arrow at its right that opens the others,
@@ -63,7 +64,7 @@ export default function OptionRowPicker<T extends string | number>({ label, valu
         aria-expanded={open}
         aria-controls={list}
         onClick={() => setOpen((on) => !on)}
-        className={`${ROW} cursor-pointer border-line py-0! pe-0! hover:bg-fill`}
+        className={`${ROW} cursor-pointer border-line py-0! pe-0! hover-fill`}
       >
         <span className="flex min-w-0 flex-1 items-center gap-3 py-1">
           <Stretch draw={current.sample} />
@@ -86,7 +87,7 @@ export default function OptionRowPicker<T extends string | number>({ label, valu
                   onChange(o.value)
                   setOpen(false)
                 }}
-                className={`${ROW} cursor-pointer ${o.value === value ? 'border-accent bg-accent/10' : 'border-transparent hover:bg-fill'}`}
+                className={`${ROW} cursor-pointer ${pickClass(o.value === value, 'border-transparent hover-fill')}`}
               >
                 <Stretch draw={o.sample} />
                 <span className="shrink-0 text-small text-fg-muted">{o.label}</span>

@@ -36,7 +36,7 @@ export default function PointBannerSection({ banner, onChange }: { banner: strin
         <button
           type="button"
           onClick={() => input.current?.click()}
-          className="flex aspect-[16/7] w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-(--card-radius) border border-dashed border-line-strong text-small text-fg-muted hover:bg-fill"
+          className="flex aspect-[16/7] w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-(--card-radius) border border-dashed border-line-strong text-small text-fg-muted hover-fill"
         >
           <LuImagePlus className="size-5" />
           Add banner image

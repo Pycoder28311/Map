@@ -14,7 +14,7 @@ export default function ZoomControls({ scale, onZoom, onFit }: Props) {
         type="button"
         title="Fit the board (0)"
         onClick={onFit}
-        className="min-w-14 cursor-pointer rounded-(--btn-close-radius) px-1 py-(--btn-close-p) text-center text-small tabular-nums hover:bg-fill focus-visible:outline-2 focus-visible:outline-accent"
+        className="min-w-14 cursor-pointer rounded-(--btn-close-radius) px-1 py-(--btn-close-p) text-center text-small tabular-nums hover-fill focus-visible:outline-2 focus-visible:outline-accent"
       >
         {Math.round(scale * 100)}%
       </button>

@@ -12,7 +12,12 @@ type SortChoice = CardSort | 'manual'
 // sides facing each other are square). Closed: its own green button,
 // darker while hovered. Open: part of the dropdowns' gray shape, darker while hovered
 const PART = 'flex items-center self-stretch py-(--pill-py) transition-colors'
-const PART_HOVER = { closed: 'bg-create hover:bg-create-hover', open: 'hover:bg-fill-strong' }
+const PART_HOVER = { closed: 'bg-create hover:bg-(--btn-create-hover-bg)', open: 'hover-fill-strong' }
+// The split button's parts: while hovered / pressed, an inner shadow of their own (the outer shadow is the whole button's)
+const SPLIT_HOVER = {
+  closed: `${PART_HOVER.closed} hover:[box-shadow:var(--btn-hover-inset-dark)] active:[box-shadow:var(--btn-active-inset-dark)]`,
+  open: PART_HOVER.open,
+}
 
 const SORTS: ExtendMenuItem<SortChoice>[] = (Object.keys(SORT_LABEL) as CardSort[]).map((value) => ({ value, label: SORT_LABEL[value] }))
 // While a sort is on, its button shows it (and leaves it out of its options); this one goes back to the manual order
@@ -106,7 +111,7 @@ export default function RowHeader({ name, onRename, sort, onSort, creatable, onC
           <button
             type="button"
             onClick={() => onCreate(kind)}
-            className={`${PART} ${PART_HOVER.closed} cursor-pointer gap-1.5 rounded-(--btn-radius) px-(--pill-px) text-body font-medium text-create-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`}
+            className={`${PART} ${PART_HOVER.closed} corner-marks relative cursor-pointer gap-1.5 rounded-(--btn-radius) px-(--pill-px) text-body font-medium text-create-fg [box-shadow:var(--btn-create-shadow)] hover:[box-shadow:var(--btn-hover-inset-dark),var(--btn-create-shadow)] active:[box-shadow:var(--btn-active-inset-dark),var(--btn-create-shadow)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`}
           >
             {KIND_LABEL[kind]}
             <LuPlus aria-hidden className="size-4" />
@@ -133,14 +138,14 @@ export default function RowHeader({ name, onRename, sort, onSort, creatable, onC
                     e.stopPropagation()
                     onCreate(kind)
                   }}
-                  className={`${PART} ${PART_HOVER[open ? 'open' : 'closed']} cursor-pointer rounded-s-(--btn-radius) px-(--pill-px)`}
+                  className={`${PART} ${SPLIT_HOVER[open ? 'open' : 'closed']} cursor-pointer rounded-s-(--btn-radius) px-(--pill-px)`}
                 >
                   {KIND_LABEL[kind]}
                 </span>
               ) : (
-                <span className={`${PART} ${PART_HOVER[open ? 'open' : 'closed']} rounded-s-(--btn-radius) px-(--pill-px)`}>Create</span>
+                <span className={`${PART} ${SPLIT_HOVER[open ? 'open' : 'closed']} rounded-s-(--btn-radius) px-(--pill-px)`}>Create</span>
               )}
-              <span aria-hidden className={`${PART} ${PART_HOVER[open ? 'open' : 'closed']} ms-0.5 rounded-e-(--btn-radius) px-2`}>
+              <span aria-hidden className={`${PART} ${SPLIT_HOVER[open ? 'open' : 'closed']} ms-0.5 rounded-e-(--btn-radius) px-2`}>
                 {open ? <LuX className="size-4" /> : named ? <LuPlus className="size-4" /> : <LuChevronDown className="size-4" />}
               </span>
             </>

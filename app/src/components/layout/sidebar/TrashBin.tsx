@@ -78,7 +78,7 @@ export default function TrashBin({ compact }: { compact: boolean }) {
         {count > 0 && (
           // Compact: a badge on the icon; open: at the row's end
           <span
-            className={`rounded-full bg-fill-strong px-1.5 text-small leading-4 text-fg transition-[inset] duration-(--sidebar-duration) ${
+            className={`rounded-(--radius-pill) bg-fill-strong px-1.5 text-small leading-4 text-fg transition-[inset] duration-(--sidebar-duration) ${
               compact ? 'absolute start-[calc(var(--btn-px)+var(--btn-icon-size))] top-0.5' : 'ms-auto'
             }`}
           >

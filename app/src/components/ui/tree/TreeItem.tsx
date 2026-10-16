@@ -74,7 +74,7 @@ const INTO = 'bg-drop/16 ring-[1.4px] ring-inset ring-drop/55'
 function DropLine({ at }: { at: 'before' | 'after' }) {
   return (
     <span aria-hidden className={`pointer-events-none absolute start-(--btn-px) end-0 z-20 h-0.5 bg-drop ${LINE[at]}`}>
-      <span className="absolute -start-[3px] -top-[2px] size-1.5 rounded-full bg-drop" />
+      <span className="absolute -start-[3px] -top-[2px] size-1.5 rounded-(--radius-pill) bg-drop" />
     </span>
   )
 }
@@ -174,7 +174,7 @@ export default function TreeItem({
         {...node.rowData}
         data-row-id={node.id}
         style={{ '--icons-rest': iconsWidth(alwaysShown), '--icons-hover': iconsWidth(right.length) } as CSSProperties}
-        className={`${dropAt === 'into' ? INTO : ''} ${dnd?.draggingId === node.id ? LEFT_BEHIND : ''} group/row relative flex items-center rounded-(--btn-radius) hover:bg-fill [--icons:var(--icons-rest)] hover:[--icons:var(--icons-hover)] has-[:focus-visible]:[--icons:var(--icons-hover)] max-w-[var(--tree-row-max,100%)] transition-[max-width] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none`}
+        className={`${dropAt === 'into' ? INTO : ''} ${dnd?.draggingId === node.id ? LEFT_BEHIND : ''} group/row relative flex items-center rounded-(--btn-radius) hover-fill [--icons:var(--icons-rest)] hover:[--icons:var(--icons-hover)] has-[:focus-visible]:[--icons:var(--icons-hover)] max-w-[var(--tree-row-max,100%)] transition-[max-width] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none`}
       >
         {state.isFolder && (
           <span data-drop-icon={node.id} className="absolute start-(--btn-px) top-1/2 z-10 flex -translate-y-1/2">

@@ -12,7 +12,7 @@ import Modal from '../../ui/overlays/Modal'
 import { snapshotRows } from '../../ui/tree/rowFlip'
 import { DeleteDialog } from '../../../features/objects/ObjectDialogs'
 
-const ROW = 'flex items-center gap-2 rounded-(--btn-radius) px-2 py-1.5 hover:bg-fill'
+const ROW = 'flex items-center gap-2 rounded-(--btn-radius) px-2 py-1.5 hover-fill'
 
 /**
  * What's in the trash (objects, then saved layouts): restore one, delete it for good, or empty the
