@@ -193,6 +193,42 @@ export const SPRITES = {
     '.kSdbdSkSdTdSTk.',
     '.kkkkk.kk.kkkkk.',
   ],
+  // A rolled-up papyrus scroll, its spiral end facing left, tied with a red ribbon (27 × 16)
+  scroll: [
+    '............kkk............',
+    '....kkkkkkkkrrRkkkkkkkk....',
+    '...kTTYYYYYYrrRYYYYYYYYk...',
+    '..kTyyYYYYYYrrRYYYYYYYYYk..',
+    '.kTyTTyyyyyyrrRyyyyyyyyyyk.',
+    'kTyTYYyyyyyyrrRyyyyyyyyyyyk',
+    'kTyTYYyyyyyyrrRyyyyyyyyyyyk',
+    'kTyYYYyyyyyyrrRyyyyyyyyyyyk',
+    'kTyYYYyyyyyyrrRyyyyyyyyyyyk',
+    'kTyTYYttttttrrRtttttttttttk',
+    'kTyTYYttttttrrRtttttttttttk',
+    '.kTyTTttttttrrRttttttttttk.',
+    '..kTyyTTTTTTrrRTTTTTTTTTk..',
+    '...kTTTTTTTTrrRTTTTTTTTk...',
+    '....kkkkkkkkrRRkkkkkkkk....',
+    '..........krrkRRk..........',
+  ],
+  // The same scroll unrolled, both ends still rolled (48 × 15)
+  scrollOpen: [
+    '....kkkkkk............................kkkkkk....',
+    '...kTTYYYYkkkkkkkkkkkkkkkkkkkkkkkkkkkkYYYYTTk...',
+    '..kTyyYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYyyTk..',
+    '.kTyTTyyyyYYYYYYYYYYYYYYYYYYYYYYYYYYYYyyyyTTyTk.',
+    'kTyTYYyyyyYYYTTTYYTTYYTTTTTYTTYTTYYYYYyyyyYYTyTk',
+    'kTyTYYyyyyYYYYYYYYYYYYYYYYYYYYYYYYYYYYyyyyYYTyTk',
+    'kTyYYYyyyyYYYTTTTYTTTYYTTTTYTTYYTTTYYYyyyyYYYyTk',
+    'kTyYYYyyyyYYYYYYYYYYYYYYYYYYYYYYYYYYYYyyyyYYYyTk',
+    'kTyTYYttttYYYTTTTYYTTTYTTTTYYTTTTYYYYYttttYYTyTk',
+    'kTyTYYttttYYYYYYYYYYYYYYYYYYYYYYYYYYYYttttYYTyTk',
+    '.kTyTTttttyyyyyyyyyyyyyyyyyyyyyyyyyyyyttttTTyTk.',
+    '..kTyyTTTTttttttttttttttttttttttttttttTTTTyyTk..',
+    '...kTTTTTTkkkkkkkkkkkkkkkkkkkkkkkkkkkkTTTTTTk...',
+    '....kkkkkk............................kkkkkk....',
+  ],
 } as const
 
 export type SpriteName = keyof typeof SPRITES

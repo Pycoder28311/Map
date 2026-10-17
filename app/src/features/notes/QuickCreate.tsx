@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { LuChevronDown, LuFileText, LuStickyNote } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
+import PixelSprite from '../../components/ui/pixelart/PixelSprite'
 import ExtendMenu, { type ExtendMenuItem } from '../../components/ui/overlays/ExtendMenu'
 import { createArticle, createNote } from '../../mocks/projectsStore'
 
@@ -170,6 +171,20 @@ export default function QuickCreate() {
             />
             {/* The gray line between title and text */}
             <div aria-hidden className="mx-4 h-px bg-line" />
+          </div>
+        </div>
+
+        {/* A faint pixel-art papyrus floating in the card's background, left of the kind button. Opening, the
+            rolled one rolls off to the left while the sheet unrolls behind it (clipped from the right) */}
+        <div aria-hidden className="pointer-events-none absolute end-32 top-2 h-8 w-24 opacity-15 motion-reduce:animate-none animate-float">
+          <div className={`absolute end-0 top-0 transition-[translate,opacity] duration-500 ease-out motion-reduce:transition-none ${open ? '-translate-x-[42px] opacity-0' : ''}`}>
+            <PixelSprite name="scroll" scale={2} />
+          </div>
+          <div
+            style={{ clipPath: open ? 'inset(0 0 0 0)' : 'inset(0 0 0 56%)' }}
+            className={`absolute end-0 top-0.5 transition-[clip-path,opacity] duration-500 ease-out motion-reduce:transition-none ${open ? '' : 'opacity-0'}`}
+          >
+            <PixelSprite name="scrollOpen" scale={2} />
           </div>
         </div>
 
