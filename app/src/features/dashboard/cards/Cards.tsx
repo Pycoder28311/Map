@@ -46,15 +46,15 @@ export default function Card(props: CardProps) {
 function ObjectCard(props: CardProps) {
   const { object } = props
   return (
-    <CardShell {...props}>
+    <CardShell {...props} corner>
       {(name) => (
         <>
-          <div style={placeholderArt(object.id)} className="h-24 shrink-0 rounded-(--btn-radius)" />
-          <div className="flex items-baseline justify-between gap-2 px-0.5">
+          <div style={placeholderArt(object.id)} className="h-28 shrink-0 rounded-(--btn-radius)" />
+          <div className="flex items-center justify-between gap-2 px-0.5">
             <KindName kind="object" name={name} />
             <span className="shrink-0 text-small text-fg-subtle">{DATE.format(object.createdAt)}</span>
           </div>
-          <p className="line-clamp-2 px-0.5 text-small text-fg-muted">{object.description || 'No description'}</p>
+          <p className="line-clamp-2 min-h-[2lh] px-0.5 text-small text-fg-muted group-data-pending/card:hidden">{object.description || 'No description'}</p>
         </>
       )}
     </CardShell>
@@ -65,16 +65,16 @@ function ObjectCard(props: CardProps) {
 function ArticleCard(props: CardProps) {
   const { object } = props
   return (
-    <CardShell {...props}>
+    <CardShell {...props} corner>
       {(name) => (
         <>
           <div style={placeholderArt(object.id)} className="flex h-28 shrink-0 items-center justify-center rounded-(--btn-radius) text-fg/25">
             <LuFileText className="size-8" />
           </div>
-          <div className="line-clamp-2 px-0.5 [&_span]:whitespace-normal">
+          <div className="line-clamp-2 min-h-[2lh] px-0.5 group-data-pending/card:min-h-0 [&_span]:whitespace-normal">
             <KindName kind="article" name={name} />
           </div>
-          <p className="truncate px-0.5 pe-12 text-small text-fg-subtle">{object.text?.split('\n')[0] || 'Empty'}</p>
+          <p className="truncate px-0.5 text-small text-fg-subtle group-data-pending/card:hidden">{object.text?.split('\n')[0] || 'Empty'}</p>
         </>
       )}
     </CardShell>
@@ -105,7 +105,7 @@ function NoteCard(props: CardProps) {
     <CardShell {...props} size={COMMENT_SIZE} className="bg-note">
       {(name) => (
         <>
-          <div className="flex items-baseline gap-2 px-0.5 pe-8 pt-0.5">
+          <div className="flex items-center gap-2 px-0.5 pe-8 pt-0.5">
             <KindName kind="note" name={name} />
             <span className="shrink-0 text-small text-fg-subtle">{DATE.format(object.createdAt)}</span>
           </div>

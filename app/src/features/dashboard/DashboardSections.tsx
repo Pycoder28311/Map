@@ -1,7 +1,7 @@
 import { useDroppable } from '@dnd-kit/core'
 import { useEffect, useRef, useState } from 'react'
 import { findObject, KIND_LABEL, type MockObject, type ObjectKind } from '../../mocks/projects'
-import { createObjectOf, getObjects, renameObject, useLinks, useMockObjects } from '../../mocks/projectsStore'
+import { createObjectOf, deleteObject, getObjects, renameObject, useLinks, useMockObjects } from '../../mocks/projectsStore'
 import { useTimeout } from '../../lib/useTimeout'
 import NoteModal from '../notes/NoteModal'
 import { clearSelected } from '../select/selectStore'
@@ -18,6 +18,7 @@ import { columnLabel, sectionsBelow, type ColumnId } from './columns'
 import RowHeader from './RowHeader'
 import { describeDrop, rowItems, rowParent, sortCards, type CardSort, type RowId } from './rows'
 import { undoRowDrop, useCardFlip, useRowDrop, type RowTarget, type RowUndo } from './useRowDrop'
+import { useRowReorder } from './useRowReorder'
 import { useRowSort } from './useRowSort'
 import { SectionCardLook } from './SectionCard'
 
@@ -54,6 +55,10 @@ export default function DashboardSections({ columns, projects }: Props) {
   const open = useOpenLayout()
   const { sortOf, setSort } = useRowSort()
   const { target } = useObjectDrop()
+  const reorder = useRowReorder(
+    rootRef,
+    projects.map((p) => p.id),
+  )
   const [note, setNote] = useState<Note | null>(null)
   const noteTimer = useTimeout()
   // A card just created: its name opens for editing
@@ -116,10 +121,25 @@ export default function DashboardSections({ columns, projects }: Props) {
       {rows.map((row) => {
         const projectId = rowParent(row)
         return (
-          <section key={row} data-dash-block={row} aria-label={rowName(row)} className="flex flex-col gap-3">
+          <section
+            key={row}
+            data-dash-block={row}
+            data-project-row={projectId ?? undefined}
+            aria-label={rowName(row)}
+            className={`relative flex flex-col gap-3 transition-opacity ${projectId && reorder.dragging === projectId ? 'opacity-40' : ''}`}
+          >
+            {/* Where a row being moved would land: a line above this row (or below the last project row) */}
+            {projectId && reorder.at?.beforeId === projectId && reorder.dragging !== projectId && (
+              <div aria-hidden className="pointer-events-none absolute -top-4 inset-x-0 h-0.5 rounded-full bg-accent" />
+            )}
+            {projectId && reorder.at && reorder.at.beforeId === null && projectId === projects[projects.length - 1]?.id && reorder.dragging !== projectId && (
+              <div aria-hidden className="pointer-events-none absolute -bottom-4 inset-x-0 h-0.5 rounded-full bg-accent" />
+            )}
             <RowHeader
               name={rowName(row)}
               onRename={projectId ? (name) => renameObject(projectId, name) : undefined}
+              onOpen={projectId ? () => open(single({ type: 'project', id: projectId })) : undefined}
+              onGripDown={projectId ? reorder.start(projectId) : undefined}
               sort={sortOf(row)}
               onSort={(sort: CardSort | null) => setSort(row, sort)}
               creatable={row === 'notes' ? NOTE_KINDS : projectId ? PROJECT_KINDS : ROOT_KINDS}
@@ -146,6 +166,8 @@ export default function DashboardSections({ columns, projects }: Props) {
                   onOpen={() => (o.kind === 'note' ? setNoteId(o.id) : open(single({ type: o.kind, id: o.id })))}
                   dropActive={rowTarget?.folderId === o.id}
                   renameOnMount={o.id === created}
+                  // A just-created element: Cancel removes it, Create keeps it
+                  pending={o.id === created ? { onCancel: () => (deleteObject(o.id), setCreated(null)), onCreate: () => setCreated(null) } : undefined}
                   menu={(onRename) =>
                     actions.menuOf(o, {
                       panel: { type: o.kind, id: o.id },

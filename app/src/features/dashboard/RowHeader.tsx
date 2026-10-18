@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LuChevronDown, LuPencil, LuPlus, LuX } from 'react-icons/lu'
+import { LuChevronDown, LuGripVertical, LuPencil, LuPlus, LuX } from 'react-icons/lu'
 import ExtendMenu, { type ExtendMenuItem } from '../../components/ui/overlays/ExtendMenu'
 import { KIND_LABEL, type ObjectKind } from '../../mocks/projects'
 import { KIND_ICON } from '../../mocks/sidebarTree'
@@ -28,6 +28,10 @@ type Props = {
   name: string
   /** Renames the row (projects); none: the name can't be edited (Orphans) */
   onRename?: (name: string) => void
+  /** A click on the name opens the row's page (projects) */
+  onOpen?: () => void
+  /** The 6-dot grip on the name's left (shown on hover) starts moving the row (projects) */
+  onGripDown?: (e: React.PointerEvent<HTMLButtonElement>) => void
   sort: CardSort | null
   onSort: (sort: CardSort | null) => void
   /** What Create offers here (e.g. no Map at the top level) */
@@ -42,14 +46,14 @@ type Props = {
 }
 
 /**
- * A Dashboard row's header: its name on the left (a project's is edited in place: hover shows ✎ and a
- * text cursor, a click edits it), Sort by (a background only on hover) and Create (green) on the
+ * A Dashboard row's header: its name on the left (a project's opens its page on a click; hover shows a 6-dot grip
+ * on its left, to move the row, and ✎ on its right, which edits the name in place), Sort by (a background only on hover) and Create (green) on the
  * right, as big as a sidebar row; they extend (ExtendMenu: the button grows to show its options).
  * Create is split in two parts with a small gap between (Create ▾); both open its menu. Named
  * (`named`): "Note +" creates a note at once; in a project, "<last kind> | +" creates it from the name,
  * and the + part (where the arrow was) opens the menu to create another kind (which it then remembers).
  */
-export default function RowHeader({ name, onRename, sort, onSort, creatable, onCreate, named = false }: Props) {
+export default function RowHeader({ name, onRename, onOpen, onGripDown, sort, onSort, creatable, onCreate, named = false }: Props) {
   const [editing, setEditing] = useState(false)
   // The kind a named Create makes: the last one picked from its menu (the first at the start)
   const [picked, setPicked] = useState<CreatableKind | null>(null)
@@ -58,40 +62,71 @@ export default function RowHeader({ name, onRename, sort, onSort, creatable, onC
 
   return (
     <div className="flex items-center justify-between gap-3">
-      {editing && onRename ? (
-        <input
-          defaultValue={name}
-          aria-label="Project name"
-          autoFocus
-          onFocus={(e) => e.currentTarget.select()}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') e.currentTarget.blur()
-            if (e.key === 'Escape') {
-              e.currentTarget.value = name
-              e.currentTarget.blur()
-            }
-          }}
-          onBlur={(e) => {
-            const next = e.currentTarget.value.trim()
-            if (next && next !== name) onRename(next)
-            setEditing(false)
-          }}
-          className="-ms-6 min-w-0 flex-1 rounded-(--corner-sm) bg-transparent ps-6 text-title outline-2 outline-accent [field-sizing:content]"
-        />
-      ) : onRename ? (
-        // ✎ appears on the name's left on hover (it hangs into the margin, so the name never moves)
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          title="Rename"
-          className="group/name relative -ms-6 flex min-w-0 cursor-text items-center ps-6 text-start text-title"
-        >
-          <LuPencil aria-hidden className="absolute start-0 size-4 text-fg-subtle opacity-0 transition-opacity group-hover/name:opacity-100 group-focus-visible/name:opacity-100" />
-          <span className="truncate">{name}</span>
-        </button>
-      ) : (
-        <h2 className="truncate text-title">{name}</h2>
-      )}
+      {/* The grip hangs into the margin on the name's left, so the name never moves */}
+      <div className="group/name relative -ms-6 flex min-w-0 items-center">
+        {onGripDown ? (
+          <button
+            type="button"
+            data-drag-handle
+            onPointerDown={onGripDown}
+            aria-label={`Move ${name}`}
+            title="Drag to move"
+            className="inline-flex w-6 shrink-0 cursor-grab touch-none items-center justify-center rounded-(--btn-close-radius) py-0.5 text-fg-subtle opacity-0 transition-opacity group-hover/name:opacity-100 hover:text-fg focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent active:cursor-grabbing"
+          >
+            <LuGripVertical className="size-(--btn-icon-size)" />
+          </button>
+        ) : (
+          <span aria-hidden className="w-6 shrink-0" />
+        )}
+        {editing && onRename ? (
+          <input
+            defaultValue={name}
+            aria-label="Project name"
+            autoFocus
+            onFocus={(e) => e.currentTarget.select()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur()
+              if (e.key === 'Escape') {
+                e.currentTarget.value = name
+                e.currentTarget.blur()
+              }
+            }}
+            onBlur={(e) => {
+              const next = e.currentTarget.value.trim()
+              if (next && next !== name) onRename(next)
+              setEditing(false)
+            }}
+            className="min-w-0 flex-1 rounded-(--corner-sm) bg-transparent text-title outline-2 outline-accent [field-sizing:content]"
+          />
+        ) : (
+          <>
+            {onOpen ? (
+              <button
+                type="button"
+                onClick={onOpen}
+                title={`Open ${name}`}
+                className="min-w-0 cursor-pointer truncate rounded-(--corner-sm) text-start text-title hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+              >
+                {name}
+              </button>
+            ) : (
+              <h2 className="truncate text-title">{name}</h2>
+            )}
+            {/* ✎ on the name's right on hover: renames it in place */}
+            {onRename && (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                aria-label={`Rename ${name}`}
+                title="Rename"
+                className="ms-2 inline-flex shrink-0 cursor-pointer rounded-(--btn-close-radius) p-1 text-fg-subtle opacity-0 transition-opacity group-hover/name:opacity-100 hover:text-fg focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent"
+              >
+                <LuPencil aria-hidden className="size-4" />
+              </button>
+            )}
+          </>
+        )}
+      </div>
 
       <div className="flex shrink-0 items-center gap-2">
         {/* They extend: the button grows down to show its options (not the one it already shows), and

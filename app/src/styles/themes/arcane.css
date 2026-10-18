@@ -51,8 +51,8 @@
      is the panel plus those pieces. */
   --popout-panel-radius: 0px;
   --popout-line-color: #6b7280;
-  /* The navbar gets the same line as the popouts have inside them: along its bottom, 2px up from the edge */
-  --navbar-line-display: block;
+  /* No inner line along the navbar's bottom (block: a line, 2px up from the edge, like the popouts' had) */
+  --navbar-line-display: none;
   /* Pixel-art items along the top of the Dashboard */
   --decor-display: flex;
   --decor-opacity: 0.55;
@@ -110,22 +110,8 @@
   );
 }
 
-/* A thin gray line inside the popout: a plain rectangle (square corners, not following the cut ones) without a top
-   side, drawn behind the content. --popout-line-inset: its distance from the edge. Its bottom corners are further out than
-   the diagonal cuts, so the panel's clip-path hides the tips of the line there; raise the inset to bring them back. */
-:root[data-theme='arcane'] .popout-panel {
-  --popout-line-width: 1px;
-}
-:root[data-theme='arcane'] .popout-panel::before {
-  content: '';
-  position: absolute;
-  /* from the top edge down: it goes on from the line in the bar (PopoutLayer's BarLine) */
-  inset: 0 var(--popout-line-inset) var(--popout-line-inset);
-  z-index: -1;
-  pointer-events: none;
-  border: var(--popout-line-width) solid var(--popout-line-color);
-  border-top: 0;
-}
+/* (No thin gray line inside the popouts any more: it was a ::before rectangle with border --popout-line-width in --popout-line-color,
+   inset by --popout-line-inset.) */
 
 /* The popouts have the bar's texture too, so they stay one with it */
 :root[data-theme='arcane'] .popout-panel {

@@ -174,17 +174,30 @@ export default function QuickCreate() {
           </div>
         </div>
 
-        {/* A faint pixel-art papyrus floating in the card's background, left of the kind button. Opening, the
-            rolled one rolls off to the left while the sheet unrolls behind it (clipped from the right) */}
-        <div aria-hidden className="pointer-events-none absolute end-32 top-2 h-8 w-24 opacity-15 motion-reduce:animate-none animate-float">
-          <div className={`absolute end-0 top-0 transition-[translate,opacity] duration-500 ease-out motion-reduce:transition-none ${open ? '-translate-x-[42px] opacity-0' : ''}`}>
-            <PixelSprite name="scroll" scale={2} />
-          </div>
-          <div
-            style={{ clipPath: open ? 'inset(0 0 0 0)' : 'inset(0 0 0 56%)' }}
-            className={`absolute end-0 top-0.5 transition-[clip-path,opacity] duration-500 ease-out motion-reduce:transition-none ${open ? '' : 'opacity-0'}`}
-          >
-            <PixelSprite name="scrollOpen" scale={2} />
+        {/* A faint pixel-art papyrus floating in the card's background, left of the kind button. Opening, it
+            unrolls downward: the ribbon comes off, and the sheet with its bottom roll drops out from under the
+            top roll. It keeps the text row's place while the card grows upward (same timing as the card's move) */}
+        <div
+          aria-hidden
+          style={{ top: open ? 8 + size.title : 8 }}
+          className={`pointer-events-none absolute end-32 h-[78px] w-[54px] opacity-25 transition-[top] ${ANIMATE}`}
+        >
+          <div className="size-full motion-reduce:animate-none animate-float">
+            {/* The sheet and the bottom roll: out of sight above while rolled, clipped by this box */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div
+                className={`absolute end-0 top-3.5 transition-transform duration-700 ease-out motion-reduce:transition-none ${open ? '' : '-translate-y-full'}`}
+              >
+                <PixelSprite name="scrollDrop" scale={2} />
+              </div>
+            </div>
+            {/* The roll on top: tied while folded, untied once open */}
+            <div className={`absolute end-0 top-0 transition-opacity duration-200 motion-reduce:transition-none ${open ? 'opacity-0' : ''}`}>
+              <PixelSprite name="scroll" scale={2} />
+            </div>
+            <div className={`absolute end-0 top-0 transition-opacity duration-200 motion-reduce:transition-none ${open ? '' : 'opacity-0'}`}>
+              <PixelSprite name="scrollRoll" scale={2} />
+            </div>
           </div>
         </div>
 
