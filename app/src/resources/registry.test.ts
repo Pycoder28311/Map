@@ -62,7 +62,13 @@ describe('the resource registry', () => {
     expect(resourcesWith('trash').map((r) => r.name)).toEqual(['projects', 'notes', 'folders', 'articles', 'objectCards', 'maps'])
     expect(resourcesWith('quickCreate').map((r) => r.name)).toEqual(['notes'])
     expect(RESOURCES.filter((r) => r.linked).map((r) => r.name)).toEqual(['notes', 'folders', 'articles', 'objectCards'])
-    expect(RESOURCES.filter((r) => r.surfaces.sidebar?.group === 'orphans').map((r) => r.name)).toEqual(['folders', 'articles', 'objectCards', 'maps'])
+    expect(resourcesWith('sidebar').map((r) => r.name)).toEqual(['projects', 'notes'])
+    expect(RESOURCES.filter((r) => r.parents?.length).map((r) => [r.name, r.parents!.map((p) => `${p.type}:${p.resource}`)])).toEqual([
+      ['notes', ['project:projects', 'folder:folders']],
+      ['folders', ['project:projects', 'folder:folders']],
+      ['articles', ['project:projects', 'folder:folders']],
+      ['objectCards', ['project:projects', 'folder:folders']],
+    ])
   })
 
   it('makes a list page per resource with one, at its API path', () => {

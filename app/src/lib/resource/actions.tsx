@@ -2,9 +2,10 @@
 // row, a Dashboard card, the Trash). What it offers follows from the resource: pin only if the resource has pinned items, a panel
 // only if it can be opened as one.
 import { useState, type ReactNode } from 'react'
-import { LuColumns2, LuCopy, LuPencil, LuPin, LuPinOff, LuRotateCcw, LuTrash, LuTrash2 } from 'react-icons/lu'
+import { LuColumns2, LuCopy, LuFolderInput, LuPencil, LuPin, LuPinOff, LuRotateCcw, LuTrash, LuTrash2 } from 'react-icons/lu'
 import ResourceDeleteDialog from '../../components/ui/resource/ResourceDeleteDialog'
 import ResourceErrorDialog from '../../components/ui/resource/ResourceErrorDialog'
+import ResourceMoveDialog from '../../components/ui/resource/ResourceMoveDialog'
 import type { TreeMenuGroup } from '../../components/ui/tree/types'
 import { useWorkspace } from '../../features/workspace/useWorkspace'
 import type { AnyResource } from '../../resources/types'
@@ -26,6 +27,7 @@ export function useResourceMenu(resource: AnyResource) {
   const actions = useResourceActions(resource)
   const workspace = useWorkspace()
   const [deleting, setDeleting] = useState<MenuItem | null>(null)
+  const [moving, setMoving] = useState<MenuItem | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   /** Runs an action; a failure opens the error dialog */
@@ -64,6 +66,8 @@ export function useResourceMenu(resource: AnyResource) {
       ],
       [
         { label: 'Duplicate', icon: LuCopy, onClick: () => void attempt('duplicate it', () => duplicate(item)) },
+        // An item that can have a parent (project, folder) goes into another: one update of its parent
+        ...(resource.parents?.length ? [{ label: 'Move to…', icon: LuFolderInput, onClick: () => setMoving(item) }] : []),
         ...(panel ? [{ label: 'Add in screen', icon: LuColumns2, onClick: () => workspace.open(panel) }] : []),
         {
           label: 'Move to Trash',
@@ -81,6 +85,7 @@ export function useResourceMenu(resource: AnyResource) {
 
   const dialogs: ReactNode = (
     <>
+      {moving && <ResourceMoveDialog resource={resource} item={moving} onClose={() => setMoving(null)} />}
       {deleting && <ResourceDeleteDialog resource={resource} item={deleting} onClose={() => setDeleting(null)} />}
       {error && <ResourceErrorDialog message={error} onClose={() => setError(null)} />}
     </>

@@ -11,14 +11,14 @@ import type { FieldWidget } from './types'
 
 /** Where a resource shows up; `page: true` gives it a list page at /<its API path> */
 export type UiSurfaces = {
-  /** Its own sidebar section, or a group of the Orphans section (the items without a parent); rows shown before "Show more" */
-  sidebar?: { limit: number; group?: 'own' | 'orphans' }
+  /** Its own sidebar section, with the rows shown before "Show more" */
+  sidebar?: { limit: number }
   page?: boolean
   panel?: boolean
   search?: boolean
   recent?: boolean
   trash?: boolean
-  /** A Dashboard column (⋯ on a column) and a row below the columns */
+  /** A Dashboard column (⋯ on a column), its items in the project rows below the columns, and a Create there */
   dashboard?: boolean
   /** The Dashboard's "Take a note…" input makes one */
   quickCreate?: boolean
@@ -81,7 +81,7 @@ export const RESOURCE_UI: Record<TableName | MockTableName, ResourceUi> = {
     icon: LuFolderClosed,
     untitled: 'Untitled folder',
     fields: { title: { placeholder: 'Title' }, description: { placeholder: 'Description' } },
-    surfaces: { ...EVERYWHERE, sidebar: { limit: 5, group: 'orphans' } },
+    surfaces: { ...EVERYWHERE },
   },
   articles: {
     panelType: 'article',
@@ -90,7 +90,7 @@ export const RESOURCE_UI: Record<TableName | MockTableName, ResourceUi> = {
     icon: LuFileText,
     untitled: 'Untitled article',
     fields: { title: { placeholder: 'Title' }, content: { label: 'Text', placeholder: 'Write the article…' } },
-    surfaces: { ...EVERYWHERE, sidebar: { limit: 5, group: 'orphans' } },
+    surfaces: { ...EVERYWHERE },
   },
   objectCards: {
     panelType: 'object',
@@ -100,7 +100,7 @@ export const RESOURCE_UI: Record<TableName | MockTableName, ResourceUi> = {
     untitled: 'Untitled object card',
     card: 'image',
     fields: { title: { placeholder: 'Title' }, content: { label: 'Text', placeholder: 'Describe it (pictures too)…' } },
-    surfaces: { ...EVERYWHERE, sidebar: { limit: 5, group: 'orphans' } },
+    surfaces: { ...EVERYWHERE },
   },
   // In memory only (mock.config.ts): no table on the server yet
   maps: {
@@ -111,7 +111,7 @@ export const RESOURCE_UI: Record<TableName | MockTableName, ResourceUi> = {
     untitled: 'Untitled map',
     card: 'map',
     fields: { title: { placeholder: 'Title' }, branchOf: { hidden: true } },
-    surfaces: { ...EVERYWHERE, page: false, sidebar: { limit: 5, group: 'orphans' } },
+    surfaces: { ...EVERYWHERE, page: false },
     panel: { load: () => import('../features/maps/MapPanel'), fill: true },
     effects: {
       copied: (fromId, toId) => void import('../features/board/boardStore').then(({ copyBoard }) => copyBoard(fromId, toId)),

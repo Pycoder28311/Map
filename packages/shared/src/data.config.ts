@@ -9,8 +9,8 @@ import { defineTables, type FilterOf, type InputOf, type ItemOf, type ListItemOf
 /** Pinned first, then by position, then by id */
 const ORDERED = { pinned: true, position: true } as const
 
-/** What a linked row can point at as its parent (relations come later: for now the pair is only stored) */
-const PARENT = { types: ['project', 'folder'] } as const
+/** What a linked row can point at as its parent: its `objectType`, and the table that type is (ownedRepo checks the parent there) */
+const PARENT = { types: { project: 'projects', folder: 'folders' } } as const
 
 export const DATA = defineTables({
   projects: {
@@ -27,7 +27,7 @@ export const DATA = defineTables({
     preview: 'content',
     requireOneOf: ['title', 'content'],
     link: PARENT,
-    // Its index stays as it was (lists of notes are not filtered by parent yet)
+    // Its index stays as it was (no migration for the notes): its lists by parent read through the owner and archived
     listFilters: ['archived'],
   },
   folders: {

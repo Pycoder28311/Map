@@ -10,7 +10,7 @@ const { things } = defineTables({
     fields: { title: field.text(50), content: field.richText() },
     preview: 'content',
     requireOneOf: ['title', 'content'],
-    link: { types: ['folder'] },
+    link: { types: { folder: 'things' } },
   },
 })
 const api = createMockApi(things, [{ title: 'a' }, { title: 'b', content: '<p>words</p>' }])

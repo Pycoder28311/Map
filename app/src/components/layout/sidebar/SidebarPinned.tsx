@@ -4,7 +4,6 @@ import { useListStore } from '../../../lib/resource/listStoreContext'
 import type { AnyResource } from '../../../resources/types'
 import Divider from '../../ui/Divider'
 import ResourceRows, { type SidebarTreeSettings } from './ResourceRows'
-import { sidebarFilter } from './sidebarLists'
 
 type Props = { resources: AnyResource[]; tree: SidebarTreeSettings; compact: boolean }
 
@@ -16,7 +15,7 @@ const isPinned = (item: Record<string, unknown>) => item.pinned === true
  */
 export default function SidebarPinned({ resources, tree, compact }: Props) {
   const store = useListStore()
-  const keys = resources.map((r) => listKey(r.name, { archived: false, ...sidebarFilter(r) }))
+  const keys = resources.map((r) => listKey(r.name, { archived: false }))
   const states = useSyncExternalStore(store.watchAll, () => store.snapshotMany(keys))
   const withPins = resources.filter((_, i) => states[i].items.some((item) => isPinned(item as Record<string, unknown>)))
   if (withPins.length === 0) return null

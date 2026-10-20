@@ -1,12 +1,13 @@
 // The tests every user-owned table must pass (ownedRepo.test.ts runs them for each table of the data config). A table with
 // overrides runs them too: `describeOwnedRepo('notes', ownedRepo(schema.notes, DATA.notes, { … }))`.
-import { DATA, previewOf, type Table, type TableName } from '@map/shared'
+import { DATA, previewOf, TABLE_NAMES, type Table, type TableName } from '@map/shared'
 import { generateSQLiteDrizzleJson, generateSQLiteMigration } from 'drizzle-kit/api'
 import { drizzle } from 'drizzle-orm/sqlite-proxy'
 import { DatabaseSync } from 'node:sqlite'
 import { describe, expect, it } from 'vitest'
 import * as schema from '../db/schema'
 import type { Ctx, Repo } from './crud'
+import { ownedRepo } from './ownedRepo'
 
 // The real schema in a real in-memory SQLite, created from the SQL drizzle-kit writes for it
 export const sqlite = new DatabaseSync(':memory:')
@@ -154,19 +155,82 @@ export function describeOwnedRepo(name: TableName, repo: AnyRepo) {
     }
 
     if (table.link) {
-      const [parentType] = table.link.types
+      const [parentType, parentTable] = Object.entries(table.link.types)[0]
+      // A real parent of the user's: made through the repo of the table its type names
+      const parentName = TABLE_NAMES.find((n) => DATA[n].tableName === parentTable || n === parentTable)!
+      const parentRepo = ownedRepo((schema as never)[parentName], DATA[parentName] as unknown as Table) as unknown as AnyRepo
+      const parentOf = async (ctx: Ctx) => ((await parentRepo.create(ctx, DATA[parentName].input.parse(sample(DATA[parentName] as unknown as Table))))).id as number
+
       it('keeps a parent, and lists by parent or by having none', async () => {
         const ctx = newUser()
+        const parent = await parentOf(ctx)
         const orphan = await create(ctx, sample(table, 1))
-        const child = await create(ctx, { ...sample(table, 2), objectType: parentType, objectId: 7 })
-        expect(child).toMatchObject({ objectType: parentType, objectId: 7 })
+        const child = await create(ctx, { ...sample(table, 2), objectType: parentType, objectId: parent })
+        expect(child).toMatchObject({ objectType: parentType, objectId: parent })
         expect(ids((await list(ctx, { objectType: 'none' })).items)).toEqual([orphan.id])
-        expect(ids((await list(ctx, { objectType: parentType, objectId: '7' })).items)).toEqual([child.id])
-        expect(ids((await list(ctx, { objectType: parentType, objectId: '8' })).items)).toEqual([])
+        expect(ids((await list(ctx, { objectType: parentType, objectId: String(parent) })).items)).toEqual([child.id])
+        expect(ids((await list(ctx, { objectType: parentType })).items)).toEqual([child.id])
+        expect(ids((await list(ctx, { objectType: parentType, objectId: String(parent + 100) })).items)).toEqual([])
         // Back to no parent
         expect(await update(ctx, child.id as number, { objectType: null, objectId: null })).toMatchObject({ objectType: null, objectId: null })
         expect((await list(ctx, { objectType: 'none' })).items).toHaveLength(2)
       })
+
+      it('moves a row to another parent', async () => {
+        const ctx = newUser()
+        const [a, b] = [await parentOf(ctx), await parentOf(ctx)]
+        const row = await create(ctx, { ...sample(table), objectType: parentType, objectId: a })
+        expect(await update(ctx, row.id as number, { objectType: parentType, objectId: b })).toMatchObject({ objectId: b })
+        expect(ids((await list(ctx, { objectType: parentType, objectId: String(a) })).items)).toEqual([])
+      })
+
+      it('refuses a parent that is missing or someone else\'s, on create and on move', async () => {
+        const ctx = newUser()
+        const other = newUser()
+        const theirs = await parentOf(other)
+        await expect(create(ctx, { ...sample(table), objectType: parentType, objectId: 999999 })).rejects.toMatchObject({ status: 400, code: 'UNKNOWN_REFERENCE' })
+        await expect(create(ctx, { ...sample(table), objectType: parentType, objectId: theirs })).rejects.toMatchObject({ status: 400 })
+        const row = await create(ctx, sample(table))
+        await expect(update(ctx, row.id as number, { objectType: parentType, objectId: theirs })).rejects.toMatchObject({ status: 400 })
+        expect((await repo.get(ctx, row.id as number))?.objectType).toBeNull()
+      })
+
+      it('does not read for a parent when a write does not set one', async () => {
+        const ctx = newUser()
+        const row = await create(ctx, sample(table))
+        const queries: string[] = []
+        const real = sqlite.prepare.bind(sqlite)
+        sqlite.prepare = ((query: string) => (queries.push(query), real(query))) as typeof sqlite.prepare
+        try {
+          await update(ctx, row.id as number, { archived: true })
+        } finally {
+          sqlite.prepare = real
+        }
+        expect(queries.filter((q) => /select/i.test(q))).toEqual([])
+      })
+
+      it('turns the children of a deleted parent into orphans', async () => {
+        const ctx = newUser()
+        const parent = await parentOf(ctx)
+        const child = await create(ctx, { ...sample(table), objectType: parentType, objectId: parent })
+        expect(await parentRepo.remove(ctx, parent)).toBe(true)
+        expect(await repo.get(ctx, child.id as number)).toMatchObject({ objectType: null, objectId: null })
+      })
+
+      // A table whose parent can be a row of its own table: no cycles
+      if (parentTable === table.tableName || parentTable === table.name) {
+        it('refuses a row inside itself or inside its own children', async () => {
+          const ctx = newUser()
+          const a = await create(ctx, sample(table, 1))
+          const b = await create(ctx, { ...sample(table, 2), objectType: parentType, objectId: a.id })
+          const c = await create(ctx, { ...sample(table, 3), objectType: parentType, objectId: b.id })
+          await expect(update(ctx, a.id as number, { objectType: parentType, objectId: a.id })).rejects.toMatchObject({ status: 400 })
+          await expect(update(ctx, a.id as number, { objectType: parentType, objectId: b.id })).rejects.toMatchObject({ status: 400 })
+          await expect(update(ctx, a.id as number, { objectType: parentType, objectId: c.id })).rejects.toMatchObject({ status: 400 })
+          // Moving up is fine
+          expect(await update(ctx, c.id as number, { objectType: parentType, objectId: a.id })).toMatchObject({ objectId: a.id })
+        })
+      }
     }
   })
 }

@@ -52,7 +52,7 @@ articles: {
   fields: { title: field.text(200), content: field.richText() },
   preview: 'content',                                  // lists send `preview` (its first words) instead of `content`
   requireOneOf: ['title', 'content'],                  // a new row needs one of them
-  link: PARENT,                                        // object_type ('project' | 'folder') + object_id: its parent
+  link: PARENT,                                        // object_type ('project' | 'folder') + object_id: its parent (PARENT names the table of each type)
 },
 
 // app/src/resources/resources.config.ts
@@ -60,7 +60,7 @@ articles: {
   panelType: 'article',                                // panel refs and URLs: article:5
   label: 'Article', plural: 'Articles', icon: LuFileText, untitled: 'Untitled article',
   fields: { content: { label: 'Text', placeholder: 'Write the article…' } },   // optional: labels, placeholders, widget, hidden
-  surfaces: { ...EVERYWHERE, sidebar: { limit: 5, group: 'orphans' } },
+  surfaces: { ...EVERYWHERE },
 },
 ```
 
@@ -87,10 +87,10 @@ A new kind: add it to `fields.ts` (its zod rule), to `columnOf` in `backend/src/
 
 | Surface | Screen |
 |---|---|
-| `sidebar: { limit, group }` | its own sidebar section (`group: 'own'`, default) or a group of **Orphans** (`'orphans'`: only its items without a parent) |
+| `sidebar: { limit }` | its own sidebar section, with `limit` rows before "Show more" (without it, the table is not in the sidebar: its items are on the Dashboard, in their project's row) |
 | `page: true` | a list page at `/<path>` (also a workspace panel) |
 | `panel: true` | an item opens as a workspace panel (`<panelType>:<id>`); `panel: { load, fill }` gives it its own (a map's board) |
-| `dashboard: true` | a Dashboard column (⋯ on a column) and a row of cards below; `card: 'plain' \| 'image' \| 'map'` |
+| `dashboard: true` | a Dashboard column (⋯ on a column) and its items as cards in their project's row (or the Orphans row) below the columns; `card: 'plain' \| 'image' \| 'map'` |
 | `create: true` | a tab of the floating Create button's modal (its title and first text field) |
 | `quickCreate: true` | the Dashboard's "Take a note…" input makes one (one table only) |
 | `search: true` | the navbar search finds it (title + preview or description) |
@@ -142,16 +142,29 @@ come from the configs. The registry test fails if a table is missing from either
 Remove its entries from the three files above (data config, `schema.ts`, UI config), generate the migration (`DROP TABLE`), deploy the
 code first, then apply it. Saved Recent entries and layouts that point at it are skipped by the app.
 
-### Put a table in Orphans or in its own section
+### Show a table in the sidebar or only on the Dashboard
 
-`resources.config.ts`: `sidebar: { limit: 5, group: 'orphans' }` or `sidebar: { limit: 5 }`. Orphans shows only the items without a
-parent (`?objectType=none`) for tables with a `link`.
+`resources.config.ts`: `sidebar: { limit: 5 }` gives it a sidebar section; without `sidebar` its items show only on the Dashboard (in
+the row of their project, or in the Orphans row), in the columns (⋯ on a column), on its list page and in search.
 
-### Give a table a parent link
+### Parent / child (projects and their folders, articles, cards, notes)
 
-`data.config.ts`: `link: PARENT` (or `{ types: ['project'] }`). It adds `object_type` / `object_id` (both set or both empty, a CHECK),
-the list filter `?objectType=<type>&objectId=<id>` or `?objectType=none`, and puts them in the list index. For now the pair is only
-checked for its shape (an allowed type, a positive id): whether the parent exists and is the user's comes with the relations.
+A table with a `link` can have a parent: `objectType` (a key of `link.types`) + `objectId`, both set or both `null`. `link.types` maps
+each type to the table it is: `{ project: 'projects', folder: 'folders' }`.
+
+- **Read the children of a project:** the Dashboard reads each resource's one list and groups it by parent (`features/dashboard/tree.ts`:
+  an item is in the row of the project it is in, also through folders; the rest is Orphans). To read them from the API:
+  `GET /api/articles?objectType=project&objectId=5` (`?objectType=none` = no parent). In the app, `useResourceList(res, { filter: { objectType, objectId } })` is
+  a list of its own in the store (one request); prefer grouping the list you already hold.
+- **Create a child:** `create({ ..., objectType: 'project', objectId: 5 })` (the Dashboard's Add in a project's row does this).
+- **Change the parent:** `update(id, { objectType, objectId })`, or `{ objectType: null, objectId: null }` for none. "Move to…" in the ⋯ menu
+  (`ResourceMoveDialog`) does this for any table with a `link`, and the lists in the store follow without reading again.
+- **What the server checks** (`ownedRepo`, only when a write sets a parent): the parent exists in the table of its type, is the user's, and
+  is not the row itself or one of its own children (a recursive query up the chain, at most 20 levels). A write that sets no parent
+  reads nothing for this. A failed check is `400` (`UNKNOWN_REFERENCE` or `VALIDATION_FAILED`) with the field `objectId`.
+- **Deleting a parent** sets the parent of its children (rows of every table that can point at it) to none: they become orphans. Archiving
+  a parent keeps them as they are; the Dashboard shows them in the Orphans row while it is in the Trash.
+- **A new kind of parent:** add it to `PARENT.types` in `data.config.ts` (and, for a table of its own, give that table a `link` to nest it).
 
 ### Something a table does its own way
 

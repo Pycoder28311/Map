@@ -1,7 +1,8 @@
 // The data hooks every screen of a resource uses. Lists and items are read through one shared store (listStore.ts), so screens that
 // show the same data ask the server once; a write that succeeded goes into it (changes.ts) without reading again.
-import { PAGE_SIZE_DEFAULT } from '@map/shared/page-size'
-import { useCallback, useMemo, useState, useSyncExternalStore } from 'react'
+import { PAGE_SIZE_DEFAULT, PAGE_SIZE_MAX } from '@map/shared/page-size'
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import type { AnyResource } from '../../resources/types'
 import { notifyChanged } from './changes'
 import { itemKey, listKey, NO_ITEM } from './listStore'
 import { useListStore } from './listStoreContext'
@@ -73,6 +74,43 @@ export function useResourceList<TItem, TListItem, TInput, TUpdate, TFilter exten
     loadMore,
     refresh,
   }
+}
+
+export type ListsResult = {
+  lists: { resource: AnyResource; items: Record<string, unknown>[]; status: ListState<unknown>['status']; hasMore: boolean }[]
+  /** Every list loaded, none still loading */
+  ready: boolean
+  /** Some list has more than it holds */
+  hasMore: boolean
+  loadMore: () => void
+}
+
+/**
+ * The live lists of several resources at once (the same lists the sidebar and the columns show: one store entry each, one request
+ * each, shared), `limit` items of each (default: the API's biggest page; more with `loadMore`). For a screen that groups items of
+ * different resources (the Dashboard's project rows), which cannot call useResourceList in a loop.
+ */
+export function useResourceLists(resources: AnyResource[], { limit = PAGE_SIZE_MAX, enabled = true }: { limit?: number; enabled?: boolean } = {}): ListsResult {
+  const store = useListStore()
+  const keys = useMemo(() => resources.map((r) => listKey(r.name, { archived: false })), [resources])
+  const [count, setCount] = useState(limit)
+
+  useEffect(() => {
+    if (!enabled) return
+    const stops = resources.map((resource, i) => store.subscribe(keys[i], resource, { archived: false }, Math.max(limit, count), () => {}))
+    return () => stops.forEach((stop) => stop())
+  }, [store, resources, keys, enabled, limit, count])
+
+  const states = useSyncExternalStore(store.watchAll, () => store.snapshotMany(keys))
+  const lists = resources.map((resource, i) => ({
+    resource,
+    items: states[i].items.slice(0, Math.max(limit, count)) as Record<string, unknown>[],
+    status: states[i].status,
+    hasMore: states[i].items.length > Math.max(limit, count) || states[i].nextCursor !== null,
+  }))
+  const hasMore = lists.some((l) => l.hasMore)
+  const loadMore = useCallback(() => setCount((n) => n + limit), [limit])
+  return { lists, ready: states.every((s) => s.loaded), hasMore, loadMore }
 }
 
 export type ItemResult<TItem> = {

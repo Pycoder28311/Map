@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { resourcesWith } from '../../resources/registry'
-import { columnLabel, DEFAULT_COLUMNS, menuEntries, moveColumn, pickColumn, sectionsBelow, validColumns, type ColumnId } from './columns'
+import { columnLabel, DEFAULT_COLUMNS, menuEntries, moveColumn, pickColumn, validColumns, type ColumnId } from './columns'
 
 const cols: ColumnId[] = ['recent', 'notes', 'maps']
 const lists = resourcesWith('dashboard').map((r) => r.name)
@@ -31,13 +31,6 @@ describe('moveColumn', () => {
     expect(moveColumn(cols, 0, 2)).toEqual(['notes', 'maps', 'recent'])
     expect(moveColumn(cols, 2, 0)).toEqual(['maps', 'recent', 'notes'])
     expect(moveColumn(cols, 1, 1)).toBe(cols)
-  })
-})
-
-describe('sectionsBelow', () => {
-  it('lists every resource that is not a column (Recent is only a column)', () => {
-    expect(sectionsBelow(['recent', 'notes', 'maps'])).toEqual(['projects', 'folders', 'articles', 'objectCards'])
-    expect(sectionsBelow(['projects', 'folders', 'articles'])).toEqual(['notes', 'objectCards', 'maps'])
   })
 })
 

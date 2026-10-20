@@ -11,7 +11,6 @@ import type { TreeNode, TreeRightIcon } from '../../ui/tree/types'
 import TreeView from '../../ui/tree/TreeView'
 import ResourceSidebarSection from './ResourceSidebarSection'
 import type { SidebarTreeSettings } from './ResourceRows'
-import SidebarOrphans from './SidebarOrphans'
 import SidebarPinned from './SidebarPinned'
 
 const DIVIDER = 'my-(--divider-gap)'
@@ -27,13 +26,11 @@ const DASHBOARD_NODE: TreeNode = {
 }
 
 const IN_SIDEBAR = resourcesWith('sidebar')
-const OWN = IN_SIDEBAR.filter((r) => r.surfaces.sidebar?.group !== 'orphans')
-const ORPHANS = IN_SIDEBAR.filter((r) => r.surfaces.sidebar?.group === 'orphans')
 
 /**
- * The sidebar's content, in sections (top to bottom): Layouts, Pinned, Dashboard, one section per resource with its own (Projects,
- * Notes), then Orphans (the items without a parent: folders, articles, object cards, maps), as the UI config says
- * (resources.config.ts: surfaces.sidebar). Items are created (+), renamed in place (menu or double-click on the name), pinned,
+ * The sidebar's content, in sections (top to bottom): Layouts, Pinned, Dashboard, then one section per resource that has one (Projects,
+ * Notes), as the UI config says (resources.config.ts: surfaces.sidebar). The other items (folders, articles, object cards, maps) are
+ * on the Dashboard, in their project's row. Items are created (+), renamed in place (menu or double-click on the name), pinned,
  * duplicated, moved to the Trash and deleted through their ⋯ menu. Rows open on screen stay visible.
  */
 export default function SidebarTree({ compact }: { compact: boolean }) {
@@ -70,11 +67,9 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
       <Divider compact={compact} className={DIVIDER} />
       <TreeView nodes={[DASHBOARD_NODE]} label="Main navigation" {...tree} />
 
-      {OWN.map((resource) => (
+      {IN_SIDEBAR.map((resource) => (
         <ResourceSidebarSection key={resource.name} resource={resource} tree={tree} compact={compact} onCreate={() => setCreating(resource)} />
       ))}
-
-      <SidebarOrphans resources={ORPHANS} tree={tree} compact={compact} onCreate={setCreating} />
 
       {creating && <ResourceCreateDialog resource={creating} onClose={() => setCreating(null)} />}
     </>

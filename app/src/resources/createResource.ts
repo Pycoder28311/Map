@@ -51,6 +51,7 @@ export function createResource(table: Table, ui: ResourceUi, api?: ResourceApi<I
     fillPanel: ui.panel?.fill,
     customPanel: ui.panel !== undefined,
     linked: table.link !== undefined,
+    parents: table.link && Object.entries(table.link.types).map(([type, resource]) => ({ type, resource })),
     effects: ui.effects,
     ui: {
       label: ui.label,

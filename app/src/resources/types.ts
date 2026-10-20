@@ -20,8 +20,8 @@ export type FieldDef<TItem> = {
 
 /** Where a resource shows up. Each flag turns one screen on for it: the Trash, the search, Recent… read these */
 export type Surfaces = {
-  /** In the sidebar: its own section, or a group of the Orphans section (the items without a parent); the rows shown before "Show more" */
-  sidebar?: { limit: number; group?: 'own' | 'orphans' }
+  /** In the sidebar: its own section, with the rows shown before "Show more" */
+  sidebar?: { limit: number }
   /** Its list page (route) */
   page?: string
   /** Can be opened as a workspace panel (type `panelType`) */
@@ -61,7 +61,9 @@ export type ResourceDefinition<
   panelType: string
   /** The panel component, loaded when first shown */
   loadPanel: () => Promise<{ default: ComponentType<PanelProps> }>
-  /** Its items can have a parent (objectType + objectId: the data config's `link`), so its lists can ask for the ones without */
+  /** Its items can have a parent (objectType + objectId: the data config's `link`): which types, and the resource each one is */
+  parents?: { type: string; resource: string }[]
+  /** Whether its items can have a parent */
   linked?: boolean
   /** Its panel is its own (a map's board), not the item's editor: it opens in a pane, not in the modal */
   customPanel?: boolean

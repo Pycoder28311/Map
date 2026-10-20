@@ -36,9 +36,6 @@ export function moveColumn(columns: ColumnId[], from: number, to: number): Colum
   return next
 }
 
-/** The rows below the columns: every resource's list that is not shown as a column (Recent is only a column) */
-export const sectionsBelow = (columns: ColumnId[]): ColumnId[] => LISTS.map((l) => l.id).filter((id) => id !== 'recent' && !columns.includes(id))
-
 /**
  * Stored columns made valid: always COLUMN_COUNT, no duplicates; an unknown one (an older version's, a resource that is gone) is
  * replaced by the first default not shown yet

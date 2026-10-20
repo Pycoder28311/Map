@@ -10,12 +10,14 @@ const MAX_TITLE = 200
 type Props = {
   resource: AnyResource
   onClose: () => void
+  /** More fields the new item starts with (a parent: `{ objectType, objectId }`) */
+  initial?: Record<string, unknown>
   /** Called with the created item */
   onCreated?: (item: Record<string, unknown> & { id: number | string }) => void
 }
 
 /** "New <thing>": asks for its title and creates it through the API. Mounted only while open, so the form starts fresh every time */
-export default function ResourceCreateDialog({ resource, onClose, onCreated }: Props) {
+export default function ResourceCreateDialog({ resource, initial, onClose, onCreated }: Props) {
   const formId = useId()
   const { create } = useResourceActions(resource)
   const [title, setTitle] = useState('')
@@ -30,7 +32,7 @@ export default function ResourceCreateDialog({ resource, onClose, onCreated }: P
     setBusy(true)
     setError(null)
     try {
-      const item = await create({ [heading]: title.trim() })
+      const item = await create({ ...initial, [heading]: title.trim() })
       onCreated?.(item)
       onClose()
     } catch (err) {

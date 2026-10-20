@@ -1,6 +1,8 @@
-import { previewOf, type Table } from '@map/shared'
-import { and, eq, getTableColumns, isNull, type SQL } from 'drizzle-orm'
+import { DATA, previewOf, TABLE_NAMES, type Table } from '@map/shared'
+import { and, eq, getTableColumns, isNull, sql, type SQL } from 'drizzle-orm'
+import * as schema from '../db/schema'
 import { hasChanges, userId, type Ctx, type Repo } from './crud'
+import { HttpError } from './errors'
 import type { OwnedTable } from './ownedTable'
 import { fetchLimit, mapPage, toPage } from './pagination'
 import { listSort, sortColumnsOf } from './sort'
@@ -25,7 +27,13 @@ export type RepoOverrides = {
  * - list: the config's order (pinned, position, id) a page at a time, filtered by `archived` and, for a linked table, by parent
  *   (`objectType: 'none'` = no parent); a table with a `preview` lists without the field it stands for (not even read)
  * - the preview is written with its field, in the same write, so the two never differ
+ * - a parent (`objectType` + `objectId`) is checked when a write sets it: the parent row exists in the table its type names, is the
+ *   user's, and does not make a cycle (a folder in itself or in its own children). Writes that do not set a parent read nothing for it
+ * - deleting a row sets the parent of its children (rows of any table pointing at it) to none: they become orphans, not lost
  */
+/** How many levels up a parent chain is followed looking for a cycle */
+const MAX_DEPTH = 20
+
 export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverrides = {}): Repo<Fields, Fields, Record<string, unknown>, Filter, Record<string, unknown>> {
   const columns = getTableColumns(table)
   const sort = listSort(sortColumnsOf(table as never, config.order))
@@ -54,6 +62,62 @@ export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverr
     return and(eq(columns.objectType, objectType), objectId === undefined ? undefined : eq(columns.objectId, objectId))
   }
 
+  const bad = (message: string, code: 'UNKNOWN_REFERENCE' | 'VALIDATION_FAILED' = 'UNKNOWN_REFERENCE') =>
+    new HttpError(400, code, message, [{ path: 'objectId', message }])
+
+  /**
+   * Checks the parent a write sets: its table has the row, the row is the user's (one lookup by primary key); and, for a parent in
+   * this same table, that the row is not in its own subtree (one recursive query up the chain, at most MAX_DEPTH levels).
+   * `selfId`: the row being moved (undefined: a new row, which nothing can point at yet)
+   */
+  async function checkParent(ctx: Ctx, fields: Fields, selfId?: number) {
+    const type = fields.objectType
+    const parentId = fields.objectId
+    if (!config.link || typeof type !== 'string' || typeof parentId !== 'number') return // no parent set by this write
+    const parentTableName = config.link.types[type]
+    const parent = parentTableName ? (schema as unknown as Record<string, OwnedTable>)[parentTableName] : undefined
+    if (!parent) throw bad(`Unknown parent type ${type}`)
+    const parentColumns = getTableColumns(parent)
+    const found = await ctx.db
+      .select({ id: parentColumns.id })
+      .from(parent)
+      .where(and(eq(parentColumns.id, parentId), eq(parentColumns.userId, userId(ctx))))
+      .get()
+    if (!found) throw bad('Parent not found')
+    if (selfId === undefined || parentTableName !== config.tableName) return
+    if (parentId === selfId) throw bad('Cannot be inside itself', 'VALIDATION_FAILED')
+    // Up from the new parent through this table's parents: reaching the row itself means a cycle
+    const t = sql.identifier(config.tableName)
+    const own = userId(ctx)
+    const cycle = await ctx.db.all(sql`
+      WITH RECURSIVE up(id, type, parent, depth) AS (
+        SELECT id, object_type, object_id, 0 FROM ${t} WHERE id = ${parentId} AND user_id = ${own}
+        UNION ALL
+        SELECT p.id, p.object_type, p.object_id, up.depth + 1 FROM ${t} p JOIN up ON up.type = ${type} AND p.id = up.parent
+        WHERE p.user_id = ${own} AND up.depth < ${MAX_DEPTH}
+      )
+      SELECT 1 FROM up WHERE id = ${selfId} LIMIT 1`)
+    if (cycle.length > 0) throw bad('Cannot be inside its own children', 'VALIDATION_FAILED')
+  }
+
+  /** The tables whose rows can have a row of this table as their parent: [table, the objectType naming this table] */
+  const childTables = TABLE_NAMES.flatMap((name) =>
+    Object.entries((DATA[name] as unknown as Table).link?.types ?? {})
+      .filter(([, target]) => target === config.tableName || target === config.name)
+      .map(([type]) => [schema[name] as unknown as OwnedTable, type] as const),
+  )
+
+  /** The children of a deleted row lose their parent (one UPDATE per table that can have children of this kind) */
+  async function orphanChildren(ctx: Ctx, id: number) {
+    for (const [child, type] of childTables) {
+      const c = getTableColumns(child)
+      await ctx.db
+        .update(child)
+        .set({ objectType: null, objectId: null })
+        .where(and(eq(c.userId, userId(ctx)), eq(c.objectType, type), eq(c.objectId, id)))
+    }
+  }
+
   const repo: Repo<Fields, Fields, Record<string, unknown>, Filter, Record<string, unknown>> = {
     async list(ctx, page, filter) {
       const rows = (await ctx.db
@@ -72,6 +136,7 @@ export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverr
 
     async create(ctx, input) {
       const fields = overrides.beforeCreate ? await overrides.beforeCreate(ctx, input) : input
+      await checkParent(ctx, fields)
       const row = (await ctx.db.insert(table).values({ ...withPreview(fields), userId: userId(ctx) }).returning().get()) as Row
       return toJson(row)
     },
@@ -80,13 +145,16 @@ export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverr
     async update(ctx, id, input) {
       const fields = overrides.beforeUpdate ? await overrides.beforeUpdate(ctx, id, input) : input
       if (!hasChanges(fields)) return repo.get(ctx, id) // nothing to change (Drizzle rejects an empty SET): the row as it is
+      await checkParent(ctx, fields, id)
       const row = (await ctx.db.update(table).set(withPreview(fields)).where(mine(ctx, id)).returning().get()) as Row | undefined
       return row ? toJson(row) : null
     },
 
     async remove(ctx, id) {
       const gone = await ctx.db.delete(table).where(mine(ctx, id)).returning({ id: columns.id }).get()
-      return gone !== undefined
+      if (gone === undefined) return false
+      await orphanChildren(ctx, id)
+      return true
     },
   }
   return repo

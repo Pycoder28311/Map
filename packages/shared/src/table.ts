@@ -29,14 +29,17 @@ export type TableConfig = {
   readonly preview?: string
   /** A new row needs one of these fields not empty */
   readonly requireOneOf?: readonly string[]
-  /** The row can point at its parent: `objectType` (one of these tables) + `objectId`, both set or both empty */
-  readonly link?: { readonly types: readonly string[] }
+  /**
+ * The row can point at its parent: `objectType` (a key of `types`) + `objectId`, both set or both empty. `types` says which table each
+ * type is: `{ project: 'projects' }` (the parent row is checked to exist, be the user's and not make a cycle: ownedRepo)
+ */
+  readonly link?: { readonly types: Readonly<Record<string, string>> }
   /** The list filters kept first in the table's index (default: archived, and link when the table has one) */
   readonly listFilters?: readonly ListFilter[]
 }
 
 type FieldValues<C extends TableConfig> = { -readonly [K in keyof C['fields']]: ValueOf<C['fields'][K]> }
-type LinkTypes<C extends TableConfig> = C extends { link: { types: readonly (infer L)[] } } ? L : never
+type LinkTypes<C extends TableConfig> = C extends { link: { types: infer T } } ? keyof T & string : never
 type LinkValues<C extends TableConfig> = [LinkTypes<C>] extends [never] ? unknown : { objectType: LinkTypes<C> | null; objectId: number | null }
 type PreviewValue<C extends TableConfig> = C extends { preview: string } ? { preview: string } : unknown
 
@@ -84,7 +87,7 @@ const isEmpty = (value: unknown) => value === undefined || value === null || val
 
 function defineTable(name: string, config: TableConfig): Table {
   const listFilters = config.listFilters ?? (config.link ? ['archived', 'link'] : ['archived'])
-  const linkTypes = config.link?.types as [string, ...string[]] | undefined
+  const linkTypes = config.link ? (Object.keys(config.link.types) as [string, ...string[]]) : undefined
 
   const shape: Record<string, z.ZodType> = {
     ...Object.fromEntries(Object.entries(config.fields).map(([key, f]) => [key, f.zod])),

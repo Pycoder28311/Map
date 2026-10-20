@@ -10,7 +10,6 @@ import { TREE_ROW_LOOK } from '../../ui/buttons/buttonStyles'
 import { useLids } from '../../ui/tree/swallow'
 import TreeView from '../../ui/tree/TreeView'
 import type { TreeNode, TreeRightIcon } from '../../ui/tree/types'
-import { sidebarFilter } from './sidebarLists'
 import { useSidebarDrop } from './sidebarDropState'
 
 type Item = Record<string, unknown> & { id: number | string }
@@ -31,13 +30,13 @@ type Props = {
 }
 
 /**
- * A resource's rows in the sidebar: its sidebar list (sidebarFilter), the first few, then Show more / less. The rows open its panel,
+ * A resource's rows in the sidebar: its list, the first few, then Show more / less. The rows open its panel,
  * drag onto pane edges and the Trash, rename in place, and have the ⋯ menu (pin, duplicate, trash, delete…). They take no drops:
  * their order comes from the server (pinned first).
  */
 export default function ResourceRows({ resource, tree, compact, only, prefix = '', quiet = false }: Props) {
   const limit = resource.surfaces.sidebar?.limit ?? 5
-  const list = useResourceList(resource, { filter: sidebarFilter(resource) })
+  const list = useResourceList(resource)
   const { menuOf, actions, attempt, dialogs } = useResourceMenu(resource)
   const workspace = useWorkspace()
   const drop = useSidebarDrop()

@@ -20,7 +20,6 @@ import {
 import { listKey } from '../../lib/resource/listStore'
 import { useListStore } from '../../lib/resource/listStoreContext'
 import { resourceByPanelType, resourcesWith } from '../../resources/registry'
-import { sidebarFilter } from '../../components/layout/sidebar/sidebarLists'
 import { parsePanelKey, workspaceHref, type WorkspaceLayout } from '../workspace/layout'
 import { usePanelRegistry } from '../workspace/registryContext'
 import { setSplit, useSplit } from '../workspace/split'
@@ -144,9 +143,9 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
 
   /** Opens 2 random items as panes; `save`: also saves them as a new layout (selected, its tile appears) */
   function createRandom(save = false) {
-    // The items the sidebar has loaded (no request of its own), of every resource that opens as a panel
+    // The items the lists have loaded (no request of its own), of every resource that opens as a panel
     const candidates: PanelRef[] = resourcesWith('panel').flatMap((r) =>
-      store.snapshot(listKey(r.name, { archived: false, ...sidebarFilter(r) })).items.map((item) => ({ type: r.panelType, id: String((item as { id: number }).id) })),
+      store.snapshot(listKey(r.name, { archived: false })).items.map((item) => ({ type: r.panelType, id: String((item as { id: number }).id) })),
     )
     if (candidates.length < 2) return setHint({ kind: 'empty' })
     const shuffled = [...candidates].sort(() => Math.random() - 0.5)
