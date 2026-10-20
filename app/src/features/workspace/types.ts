@@ -2,7 +2,7 @@ import type { ComponentType } from 'react'
 import type { ButtonIcon, PlainIcon } from '../../components/ui/icons/IconSlot'
 import type { Slot } from './layout'
 
-/** Which panel: its registered type and, for items like a project, its id. Fits in the URL */
+/** Which panel: its registered type and, for items like a map, its id. Fits in the URL */
 export type PanelRef = { type: string; id?: string }
 
 export type PanelProps = { id?: string }
@@ -25,7 +25,7 @@ export type ObjectDragInfo = {
  * What a drag carries:
  * - new: a panel from outside the workspace (a sidebar item, a list row…), dropped on an edge;
  *   `object` when it's an object (it can also be dropped on sidebar rows, link nodes, the trash…)
- * - object: an object with no panel of its own (e.g. a project's sidebar row): object drops only
+ * - object: an object with no panel of its own (e.g. a sidebar row that only holds a group): object drops only
  * - pane: a panel of the workspace (its grip, Pane), dropped on an edge or the centre of another
  * - layout: a saved layout's tile (sidebar), dropped on the trash
  * - column: a Dashboard column by its grip, dropped among the other columns only (features/dashboard)

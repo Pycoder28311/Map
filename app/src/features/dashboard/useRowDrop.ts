@@ -2,18 +2,18 @@ import { useDndMonitor, type DragMoveEvent } from '@dnd-kit/core'
 import { useLayoutEffect, useRef, type RefObject } from 'react'
 import { dragPoint } from '../../lib/dnd'
 import { findObject } from '../../mocks/projects'
-import { getObjects, moveObject, reorderChildren } from '../../mocks/projectsStore'
+import { getObjects, moveObject, reorderObjects } from '../../mocks/projectsStore'
 import { useDropZone, type DropTargetValue } from '../drag/objectDrop'
 import { objectOf } from '../drag/objectDrag'
-import { dropPlan, rowParent, type CardSort, type DropPlan, type RowId } from './rows'
+import { dropPlan, type CardSort, type DropPlan, type RowId } from './rows'
 
 /** Where a drag would land on a row: before a card (null: last) */
 export type RowTarget = DropTargetValue & { row: RowId; beforeId: string | null }
 
 type FrozenCard = { id: string; kind: string; rect: DOMRect }
 
-/** A finished drop, to undo: the rows' orders before it, and the sort it switched off */
-export type RowUndo = { draggedId: string; from: { parentId: string | null; order: string[] }; to: { parentId: string | null; order: string[] }; row: RowId; sort: CardSort | null }
+/** A finished drop, to undo: the objects' order before it, and the sort it switched off */
+export type RowUndo = { order: string[]; row: RowId; sort: CardSort | null }
 
 type Options = {
   /** The cards a row shows now (its sort applied), ids in order */
@@ -22,8 +22,6 @@ type Options = {
   /** After a drop: what happened, and how to undo it */
   onDropped: (row: RowId, plan: DropPlan, draggedId: string, undo: RowUndo) => void
 }
-
-const childIds = (parentId: string | null) => getObjects().filter((o) => o.parentId === parentId && o.kind !== 'project').map((o) => o.id)
 
 /**
  * Drops on the Dashboard's rows (the 'row-card' zone): a card (or any object, e.g. a sidebar row)
@@ -72,27 +70,17 @@ export function useRowDrop({ shownIds, sortOf, onDropped }: Options) {
       if (!dragged) return
       const plan = dropPlan(dragged, { row: target.row, beforeId: target.beforeId })
       if (!plan) return
-      const undo: RowUndo = {
-        draggedId: dragged.id,
-        from: { parentId: dragged.parentId, order: childIds(dragged.parentId) },
-        to: { parentId: plan.parentId, order: childIds(plan.parentId) },
-        row: target.row,
-        sort: sortOf(target.row),
-      }
+      const undo: RowUndo = { order: getObjects().map((o) => o.id), row: target.row, sort: sortOf(target.row) }
       // A sorted row: what's shown becomes its manual order first, so the card lands where its gap was
-      if (undo.sort) reorderChildren(rowParent(target.row), shownIds(target.row).filter((id) => id !== dragged.id))
-      moveObject(dragged.id, { parentId: plan.parentId, beforeId: plan.beforeId })
+      if (undo.sort) reorderObjects(shownIds(target.row).filter((id) => id !== dragged.id))
+      moveObject(dragged.id, { beforeId: plan.beforeId })
       onDropped(target.row, plan, dragged.id, undo)
     },
   })
 }
 
-/** Undoes a row drop: the card back where it was, both rows in their old order */
-export function undoRowDrop(undo: RowUndo) {
-  if (findObject(undo.draggedId)?.parentId !== undo.from.parentId) moveObject(undo.draggedId, { parentId: undo.from.parentId })
-  reorderChildren(undo.from.parentId, undo.from.order)
-  if (undo.to.parentId !== undo.from.parentId) reorderChildren(undo.to.parentId, undo.to.order)
-}
+/** Undoes a row drop: the objects back in their old order */
+export const undoRowDrop = (undo: RowUndo) => reorderObjects(undo.order)
 
 /**
  * The cards of one row glide to their new places when it changes (a gap opening for a drop, a sort,

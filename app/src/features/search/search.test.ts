@@ -4,10 +4,9 @@ import { NO_FILTERS, searchAll, searchObjects, type SearchItem } from './search'
 
 const base = { archived: false, createdAt: 0 }
 const objects: MockObject[] = [
-  { ...base, id: 'p1', kind: 'project', name: 'City parks', parentId: null },
-  { ...base, id: 'm1', kind: 'map', name: 'Parks overview', parentId: 'p1' },
-  { ...base, id: 'o1', kind: 'object', name: 'Café bench', parentId: null, description: 'a bench in the park\nsecond line' },
-  { ...base, id: 'o2', kind: 'object', name: 'Park benches', parentId: 'p1' },
+  { ...base, id: 'm1', kind: 'map', name: 'Parks overview' },
+  { ...base, id: 'o1', kind: 'object', name: 'Café bench', description: 'a bench in the park\nsecond line' },
+  { ...base, id: 'o2', kind: 'object', name: 'Park benches' },
 ]
 const notes: SearchItem[] = [
   { id: '5', kind: 'note', name: 'Café ideas', text: 'a list of parks' },
@@ -21,24 +20,24 @@ describe('searchObjects (the mock objects)', () => {
   })
 
   it('matches every word in the name or description, ignoring case and accents, best first', () => {
-    expect(ids(searchObjects(objects, 'park', NO_FILTERS))).toEqual(['o2', 'm1', 'p1', 'o1'])
+    expect(ids(searchObjects(objects, 'park', NO_FILTERS))).toEqual(['o2', 'm1', 'o1'])
     expect(ids(searchObjects(objects, 'CAFE', NO_FILTERS))).toEqual(['o1'])
-    expect(ids(searchObjects(objects, 'parks city', NO_FILTERS))).toEqual(['p1'])
+    expect(ids(searchObjects(objects, 'overview parks', NO_FILTERS))).toEqual(['m1'])
   })
 
-  it('describes a result by its project, or by the first line of its description', () => {
+  it('describes a result by the first line of its description', () => {
     const results = searchObjects(objects, 'park', NO_FILTERS)
-    expect(results.find((r) => r.id === 'm1')?.description).toBe('City parks')
+    expect(results.find((r) => r.id === 'm1')?.description).toBeUndefined()
     expect(results.find((r) => r.id === 'o1')?.description).toBe('a bench in the park')
   })
 
   it('includes or excludes kinds', () => {
-    expect(ids(searchObjects(objects, 'park', { ...NO_FILTERS, types: ['map', 'object'] }))).toEqual(['o2', 'm1', 'o1'])
-    expect(ids(searchObjects(objects, 'park', { ...NO_FILTERS, typeMode: 'exclude', types: ['map', 'object'] }))).toEqual(['p1'])
+    expect(ids(searchObjects(objects, 'park', { ...NO_FILTERS, types: ['map'] }))).toEqual(['m1'])
+    expect(ids(searchObjects(objects, 'park', { ...NO_FILTERS, typeMode: 'exclude', types: ['map'] }))).toEqual(['o2', 'o1'])
   })
 
-  it('keeps only objects in the ticked projects, and lists them all without a query', () => {
-    expect(ids(searchObjects(objects, '', { ...NO_FILTERS, projects: ['p1', 'p2'] }))).toEqual(['o2', 'm1'])
+  it('lists every object of the ticked kinds without a query', () => {
+    expect(ids(searchObjects(objects, '', { ...NO_FILTERS, types: ['object'] }))).toEqual(['o1', 'o2'])
   })
 })
 
@@ -50,7 +49,7 @@ describe('searchAll (mock objects and a resource\'s items)', () => {
 
   it('ranks by name first, whatever the source', () => {
     // 'Park benches' (mock) starts with it; 'Café ideas' only has it in its preview
-    expect(ids(searchAll(objects, notes, 'park', NO_FILTERS))).toEqual(['o2', 'm1', 'p1', 'o1', '5'])
+    expect(ids(searchAll(objects, notes, 'park', NO_FILTERS))).toEqual(['o2', 'm1', 'o1', '5'])
   })
 
   it('takes the preview as the note\'s description', () => {
@@ -60,10 +59,6 @@ describe('searchAll (mock objects and a resource\'s items)', () => {
   it('filters notes by kind', () => {
     expect(ids(searchAll(objects, notes, 'cafe', { ...NO_FILTERS, types: ['note'] }))).toEqual(['5'])
     expect(ids(searchAll(objects, notes, 'cafe', { ...NO_FILTERS, typeMode: 'exclude', types: ['note'] }))).toEqual(['o1'])
-  })
-
-  it('leaves notes out while a project filter is on: they have no project', () => {
-    expect(ids(searchAll(objects, notes, 'park', { ...NO_FILTERS, projects: ['p1'] }))).toEqual(['o2', 'm1'])
   })
 
   it('lists every item of a ticked kind without a query', () => {

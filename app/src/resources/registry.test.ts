@@ -30,21 +30,30 @@ describe('the resource registry', () => {
 
   it('finds a resource by name and by panel type', () => {
     expect(resourceByName('notes')?.panelType).toBe('note')
+    expect(resourceByName('projects')?.panelType).toBe('project')
     expect(resourceByPanelType('note')?.name).toBe('notes')
+    expect(resourceByPanelType('project')?.name).toBe('projects')
     expect(resourceByPanelType('map')).toBeUndefined()
     expect(resourceByPanelType(undefined)).toBeUndefined()
   })
 
   it('lists the resources that turned a screen on', () => {
-    expect(resourcesWith('trash').map((r) => r.name)).toEqual(['notes'])
-    expect(resourcesWith('search').map((r) => r.name)).toEqual(['notes'])
+    expect(resourcesWith('trash').map((r) => r.name)).toEqual(['projects', 'notes'])
+    expect(resourcesWith('search').map((r) => r.name)).toEqual(['projects', 'notes'])
   })
 
   it('makes the workspace panel of each resource that can be one', () => {
     const panels = resourcePanels()
-    expect(Object.keys(panels)).toEqual(['note'])
+    expect(Object.keys(panels)).toEqual(['project', 'note'])
+    expect(panels.project.title()).toBe('Project')
     expect(panels.note.title()).toBe('Note')
     expect(panels.note.draggable).toBe(true)
+  })
+
+  it('keeps each resource\'s Dashboard row and column known to the Dashboard', async () => {
+    const { RESOURCE_COLUMNS } = await import('../features/dashboard/columns')
+    const dashboard = RESOURCES.filter((r) => r.surfaces.dashboard).map((r) => r.name).sort()
+    expect(Object.values(RESOURCE_COLUMNS).sort()).toEqual(dashboard)
   })
 
   it('trashes only through the archived filter: a list is never asked without it', () => {

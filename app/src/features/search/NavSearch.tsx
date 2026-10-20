@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import SearchInput from '../../components/ui/fields/SearchInput'
 import BarPopout from '../../components/ui/overlays/BarPopout'
 import { findObject } from '../../mocks/projects'
-import { useMockObjects, useMockProjects } from '../../mocks/projectsStore'
+import { useMockObjects } from '../../mocks/projectsStore'
 import { useOpenLayout } from '../objects/ListRows'
 import { single } from '../workspace/layout'
 import type { PanelDragData } from '../workspace/types'
@@ -12,7 +12,7 @@ import { NO_FILTERS, searchAll, type SearchFilters, type SearchResult } from './
 import { useSearchItems } from './useSearchItems'
 import SearchPanel from './SearchPanel'
 
-// The resources the search looks in (the server's notes), besides the mock objects
+// The resources the search looks in (the server's projects and notes), besides the mock objects
 const SEARCHABLE = resourcesWith('search')
 
 // The filters, and whether they're shown, kept for the session (not saved)
@@ -33,7 +33,6 @@ export default function NavSearch() {
   const [active, setActive] = useState(0)
   const [filtersOpen, setFiltersOpen] = useState(lastFiltersOpen)
   const objects = useMockObjects()
-  const projects = useMockProjects()
   const openLayout = useOpenLayout()
 
   // The resources' live items are read while the search is open (archived ones are never asked for)
@@ -129,7 +128,6 @@ export default function NavSearch() {
         active={Math.min(active, Math.max(results.length - 1, 0))}
         onActive={setActive}
         onOpen={openResult}
-        projects={projects}
         resultsRef={resultsRef}
         filtersOpen={filtersOpen}
         onFiltersOpen={(next) => {

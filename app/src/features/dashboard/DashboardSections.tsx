@@ -1,10 +1,11 @@
 import { useDroppable } from '@dnd-kit/core'
 import { useEffect, useRef, useState } from 'react'
-import { findObject, KIND_LABEL, type MockObject, type ObjectKind } from '../../mocks/projects'
-import { createObjectOf, deleteObject, getObjects, renameObject, useLinks, useMockObjects } from '../../mocks/projectsStore'
+import ResourceModal from '../../components/ui/resource/ResourceModal'
+import { KIND_LABEL, type MockObject, type ObjectKind } from '../../mocks/projects'
+import { createObjectOf, deleteObject, getObjects, useLinks, useMockObjects } from '../../mocks/projectsStore'
 import { useTimeout } from '../../lib/useTimeout'
-import NoteModal from '../../resources/notes/NoteModal'
 import { resourceByName } from '../../resources/registry'
+import type { AnyResource } from '../../resources/types'
 import { clearSelected } from '../select/selectStore'
 import { useObjectDrop } from '../drag/objectDrop'
 import { useDragSurface } from '../drag/surfaces'
@@ -15,11 +16,10 @@ import { single } from '../workspace/layout'
 import { useBlockFlip } from './blockFlip'
 import Card from './cards/Cards'
 import { CARD_SIZE, cardOf } from './cards/CardShell'
-import { columnLabel, sectionsBelow, type ColumnId } from './columns'
+import { columnLabel, RESOURCE_COLUMNS, sectionsBelow, type ColumnId } from './columns'
 import RowHeader from './RowHeader'
-import { describeDrop, rowItems, rowParent, sortCards, type CardSort, type RowId } from './rows'
+import { describeDrop, rowItems, sortCards, type CardSort, type RowId } from './rows'
 import { undoRowDrop, useCardFlip, useRowDrop, type RowTarget, type RowUndo } from './useRowDrop'
-import { useRowReorder } from './useRowReorder'
 import { useRowSort } from './useRowSort'
 import { SectionCardLook } from './SectionCard'
 import ResourceSection from './ResourceSection'
@@ -27,26 +27,22 @@ import ResourceSection from './ResourceSection'
 /** How long the "Moved to…" note (with Undo) stays (ms) */
 const NOTE_FOR = 6000
 
-type Creatable = Exclude<ObjectKind, 'project'>
-// A project's Create: no maps at the top level (Orphans: they live in projects). The Notes row is the server's (ResourceSection)
-const PROJECT_KINDS: Creatable[] = ['object', 'map']
-const ROOT_KINDS: Creatable[] = ['object']
+// What the Objects row's Create offers
+const OBJECT_KINDS: ObjectKind[] = ['object', 'map']
 
 type Props = {
   columns: ColumnId[]
-  projects: { id: string; name: string }[]
 }
 
 type Note = { row: RowId; text: string; undo: RowUndo }
 
 /**
- * Under the columns: Orphans (every top-level object that isn't a project), then a row per project,
+ * Under the columns: Projects and Notes (the server's items, a strip of cards each) and Objects (the mock maps and object cards),
  * each a strip of cards that scrolls sideways (one shown as a column, ⋯ on a column, isn't here).
- * A row's header renames a project in place, sorts its cards and creates new ones. Cards are dragged
- * to another place in their row or into another row; a note then says where it
+ * A row's header sorts its cards and creates new ones. Object cards are dragged to another place in their row; a note then says where it
  * went, with Undo.
  */
-export default function DashboardSections({ columns, projects }: Props) {
+export default function DashboardSections({ columns }: Props) {
   const rootRef = useRef<HTMLDivElement>(null)
   const objects = useMockObjects()
   useLinks() // re-render when links change
@@ -55,16 +51,12 @@ export default function DashboardSections({ columns, projects }: Props) {
   const open = useOpenLayout()
   const { sortOf, setSort } = useRowSort()
   const { target } = useObjectDrop()
-  const reorder = useRowReorder(
-    rootRef,
-    projects.map((p) => p.id),
-  )
   const [note, setNote] = useState<Note | null>(null)
   const noteTimer = useTimeout()
   // A card just created: its name opens for editing
   const [created, setCreated] = useState<string | null>(null)
-  // The note open in its modal
-  const [noteId, setNoteId] = useState<string | null>(null)
+  // The project or note open in its modal
+  const [editing, setEditing] = useState<{ resource: AnyResource; id: string } | null>(null)
   // Esc unticks the selected cards (a dialog or menu takes the Esc first)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !e.defaultPrevented && clearSelected()
@@ -72,30 +64,22 @@ export default function DashboardSections({ columns, projects }: Props) {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  const rows = sectionsBelow(
-    columns,
-    projects.map((p) => p.id),
-  ) as RowId[]
+  const rows = sectionsBelow(columns) as RowId[]
   useBlockFlip(rootRef, 'sections', rows.join(','))
   // Over the rows, a dragged object looks like a card
   useDragSurface('dash-sections', rootRef, (item) => <SectionCardLook label={item.label} icon={item.icon} />)
 
-  const visible = objects.filter((o) => findObject(o.id))
+  const visible = objects.filter((o) => !o.archived)
   const shown = (row: RowId) => sortCards(rowItems(visible, row), sortOf(row))
-  const rowName = (row: RowId) => columnLabel(row as ColumnId, projects)
 
   useRowDrop({
     shownIds: (row) => shown(row).map((o) => o.id),
     sortOf,
-    onDropped: (row, plan, id, undo) => {
+    onDropped: (row, _plan, id, undo) => {
       if (undo.sort) setSort(row, null)
       // Its place in the row's (now manual) order
-      const now = rowItems(
-        getObjects().filter((o) => findObject(o.id)),
-        row,
-      )
-      const place = now.findIndex((o) => o.id === id) + 1
-      setNote({ row, text: describeDrop(plan, { row: rowName(row) }, place), undo })
+      const place = rowItems(getObjects().filter((o) => !o.archived), row).findIndex((o) => o.id === id) + 1
+      setNote({ row, text: describeDrop(place), undo })
       noteTimer.set(() => setNote(null), NOTE_FOR)
     },
   })
@@ -106,9 +90,8 @@ export default function DashboardSections({ columns, projects }: Props) {
     setNote(null)
   }
 
-  const create = (row: RowId, kind: Creatable) => {
-    const id = createObjectOf(kind, rowParent(row), `Untitled ${KIND_LABEL[kind].toLowerCase()}`, { first: true })
-    if (!id) return
+  const create = (kind: ObjectKind) => {
+    const id = createObjectOf(kind, `Untitled ${KIND_LABEL[kind].toLowerCase()}`, { first: true })
     setCreated(id)
     requestAnimationFrame(() => document.querySelector(`[data-card-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' }))
   }
@@ -118,36 +101,23 @@ export default function DashboardSections({ columns, projects }: Props) {
   return (
     <div ref={rootRef} data-flip-root="sections" className="flex flex-col gap-8">
       {rows.map((row) => {
-        // A resource's row (Notes): its own section, from the server
-        const resource = row === 'notes' ? resourceByName('notes') : undefined
-        if (resource) return <ResourceSection key={row} resource={resource} row="notes" onOpen={setNoteId} />
-        const projectId = rowParent(row)
+        // A resource's row (Projects, Notes): its own section, from the server
+        const resourceName = RESOURCE_COLUMNS[row as ColumnId]
+        const resource = resourceName ? resourceByName(resourceName) : undefined
+        if (resource) return <ResourceSection key={row} resource={resource} row={row as 'projects' | 'notes'} onOpen={(id) => setEditing({ resource, id })} />
         return (
           <section
             key={row}
             data-dash-block={row}
-            data-project-row={projectId ?? undefined}
-            aria-label={rowName(row)}
-            className={`relative flex flex-col gap-3 transition-opacity ${projectId && reorder.dragging === projectId ? 'opacity-40' : ''}`}
+            aria-label={columnLabel(row)}
+            className="relative flex flex-col gap-3 transition-opacity"
           >
-            {/* Where a row being moved would land: a line above this row (or below the last project row) */}
-            {projectId && reorder.at?.beforeId === projectId && reorder.dragging !== projectId && (
-              <div aria-hidden className="pointer-events-none absolute -top-4 inset-x-0 h-0.5 rounded-full bg-accent" />
-            )}
-            {projectId && reorder.at && reorder.at.beforeId === null && projectId === projects[projects.length - 1]?.id && reorder.dragging !== projectId && (
-              <div aria-hidden className="pointer-events-none absolute -bottom-4 inset-x-0 h-0.5 rounded-full bg-accent" />
-            )}
             <RowHeader
-              name={rowName(row)}
-              onRename={projectId ? (name) => renameObject(projectId, name) : undefined}
-              onOpen={projectId ? () => open(single({ type: 'project', id: projectId })) : undefined}
-              onGripDown={projectId ? reorder.start(projectId) : undefined}
+              name={columnLabel(row)}
               sort={sortOf(row)}
               onSort={(sort: CardSort | null) => setSort(row, sort)}
-              creatable={projectId ? PROJECT_KINDS : ROOT_KINDS}
-              onCreate={(kind) => create(row, kind)}
-              // Create names what it makes in a project ("Object +"…), and is "Create ▾" in Orphans
-              named={row !== 'orphans'}
+              creatable={OBJECT_KINDS}
+              onCreate={create}
             />
             {note?.row === row && (
               <p role="status" className="flex items-center gap-2 self-start rounded-(--radius-pill) bg-fill px-3 py-1 text-small text-fg-muted">
@@ -183,7 +153,7 @@ export default function DashboardSections({ columns, projects }: Props) {
         )
       })}
       {actions.dialogs}
-      <NoteModal noteId={noteId} onClose={() => setNoteId(null)} />
+      {editing && <ResourceModal resource={editing.resource} itemId={editing.id} onClose={() => setEditing(null)} />}
     </div>
   )
 }

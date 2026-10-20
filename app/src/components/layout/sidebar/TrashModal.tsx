@@ -91,13 +91,11 @@ export default function TrashModal({ trashed, onClose }: { trashed: ReturnType<t
           <ul className="flex flex-col gap-1">
             {archived.map((o) => {
               const Icon = KIND_ICON[o.kind]
-              const parent = o.parentId ? objects.find((p) => p.id === o.parentId) : undefined
               return (
                 <li key={o.id} className={ROW}>
                   <Icon className="size-(--btn-icon-size) shrink-0 text-fg-subtle" />
                   <span className="min-w-0 flex-1 truncate text-body">
                     {o.name}
-                    {parent && <span className="text-fg-subtle"> · in {parent.name}</span>}
                   </span>
                   <IconButton
                     icon={LuRotateCcw}
@@ -111,7 +109,7 @@ export default function TrashModal({ trashed, onClose }: { trashed: ReturnType<t
                     icon={LuTrash2}
                     label={`Delete ${o.name} for good`}
                     className="text-danger"
-                    onClick={() => setDeleting({ kind: o.kind, id: o.id, name: o.name, parentId: o.parentId })}
+                    onClick={() => setDeleting({ kind: o.kind, id: o.id, name: o.name })}
                   />
                 </li>
               )

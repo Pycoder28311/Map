@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { findObject } from '../../mocks/projects'
 import { useMockObjects } from '../../mocks/projectsStore'
 import { useWorkspace } from '../workspace/useWorkspace'
 import BarPopover from './BarPopover'
@@ -11,12 +10,11 @@ const BRANCH =
   'relative ps-4 before:absolute before:start-0 before:top-0 before:h-full before:w-0.5 before:bg-line ' +
   'last:before:h-1/2 after:absolute after:start-0 after:top-1/2 after:h-0.5 after:w-2 after:bg-line'
 
-/** The map's name ; a click lists the maps of its project (those with branches show them in a tree under them) */
+/** The map's name ; a click lists the maps (those with branches show them in a tree under them) */
 export default function MapPicker({ mapId, name }: { mapId: string; name: string }) {
   const objects = useMockObjects()
   const workspace = useWorkspace()
   const [open, setOpen] = useState(false)
-  const project = findObject(findObject(mapId)?.parentId ?? undefined)
   const tree = mapTree(siblingMaps(objects, mapId))
 
   const show = (id: string) => {
@@ -43,7 +41,7 @@ export default function MapPicker({ mapId, name }: { mapId: string; name: string
     <BarPopover
       open={open}
       onOpenChange={setOpen}
-      label="Maps of this project"
+      label="Maps"
       trigger={
         <button
           type="button"
@@ -56,7 +54,6 @@ export default function MapPicker({ mapId, name }: { mapId: string; name: string
         </button>
       }
     >
-      {project && <p className="truncate px-2 pb-1 text-small text-fg-subtle">{project.name}</p>}
       <ul className="flex max-h-72 flex-col gap-0.5 overflow-y-auto">
         {tree.map(({ map, branches }) => (
           <li key={map.id}>

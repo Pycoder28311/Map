@@ -3,9 +3,11 @@
 import { lazy } from 'react'
 import type { PanelRegistry } from '../features/workspace/types'
 import { notesResource } from './notes/notes.resource'
+import { projectsResource } from './projects/projects.resource'
 import { asAnyResource, type AnyResource, type Surfaces } from './types'
 
-export const RESOURCES: AnyResource[] = [asAnyResource(notesResource)]
+// The order is the sidebar's (and the Dashboard's) order of sections
+export const RESOURCES: AnyResource[] = [asAnyResource(projectsResource), asAnyResource(notesResource)]
 
 export const resourceByName = (name: string) => RESOURCES.find((r) => r.name === name)
 export const resourceByPanelType = (type: string | undefined) => (type ? RESOURCES.find((r) => r.panelType === type) : undefined)

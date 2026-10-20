@@ -1,5 +1,5 @@
 // The sidebar's drop zones on the app's drop system (features/drag/objectDrop.ts): 'row' (move into
-// a project, between rows, into Notes, or pin) and 'trash' (archive). SidebarDropProvider registers
+// between rows, or pin) and 'trash' (archive). SidebarDropProvider registers
 // them; useSidebarDrop gives the sidebar what's dragged and where it would land.
 import type { DragMoveEvent, DragOverEvent } from '@dnd-kit/core'
 import { useObjectDrop, type DropTargetValue, type ZoneHandler } from '../../../features/drag/objectDrop'
@@ -7,7 +7,6 @@ import { objectOf } from '../../../features/drag/objectDrag'
 import type { PanelDragData } from '../../../features/workspace/types'
 import { dragPoint } from '../../../lib/dnd'
 import { archiveLayout } from '../../../mocks/layoutsStore'
-import { canPlace } from '../../../mocks/projects'
 import { archiveObject, getObjects, getPins, moveObject, reorderPinned } from '../../../mocks/projectsStore'
 import { notifyChanged } from '../../../lib/resource/changes'
 import { resourceByPanelType } from '../../../resources/registry'
@@ -46,8 +45,6 @@ const layoutOf = (data: unknown) => {
   return drag?.kind === 'layout' ? drag.layoutId : undefined
 }
 
-const rowElement = (nodeId: string) => document.querySelector(`[data-row-id="${CSS.escape(nodeId)}"]`)
-
 /**
  * Archives an object with the Zen effect: `source` (the floating copy, or the row itself when archived
  * from its menu) falls into the trash bin, whose lid opens
@@ -65,26 +62,18 @@ export const rowZone: ZoneHandler = {
     const row = e.over.data.current as RowDropData | undefined
     const point = dragPoint(e as DragMoveEvent)
     if (!row?.section || !point) return null
-    const objects = getObjects()
-    const dragged = objects.find((o) => o.id === item.objectId)
-    // A container that may hold it (e.g. a folder only takes articles): a middle band for "into"
-    const container = objects.find((o) => o.id === row.objectId)
-    const canInto = !!row.folder && !!dragged && !!container && canPlace(dragged.kind, container.kind)
-    const position = row.section === 'objects-end' ? 'after' : rowDropPosition(point.y, e.over.rect, canInto)
-    const action = resolveDrop(objects, getPins(), item.objectId, row, position)
+    const position = row.section === 'objects-end' ? 'after' : rowDropPosition(point.y, e.over.rect, false)
+    const action = resolveDrop(getObjects(), getPins(), item.objectId, row, position)
     return action ? { key: `${row.nodeId}:${position}`, nodeId: row.nodeId, position, action } : null
   },
   drop: (data, target, float) => {
     const object = objectOf(data)
     if (!object?.objectId) return
-    const { nodeId, action } = target as DropTargetValue & { nodeId: string; action: DropAction }
+    const { action } = target as DropTargetValue & { nodeId: string; action: DropAction }
     // The dropped row glides from where it was let go to its new place
     snapshotRows(float && object.nodeId ? { [object.nodeId]: float.getBoundingClientRect() } : {})
     if (action.kind === 'pin') return reorderPinned(object.objectId, action.beforeId)
-    // Into a closed folder: it falls in, the lid opens
-    const closed = action.into && rowElement(nodeId)?.closest('li')?.getAttribute('aria-expanded') === 'false'
-    if (closed) fallInto(float, nodeId, { lifted: true })
-    moveObject(object.objectId, { parentId: action.parentId, beforeId: action.beforeId })
+    moveObject(object.objectId, { beforeId: action.beforeId })
   },
 }
 

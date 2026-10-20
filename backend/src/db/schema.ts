@@ -1,4 +1,4 @@
-import { notesConfig } from '@map/shared'
+import { notesConfig, projectsConfig } from '@map/shared'
 import { sql } from 'drizzle-orm'
 import { sqliteTable, integer, text, check } from 'drizzle-orm/sqlite-core'
 import { listIndex, orderColumns } from '../lib/sort'
@@ -36,6 +36,28 @@ export const notes = sqliteTable(
         // The list: one user's notes, filtered (notesConfig.listFilters), in the list's order (notesConfig.order; lib/sort.ts)
         listIndex('notes_list_idx', t, { owner: 'userId', filters: notesConfig.listFilters, order: notesConfig.order }),
         check('notes_object_pair', sql`(${t.objectType} IS NULL) = (${t.objectId} IS NULL)`),
+    ],
+)
+
+/* ─────────────── Projects ─────────────── */
+
+export const projects = sqliteTable(
+    'projects',
+    {
+        id: id(),
+        userId: owner(),
+        title: text('title').notNull().default(''),
+        content: text('content').notNull().default(''), // HTML from the editor, cleaned by the contract (richText)
+        // The first words of the content as plain text (shared previewOf), written with it by the projects repo: lists show this instead of the content
+        preview: text('preview').notNull().default(''),
+        createdAt: createdAt(),
+        updatedAt: updatedAt(),
+        archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
+        ...orderColumns(projectsConfig.order), // pinned and position, whichever projectsConfig (shared/src/projects.ts) turns on
+    },
+    (t) => [
+        // The list: one user's projects, filtered (projectsConfig.listFilters), in the list's order (projectsConfig.order; lib/sort.ts)
+        listIndex('projects_list_idx', t, { owner: 'userId', filters: projectsConfig.listFilters, order: projectsConfig.order }),
     ],
 )
 

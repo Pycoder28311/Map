@@ -45,7 +45,7 @@ type Hint = { kind: 'drag' | 'swap' | 'empty'; key?: string }
 const HINTS: Record<Hint['kind'], string> = {
   drag: 'Drag an object from the sidebar onto the panes to add it.',
   swap: 'Drag a pane by its grip onto the other one to swap them.',
-  empty: 'Create a project or a note first: use the + next to Projects or Notes.',
+  empty: 'Create a map or an object card first: use the + next to Objects.',
 }
 
 const cssPx = (name: string) => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0
@@ -143,7 +143,7 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
 
   /** Opens 2 random objects as panes; `save`: also saves them as a new layout (selected, its tile appears) */
   function createRandom(save = false) {
-    // Every object that opens as a panel (a project opens its Overview)
+    // Every mock object that opens as a panel
     const candidates: PanelRef[] = objects
       .filter((o) => findObject(o.id))
       .map((o) => ({ type: o.kind, id: o.id }))

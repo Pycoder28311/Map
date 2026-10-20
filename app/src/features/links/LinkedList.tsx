@@ -6,8 +6,8 @@ import OpenAsPanelButton from '../workspace/OpenAsPanelButton'
 
 /**
  * DORMANT: nothing renders this while notes come from the server (no link route; plan 25, D5).
- * What an object is linked to: for a project or map, its linked notes; for a note, the projects and
- * maps it's linked to. Each can be opened as a panel or unlinked. Nothing when there are none.
+ * What an object is linked to: for a map or object card, its linked notes; for a note, the maps and
+ * object cards it's linked to. Each can be opened as a panel or unlinked. Nothing when there are none.
  */
 export default function LinkedList({ objectId, isNote, title }: { objectId: string; isNote: boolean; title: string }) {
   useLinks() // re-render when links change

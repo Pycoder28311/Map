@@ -1,28 +1,19 @@
-import Card from '../../components/ui/Card'
-import SeeMoreLink from '../../components/ui/links/SeeMoreLink'
-import OpenAsPanelButton from '../../features/workspace/OpenAsPanelButton'
-import { useMockProjects } from '../../mocks/projectsStore'
+import { useState } from 'react'
+import ResourceModal from '../../components/ui/resource/ResourceModal'
+import ResourcePage from '../../components/ui/resource/ResourcePage'
+import { projectsResource } from '../../resources/projects/projects.resource'
+import { asAnyResource } from '../../resources/types'
+
+const resource = asAnyResource(projectsResource)
 
 // Also a workspace panel (src/panels.ts): no <main> here, AppLayout provides it
+/** Every project, pinned first, as a list. A click opens the project; drag one onto a pane edge to open it there, or onto the Trash */
 export default function ProjectsPage() {
-    const projects = useMockProjects()
-    return (
-        <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 pt-8 pb-24">
-            <h1 className="text-title">Projects</h1>
-            <ul className="flex flex-col gap-2">
-                {projects.map((project) => (
-                    <li key={project.id}>
-                        <Card variant="muted" className="flex items-center justify-between gap-2 px-4 py-3">
-                            <div>
-                                <p className="text-body font-medium">{project.name}</p>
-                                <p className="text-small text-fg-muted">{project.description}</p>
-                            </div>
-                            <OpenAsPanelButton panel={{ type: 'project', id: project.id }} />
-                        </Card>
-                    </li>
-                ))}
-            </ul>
-            <SeeMoreLink to="/dashboard">Back to dashboard</SeeMoreLink>
-        </div>
-    )
+  const [projectId, setProjectId] = useState<string | null>(null)
+  return (
+    <>
+      <ResourcePage resource={resource} description="Pinned projects come first." onOpenItem={setProjectId} />
+      <ResourceModal resource={resource} itemId={projectId} onClose={() => setProjectId(null)} />
+    </>
+  )
 }

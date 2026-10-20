@@ -18,7 +18,7 @@ const HOVER = 'hover:[--pane-border:var(--highlight)]'
 type Props = {
   /** Position in the grid: a, b, c, d (also its CSS grid-area) */
   slot: Slot
-  /** What it shows, e.g. { type: 'project', id: 'p1' } */
+  /** What it shows, e.g. { type: 'map', id: 'm1' } */
   panel: PanelRef
   /** Where it sits on wide screens: insets from the split lines (layout.ts: paneBoxCss) */
   box: { left: string; top: string; right: string; bottom: string }

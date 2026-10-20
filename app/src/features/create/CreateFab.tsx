@@ -18,8 +18,8 @@ const FACE =
   'absolute inset-0 corner-marks flex cursor-pointer items-center justify-center gap-2 rounded-(--corner-xl) text-base font-medium [backface-visibility:hidden] ' +
   `transition-[background-color,box-shadow,translate] ${RAISED} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`
 
-/** What was made: its panel type (to open it), what to call it ("note"), its name, and where it went */
-type Made = { id: string; panelType: string; label: string; name: string; where: string | null }
+/** What was made: its panel type (to open it), what to call it ("note") and its name */
+type Made = { id: string; panelType: string; label: string; name: string }
 
 /**
  * The floating Create button (bottom right of the page area, over the page and its panes, not in them).
@@ -29,7 +29,7 @@ type Made = { id: string; panelType: string; label: string; name: string; where:
  */
 export default function CreateFab() {
   const [open, setOpen] = useState(false)
-  // The modal stays mounted while it shrinks back; a new key each time it opens: a fresh form and path
+  // The modal stays mounted while it shrinks back; a new key each time it opens: a fresh form
   const [mounted, setMounted] = useState(false)
   const [session, setSession] = useState(0)
   const [made, setMade] = useState<Made | null>(null)
@@ -84,7 +84,6 @@ export default function CreateFab() {
           >
             <span className="min-w-0 truncate">
               Created {made.label.toLowerCase()} <strong className="font-medium">{made.name}</strong>
-              {made.where ? ` in ${made.where}` : ''}
             </span>
             <button
               type="button"

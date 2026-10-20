@@ -1,27 +1,27 @@
 // MOCK DATA: in-memory create / rename / duplicate / move / pin / archive / delete of the mock
-// sidebar objects (projects, maps, object cards). Nothing is saved: a reload starts again from the seed data.
+// sidebar objects (maps, object cards). Nothing is saved: a reload starts again from the seed data.
 // Replaced by API calls later (same function names, async then); the UI only uses what's exported here.
 import { useSyncExternalStore } from 'react'
 import { copyBoard, dropBoard } from '../features/board/boardStore'
-import { canPlace, isNoteLike, SEED_OBJECTS, type MockMap, type MockObject, type MockProject, type ObjectKind } from './projects'
+import { isNoteLike, SEED_OBJECTS, type MockObject, type ObjectKind } from './projects'
 
 type State = {
-  /** Flat, in document order (a project, then its children) */
+  /** Flat, in the order they are shown */
   objects: MockObject[]
   /** Pinned object ids, in pin order */
   pins: string[]
-  /** Notes linked to projects / maps (many-to-many; nothing moves) */
+  /** Notes linked to maps / object cards (many-to-many; nothing moves) */
   links: Link[]
 }
 
-/** A note linked to a project or map */
+/** A note linked to a map or object card */
 export type Link = { noteId: string; targetId: string }
 
 // Copied from the seed on first use (not at import: projects.ts imports this file too)
 let state: State | null = null
 const listeners = new Set<() => void>()
 
-// New ids never clash with the seed's (p1…, m1…, o1…)
+// New ids never clash with the seed's (m1…, o1…)
 let nextId = 101
 const newId = (kind: MockObject['kind']) => `${kind[0]}${nextId++}`
 
@@ -43,39 +43,8 @@ export const getObjects = () => getState().objects
 export const getPins = () => getState().pins
 export const getLinks = () => getState().links
 
-/* ─────────────── Tree helpers (flat list, like the Zen sidebar's) ─────────────── */
-
-/** Every id in an object's subtree, itself included */
-export function subtreeIds(objects: MockObject[], id: string) {
-  const ids = new Set([id])
-  let grew = true
-  while (grew) {
-    grew = false
-    for (const o of objects) {
-      if (o.parentId && ids.has(o.parentId) && !ids.has(o.id)) {
-        ids.add(o.id)
-        grew = true
-      }
-    }
-  }
-  return ids
-}
-
-/** Archived, or under an archived object */
-export function isHidden(objects: MockObject[], object: MockObject) {
-  for (let o: MockObject | undefined = object; o; o = objects.find((p) => p.id === o!.parentId)) {
-    if (o.archived) return true
-  }
-  return false
-}
-
-// Index just past a parent's last descendant (where a new last child goes)
-function endOfSubtree(objects: MockObject[], parentId: string) {
-  const ids = subtreeIds(objects, parentId)
-  let last = objects.findIndex((o) => o.id === parentId)
-  for (let i = last + 1; i < objects.length && ids.has(objects[i].id); i++) last = i
-  return last + 1
-}
+/** Archived (hidden from every list, restorable) */
+export const isHidden = (object: MockObject) => object.archived
 
 /* ─────────────── Hooks ─────────────── */
 
@@ -84,111 +53,42 @@ export const useMockObjects = () => useSyncExternalStore(subscribe, getObjects)
 export const usePins = () => useSyncExternalStore(subscribe, getPins)
 export const useLinks = () => useSyncExternalStore(subscribe, getLinks)
 
-// Projects with their children, derived once per change
-let derived: { from: MockObject[]; projects: MockProject[] } | null = null
-
-/** The visible projects with their visible children (the shape pages and panels use) */
-export function getProjects(): MockProject[] {
-  const objects = getObjects()
-  if (derived?.from === objects) return derived.projects
-  const visible = objects.filter((o) => !isHidden(objects, o))
-  const projects = visible
-    .filter((o) => o.kind === 'project')
-    .map((p) => ({
-      id: p.id,
-      name: p.name,
-      description: p.description ?? '',
-      maps: visible
-        .filter((o) => o.parentId === p.id && o.kind !== 'project')
-        .map((o) => ({ id: o.id, name: o.name, kind: o.kind as MockMap['kind'] })),
-    }))
-  derived = { from: objects, projects }
-  return projects
-}
-
-/** The visible projects; re-renders on every change */
-export const useMockProjects = () => useSyncExternalStore(subscribe, getProjects)
-
 /* ─────────────── Changes ─────────────── */
 
 const has = (id: string) => getObjects().some((o) => o.id === id)
 
-function add(object: MockObject) {
-  const objects = getObjects()
-  const at = object.parentId ? endOfSubtree(objects, object.parentId) : objects.length
-  set({ objects: [...objects.slice(0, at), object, ...objects.slice(at)] })
-  return object.id
-}
-
 // A new object: made now
 const fresh = () => ({ archived: false, createdAt: Date.now() })
 
-/** The kind of an object's parent (null: top level; undefined: no such parent) */
-const parentKind = (parentId: string | null): ObjectKind | null | undefined =>
-  parentId === null ? null : getObjects().find((o) => o.id === parentId)?.kind
-
-/**
- * A new object of any kind in `parentId` (null: top level), if it may go there (canPlace). Last among
- * its siblings, or with `first` before them (e.g. created from a Dashboard row). Returns its id.
- */
-export function createObjectOf(
-  kind: ObjectKind,
-  parentId: string | null,
-  name: string,
-  { description, first = false }: { description?: string; first?: boolean } = {},
-) {
-  const parent = parentKind(parentId)
-  if (parent === undefined || !canPlace(kind, parent)) return undefined
-  const firstSibling = first ? getObjects().find((o) => o.parentId === parentId && (parentId !== null || o.kind !== 'project')) : undefined
-  const id = add({
-    ...fresh(),
-    id: newId(kind),
-    kind,
-    name,
-    description,
-    parentId,
-  })
-  if (firstSibling) moveObject(id, { parentId, beforeId: firstSibling.id })
-  return id
+/** A new object of any kind: last in the list, or with `first` before the others (e.g. created from a Dashboard row). Returns its id. */
+export function createObjectOf(kind: ObjectKind, name: string, { description, first = false }: { description?: string; first?: boolean } = {}) {
+  const object: MockObject = { ...fresh(), id: newId(kind), kind, name, description }
+  const objects = getObjects()
+  set({ objects: first ? [object, ...objects] : [...objects, object] })
+  return object.id
 }
-
-export const createProject = (name: string) => createObjectOf('project', null, name, { description: '' })!
-
-export const createMap = (projectId: string, name: string) => createObjectOf('map', projectId, name)
 
 export function renameObject(id: string, name: string) {
   if (!has(id)) return
   set({ objects: getObjects().map((o) => (o.id === id ? { ...o, name } : o)) })
 }
 
-/** A copy of the object and everything under it (new ids) right after it; the copy is named "(copy)" */
+/** A copy of the object right after it, named "(copy)" (new id) */
 export function duplicateObject(id: string) {
   const objects = getObjects()
-  const object = objects.find((o) => o.id === id)
-  if (!object) return
-  const ids = subtreeIds(objects, id)
-  const newIds = new Map([...ids].map((old) => [old, newId(objects.find((o) => o.id === old)!.kind)]))
-  const copies = objects
-    .filter((o) => ids.has(o.id))
-    .map((o) => ({
-      ...o,
-      id: newIds.get(o.id)!,
-      name: o.id === id ? `${o.name} (copy)` : o.name,
-      parentId: o.id === id ? o.parentId : newIds.get(o.parentId!)!,
-      ...fresh(),
-    }))
-  const at = endOfSubtree(objects, id)
-  set({ objects: [...objects.slice(0, at), ...copies, ...objects.slice(at)] })
+  const at = objects.findIndex((o) => o.id === id)
+  if (at === -1) return
+  const object = objects[at]
+  const copy: MockObject = { ...object, id: newId(object.kind), name: `${object.name} (copy)`, ...fresh() }
+  set({ objects: [...objects.slice(0, at + 1), copy, ...objects.slice(at + 1)] })
   // A copied map opens with what is drawn on the original
-  for (const [old, copy] of newIds) if (objects.find((o) => o.id === old)?.kind === 'map') copyBoard(old, copy)
+  if (object.kind === 'map') copyBoard(object.id, copy.id)
 }
 
-/** The next object after `id` among its siblings */
+/** The next object after `id` */
 const nextSibling = (id: string) => {
   const objects = getObjects()
-  const parentId = objects.find((o) => o.id === id)?.parentId
-  const siblings = objects.filter((o) => o.parentId === parentId)
-  return siblings[siblings.findIndex((o) => o.id === id) + 1]
+  return objects[objects.findIndex((o) => o.id === id) + 1]
 }
 
 /**
@@ -200,42 +100,35 @@ export function createBranch(mapId: string, name: string) {
   if (!map || map.kind !== 'map' || map.archived) return undefined
   const root = map.branchOf ?? map.id
   const before = nextSibling(mapId)
-  const id = createObjectOf('map', map.parentId, name)
-  if (!id) return undefined
-  if (before) moveObject(id, { parentId: map.parentId, beforeId: before.id })
+  const id = createObjectOf('map', name)
+  if (before) moveObject(id, { beforeId: before.id })
   set({ objects: getObjects().map((o) => (o.id === id || o.id === mapId ? { ...o, branchOf: root } : o)) })
   copyBoard(mapId, id)
   return id
 }
 
-/**
- * Moves an object (with everything under it) to a new parent (null: top level), just before
- * `beforeId` if given (a sibling there), else at the end of that parent's children. Only where it
- * may go (canPlace: e.g. only articles into a folder)
- */
-export function moveObject(id: string, to: { parentId: string | null; beforeId?: string | null }) {
+/** Moves an object just before `beforeId` if given, else to the end of the list */
+export function moveObject(id: string, to: { beforeId?: string | null }) {
   const objects = getObjects()
   const object = objects.find((o) => o.id === id)
-  const parent = parentKind(to.parentId)
-  if (!object || parent === undefined || !canPlace(object.kind, parent)) return
-  const ids = subtreeIds(objects, id)
-  if (to.parentId && ids.has(to.parentId)) return // not into itself
-  if (to.beforeId && ids.has(to.beforeId)) return
-  const moved = objects.filter((o) => ids.has(o.id)).map((o) => (o.id === id ? { ...o, parentId: to.parentId } : o))
-  const rest = objects.filter((o) => !ids.has(o.id))
-  let at = to.beforeId ? rest.findIndex((o) => o.id === to.beforeId) : -1
-  if (at === -1) at = to.parentId ? endOfSubtree(rest, to.parentId) : rest.length
-  set({ objects: [...rest.slice(0, at), ...moved, ...rest.slice(at)] })
+  if (!object || to.beforeId === id) return
+  const rest = objects.filter((o) => o.id !== id)
+  const at = to.beforeId ? rest.findIndex((o) => o.id === to.beforeId) : -1
+  set({ objects: at === -1 ? [...rest, object] : [...rest.slice(0, at), object, ...rest.slice(at)] })
 }
 
 /**
- * Puts these children of `parentId` in this order (after its other children; ids that aren't its
- * children are skipped). E.g. a sorted Dashboard row made its manual order, or an undo.
+ * Puts these objects in this order, in the places they hold now (the others stay where they are): e.g. a sorted Dashboard row made
+ * its manual order, a presenter's reordered maps, or an undo
  */
-export function reorderChildren(parentId: string | null, ids: string[]) {
-  for (const id of ids) {
-    if (getObjects().find((o) => o.id === id)?.parentId === parentId) moveObject(id, { parentId, beforeId: null })
-  }
+export function reorderObjects(ids: string[]) {
+  const objects = getObjects()
+  const byId = new Map(objects.map((o) => [o.id, o]))
+  const known = ids.filter((id) => byId.has(id))
+  const slots = objects.flatMap((o, i) => (known.includes(o.id) ? [i] : []))
+  const next = [...objects]
+  slots.forEach((slot, i) => (next[slot] = byId.get(known[i])!))
+  set({ objects: next })
 }
 
 export function togglePin(id: string) {
@@ -252,51 +145,48 @@ export function reorderPinned(id: string, beforeId: string | null) {
   set({ pins: at === -1 ? [...pins, id] : [...pins.slice(0, at), id, ...pins.slice(at)] })
 }
 
-/** Into the trash: hidden with everything under it, restorable */
+/** Into the trash: hidden, restorable */
 export function archiveObject(id: string) {
   const object = getObjects().find((o) => o.id === id)
   if (!object || object.archived) return
   set({ objects: getObjects().map((o) => (o.id === id ? { ...o, archived: true } : o)) })
 }
 
-/** Out of the trash, back where it was (a project with its children) */
+/** Out of the trash, back where it was */
 export function restoreObject(id: string) {
   const object = getObjects().find((o) => o.id === id)
   if (!object?.archived) return
   set({ objects: getObjects().map((o) => (o.id === id ? { ...o, archived: false } : o)) })
 }
 
-/** What's in the trash (the archived objects themselves, not what's under them) */
+/** What's in the trash */
 export const getArchived = () => getObjects().filter((o) => o.archived)
 
 /** Deletes everything in the trash */
 export function emptyTrash() {
-  const objects = getObjects()
-  const ids = new Set(getArchived().flatMap((o) => [...subtreeIds(objects, o.id)]))
+  const ids = new Set(getArchived().map((o) => o.id))
   if (ids.size === 0) return
   ids.forEach(dropBoard)
-  set({ objects: objects.filter((o) => !ids.has(o.id)), pins: getPins().filter((p) => !ids.has(p)), links: withoutLinksOf(ids) })
+  set({ objects: getObjects().filter((o) => !ids.has(o.id)), pins: getPins().filter((p) => !ids.has(p)), links: withoutLinksOf(ids) })
 }
 
-/** Deletes an object and everything under it (and their pins) */
+/** Deletes an object (and its pin) */
 export function deleteObject(id: string) {
-  const objects = getObjects()
   if (!has(id)) return
-  const ids = subtreeIds(objects, id)
-  ids.forEach(dropBoard)
-  set({ objects: objects.filter((o) => !ids.has(o.id)), pins: getPins().filter((p) => !ids.has(p)), links: withoutLinksOf(ids) })
+  const ids = new Set([id])
+  dropBoard(id)
+  set({ objects: getObjects().filter((o) => o.id !== id), pins: getPins().filter((p) => p !== id), links: withoutLinksOf(ids) })
 }
 
 /* ─────────────── Links ─────────────── */
 
 const visibleById = (id: string) => {
-  const objects = getObjects()
-  const object = objects.find((o) => o.id === id)
-  return object && !isHidden(objects, object) ? object : undefined
+  const object = getObjects().find((o) => o.id === id)
+  return object && !isHidden(object) ? object : undefined
 }
 
 /** What notes can be linked to */
-export const isLinkTarget = (kind?: string) => kind === 'project' || kind === 'folder' || kind === 'map' || kind === 'object'
+export const isLinkTarget = (kind?: string) => kind === 'map' || kind === 'object'
 
 /** Whether a note may be linked to a target (dormant: notes are on the server now and have no link route, so this is never true) */
 export function canLink(noteId: string, targetId: string) {

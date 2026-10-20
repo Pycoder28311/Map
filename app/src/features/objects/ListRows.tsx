@@ -87,7 +87,6 @@ export function ObjectListRow({
   open: (layout: WorkspaceLayout) => void
   afterOpen?: () => void
 }) {
-  // A project opens its Overview
   const panel: PanelRef = { type: object.kind, id: object.id }
   // Projects, maps and object cards take links (a note dropped on the node at the row's end)
   const link = isLinkTarget(object.kind) ? linkNodeFor(object.id, place, object.name) : undefined

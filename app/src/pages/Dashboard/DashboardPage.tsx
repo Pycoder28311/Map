@@ -14,7 +14,7 @@ import { authClient } from '../../lib/auth-client'
 // Also a workspace panel (src/panels.ts): no <main> here, AppLayout provides it
 /**
  * The main page: the quick note input, three columns (Recent, Notes, Maps by default; each can show
- * another list), and under them the sections (Orphans, then each project) as rows of cards
+ * another list), and under them the sections (Projects, Notes and Objects) as rows of cards
  */
 export default function DashboardPage() {
     const navigate = useNavigate()
@@ -63,7 +63,7 @@ export default function DashboardPage() {
                     <DashboardColumns {...columns} />
                 </div>
 
-                <DashboardSections columns={columns.columns} projects={columns.projects} />
+                <DashboardSections columns={columns.columns} />
 
                 <footer className="flex items-center justify-between gap-4 border-t border-line pt-4">
                     <p className="text-body text-fg-muted">

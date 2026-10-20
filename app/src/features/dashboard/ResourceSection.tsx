@@ -12,10 +12,10 @@ import { useRowSort } from './useRowSort'
 type Item = Record<string, unknown> & { id: number | string; createdAt?: string }
 
 /**
- * A resource's row on the Dashboard (the Notes row): its header (name, sort, "+"), then its cards in a strip that scrolls sideways.
+ * A resource's row on the Dashboard (the Projects and Notes rows): its header (name, sort, "+"), then its cards in a strip that scrolls sideways.
  * The server's order (pinned first) unless a sort is chosen. The cards take no drops (nothing is moved between rows).
  */
-export default function ResourceSection({ resource, row, onOpen }: { resource: AnyResource; row: 'notes'; onOpen: (id: string) => void }) {
+export default function ResourceSection({ resource, row, onOpen }: { resource: AnyResource; row: 'projects' | 'notes'; onOpen: (id: string) => void }) {
   const list = useResourceList(resource)
   const { menuOf, dialogs } = useResourceMenu(resource)
   const { sortOf, setSort } = useRowSort()

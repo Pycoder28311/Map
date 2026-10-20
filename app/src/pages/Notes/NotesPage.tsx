@@ -1,7 +1,7 @@
 import { useState } from 'react'
+import ResourceModal from '../../components/ui/resource/ResourceModal'
 import ResourcePage from '../../components/ui/resource/ResourcePage'
 import { notesResource } from '../../resources/notes/notes.resource'
-import NoteModal from '../../resources/notes/NoteModal'
 import { asAnyResource } from '../../resources/types'
 
 const resource = asAnyResource(notesResource)
@@ -13,7 +13,7 @@ export default function NotesPage() {
   return (
     <>
       <ResourcePage resource={resource} description="Pinned notes come first." onOpenItem={setNoteId} />
-      <NoteModal noteId={noteId} onClose={() => setNoteId(null)} />
+      <ResourceModal resource={resource} itemId={noteId} onClose={() => setNoteId(null)} />
     </>
   )
 }

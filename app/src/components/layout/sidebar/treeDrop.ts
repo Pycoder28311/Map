@@ -1,8 +1,7 @@
 // Where a dragged sidebar object lands, and whether it may (pure: tested in treeDrop.test.ts).
-// Rules: an object goes into a project, between rows inside one, or into Objects (parentless),
-// wherever canPlace allows it; projects are reordered among projects, never nested; Pinned rows
-// reorder pins (a dropped object gets pinned); Dashboard never takes a drop.
-import { canPlace, type MockObject } from '../../../mocks/projects'
+// Rules: an object goes between rows of Objects (or at their end); Pinned rows reorder pins (a dropped
+// object gets pinned); Dashboard never takes a drop.
+import type { MockObject } from '../../../mocks/projects'
 
 export type DropPosition = 'before' | 'after' | 'into'
 
@@ -12,18 +11,14 @@ export type RowDropData = {
   zone?: 'row'
   priority?: number
   nodeId: string
-  section: 'pinned' | 'projects' | 'objects' | 'objects-end' | 'fixed'
+  section: 'pinned' | 'objects' | 'objects-end' | 'fixed'
   /** The object this row is */
   objectId?: string
-  /** A project's Overview row: which project */
-  overviewOf?: string
-  /** A container (a project): may take drops into it */
-  folder?: boolean
 }
 
 export type DropAction =
-  /** Move to `parentId` (null: top level), just before `beforeId` (null: last). `into`: dropped on that project's row */
-  | { kind: 'move'; parentId: string | null; beforeId: string | null; into?: string }
+  /** Move just before `beforeId` (null: last) */
+  | { kind: 'move'; beforeId: string | null }
   /** Pin (or move the pin) just before `beforeId` among the pins (null: last) */
   | { kind: 'pin'; beforeId: string | null }
 
@@ -53,7 +48,6 @@ export function resolveDrop(
 ): DropAction | null {
   const dragged = objects.find((o) => o.id === draggedId)
   if (!dragged) return null
-  const isProject = dragged.kind === 'project'
 
   switch (row.section) {
     case 'fixed':
@@ -65,38 +59,12 @@ export function resolveDrop(
       return beforeId === draggedId ? null : { kind: 'pin', beforeId }
     }
     case 'objects-end':
-      return canPlace(dragged.kind, null) && !isProject ? { kind: 'move', parentId: null, beforeId: null } : null
+      return { kind: 'move', beforeId: null }
   }
 
-  // A project's Overview row: only "after" it, i.e. first among the project's own children
-  if (row.overviewOf) {
-    if (!canPlace(dragged.kind, 'project') || position !== 'after') return null
-    const first = objects.find((o) => o.parentId === row.overviewOf && o.id !== draggedId)
-    return { kind: 'move', parentId: row.overviewOf, beforeId: first?.id ?? null }
-  }
-
+  // Next to another object
   const target = objects.find((o) => o.id === row.objectId)
-  if (!target || target.id === draggedId) return null
-
-  if (position === 'into') {
-    if (target.kind !== 'project' || !canPlace(dragged.kind, target.kind)) return null
-    return { kind: 'move', parentId: target.id, beforeId: null, into: target.id }
-  }
-
-  if (isProject) {
-    // Only among the projects (top level)
-    if (target.kind !== 'project') return null
-    const beforeId =
-      position === 'before' ? target.id : nextAfter(objects, target, draggedId, (o) => o.kind === 'project' && o.parentId === null)
-    return { kind: 'move', parentId: null, beforeId }
-  }
-
-  // Any other object: next to a sibling (in its project, or in Objects), never among projects,
-  // and only where it may go
-  if (target.kind === 'project') return null
-  const parent = target.parentId ? objects.find((o) => o.id === target.parentId) : null
-  if (parent === undefined || !canPlace(dragged.kind, parent?.kind ?? null)) return null
-  const sibling = (o: MockObject) => o.parentId === target.parentId && o.kind !== 'project'
-  const beforeId = position === 'before' ? target.id : nextAfter(objects, target, draggedId, sibling)
-  return { kind: 'move', parentId: target.parentId, beforeId }
+  if (!target || target.id === draggedId || position === 'into') return null
+  const beforeId = position === 'before' ? target.id : nextAfter(objects, target, draggedId, (o) => !o.archived)
+  return { kind: 'move', beforeId }
 }

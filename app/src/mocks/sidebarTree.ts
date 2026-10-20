@@ -1,16 +1,15 @@
 // MOCK DATA: turns the mock objects into the sidebar's tree nodes. Replaced by the same mapping over
 // backend data later; the components stay the same.
-import { LuBox, LuFolder, LuFolderOpen, LuInfo, LuLayoutDashboard, LuMap } from 'react-icons/lu'
+import { LuBox, LuLayoutDashboard, LuMap } from 'react-icons/lu'
 import type { ButtonIcon } from '../components/ui/icons/IconSlot'
 import type { TreeNode } from '../components/ui/tree/types'
 import type { MockObject, ObjectKind } from './projects'
 import { isHidden, type Link } from './projectsStore'
 
 /** A row the user can change (rename, duplicate, move, pin, archive, delete): one object */
-export type SidebarItem = { kind: ObjectKind; id: string; name: string; parentId: string | null }
+export type SidebarItem = { kind: ObjectKind; id: string; name: string }
 
 export const KIND_ICON: Record<ObjectKind, ButtonIcon> = {
-  project: LuFolder,
   map: LuMap,
   object: LuBox,
 }
@@ -28,12 +27,12 @@ export const DASHBOARD_NODE: TreeNode = {
   locked: true,
 }
 
-const itemOf = (o: MockObject): SidebarItem => ({ kind: o.kind, id: o.id, name: o.name, parentId: o.parentId })
+const itemOf = (o: MockObject): SidebarItem => ({ kind: o.kind, id: o.id, name: o.name })
 
 // An object's row can be picked to share (features/share)
 const shareData = (o: MockObject) => ({ 'data-share-id': o.id }) as const
 
-/** A map or object card row (a leaf that opens its panel; every object can be picked up, only a project takes a drop into it) */
+/** A map or object card row (a leaf that opens its panel; every object can be picked up) */
 const leafOf = (o: MockObject, id = nodeIdOf(o), badge?: number): TreeNode => ({
   id,
   rowData: shareData(o),
@@ -41,20 +40,19 @@ const leafOf = (o: MockObject, id = nodeIdOf(o), badge?: number): TreeNode => ({
   icon: KIND_ICON[o.kind],
   panel: { type: o.kind, id: o.id },
   draggable: true,
-  locked: o.kind !== 'project',
+  locked: true,
   badge,
 })
 
 /**
  * The sidebar's sections from the objects (archived ones left out):
- * - pinned: one leaf per pinned object (`pin:` ids), in pin order; a project opens its Overview
- * - projects: each project, its Overview, then its children
- * - objects: the top-level objects that aren't projects (notes are not here: they come from the server)
+ * - pinned: one leaf per pinned object (`pin:` ids), in pin order
+ * - objects: every object (notes and projects are not here: they come from the server)
  * `items`: which rows are objects (by node id, Pinned rows included); the others are fixed.
  */
 export function buildSidebarSections(objects: MockObject[], pins: string[], links: Link[] = []) {
   const items = new Map<string, SidebarItem>()
-  const visible = objects.filter((o) => !isHidden(objects, o))
+  const visible = objects.filter((o) => !isHidden(o))
   const byId = new Map(visible.map((o) => [o.id, o]))
   // How many visible objects each one is linked to (shown as a small count on its row)
   const linked = new Map<string, number>()
@@ -65,50 +63,21 @@ export function buildSidebarSections(objects: MockObject[], pins: string[], link
   }
   const badge = (id: string) => linked.get(id)
 
-  /** An object's row in a project or in Objects: a leaf */
+  /** An object's row in Objects: a leaf */
   const rowOf = (o: MockObject): TreeNode => {
     items.set(nodeIdOf(o), itemOf(o))
     return leafOf(o, nodeIdOf(o), badge(o.id))
   }
 
-  const projects = visible
-    .filter((o) => o.kind === 'project')
-    .map((p): TreeNode => {
-      items.set(nodeIdOf(p), itemOf(p))
-      return {
-        id: nodeIdOf(p),
-        label: p.name,
-        icon: KIND_ICON.project,
-        openIcon: LuFolderOpen,
-        rowData: shareData(p),
-        draggable: true,
-        locked: false,
-        badge: badge(p.id),
-        children: [
-          {
-            id: `${nodeIdOf(p)}-overview`,
-            label: 'Overview',
-            icon: LuInfo,
-            panel: { type: 'project', id: p.id },
-            draggable: true,
-            locked: true,
-          },
-          ...visible.filter((o) => o.parentId === p.id).map(rowOf),
-        ],
-      }
-    })
-
-  const objectRows = visible.filter((o) => o.parentId === null && o.kind !== 'project').map(rowOf)
+  const objectRows = visible.map(rowOf)
 
   const pinned = pins.flatMap((id) => {
     const o = byId.get(id)
     if (!o) return []
     const nodeId = `pin:${nodeIdOf(o)}`
     items.set(nodeId, itemOf(o))
-    const node = leafOf(o, nodeId, badge(o.id))
-    // A project's shortcut opens its Overview
-    return [o.kind === 'project' ? { ...node, panel: { type: 'project', id: o.id } } : node]
+    return [leafOf(o, nodeId, badge(o.id))]
   })
 
-  return { pinned, projects, objects: objectRows, items }
+  return { pinned, objects: objectRows, items }
 }

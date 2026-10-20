@@ -1,5 +1,5 @@
 import { useMemo, useState, type ComponentProps } from 'react'
-import { LuPlus, LuUnlink } from 'react-icons/lu'
+import { LuUnlink } from 'react-icons/lu'
 import LayoutsSection from '../../../features/layouts/LayoutsSection'
 import { useLinkNode } from '../../../features/links/linkNode'
 import { useLinkPick } from '../../../features/links/linkPick'
@@ -26,8 +26,8 @@ import type { RowDropData } from './treeDrop'
 const DIVIDER = 'my-(--divider-gap)'
 
 /**
- * The sidebar's content, in sections (top to bottom): Layouts, Pinned, Dashboard, Projects, then one section per resource
- * (Notes: from the server) and Objects (mock objects without a project).
+ * The sidebar's content, in sections (top to bottom): Layouts, Pinned, Dashboard, then one section per resource
+ * (Projects and Notes: from the server) and Objects (the mock maps and object cards).
  * Objects can be created (+), renamed in place (menu or double-click on the name), pinned,
  * duplicated, moved and deleted. Rows open on screen stay visible under their collapsed parent.
  */
@@ -35,7 +35,7 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
     const objects = useMockObjects()
     const pins = usePins()
     const links = useLinks()
-    const { pinned, projects, objects: objectRows, items } = useMemo(() => buildSidebarSections(objects, pins, links), [objects, pins, links])
+    const { pinned, objects: objectRows, items } = useMemo(() => buildSidebarSections(objects, pins, links), [objects, pins, links])
     const linkNodeFor = useLinkNode()
     const picking = useLinkPick() !== null
     const workspace = useWorkspace()
@@ -57,7 +57,7 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
             element: () => document.querySelector(`[data-row-id="${CSS.escape(node.id)}"]`),
         })
 
-    // Right icons, only on hover (the left icon is each node's own). Fixed rows (Dashboard, Overview): only undrag
+    // Right icons, only on hover (the left icon is each node's own). Fixed rows (Dashboard): only undrag
     // Shown as a pane: "undrag" (take it out of the panes), left of the others
     const rightIcons = (node: TreeNode): TreeRightIcon[] => {
         const undrag: TreeRightIcon[] =
@@ -67,9 +67,7 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
         const item = items.get(node.id)
         if (!item) return undrag
         const more: TreeRightIcon = { label: `More: ${item.name}`, show: 'hover', menu: menuOf(node, item) }
-        if (item.kind !== 'project' || node.id.startsWith('pin:')) return [...undrag, more]
-        const create = () => actions.openDialog({ kind: 'create', parent: { kind: 'project', id: item.id, name: item.name } })
-        return [...undrag, { icon: LuPlus, label: `New map in ${item.name}`, show: 'hover', onClick: create }, more]
+        return [...undrag, more]
     }
 
     // What a dragged row carries (rows that can't be picked up: none)
@@ -86,14 +84,9 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
         dropData: (node): RowDropData | undefined => {
             if (section === 'fixed') return undefined
             const item = items.get(node.id)
-            // A project's Overview row: things can go right after it (first in the project)
-            if (!item && section === 'projects' && node.panel?.type === 'project') {
-                return { zone: 'row', priority: 2, nodeId: node.id, section, overviewOf: node.panel.id }
-            }
             if (!item) return undefined
-            return { zone: 'row', priority: 2, nodeId: node.id, section, objectId: item.id, folder: item.kind === 'project' }
+            return { zone: 'row', priority: 2, nodeId: node.id, section, objectId: item.id }
         },
-        // Rows that aren't links (projects) drag themselves
         dragData: (node) => {
             const object = objectInfo(node)
             return object?.objectId ? { kind: 'object', label: node.label, object } : undefined
@@ -101,10 +94,10 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
         draggingId: drop.draggingNodeId,
         target: drop.target?.kind === 'row' ? { nodeId: drop.target.nodeId, position: drop.target.position } : null,
         lidOpen,
-        // Projects, maps and object cards take links: a link node slides out while a note is dragged (features/links)
+        // Maps and object cards take links: a link node slides out while a note is dragged (features/links)
         linkNode: (node) => {
             const item = items.get(node.id)
-            // Linking a map object: the notes and articles take the node; else the targets of dragged notes (projects, maps…)
+            // Linking a map object: the notes and articles take the node; else the targets of dragged notes (maps…)
             if (!item || !(picking ? isNoteLike(item.kind) : isLinkTarget(item.kind))) return undefined
             return linkNodeFor(item.id, node.id.startsWith('pin:') ? 'pin' : 'sidebar', item.name, item.kind)
         },
@@ -142,16 +135,6 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
             <Divider compact={compact} className={DIVIDER} />
             <TreeView nodes={[DASHBOARD_NODE]} label="Main navigation" {...tree} dnd={dndFor('fixed')} />
 
-            <section aria-label="Projects">
-                <Divider
-                    label="Projects"
-                    action={{ icon: LuPlus, label: 'New project', onClick: () => actions.openDialog({ kind: 'create', parent: { kind: 'projects' } }) }}
-                    compact={compact}
-                    className={DIVIDER}
-                />
-                <TreeView nodes={projects} label="Projects" {...tree} dnd={dndFor('projects')} />
-            </section>
-
             {resourcesWith('sidebar').map((resource) => (
                 <ResourceSidebarSection key={resource.name} resource={resource} tree={tree} compact={compact} onCreate={() => setCreating(resource)} />
             ))}
@@ -161,7 +144,7 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
                 tree={{ ...tree, dnd: dndFor('objects') }}
                 dropAtEnd={drop.target?.kind === 'row' && drop.target.nodeId === OBJECTS_END}
                 compact={compact}
-                onCreate={() => actions.openDialog({ kind: 'create', parent: { kind: 'objects' } })}
+                onCreate={() => actions.openDialog({ kind: 'create' })}
             />
 
             {actions.dialogs}

@@ -10,7 +10,7 @@ import TreeView from '../../ui/tree/TreeView'
 /** How many rows show before "Show more" */
 const LIMIT = 5
 
-/** The node id of the Objects header as a drop target: dropped there, an object goes to the top level (last) */
+/** The node id of the Objects header as a drop target: dropped there, an object goes last */
 export const OBJECTS_END = 'objects-end'
 
 type Props = {
@@ -23,7 +23,7 @@ type Props = {
   dropAtEnd?: boolean
 }
 
-/** The Objects section (mock objects without a project: maps and object cards), the first few, then Show more / less. Notes have their own section (ResourceSidebarSection) */
+/** The Objects section (the mock maps and object cards), the first few, then Show more / less. Notes have their own section (ResourceSidebarSection) */
 export default function SidebarObjects({ nodes, tree, compact, onCreate, dropAtEnd = false }: Props) {
   const [showAll, setShowAll] = useState(false)
   // The header takes drops too (e.g. when there are no objects yet)

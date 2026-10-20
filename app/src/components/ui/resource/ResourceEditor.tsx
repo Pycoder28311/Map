@@ -1,45 +1,48 @@
-import type { Note } from '@map/shared'
 import { useEffect, useRef, useState } from 'react'
 import { LuTrash2 } from 'react-icons/lu'
-import Button from '../../components/ui/buttons/Button'
-import Modal from '../../components/ui/overlays/Modal'
-import ResourceDeleteDialog from '../../components/ui/resource/ResourceDeleteDialog'
-import ResourceForm from '../../components/ui/resource/ResourceForm'
-import SaveStatus from '../../components/ui/resource/SaveStatus'
-import { authClient } from '../../lib/auth-client'
-import { browserStorage, clearDraft, decideOnOpen, draftKey, readDraft } from '../../lib/resource/autosave'
-import { changedFields, sameValues, valuesOf, type FormValues } from '../../lib/resource/changed'
-import { useResourceActions, useResourceItem } from '../../lib/resource/hooks'
-import { useAutosave } from '../../lib/resource/useAutosave'
-import { asAnyResource } from '../types'
-import { notesResource } from './notes.resource'
+import Button from '../buttons/Button'
+import Modal from '../overlays/Modal'
+import ResourceDeleteDialog from './ResourceDeleteDialog'
+import ResourceForm from './ResourceForm'
+import SaveStatus from './SaveStatus'
+import { authClient } from '../../../lib/auth-client'
+import { browserStorage, clearDraft, decideOnOpen, draftKey, readDraft } from '../../../lib/resource/autosave'
+import { changedFields, sameValues, valuesOf, type FormValues } from '../../../lib/resource/changed'
+import { useResourceActions, useResourceItem } from '../../../lib/resource/hooks'
+import { useAutosave } from '../../../lib/resource/useAutosave'
+import type { AnyResource } from '../../../resources/types'
 
 const DATE = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
-const resource = asAnyResource(notesResource)
+
+/** What the editor needs of an item of any resource */
+type Item = { id: number | string; title: string; archived: boolean; createdAt: string; updatedAt: string } & Record<string, unknown>
 
 type Props = {
-  /** The note's id */
+  resource: AnyResource
+  /** The item's id */
   id: string
   /** Set in the modal: a Close button saves first, then calls it */
   onClose?: () => void
 }
 
 /**
- * One note, edited in place (the modal and the panel use it): a borderless title and the rich text, saved as you write
- * (useAutosave: 5 s without a change, 30 s at most, at once when the page is hidden, a draft on this device meanwhile).
- * A note in the Trash says so, with Restore.
+ * One item of a resource (a note, a project), edited in place (the modal and the panel use it): the resource's fields, saved as you
+ * write (useAutosave: 5 s without a change, 30 s at most, at once when the page is hidden, a draft on this device meanwhile).
+ * An item in the Trash says so, with Restore.
  */
-export default function NoteEditor({ id, onClose }: Props) {
-  const { item: note, status, error, notFound, refresh } = useResourceItem(notesResource, id)
-  const { restore } = useResourceActions(notesResource)
+export default function ResourceEditor({ resource, id, onClose }: Props) {
+  const { item, status, error, notFound, refresh } = useResourceItem(resource, id)
+  const note = item as Item | null
+  const what = resource.ui.label.toLowerCase()
+  const { restore } = useResourceActions(resource)
   const [restoring, setRestoring] = useState(false)
 
-  if (notFound) return <p className="p-4 text-body text-fg-muted">This note is gone.</p>
+  if (notFound) return <p className="p-4 text-body text-fg-muted">This {what} is gone.</p>
   if (status === 'error' && !note) {
     return (
       <div className="flex flex-col items-start gap-2 p-4">
         <p role="alert" className="text-body text-danger">
-          {error?.message ?? 'Could not load the note.'}
+          {error?.message ?? `Could not load the ${what}.`}
         </p>
         <Button variant="secondary" onClick={refresh}>
           Try again
@@ -51,7 +54,7 @@ export default function NoteEditor({ id, onClose }: Props) {
   if (note.archived) {
     return (
       <div className="flex flex-col items-start gap-3 p-4">
-        <p className="text-body text-fg-muted">This note is in the Trash.</p>
+        <p className="text-body text-fg-muted">This {what} is in the Trash.</p>
         <Button
           variant="secondary"
           disabled={restoring}
@@ -65,11 +68,12 @@ export default function NoteEditor({ id, onClose }: Props) {
       </div>
     )
   }
-  return <NoteForm key={note.id} note={note} onClose={onClose} />
+  return <ItemForm key={note.id} resource={resource} note={note} onClose={onClose} />
 }
 
-function NoteForm({ note, onClose }: { note: Note; onClose?: () => void }) {
-  const { update } = useResourceActions(notesResource)
+function ItemForm({ resource, note, onClose }: { resource: AnyResource; note: Item; onClose?: () => void }) {
+  const what = resource.ui.label.toLowerCase()
+  const { update } = useResourceActions(resource)
   const { data: session } = authClient.useSession()
   const userId = session?.user.id
 
@@ -77,7 +81,7 @@ function NoteForm({ note, onClose }: { note: Note; onClose?: () => void }) {
   const saved = useRef<FormValues>(valuesOf(resource, note))
   const base = useRef(note.updatedAt)
 
-  // A draft kept on this device since the last time: applied if it changes the server's current version, asked about if the note
+  // A draft kept on this device since the last time: applied if it changes the server's current version, asked about if the item
   // changed since, dropped if it holds nothing new
   const [boot] = useState(() => {
     const storage = browserStorage()
@@ -98,7 +102,7 @@ function NoteForm({ note, onClose }: { note: Note; onClose?: () => void }) {
     save: async (values, { keepalive }) => {
       const patch = changedFields(values, saved.current)
       if (Object.keys(patch).length === 0) return
-      const result = await update(note.id, patch, { keepalive })
+      const result = (await update(note.id, patch, { keepalive })) as Item
       saved.current = valuesOf(resource, result)
       base.current = result.updatedAt
     },
@@ -163,7 +167,7 @@ function NoteForm({ note, onClose }: { note: Note; onClose?: () => void }) {
         <Modal
           open
           onClose={useServers}
-          title="This note changed"
+          title={`This ${what} changed`}
           size="sm"
           footer={
             <>
@@ -174,7 +178,7 @@ function NoteForm({ note, onClose }: { note: Note; onClose?: () => void }) {
             </>
           }
         >
-          <p className="text-body">This note was changed somewhere else after you made the changes kept on this device. Which version do you want?</p>
+          <p className="text-body">This {what} was changed somewhere else after you made the changes kept on this device. Which version do you want?</p>
         </Modal>
       )}
     </div>

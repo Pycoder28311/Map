@@ -1,19 +1,19 @@
-import { findObject } from '../../mocks/projects'
+import { KIND_LABEL, type ObjectKind } from '../../mocks/projects'
 import { createObjectOf } from '../../mocks/projectsStore'
-import { resolveCreate, type CreateKind, type Path } from './place'
+
+/** The kinds the Create modal makes in the mock store (projects and notes are made on the server, see CreateModal), in the order of its tabs */
+export const CREATE_KINDS: ObjectKind[] = ['object', 'map']
 
 export type CreateFields = { title: string; description: string }
 
 /**
- * What the Create modal does for a map or an object card: makes it in the place (first among its siblings). Never opens or navigates
- * anywhere. Returns what the toast says. (A note is made on the server, without a place: see CreateModal.)
+ * What the Create modal does for a map or an object card: makes it, first among the objects. Never opens or navigates anywhere.
+ * Returns its id.
  */
-export function createFromModal(kind: CreateKind, path: Path, fields: CreateFields): { id: string; where: string | null } | null {
-  const { parentId } = resolveCreate(path)
-  const id = createObjectOf(kind, parentId, fields.title.trim() || 'Untitled', {
+export function createFromModal(kind: ObjectKind, fields: CreateFields): { id: string } {
+  const id = createObjectOf(kind, fields.title.trim() || `Untitled ${KIND_LABEL[kind].toLowerCase()}`, {
     description: kind === 'object' ? fields.description.trim() || undefined : undefined,
     first: true,
   })
-  if (!id) return null
-  return { id, where: parentId ? (findObject(parentId)?.name ?? null) : null }
+  return { id }
 }

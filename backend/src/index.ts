@@ -12,6 +12,7 @@ import { rateLimit } from './middleware/rate-limit'
 import imagesRoutes from './resources/images/images.routes'
 import { imagesBase } from './resources/images/images.repo'
 import notesRoutes from './resources/notes/notes.routes'
+import projectsRoutes from './resources/projects/projects.routes'
 
 // Only /api/* and /images/* reach this code (wrangler.jsonc run_worker_first);
 // every other path is the website from app/dist
@@ -47,6 +48,7 @@ app.on(['GET', 'POST'], '/api/auth/*', (c) => createAuth(c.env).handler(c.req.ra
 // One line per resource (see instructions/adding-a-resource.md)
 const routes = app
   .route('/api/notes', notesRoutes)
+  .route('/api/projects', projectsRoutes)
   .route('/api/images', imagesRoutes)
 
 // Serves R2 files through the Worker for LOCAL development only (production uses the IMAGES_URL domain).

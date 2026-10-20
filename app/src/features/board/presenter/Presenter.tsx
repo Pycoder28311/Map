@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { LuChevronLeft, LuChevronRight, LuExternalLink, LuX } from 'react-icons/lu'
 import Button from '../../../components/ui/buttons/Button'
 import IconButton from '../../../components/ui/buttons/IconButton'
-import { reorderChildren, useMockObjects } from '../../../mocks/projectsStore'
+import { reorderObjects, useMockObjects } from '../../../mocks/projectsStore'
 import { useWorkspace } from '../../workspace/useWorkspace'
 import { getBoard } from '../boardStore'
 import { siblingMaps } from '../branches'
@@ -28,8 +28,8 @@ function pageStyle(style: PresenterStyle, index: number, current: number, count:
 }
 
 /**
- * The project's maps, one after the other: the shown map on the stage (read only; a pin opens its card) and below it a strip of
- * thumbnails to drag into another order (the project's order follows). Arrows, the strip and the keys change the map.
+ * The maps, one after the other: the shown map on the stage (read only; a pin opens its card) and below it a strip of
+ * thumbnails to drag into another order (the maps' order follows). Arrows, the strip and the keys change the map.
  */
 export default function Presenter({ mapId, onClose }: { mapId: string; onClose: () => void }) {
   const objects = useMockObjects()
@@ -44,12 +44,11 @@ export default function Presenter({ mapId, onClose }: { mapId: string; onClose: 
 
   const current = Math.max(0, maps.findIndex((m) => m.id === currentId))
   const go = (i: number) => maps[i] && setCurrentId(maps[i].id)
-  const parentId = maps[0]?.parentId ?? null
 
   const reorder = (from: number, to: number) => {
     const ids = moveItem(maps.map((m) => m.id), from, to)
     if (ids.every((id, i) => id === maps[i].id)) return
-    reorderChildren(parentId, ids)
+    reorderObjects(ids)
     setAnnounce(`${maps[from].name} moved to place ${to + 1}`)
   }
   const open = () => {
@@ -63,7 +62,7 @@ export default function Presenter({ mapId, onClose }: { mapId: string; onClose: 
     <div
       ref={root}
       role="dialog"
-      aria-label="Maps of the project"
+      aria-label="Maps"
       tabIndex={-1}
       onKeyDown={(e) => {
         e.stopPropagation()

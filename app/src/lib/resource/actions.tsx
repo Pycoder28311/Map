@@ -75,6 +75,7 @@ export function useResourceMenu(resource: AnyResource) {
             }),
         },
       ],
+      [{ label: 'Delete', icon: LuTrash2, danger: true, onClick: () => setDeleting(item) }],
     ].filter((group) => group.length > 0)
   }
 

@@ -1,4 +1,4 @@
-// Which maps are branches of each other, and which maps a project presents. Pure (branches.test.ts).
+// Which maps are branches of each other, and which maps are presented together. Pure (branches.test.ts).
 import type { MockObject } from '../../mocks/projects'
 
 /** The maps of the current map's branch group, in the order they were made (the map alone when it has no branches) */
@@ -18,15 +18,14 @@ export function nextBranchName(group: MockObject[]) {
   return `Branch ${n}`
 }
 
-/** The maps beside this one in its project (itself included, in list order); a map outside a project is alone */
+/** The maps (itself included, in list order); none when `mapId` is not a visible map */
 export function siblingMaps(objects: MockObject[], mapId: string): MockObject[] {
   const map = objects.find((o) => o.id === mapId)
-  if (!map) return []
-  if (map.parentId === null) return [map]
-  return objects.filter((o) => o.parentId === map.parentId && o.kind === 'map' && !o.archived)
+  if (!map || map.archived) return []
+  return objects.filter((o) => o.kind === 'map' && !o.archived)
 }
 
-/** A map of a project's list, with the branches made from it (in the order they were made) */
+/** A map of the list, with the branches made from it (in the order they were made) */
 export type MapNode = { map: MockObject; branches: MockObject[] }
 
 /** The maps as a tree: each branch group once, its first map on top and the others under it; lone maps have no branches */

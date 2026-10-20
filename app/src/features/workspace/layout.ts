@@ -34,7 +34,7 @@ const EDGE_CELLS: Record<Edge, number[]> = { left: [0, 2], right: [1, 3], top: [
 
 /* ─────────────── Panels ─────────────── */
 
-/** Stable text form of a panel: "dashboard", "project:p1" */
+/** Stable text form of a panel: "dashboard", "map:m1" */
 export const panelKey = (panel: PanelRef) => (panel.id ? `${panel.type}:${panel.id}` : panel.type)
 
 export function parsePanelKey(key: string): PanelRef | null {
@@ -395,7 +395,7 @@ export function keepOnly(layout: WorkspaceLayout, slot: Slot): WorkspaceLayout {
 
 /* ─────────────── URL ─────────────── */
 
-/** "/workspace?layout=3-left&panels=dashboard,project:p1,map:m1" */
+/** "/workspace?layout=3-left&panels=dashboard,project:5,map:m1" */
 export function workspaceHref(layout: WorkspaceLayout) {
   const keys = layout.panels.map((p) => panelKey(p).split(':').map(encodeURIComponent).join(':'))
   return `${WORKSPACE_PATH}?layout=${layout.template}&panels=${keys.join(',')}`

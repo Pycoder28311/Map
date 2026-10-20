@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { authClient } from '../../lib/auth-client'
-import { useMockProjects } from '../../mocks/projectsStore'
 import { snapshotBlocks } from './blockFlip'
 import { moveColumn, pickColumn, validColumns, type ColumnId } from './columns'
 
@@ -17,17 +16,15 @@ function load(userId: string | undefined): unknown {
 
 /**
  * The Dashboard's columns (which list each shows, in order), kept in this browser per user. Gone
- * projects fall back to a default list (validColumns). Every change glides (blockFlip.ts).
+ * lists fall back to a default list (validColumns). Every change glides (blockFlip.ts).
  */
 export function useDashboardColumns() {
   const { data: session } = authClient.useSession()
   const userId = session?.user.id
-  const projects = useMockProjects()
-  const projectIds = projects.map((p) => p.id)
-  // Read once per user; the stored value is made valid on every render (projects come and go)
+  // Read once per user; the stored value is made valid on every render
   const [stored, setStored] = useState<{ userId: string | undefined; value: unknown }>(() => ({ userId, value: load(userId) }))
   if (stored.userId !== userId) setStored({ userId, value: load(userId) })
-  const columns = validColumns(stored.value, projectIds)
+  const columns = validColumns(stored.value)
 
   const change = (next: ColumnId[]) => {
     if (next === columns) return
@@ -43,7 +40,6 @@ export function useDashboardColumns() {
 
   return {
     columns,
-    projects,
     /** Column i shows `id` (swaps with the column already showing it) */
     pick: (i: number, id: ColumnId) => change(pickColumn(columns, i, id)),
     /** Column `from` dropped at `to` */

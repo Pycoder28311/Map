@@ -23,7 +23,6 @@ type Props = {
   active: number
   onActive: (index: number) => void
   onOpen: (result: SearchResult) => void
-  projects: { id: string; name: string }[]
   /** The filters column is shown (Open Filters) */
   filtersOpen: boolean
   onFiltersOpen: (open: boolean) => void
@@ -44,7 +43,6 @@ export default function SearchPanel({
   active,
   onActive,
   onOpen,
-  projects,
   filtersOpen,
   onFiltersOpen,
   resultsRef,
@@ -55,11 +53,6 @@ export default function SearchPanel({
       key: `t:${k}`,
       label: `${filters.typeMode === 'exclude' ? 'Not ' : ''}${kindEntry(k)?.label ?? k}`,
       remove: () => onFilters({ ...filters, types: filters.types.filter((x) => x !== k) }),
-    })),
-    ...filters.projects.map((p) => ({
-      key: `p:${p}`,
-      label: `In ${projects.find((x) => x.id === p)?.name ?? 'project'}`,
-      remove: () => onFilters({ ...filters, projects: filters.projects.filter((x) => x !== p) }),
     })),
   ]
 
@@ -106,22 +99,6 @@ export default function SearchPanel({
                 )
               })}
             </fieldset>
-            {projects.length > 0 && (
-              <fieldset className="flex flex-col gap-1">
-                <legend className={`${HEADING} mb-1`}>Parent Project</legend>
-                {projects.map((p) => (
-                  <label key={p.id} className={CHECK}>
-                    <input
-                      type="checkbox"
-                      checked={filters.projects.includes(p.id)}
-                      onChange={() => onFilters({ ...filters, projects: toggle(filters.projects, p.id) })}
-                      className="accent-accent"
-                    />
-                    <span className="min-w-0 truncate">{p.name}</span>
-                  </label>
-                ))}
-              </fieldset>
-            )}
           </div>
 
           <div aria-hidden className="w-px shrink-0 self-stretch bg-line" />

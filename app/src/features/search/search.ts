@@ -1,16 +1,14 @@
-// The navbar search: which items match a query and the filters. Pure (search.test.ts). It looks in the mock objects (projects, maps,
-// object cards) and in the items of the resources that turned search on (the server's notes: their title and preview).
+// The navbar search: which items match a query and the filters. Pure (search.test.ts). It looks in the mock objects (maps, object
+// cards) and in the items of the resources that turned search on (the server's projects and notes: their title and preview).
 import type { MockObject } from '../../mocks/projects'
 
 export type SearchFilters = {
   /** include: only the ticked kinds (none ticked: all); exclude: all but the ticked kinds. A kind is a mock kind or a resource's panel type */
   typeMode: 'include' | 'exclude'
   types: string[]
-  /** Only objects in these projects (none ticked: any). A resource's items have no project: they never match while this is set */
-  projects: string[]
 }
 
-export const NO_FILTERS: SearchFilters = { typeMode: 'include', types: [], projects: [] }
+export const NO_FILTERS: SearchFilters = { typeMode: 'include', types: [] }
 
 /** An item of a resource, as the search sees it: `text` is what it can be found by besides its name (a note's preview) */
 export type SearchItem = { id: string; kind: string; name: string; text: string }
@@ -22,9 +20,9 @@ export type SearchResult = { id: string; kind: string; name: string; description
 export const fold = (text: string) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 
 /** Whether any filter narrows the results */
-export const hasFilters = (f: SearchFilters) => f.types.length > 0 || f.projects.length > 0
+export const hasFilters = (f: SearchFilters) => f.types.length > 0
 
-type Candidate = SearchResult & { text: string; parentId: string | null }
+type Candidate = SearchResult & { text: string }
 
 /**
  * The items matching every word of the query (in the name or the text, ignoring case and accents) and the filters, best first:
@@ -37,27 +35,16 @@ export function searchAll(objects: MockObject[], items: SearchItem[], query: str
   const q = words.join(' ')
 
   const candidates: Candidate[] = [
-    ...objects.map((o): Candidate => {
-      const project = o.parentId ? objects.find((p) => p.id === o.parentId) : undefined
-      return {
-        id: o.id,
-        kind: o.kind,
-        name: o.name,
-        text: o.description ?? '',
-        parentId: o.parentId,
-        description: o.parentId ? project?.name : o.description?.split('\n')[0] || undefined,
-      }
-    }),
-    ...items.map((item): Candidate => ({ id: item.id, kind: item.kind, name: item.name, text: item.text, parentId: null, description: item.text || undefined })),
+    ...objects.map((o): Candidate => ({ id: o.id, kind: o.kind, name: o.name, text: o.description ?? '', description: o.description?.split('\n')[0] || undefined })),
+    ...items.map((item): Candidate => ({ id: item.id, kind: item.kind, name: item.name, text: item.text, description: item.text || undefined })),
   ]
 
   const kindOk = (c: Candidate) =>
     filters.types.length === 0 || (filters.typeMode === 'include' ? filters.types.includes(c.kind) : !filters.types.includes(c.kind))
-  const projectOk = (c: Candidate) => filters.projects.length === 0 || (c.parentId !== null && filters.projects.includes(c.parentId))
 
   const scored: { c: Candidate; score: number }[] = []
   for (const c of candidates) {
-    if (!kindOk(c) || !projectOk(c)) continue
+    if (!kindOk(c)) continue
     const name = fold(c.name)
     const all = `${name} ${fold(c.text)}`
     if (!words.every((w) => all.includes(w))) continue

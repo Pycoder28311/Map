@@ -2,9 +2,9 @@
 // To make something a panel: add one entry here, then put <OpenAsPanelButton panel={{ type, id }} />
 // next to it anywhere (see instructions/adding-a-panel.md). Passed to <WorkspaceProvider> in AppLayout.
 import { lazy } from 'react'
-import { LuBox, LuFolder, LuFolderOpen, LuLayoutDashboard, LuMap, LuStickyNote } from 'react-icons/lu'
+import { LuBox, LuFolder, LuLayoutDashboard, LuMap, LuStickyNote } from 'react-icons/lu'
 import type { PanelRegistry } from './features/workspace/types'
-import { findMap, findObject, findProject } from './mocks/projects'
+import { findMap, findObject } from './mocks/projects'
 import { resourcePanels } from './resources/registry'
 
 export const PANELS: PanelRegistry = {
@@ -33,12 +33,6 @@ export const PANELS: PanelRegistry = {
     matchRoute: '/notes',
   },
   // Panel-only content (no page of its own): shown on /workspace, also alone
-  project: {
-    title: (id) => findProject(id)?.name ?? 'Project',
-    icon: LuFolderOpen,
-    component: lazy(() => import('./features/projects/ProjectPanel')),
-    draggable: true,
-  },
   map: {
     title: (id) => findMap(id)?.name ?? 'Map',
     icon: LuMap,
@@ -52,6 +46,6 @@ export const PANELS: PanelRegistry = {
     component: lazy(() => import('./features/objects/ObjectPanel')),
     draggable: true,
   },
-  // One panel per resource that can be opened as one (the notes: resources/registry.ts)
+  // One panel per resource that can be opened as one (projects and notes: resources/registry.ts)
   ...resourcePanels(),
 }

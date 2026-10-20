@@ -26,7 +26,7 @@ type Columns = ReturnType<typeof useDashboardColumns>
  * (show another list here: one already in a column trades places; a section from below moves up).
  * Stacked on narrow screens.
  */
-export default function DashboardColumns({ columns, projects, pick, move }: Columns) {
+export default function DashboardColumns({ columns, pick, move }: Columns) {
   const rootRef = useRef<HTMLDivElement>(null)
   const { shown, draggingIndex } = useColumnDrag(rootRef, columns, move)
   useBlockFlip(rootRef, 'columns', shown.join(','))
@@ -42,8 +42,8 @@ export default function DashboardColumns({ columns, projects, pick, move }: Colu
           <Column
             id={id}
             index={columns.indexOf(id)}
-            label={columnLabel(id, projects)}
-            entries={menuEntries(columns, columns.indexOf(id), projects)}
+            label={columnLabel(id)}
+            entries={menuEntries(columns, columns.indexOf(id))}
             onPick={(choice) => pick(columns.indexOf(id), choice)}
             dragging={draggingIndex === columns.indexOf(id)}
           />
