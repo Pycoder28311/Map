@@ -34,6 +34,10 @@ export function useAutosave<V>(options: Options<V>) {
     first: 0,
     last: 0,
     attempt: 0,
+    /** Nothing is sent while true (a delete is being asked of the server) */
+    held: false,
+    /** The thing was deleted: nothing is sent, ever */
+    gone: false,
     saveTimer: undefined as number | undefined,
     draftTimer: undefined as number | undefined,
   })
@@ -62,7 +66,7 @@ export function useAutosave<V>(options: Options<V>) {
   const send = useCallback(
     async (keepalive: boolean) => {
       const r = run.current
-      if (r.saving || !r.dirty || r.latest === undefined) return
+      if (r.held || r.gone || r.saving || !r.dirty || r.latest === undefined) return
       r.saving = true
       r.first = Date.now() // changes made from now on are counted from now
       const sent = r.latest
@@ -86,6 +90,7 @@ export function useAutosave<V>(options: Options<V>) {
         }
       } catch (e) {
         r.saving = false
+        if (r.gone) return
         setError(e instanceof Error ? e : new Error(String(e)))
         setStatus('error')
         // The draft stays; try again later (5 s, 10 s, 20 s… at most a minute)
@@ -124,6 +129,29 @@ export function useAutosave<V>(options: Options<V>) {
     await send(false)
   }, [send])
 
+  /** Stops sending while something else decides what the server has (a delete); `release` goes on, `discard` drops it all */
+  const hold = useCallback(() => {
+    window.clearTimeout(run.current.saveTimer)
+    run.current.held = true
+  }, [])
+  const release = useCallback(() => {
+    run.current.held = false
+    schedule()
+  }, [schedule])
+  /** The thing was deleted: what was not sent, and its draft, are dropped, and nothing is sent again */
+  const discard = useCallback(() => {
+    const r = run.current
+    window.clearTimeout(r.saveTimer)
+    window.clearTimeout(r.draftTimer)
+    r.saveTimer = r.draftTimer = undefined
+    r.gone = true
+    r.dirty = false
+    r.latest = undefined
+    const { draft } = config.current
+    if (draft) clearDraft(browserStorage(), draft.key)
+    setStatus('idle')
+  }, [])
+
   // The page is hidden or closing: the draft first, then try to send, with keepalive when the body fits
   useEffect(() => {
     const leave = () => {
@@ -151,5 +179,5 @@ export function useAutosave<V>(options: Options<V>) {
     }
   }, [persistDraft, send])
 
-  return { change, flush, status, error }
+  return { change, flush, hold, release, discard, status, error }
 }

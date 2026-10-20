@@ -11,6 +11,11 @@ export const notesResource: ResourceDefinition<Note, NoteListItem, NoteInput, No
   name: 'notes',
   panelType: 'note',
   api: createResourceApi<Note, NoteListItem, NoteInput, NoteUpdate, NoteFilter>('/api/notes'),
+  // A written note goes into the lists in the server's order, without its content (the list's version of it)
+  list: {
+    order: NOTES_ORDER,
+    toItem: ({ content: _content, ...item }) => item,
+  },
   loadPanel: () => import('./NotePanel'),
   ui: {
     label: 'Note',

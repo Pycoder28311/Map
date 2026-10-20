@@ -1,4 +1,6 @@
 import { Outlet } from 'react-router-dom'
+import { authClient } from '../../lib/auth-client'
+import { ResourcesProvider } from '../../lib/resource/ResourcesProvider'
 import { FocusModeProvider, useFocusMode } from '../../features/focus/FocusMode'
 import ShareMode from '../../features/share/ShareMode'
 import PageDropZones from '../../features/workspace/PageDropZones'
@@ -19,20 +21,23 @@ import SidebarProvider from './sidebar/SidebarProvider'
  * FocusModeProvider: the navbar's Zoom hides the navbar and sidebar (they slide away).
  */
 export default function AppLayout() {
+    const { data: session } = authClient.useSession()
     return (
-        <WorkspaceProvider panels={PANELS}>
-            {/* Notes dropped on link nodes (sidebar rows, Dashboard cards…) get linked */}
-            <LinkZone />
-            {/* What's opened, for the Dashboard's Recent column */}
-            <RecordRecent />
-            {/* The navbar's Share: the screen dims except what can be shared */}
-            <ShareMode />
-            <FocusModeProvider>
-                <SidebarProvider>
-                    <Frame />
-                </SidebarProvider>
-            </FocusModeProvider>
-        </WorkspaceProvider>
+        <ResourcesProvider userId={session?.user.id}>
+            <WorkspaceProvider panels={PANELS}>
+                {/* Notes dropped on link nodes (sidebar rows, Dashboard cards…) get linked */}
+                <LinkZone />
+                {/* What's opened, for the Dashboard's Recent column */}
+                <RecordRecent />
+                {/* The navbar's Share: the screen dims except what can be shared */}
+                <ShareMode />
+                <FocusModeProvider>
+                    <SidebarProvider>
+                        <Frame />
+                    </SidebarProvider>
+                </FocusModeProvider>
+            </WorkspaceProvider>
+        </ResourcesProvider>
     )
 }
 

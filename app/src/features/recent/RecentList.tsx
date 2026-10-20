@@ -46,7 +46,13 @@ export default function RecentList({ limit, allHref, afterOpen, place }: Props) 
   }
 
   // A resource's item (a note) is checked when its row loads: a gone one removes its entry (ResourceRecentRow)
-  const exists = (panel: PanelRef) => panel.type in registry && (!panel.id || resourceByPanelType(panel.type) !== undefined || findObject(panel.id) !== undefined)
+  // A resource's ids are the server's (numbers): an older id (a mock "n1") is never asked for, it is just left out
+  const exists = (panel: PanelRef) => {
+    if (!(panel.type in registry)) return false
+    if (!panel.id) return true
+    if (resourceByPanelType(panel.type)) return /^\d+$/.test(panel.id)
+    return findObject(panel.id) !== undefined
+  }
   const title = (panel: PanelRef) => registry[panel.type]?.title(panel.id) ?? 'Missing'
 
   const rowOf = (entry: RecentEntry): ReactNode => {

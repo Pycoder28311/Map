@@ -1,13 +1,12 @@
-// The data hooks every screen of a resource uses. No cache: a list or an item loads when the component mounts and again when the
-// resource changed (changes.ts); nothing else is kept. When a cache comes, it goes behind these same hooks.
-import { PAGE_SIZE_DEFAULT, PAGE_SIZE_MAX } from '@map/shared/page-size'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import { isAbout, notifyChanged, subscribeChanges } from './changes'
-import { initialItem, initialList, itemReducer, listReducer, type ItemState, type ListState } from './state'
+// The data hooks every screen of a resource uses. Lists and items are read through one shared store (listStore.ts), so screens that
+// show the same data ask the server once; a write that succeeded goes into it (changes.ts) without reading again.
+import { PAGE_SIZE_DEFAULT } from '@map/shared/page-size'
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react'
+import { notifyChanged } from './changes'
+import { itemKey, listKey, NO_ITEM } from './listStore'
+import { useListStore } from './listStoreContext'
+import type { ItemState, ListState } from './state'
 import type { ResourceCore } from './types'
-
-const isAbort = (error: unknown) => error instanceof DOMException && error.name === 'AbortError'
-const asError = (error: unknown) => (error instanceof Error ? error : new Error(String(error)))
 
 export type ListOptions = {
   /**
@@ -33,53 +32,37 @@ export type ListResult<TListItem> = {
   refresh: () => void
 }
 
-/** A resource's list, a page at a time: `loadMore` adds the next page. Loads again when the resource changes */
+/**
+ * A resource's list, a page at a time: `loadMore` shows the next page. The list is shared with every other screen that shows it
+ * (ResourcesProvider): this one shows its first `limit` items (more after `loadMore`) and what it needs beyond what is held is read
+ * after the cursor, never from the start. It loads again when the resource changes
+ */
 export function useResourceList<TItem, TListItem, TInput, TUpdate, TFilter extends { archived: boolean }>(
   resource: ResourceCore<TItem, TListItem, TInput, TUpdate, TFilter>,
   { trashed = false, limit = PAGE_SIZE_DEFAULT, enabled = true }: ListOptions = {},
 ): ListResult<TListItem> {
-  const [state, dispatch] = useReducer(listReducer<TListItem>, undefined, initialList<TListItem>)
-  const [tick, refresh] = useReducer((n: number) => n + 1, 0)
-  const request = useRef(0)
-  const shown = useRef({ count: 0, nextCursor: null as string | null, busy: false })
-  const filter = useMemo(() => ({ archived: trashed }) as TFilter, [trashed])
-
-  useEffect(() => {
-    shown.current = { count: state.items.length, nextCursor: state.nextCursor, busy: state.loadingMore || state.status !== 'ready' }
-  }, [state])
-
-  useEffect(() => subscribeChanges((event) => event.name === resource.name && refresh()), [resource.name])
-
-  useEffect(() => {
-    if (!enabled) return
-    const id = ++request.current
-    const controller = new AbortController()
-    dispatch({ type: 'load', request: id })
-    // A reload keeps as many items as are shown (one request), so a list does not shrink back to its first page
-    const size = Math.min(PAGE_SIZE_MAX, Math.max(limit, shown.current.count))
-    resource.api
-      .list(filter, { limit: size }, controller.signal)
-      .then((page) => dispatch({ type: 'loaded', request: id, page, append: false }))
-      .catch((error) => !isAbort(error) && dispatch({ type: 'failed', request: id, error: asError(error) }))
-    return () => controller.abort()
-  }, [resource, filter, limit, enabled, tick])
-
+  const store = useListStore()
+  const filter = useMemo(() => ({ archived: trashed }), [trashed])
+  const key = listKey(resource.name, filter)
+  const [shown, setShown] = useState(limit)
+  const count = Math.max(limit, shown)
+  const subscribe = useCallback(
+    (onChange: () => void) => (enabled ? store.subscribe(key, resource, filter, count, onChange) : () => {}),
+    [store, key, resource, filter, count, enabled],
+  )
+  const state = useSyncExternalStore(subscribe, () => store.snapshot(key)) as ListState<TListItem>
+  const items = useMemo(() => state.items.slice(0, count), [state.items, count])
+  const hasMore = state.items.length > count || state.nextCursor !== null
   const loadMore = useCallback(() => {
-    const { nextCursor, busy } = shown.current
-    if (!nextCursor || busy) return
-    const id = ++request.current
-    dispatch({ type: 'more', request: id })
-    resource.api
-      .list(filter, { limit, cursor: nextCursor })
-      .then((page) => dispatch({ type: 'loaded', request: id, page, append: true }))
-      .catch((error) => dispatch({ type: 'failed', request: id, error: asError(error) }))
-  }, [resource, filter, limit])
+    if (!state.loadingMore && hasMore) setShown(count + limit)
+  }, [state.loadingMore, hasMore, count, limit])
+  const refresh = useCallback(() => store.load(key), [store, key])
 
   return {
-    items: state.items,
+    items,
     status: state.status,
     error: state.error,
-    hasMore: state.nextCursor !== null,
+    hasMore,
     loadingMore: state.loadingMore,
     refreshing: state.refreshing,
     loadMore,
@@ -95,36 +78,23 @@ export type ItemResult<TItem> = {
   refresh: () => void
 }
 
-/** One item by id. Takes the server's version when it is written through useResourceActions, and is gone when it is deleted */
+/**
+ * One item by id. Shared with every other screen that shows it at the same time (a note in the editor and in the Recent list is read
+ * once, listStore.ts); it is read when a screen starts showing it, takes the server's version when it is written through
+ * useResourceActions, and is gone when it is deleted
+ */
 export function useResourceItem<TItem, TListItem, TInput, TUpdate, TFilter extends object>(
   resource: ResourceCore<TItem, TListItem, TInput, TUpdate, TFilter>,
   id: number | string | undefined,
 ): ItemResult<TItem> {
-  const [state, dispatch] = useReducer(itemReducer<TItem>, undefined, initialItem<TItem>)
-  const [tick, refresh] = useReducer((n: number) => n + 1, 0)
-  const request = useRef(0)
-
-  useEffect(() => {
-    if (id === undefined) return
-    return subscribeChanges((event) => {
-      if (event.name !== resource.name || !isAbout(event, id)) return
-      if (event.removedId !== undefined) dispatch({ type: 'gone' })
-      else dispatch({ type: 'set', item: event.item as TItem })
-    })
-  }, [resource.name, id])
-
-  useEffect(() => {
-    if (id === undefined) return
-    const n = ++request.current
-    const controller = new AbortController()
-    dispatch({ type: 'load', request: n })
-    resource.api
-      .get(id, controller.signal)
-      .then((item) => dispatch({ type: 'loaded', request: n, item }))
-      .catch((error) => !isAbort(error) && dispatch({ type: 'failed', request: n, error: asError(error) }))
-    return () => controller.abort()
-  }, [resource, id, tick])
-
+  const store = useListStore()
+  const key = id === undefined ? '' : itemKey(resource.name, id)
+  const subscribe = useCallback(
+    (onChange: () => void) => (id === undefined ? () => {} : store.subscribeItem(resource, id, onChange)),
+    [store, resource, id],
+  )
+  const state = useSyncExternalStore(subscribe, () => (id === undefined ? NO_ITEM : store.itemSnapshot(key))) as ItemState<TItem>
+  const refresh = useCallback(() => store.loadItem(key), [store, key])
   return { item: state.item, status: state.status, error: state.error, notFound: state.status === 'notFound', refresh }
 }
 

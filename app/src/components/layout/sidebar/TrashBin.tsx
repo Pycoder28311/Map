@@ -51,10 +51,11 @@ export default function TrashBin({ compact }: { compact: boolean }) {
   const { target } = useSidebarDrop()
   const over = target?.kind === 'trash'
   const swallowing = useLidOpen(TRASH_ID)
-  // The Trash holds mock objects, saved layouts, and the archived items of every resource that shows in it (the server's)
-  const trashed = useTrashedItems(RESOURCES_IN_TRASH)
-  const count = useMockObjects().filter((o) => o.archived).length + useLayoutsState().layouts.filter((l) => l.archived).length + trashed.total
   const [open, setOpen] = useState(false)
+  // The Trash holds mock objects, saved layouts, and the archived items of every resource that shows in it (the server's,
+  // asked only while the Trash is open, so the button's count leaves them out)
+  const trashed = useTrashedItems(RESOURCES_IN_TRASH, open)
+  const count = useMockObjects().filter((o) => o.archived).length + useLayoutsState().layouts.filter((l) => l.archived).length
 
   return (
     <>
@@ -89,7 +90,6 @@ export default function TrashBin({ compact }: { compact: boolean }) {
             }`}
           >
             {count}
-            {trashed.more ? '+' : ''}
           </span>
         )}
       </button>

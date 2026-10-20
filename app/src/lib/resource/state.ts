@@ -25,6 +25,8 @@ export type ListAction<T> =
   | { type: 'more'; request: number }
   | { type: 'loaded'; request: number; page: Page<T>; append: boolean }
   | { type: 'failed'; request: number; error: Error }
+  /** The items changed by a write that succeeded (the cursor stays: it is by value, so it still points after the last item held) */
+  | { type: 'items'; items: T[] }
 
 export const initialList = <T>(): ListState<T> => ({
   status: 'loading',
@@ -59,6 +61,8 @@ export function listReducer<T>(state: ListState<T>, action: ListAction<T>): List
       if (action.request !== state.request) return state
       // A failed first load is an error; a failed refresh or "load more" keeps what is shown and says what went wrong
       return { ...state, status: state.loaded ? 'ready' : 'error', refreshing: false, loadingMore: false, error: action.error }
+    case 'items':
+      return { ...state, items: action.items }
   }
 }
 

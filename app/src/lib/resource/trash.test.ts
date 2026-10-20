@@ -9,7 +9,7 @@ function section(name: string, ids: number[], remove = vi.fn(async () => {})): T
 }
 
 describe('emptyTrashSections', () => {
-  it('deletes every item, one by one, and tells the screens once per resource', async () => {
+  it('deletes every item, one by one, and tells the screens what was deleted', async () => {
     const events: ChangeEvent[] = []
     const stop = subscribeChanges((e) => events.push(e))
     const a = section('notes', [1, 2])
@@ -18,10 +18,14 @@ describe('emptyTrashSections', () => {
     stop()
     expect(a.remove.mock.calls).toEqual([[1], [2]])
     expect(b.remove.mock.calls).toEqual([[7]])
-    expect(events).toEqual([{ name: 'notes' }, { name: 'posts' }])
+    expect(events).toEqual([
+      { name: 'notes', removedId: 1 },
+      { name: 'notes', removedId: 2 },
+      { name: 'posts', removedId: 7 },
+    ])
   })
 
-  it('stops at the first failure, keeps what was deleted, and still tells the screens', async () => {
+  it('stops at the first failure, keeps what was deleted, and still tells the screens that', async () => {
     const events: ChangeEvent[] = []
     const stop = subscribeChanges((e) => events.push(e))
     let calls = 0
@@ -31,7 +35,7 @@ describe('emptyTrashSections', () => {
     await expect(emptyTrashSections([a])).rejects.toThrow('boom')
     stop()
     expect(a.remove).toHaveBeenCalledTimes(2)
-    expect(events).toEqual([{ name: 'notes' }])
+    expect(events).toEqual([{ name: 'notes', removedId: 1 }])
   })
 
   it('does nothing for an empty Trash', async () => {

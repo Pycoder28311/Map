@@ -1,5 +1,5 @@
-// A resource changed (something was created, updated or deleted through useResourceActions): every list of it that is on
-// screen loads again, and an open item of it takes the new version. It carries no data store: only the news.
+// A resource changed (something was created, updated or deleted through useResourceActions, after the server said yes): the lists of
+// it take the news in (listStore.ts) and an open item of it takes the new version. This file carries no data: only the news.
 
 export type ChangeEvent = {
   /** The resource's name, e.g. 'notes' */

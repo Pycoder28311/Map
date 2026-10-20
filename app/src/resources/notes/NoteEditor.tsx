@@ -1,7 +1,9 @@
 import type { Note } from '@map/shared'
 import { useEffect, useRef, useState } from 'react'
+import { LuTrash2 } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import Modal from '../../components/ui/overlays/Modal'
+import ResourceDeleteDialog from '../../components/ui/resource/ResourceDeleteDialog'
 import ResourceForm from '../../components/ui/resource/ResourceForm'
 import SaveStatus from '../../components/ui/resource/SaveStatus'
 import { authClient } from '../../lib/auth-client'
@@ -86,6 +88,7 @@ function NoteForm({ note, onClose }: { note: Note; onClose?: () => void }) {
     return { key, draft, decision }
   })
   const [conflict, setConflict] = useState(boot.decision === 'conflict')
+  const [deleting, setDeleting] = useState(false)
   const [start, setStart] = useState<{ values: FormValues; version: number }>({
     values: boot.decision === 'apply' && boot.draft ? boot.draft.values : saved.current,
     version: 0,
@@ -127,6 +130,9 @@ function NoteForm({ note, onClose }: { note: Note; onClose?: () => void }) {
     <div className="flex flex-col gap-2 p-4">
       <ResourceForm key={start.version} resource={resource} initial={start.values} onChange={autosave.change} autoFocusField="title" />
       <div className="mt-2 flex items-center gap-2">
+        <Button variant="ghost" icon={LuTrash2} className="text-danger" onClick={() => setDeleting(true)}>
+          Delete
+        </Button>
         <SaveStatus status={autosave.status} />
         <span className="ms-auto text-small text-fg-subtle">Created {DATE.format(new Date(note.createdAt))}</span>
         {onClose && (
@@ -140,6 +146,19 @@ function NoteForm({ note, onClose }: { note: Note; onClose?: () => void }) {
           </Button>
         )}
       </div>
+      {deleting && (
+        <ResourceDeleteDialog
+          resource={resource}
+          item={{ id: note.id, title: note.title }}
+          onClose={() => setDeleting(false)}
+          onDeleting={autosave.hold}
+          onFailed={autosave.release}
+          onDeleted={() => {
+            autosave.discard()
+            onClose?.()
+          }}
+        />
+      )}
       {conflict && (
         <Modal
           open

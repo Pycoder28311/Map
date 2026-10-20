@@ -10,10 +10,13 @@ type Props = {
   onClose: () => void
   /** Called after it was deleted */
   onDeleted?: () => void
+  /** Called right before the request, and when it failed (a screen editing the item stops saving it meanwhile) */
+  onDeleting?: () => void
+  onFailed?: () => void
 }
 
 /** "Delete for good?" for any resource: asks first, deletes through the API, says so if it failed */
-export default function ResourceDeleteDialog({ resource, item, onClose, onDeleted }: Props) {
+export default function ResourceDeleteDialog({ resource, item, onClose, onDeleted, onDeleting, onFailed }: Props) {
   const { remove } = useResourceActions(resource)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -21,6 +24,7 @@ export default function ResourceDeleteDialog({ resource, item, onClose, onDelete
   const confirm = async () => {
     setBusy(true)
     setError(null)
+    onDeleting?.()
     try {
       await remove(item.id)
       onDeleted?.()
@@ -28,6 +32,7 @@ export default function ResourceDeleteDialog({ resource, item, onClose, onDelete
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not delete.')
       setBusy(false)
+      onFailed?.()
     }
   }
 
