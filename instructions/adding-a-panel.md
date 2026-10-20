@@ -27,7 +27,7 @@ app/src/
 │   ├── DropZones.tsx, PageDropZones.tsx  where drags can land
 │   ├── OpenAsPanelButton.tsx      the one-button API for any element
 │   └── PanelDragLink.tsx          a draggable sidebar link
-└── mocks/                         fake data until the backend has it
+└── resources/                     the tables (resources.config.ts): each one's item panel and list page come from it
 ```
 
 URL of a combination: `/workspace?layout=3-left&panels=dashboard,project:p1,map:m1`. A single panel
@@ -59,21 +59,19 @@ object: {
 <OpenAsPanelButton panel={{ type: 'object', id: object.id }} />
 ```
 
-(A table that comes from the server, like the notes, is registered as a panel by its resource instead:
-`app/src/resources/registry.ts` → `resourcePanels()`, see `adding-a-resource.md`.)
+(A table, like the notes or the maps, is registered as a panel by its resource instead: `app/src/resources/registry.ts`
+→ `resourcePanels()` and `resourcePages()`, see `data-config.md`.)
 
 That's all: clicking it opens the panel beside the current page (or alone if they can't be
 combined). It's disabled when the panel is already open or 4 are open.
 
 ## Sidebar items (drag & drop)
 
-A tree leaf becomes draggable with `panel` + `draggable`. The sidebar's nodes are built from the mock
-objects by `buildSidebarSections()` (`app/src/mocks/sidebarTree.ts`); every object can be picked up and only a project takes a drop
-into it, so the node's `draggable` / `locked` come from the object's kind. A resource's items (the notes) have their own section
-(`ResourceSidebarSection`), built from the server's list:
+A tree leaf becomes draggable with `panel` + `draggable`. The sidebar's rows are a resource's items (`ResourceRows`, from its list
+in the store): every item can be picked up and none takes a drop into it (they come in the server's order):
 
 ```ts
-{ id: 'map-m1', label: 'Parks overview', icon: LuMap, panel: { type: 'map', id: 'm1' }, draggable: true, locked: true }
+{ id: 'map-2', label: 'Parks overview', icon: LuMap, panel: { type: 'map', id: '2' }, draggable: true, locked: true }
 ```
 
 `draggable: false` (e.g. Dashboard) can't be picked up at all; `locked: true` never takes a drop into it.

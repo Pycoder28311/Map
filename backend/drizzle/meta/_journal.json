@@ -43,6 +43,13 @@
       "when": 1792531718784,
       "tag": "0005_orange_screwball",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1792534959828,
+      "tag": "0006_sad_boom_boom",
+      "breakpoints": true
     }
   ]
 }

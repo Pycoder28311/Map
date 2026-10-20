@@ -3,7 +3,7 @@ import { useResourceMenu } from '../../lib/resource/actions'
 import { useResourceList } from '../../lib/resource/hooks'
 import ResourceCreateDialog from '../../components/ui/resource/ResourceCreateDialog'
 import type { AnyResource } from '../../resources/types'
-import { cardOf, COMMENT_SIZE } from './cards/CardShell'
+import { cardOf, COMMENT_SIZE } from './cards/cardStyles'
 import ResourceCard from './ResourceCard'
 import RowHeader from './RowHeader'
 import { sortByDate } from './sortByDate'
@@ -12,10 +12,11 @@ import { useRowSort } from './useRowSort'
 type Item = Record<string, unknown> & { id: number | string; createdAt?: string }
 
 /**
- * A resource's row on the Dashboard (the Projects and Notes rows): its header (name, sort, "+"), then its cards in a strip that scrolls sideways.
+ * A resource's row on the Dashboard: its header (name, sort, "+"), then its cards in a strip that scrolls sideways.
  * The server's order (pinned first) unless a sort is chosen. The cards take no drops (nothing is moved between rows).
  */
-export default function ResourceSection({ resource, row, onOpen }: { resource: AnyResource; row: 'projects' | 'notes'; onOpen: (id: string) => void }) {
+export default function ResourceSection({ resource, onOpen }: { resource: AnyResource; onOpen: (id: string) => void }) {
+  const row = resource.name
   const list = useResourceList(resource)
   const { menuOf, dialogs } = useResourceMenu(resource)
   const { sortOf, setSort } = useRowSort()
@@ -28,10 +29,7 @@ export default function ResourceSection({ resource, row, onOpen }: { resource: A
         name={resource.ui.plural}
         sort={sortOf(row)}
         onSort={(sort) => setSort(row, sort)}
-        creatable={[]}
-        onCreate={() => {}}
         createOne={{ label: resource.ui.label, onCreate: () => setCreating(true) }}
-        named
       />
       <div data-row-strip={row} className="-mx-2 flex min-h-56 snap-x gap-3 overflow-x-auto px-2 pt-1 pb-3">
         {list.status === 'loading' ? (

@@ -6,7 +6,7 @@ type RequestFn = typeof request
 /** What a list call may ask besides the resource's own filter */
 export type PageOptions = { limit?: number; cursor?: string | null }
 
-// Method syntax on purpose: a resource with its own types (Note…) fits the registry's general type (parameters are checked loosely)
+// Method syntax on purpose: a resource with its own types (Item<'notes'>…) fits the registry's general type (parameters are checked loosely)
 export type ResourceApi<TItem, TListItem, TInput, TUpdate, TFilter> = {
   list(filter: TFilter, page?: PageOptions, signal?: AbortSignal): Promise<Page<TListItem>>
   get(id: number | string, signal?: AbortSignal): Promise<TItem>
@@ -29,7 +29,7 @@ export function toQuery(params: Record<string, unknown>): string {
 
 /**
  * The calls of one resource (a table's CRUD routes, backend crudRoutes): list (paged), get, create, update, remove. Typed by the
- * shared contract:  createResourceApi<Note, NoteListItem, NoteInput, NoteUpdate, NoteFilter>('/api/notes')
+ * shared contract. Every resource gets its own from createResource (resources/createResource.ts): createResourceApi('/api/notes')
  */
 export function createResourceApi<TItem, TListItem, TInput, TUpdate, TFilter extends object>(
   path: string,

@@ -1,9 +1,17 @@
+import { DATA, TABLE_NAMES } from '@map/shared'
 import { describe, expect, it } from 'vitest'
 import { FIELD_WIDGETS } from '../components/ui/resource/FieldRenderer'
-import { RESOURCES, resourceByName, resourceByPanelType, resourcePanels, resourcesWith } from './registry'
+import { MOCK_TABLE_NAMES } from './mock.config'
+import { RESOURCES, resourceByName, resourceByPanelType, resourcePages, resourcePanels, resourcesWith } from './registry'
+import { RESOURCE_UI } from './resources.config'
 import { FIELD_WIDGET_NAMES } from './types'
 
 describe('the resource registry', () => {
+  it('has a resource for every table of the data config and every mock table, in the UI config\'s order', () => {
+    expect(RESOURCES.map((r) => r.name)).toEqual(Object.keys(RESOURCE_UI))
+    expect([...RESOURCES.map((r) => r.name)].sort()).toEqual([...TABLE_NAMES, ...MOCK_TABLE_NAMES].sort())
+  })
+
   it('has unique names and panel types', () => {
     expect(new Set(RESOURCES.map((r) => r.name)).size).toBe(RESOURCES.length)
     expect(new Set(RESOURCES.map((r) => r.panelType)).size).toBe(RESOURCES.length)
@@ -19,45 +27,57 @@ describe('the resource registry', () => {
     expect(Object.keys(FIELD_WIDGETS).sort()).toEqual([...FIELD_WIDGET_NAMES].sort())
   })
 
-  it('gives every resource the names its screens show', () => {
-    for (const resource of RESOURCES) {
-      expect(resource.ui.label).not.toBe('')
-      expect(resource.ui.plural).not.toBe('')
-      expect(resource.ui.untitled).not.toBe('')
-      if (resource.surfaces.page) expect(resource.surfaces.page.startsWith('/')).toBe(true)
-    }
+  it('makes each table\'s form from its fields: the title as heading, plain text as a textarea, hidden ones left out', () => {
+    expect(resourceByName('folders')!.ui.fields.map((f) => [f.name, f.widget, f.heading ?? false])).toEqual([
+      ['title', 'text', true],
+      ['description', 'textarea', false],
+    ])
+    expect(resourceByName('notes')!.ui.fields.map((f) => f.widget)).toEqual(['text', 'richText'])
+    expect(resourceByName('maps')!.ui.fields.map((f) => f.name)).toEqual(['title'])
+  })
+
+  it('names a row by its title, or untitled; its line under it is the preview or the description', () => {
+    const notes = resourceByName('notes')!
+    expect(notes.ui.row.title({ id: 1, title: '  ' })).toBe('Untitled note')
+    expect(notes.ui.row.subtitle?.({ id: 1, title: 't', preview: 'first words' })).toBe('first words')
+    expect(resourceByName('folders')!.ui.row.subtitle?.({ id: 1, title: 't', description: 'about' })).toBe('about')
+    expect(notes.ui.row.pinned?.({ id: 1, pinned: true })).toBe(true)
+  })
+
+  it('puts a written item into the lists without the field its preview stands for', () => {
+    expect(resourceByName('articles')!.list!.toItem({ id: 1, title: 't', content: '<p>x</p>', preview: 'x' })).toEqual({ id: 1, title: 't', preview: 'x' })
+    expect(resourceByName('folders')!.list!.toItem({ id: 1, title: 't', description: 'd' })).toEqual({ id: 1, title: 't', description: 'd' })
+    expect(resourceByName('notes')!.list!.order).toEqual(DATA.notes.order)
   })
 
   it('finds a resource by name and by panel type', () => {
     expect(resourceByName('notes')?.panelType).toBe('note')
-    expect(resourceByName('projects')?.panelType).toBe('project')
-    expect(resourceByPanelType('note')?.name).toBe('notes')
-    expect(resourceByPanelType('project')?.name).toBe('projects')
-    expect(resourceByPanelType('map')).toBeUndefined()
+    expect(resourceByPanelType('object')?.name).toBe('objectCards')
+    expect(resourceByPanelType('map')?.name).toBe('maps')
+    expect(resourceByPanelType('dashboard')).toBeUndefined()
     expect(resourceByPanelType(undefined)).toBeUndefined()
   })
 
-  it('lists the resources that turned a screen on', () => {
-    expect(resourcesWith('trash').map((r) => r.name)).toEqual(['projects', 'notes'])
-    expect(resourcesWith('search').map((r) => r.name)).toEqual(['projects', 'notes'])
+  it('lists the resources that turned a screen on, and knows which can have a parent', () => {
+    expect(resourcesWith('trash').map((r) => r.name)).toEqual(['projects', 'notes', 'folders', 'articles', 'objectCards', 'maps'])
+    expect(resourcesWith('quickCreate').map((r) => r.name)).toEqual(['notes'])
+    expect(RESOURCES.filter((r) => r.linked).map((r) => r.name)).toEqual(['notes', 'folders', 'articles', 'objectCards'])
+    expect(RESOURCES.filter((r) => r.surfaces.sidebar?.group === 'orphans').map((r) => r.name)).toEqual(['folders', 'articles', 'objectCards', 'maps'])
   })
 
-  it('makes the workspace panel of each resource that can be one', () => {
+  it('makes a list page per resource with one, at its API path', () => {
+    const pages = resourcePages()
+    expect(Object.keys(pages)).toEqual(['projects', 'notes', 'folders', 'articles', 'objectCards'])
+    expect(pages.objectCards.route!()).toBe('/object-cards')
+    expect(pages.notes.title()).toBe('Notes')
+  })
+
+  it('makes the workspace panel of each resource that can be one; a map\'s fills its pane', () => {
     const panels = resourcePanels()
-    expect(Object.keys(panels)).toEqual(['project', 'note'])
-    expect(panels.project.title()).toBe('Project')
+    expect(Object.keys(panels)).toEqual(['project', 'note', 'folder', 'article', 'object', 'map'])
     expect(panels.note.title()).toBe('Note')
-    expect(panels.note.draggable).toBe(true)
-  })
-
-  it('keeps each resource\'s Dashboard row and column known to the Dashboard', async () => {
-    const { RESOURCE_COLUMNS } = await import('../features/dashboard/columns')
-    const dashboard = RESOURCES.filter((r) => r.surfaces.dashboard).map((r) => r.name).sort()
-    expect(Object.values(RESOURCE_COLUMNS).sort()).toEqual(dashboard)
-  })
-
-  it('trashes only through the archived filter: a list is never asked without it', () => {
-    // Every resource with a Trash surface also has the filter in its API type; the hook always sends `archived`
-    for (const resource of resourcesWith('trash')) expect(typeof resource.api.list).toBe('function')
+    expect(panels.map.fill).toBe(true)
+    expect(panels.note.fill).toBeFalsy()
+    expect(resourceByName('maps')!.customPanel).toBe(true)
   })
 })

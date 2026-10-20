@@ -11,8 +11,10 @@ import { checkEnv } from './middleware/env'
 import { rateLimit } from './middleware/rate-limit'
 import imagesRoutes from './resources/images/images.routes'
 import { imagesBase } from './resources/images/images.repo'
-import notesRoutes from './resources/notes/notes.routes'
-import projectsRoutes from './resources/projects/projects.routes'
+import { DATA, TABLE_NAMES } from '@map/shared'
+import * as schema from './db/schema'
+import { crudRoutes } from './lib/crud'
+import { ownedRepo } from './lib/ownedRepo'
 
 // Only /api/* and /images/* reach this code (wrangler.jsonc run_worker_first);
 // every other path is the website from app/dist
@@ -45,11 +47,18 @@ app.use('/api/*', rateLimit)
 
 app.on(['GET', 'POST'], '/api/auth/*', (c) => createAuth(c.env).handler(c.req.raw))
 
-// One line per resource (see instructions/adding-a-resource.md)
-const routes = app
-  .route('/api/notes', notesRoutes)
-  .route('/api/projects', projectsRoutes)
-  .route('/api/images', imagesRoutes)
+// Every table of the data config, at /api/<its path> (e.g. /api/object-cards): GET / · GET /:id · POST / · PATCH /:id · DELETE /:id
+// (instructions/data-config.md). A table with something of its own passes overrides to ownedRepo, or adds routes to its router
+for (const name of TABLE_NAMES) {
+  const table = DATA[name]
+  app.route(
+    `/api/${table.path}`,
+    crudRoutes({ access: table.access, create: table.input, update: table.update, filter: table.filter, repo: ownedRepo(schema[name], table) }),
+  )
+}
+
+// Routes that are not plain CRUD (see instructions/adding-a-resource.md)
+const routes = app.route('/api/images', imagesRoutes)
 
 // Serves R2 files through the Worker for LOCAL development only (production uses the IMAGES_URL domain).
 // The bucket is shared with other apps, so only keys inside this app's IMAGES_FOLDER are served.

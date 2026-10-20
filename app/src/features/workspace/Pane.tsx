@@ -50,8 +50,8 @@ export default function Pane({ slot, panel, box }: Props) {
     <section
       // For the glide to its new place (paneFlip.ts)
       data-pane={key}
-      // An object's pane can be picked to share (features/share)
-      data-share-id={panel.id}
+      // An item's pane can be picked to share (features/share): its panel key, e.g. note:5
+      data-share-id={panel.id ? panelKey(panel) : undefined}
       aria-label={title}
       {...(count > 1 ? listeners : {})}
       style={{ ...paneStyle, '--pane-l': box.left, '--pane-t': box.top, '--pane-r': box.right, '--pane-b': box.bottom } as CSSProperties}

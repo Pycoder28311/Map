@@ -1,24 +1,21 @@
-// The Dashboard's three columns: which lists they show, in which order. Pure (tested in columns.test.ts).
+// The Dashboard's three columns: which lists they show, in which order. Recent, then every resource with a Dashboard surface
+// (resources.config.ts), in the UI config's order. Pure apart from reading the registry (tested in columns.test.ts).
+import { resourcesWith } from '../../resources/registry'
 
-/** What a column shows: Recent, a resource's list (Notes, Projects) or a list of the mock objects */
-export type ColumnId = 'recent' | 'notes' | 'projects' | 'maps' | 'objects'
+/** What a column shows: 'recent', or a resource's name (its list) */
+export type ColumnId = string
 
 export const COLUMN_COUNT = 3
-export const DEFAULT_COLUMNS: ColumnId[] = ['recent', 'notes', 'maps']
 
-const FIXED: { id: ColumnId; label: string }[] = [
+/** The lists a column can show */
+const LISTS: { id: ColumnId; label: string }[] = [
   { id: 'recent', label: 'Recent' },
-  { id: 'notes', label: 'Notes' },
-  { id: 'projects', label: 'Projects' },
-  { id: 'maps', label: 'Maps' },
-  { id: 'objects', label: 'Objects' },
+  ...resourcesWith('dashboard').map((r) => ({ id: r.name, label: r.ui.plural })),
 ]
+const known = (id: unknown): id is ColumnId => typeof id === 'string' && LISTS.some((l) => l.id === id)
 
-/** The columns that are a resource's list (the server's): the resource's name */
-export const RESOURCE_COLUMNS: Partial<Record<ColumnId, string>> = { projects: 'projects', notes: 'notes' }
-
-/** Section kinds: shown below the columns (as a horizontal row) whenever they aren't a column */
-export const isSection = (id: ColumnId) => id === 'projects' || id === 'notes' || id === 'objects'
+/** The first visit: Recent, Notes and Maps (the ones that exist), then the first lists */
+export const DEFAULT_COLUMNS: ColumnId[] = [...new Set([...['recent', 'notes', 'maps'].filter(known), ...LISTS.map((l) => l.id)])].slice(0, COLUMN_COUNT)
 
 /** Column i shows `choice`: if another column shows it, the two trade places; else it replaces column i */
 export function pickColumn(columns: ColumnId[], i: number, choice: ColumnId): ColumnId[] {
@@ -39,22 +36,18 @@ export function moveColumn(columns: ColumnId[], from: number, to: number): Colum
   return next
 }
 
+/** The rows below the columns: every resource's list that is not shown as a column (Recent is only a column) */
+export const sectionsBelow = (columns: ColumnId[]): ColumnId[] => LISTS.map((l) => l.id).filter((id) => id !== 'recent' && !columns.includes(id))
+
 /**
- * The rows below the columns: Projects, Notes and Objects, minus those shown as columns. A resource's items (projects, notes) only
- * live in their own list, as a column or as its own row (never in the other rows).
+ * Stored columns made valid: always COLUMN_COUNT, no duplicates; an unknown one (an older version's, a resource that is gone) is
+ * replaced by the first default not shown yet
  */
-export function sectionsBelow(columns: ColumnId[]): ColumnId[] {
-  return (['projects', 'notes', 'objects'] as ColumnId[]).filter((id) => !columns.includes(id))
-}
-
-const isKnown = (id: unknown): id is ColumnId => typeof id === 'string' && FIXED.some((f) => f.id === id)
-
-/** Stored columns made valid: always COLUMN_COUNT, no duplicates; an unknown one is replaced by the first default not shown yet */
 export function validColumns(stored: unknown): ColumnId[] {
   const list = Array.isArray(stored) ? stored.slice(0, COLUMN_COUNT) : []
-  const kept: (ColumnId | null)[] = list.map((id, i) => (isKnown(id) && list.indexOf(id) === i ? id : null))
+  const kept: (ColumnId | null)[] = list.map((id, i) => (known(id) && list.indexOf(id) === i ? id : null))
   while (kept.length < COLUMN_COUNT) kept.push(null)
-  const spare = [...DEFAULT_COLUMNS, ...FIXED.map((f) => f.id)].filter((id) => !kept.includes(id))
+  const spare = [...DEFAULT_COLUMNS, ...LISTS.map((l) => l.id)].filter((id) => !kept.includes(id))
   return kept.map((id) => id ?? spare.shift()!)
 }
 
@@ -69,11 +62,11 @@ export type MenuEntry = {
 
 /** The ⋯ menu of column i: the lists */
 export function menuEntries(columns: ColumnId[], i: number): MenuEntry[] {
-  return FIXED.map(({ id, label }) => {
+  return LISTS.map(({ id, label }) => {
     const at = columns.indexOf(id)
     return { id, label, current: at === i, inColumn: at >= 0 && at !== i ? at + 1 : undefined }
   })
 }
 
 /** A column's label */
-export const columnLabel = (id: ColumnId) => FIXED.find((f) => f.id === id)?.label ?? id
+export const columnLabel = (id: ColumnId) => LISTS.find((l) => l.id === id)?.label ?? id

@@ -9,7 +9,7 @@ export type Layer = number
 export const LAYER_BACKGROUND: Layer = 0
 export const LAYER_MAIN: Layer = 1
 
-/** A link to a sidebar object (a note, an object card…) or to another object of the same board */
+/** A link to an item of a resource (`id`: its panel key, e.g. `note:5`) or to another object of the same board */
 export type Link = { to: 'sidebar'; id: string } | { to: 'board'; id: number }
 
 export const LINE_TYPES = ['solid', 'dashed', 'double', 'diagonal'] as const

@@ -1,8 +1,9 @@
-# Adding a resource (table + API) to the backend
+# Adding a resource (table + API)
 
-How to add a new database table and its API to `backend/`, using the shared CRUD, pagination and
-relationship helpers. Follow these steps for every new table. For setting up the backend (new
-project, new machine, new Cloudflare account), see `backend-setup.md`.
+**A normal table is added through the data config: see [`data-config.md`](data-config.md)** (two config files, one line in
+`schema.ts`, a migration; routes, repo, contract, types and every screen follow). This file keeps what the generic code builds on:
+how the backend is organized, what `crudRoutes()` does, formatted text, relationships, routes that are not plain CRUD and the rules.
+For setting up the backend (new project, new machine, new Cloudflare account), see `backend-setup.md`.
 
 ## How the backend is organized
 
@@ -21,27 +22,13 @@ Map/
     │   ├── config.ts         project settings derived from env + APP_NAME
     │   └── email.ts, image-type.ts
     ├── middleware/           CORE: env check, auth (optional/required/role), csrf, rate limit
-    ├── resources/<name>/     PROJECT: one folder per resource (repo + routes)
-    ├── db/schema.ts          PROJECT: all tables (Drizzle)
+    ├── lib/ownedTable.ts     tables from the data config (shared/src/data.config.ts)
+    ├── lib/ownedRepo.ts      the repo of every user-owned table, from its config (+ overrides)
+    ├── resources/<name>/     PROJECT: only what is not plain CRUD (images: uploads)
+    ├── db/schema.ts          PROJECT: one ownedTable() line per table, plus images and auth
     ├── auth.ts, emails.ts    PROJECT: sign-in methods and email texts
-    └── index.ts              PROJECT: mounts every resource under /api/<name>
+    └── index.ts              PROJECT: mounts every table under /api/<path> (a loop) and the other routers
 ```
-
-## What a new table costs
-
-A normal table with CRUD: **3 new files, 3 small edits, 3 commands.**
-
-| # | What | File |
-|---|---|---|
-| 1 | The table | `backend/src/db/schema.ts` (edit) |
-| 2 | The contract: what clients send (zod) and get back (type) | `packages/shared/src/<name>.ts` (new) |
-| 3 | Export the contract | `packages/shared/src/index.ts` (1 line) |
-| 4 | The data logic | `backend/src/resources/<name>/<name>.repo.ts` (new) |
-| 5 | The routes | `backend/src/resources/<name>/<name>.routes.ts` (new, one `crudRoutes()` call) |
-| 6 | Mount it | `backend/src/index.ts` (1 import + 1 line) |
-
-Commands: `npx drizzle-kit generate`, then apply with `--local` and `--remote` (step 2 below).
-`lib/`, `middleware/`, `auth.ts`, CORS, CSRF and rate limits are never touched for a new table.
 
 ## What `crudRoutes()` gives you
 
@@ -57,7 +44,7 @@ crudRoutes({ access, paginate?, filter?, create, update, repo })
 | `PATCH /api/<name>/:id` | update (validated with `update`), or `404` |
 | `DELETE /api/<name>/:id` | delete, `204`, or `404` |
 
-**`access`** decides who may read and write:
+**`access`** (the table's config) decides who may read and write:
 
 | Mode | Read | Write | Example |
 |---|---|---|---|
@@ -81,226 +68,26 @@ mandatory (`400` without it).
 Every error answers `{ code, message, details? }` with a code from `packages/shared/src/errors.ts`.
 CSRF protection and rate limiting apply automatically to everything under `/api`.
 
-## Steps
-
-The example adds `projects`: each user's projects (`access: 'owner'`).
-
-### 1. Define the table in `backend/src/db/schema.ts`
-
-`id()`, `owner()` and `createdAt()` are the column helpers at the top of the file.
-
-```ts
-export const projects = sqliteTable(
-    'projects',
-    {
-        id: id(),
-        userId: owner(),
-        title: text('title').notNull(),
-        archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
-        createdAt: createdAt(),
-    },
-    (t) => [index('projects_user_id_idx').on(t.userId)],
-)
-```
-
-Every user-owned table gets `userId` and an index on it. Index every column you filter or join by.
-
-### 2. Create and apply the migration (in `backend/`)
-
-```
-npx drizzle-kit generate
-npx wrangler d1 migrations apply map-db --local
-npx wrangler d1 migrations apply map-db --remote
-```
-
-Read the generated SQL in `drizzle/` before applying it remotely. Adding a required (`notNull`)
-column to a table that already has rows fails unless the column has a default.
-
-### 3. Add the contract to `packages/shared/src/projects.ts`
-
-What clients may send (zod) and what they get back (types). Never include `userId`, `id` or other
-server-controlled fields in input schemas.
-
-```ts
-import { z } from 'zod'
-
-export const projectCreate = z.object({
-  title: z.string().trim().min(1).max(200),
-})
-
-/** Every field optional: send only what changes */
-export const projectUpdate = z.object({
-  title: z.string().trim().min(1).max(200).optional(),
-  archived: z.boolean().optional(),
-})
-
-export type ProjectCreate = z.infer<typeof projectCreate>
-export type ProjectUpdate = z.infer<typeof projectUpdate>
-export type Project = { id: number; title: string; archived: boolean }
-```
-
-Export it from `packages/shared/src/index.ts`: `export * from './projects'`.
-
-### 4. Create `backend/src/resources/projects/`
-
-**`projects.repo.ts`**: the data logic. Every query on user data filters by `userId(ctx)`.
-
-```ts
-import type { Project, ProjectCreate, ProjectUpdate } from '@map/shared'
-import { and, desc, eq } from 'drizzle-orm'
-import { projects } from '../../db/schema'
-import { hasChanges, userId, type Ctx, type Repo } from '../../lib/crud'
-import { beforeCursor, fetchLimit, mapPage, toPage } from '../../lib/pagination'
-
-type Row = typeof projects.$inferSelect
-
-/** The only fields that leave the server */
-const toJson = (p: Row): Project => ({ id: p.id, title: p.title, archived: p.archived })
-
-/** Only rows owned by the signed-in user */
-const mine = (ctx: Ctx, id: number) => and(eq(projects.id, id), eq(projects.userId, userId(ctx)))
-
-export const projectsRepo: Repo<ProjectCreate, ProjectUpdate, Project> = {
-  async list(ctx, page) {
-    const rows = await ctx.db
-      .select()
-      .from(projects)
-      .where(and(eq(projects.userId, userId(ctx)), beforeCursor(projects.id, page)))
-      .orderBy(desc(projects.id))
-      .limit(fetchLimit(page) ?? -1)
-    return mapPage(toPage(rows, page, (p) => p.id), toJson)
-  },
-  async get(ctx, id) {
-    const row = await ctx.db.select().from(projects).where(mine(ctx, id)).get()
-    return row ? toJson(row) : null
-  },
-  async create(ctx, input) {
-    const row = await ctx.db.insert(projects).values({ ...input, userId: userId(ctx) }).returning().get()
-    return toJson(row)
-  },
-  async update(ctx, id, input) {
-    if (!hasChanges(input)) return projectsRepo.get(ctx, id) // Drizzle rejects an empty SET
-    const row = await ctx.db.update(projects).set(input).where(mine(ctx, id)).returning().get()
-    return row ? toJson(row) : null
-  },
-  async remove(ctx, id) {
-    const row = await ctx.db.delete(projects).where(mine(ctx, id)).returning().get()
-    return !!row
-  },
-}
-```
-
-For public resources (`public-owner`, `public-admin`), `list` and `get` must not call `userId(ctx)`
-(anonymous readers have no user), while writes in `public-owner` still filter by it: edits by
-`userId(ctx)`, deletes by `ownedOrAdmin(ctx, table.userId)` so admins can moderate.
-
-**`projects.routes.ts`**:
-
-```ts
-import { projectCreate, projectUpdate } from '@map/shared'
-import { crudRoutes } from '../../lib/crud'
-import { projectsRepo } from './projects.repo'
-
-export default crudRoutes({ access: 'owner', create: projectCreate, update: projectUpdate, repo: projectsRepo })
-```
-
-### 5. Mount it in `backend/src/index.ts`
-
-```ts
-import projectsRoutes from './resources/projects/projects.routes'
-
-const routes = app
-  .route('/api/notes', notesRoutes)
-  .route('/api/images', imagesRoutes)
-  .route('/api/projects', projectsRoutes)
-```
-
-### 6. Check and deploy
-
-```
-npm run typecheck --workspace backend
-npm run typecheck --workspace packages/shared
-npm run deploy --workspace backend
-```
-
-### 7. Use it in the app
-
-Add an API file in `app/src/` (one per resource, the only place that knows the URLs) and the pages
-under `app/src/pages/`.
-
 ## Fields that hold formatted text (HTML)
 
-Declare the field in the contract with `richText` (may be empty) or `richTextRequired` (`packages/shared/src/rich-text.ts`) and
-nothing else is needed: every route validates its input with the contract, so the text is length-limited
-(`RICH_TEXT_MAX`) and cleaned to the allowed tags, attributes and links (`sanitize-html.ts`) before the repo sees it. Show it in the
-app with `RichTextField` (`editable={false}` to read); never with `dangerouslySetInnerHTML` (lint error). The rules live in
-`rich-text-policy.ts`; the website's CSP is `app/public/_headers`.
+Declare the field with `field.richText()` in `data.config.ts`: every route validates its input with the contract, so the text is
+length-limited (`RICH_TEXT_MAX`) and cleaned to the allowed tags, attributes and links (`sanitize-html.ts`) before the repo sees it.
+Show it in the app with `RichTextField` (`editable={false}` to read); never with `dangerouslySetInnerHTML` (lint error). The rules live
+in `rich-text-policy.ts`; the website's CSP is `app/public/_headers`.
 
-Pictures in such a text are `<img>` tags of images uploaded through `/api/images`: the sanitizer keeps only those (their address must be
-a stored image's), and the field offers the image button when given `onUploadImage`. A resource that keeps formatted text this way
-needs no image table or `imageIds`. Nothing deletes the files when a picture leaves the text or the note is removed (the notes code
-does not use the images table), so they stay in R2 and the `images` table until a clean-up job removes them.
+Pictures in such a text are `<img>` tags of images uploaded through `/api/images`: the sanitizer keeps only those (their address must
+be a stored image's). Nothing deletes the files when a picture leaves the text or the row is removed, so they stay in R2 and the
+`images` table until a clean-up job removes them.
 
-Lists should not read or send the whole text. Give the table a `preview` column (plain text, `previewOf` in `shared/src/plain-text.ts`),
-write it in the repo together with the content (`withPreview` in `notes.repo.ts`), select the list without the content column
-(`columns: { content: false }`) and return a list type without it (`NoteListItem`; `Repo`'s fifth type parameter). Show the preview as
-text, never as HTML. Notes made before the column existed: `npm run backfill:previews -- --local|--remote` (in `backend/`).
-
-```ts
-export const postInput = z.object({ title: z.string().min(1).max(100), body: richTextRequired })
-```
-
-## Table config and list order (pinned, position)
-
-Each table's file in `packages/shared/src/<table>.ts` has a config object (see `notesConfig` in `notes.ts`): who may access it
-(`access`), the list order as flags (`order: { pinned, position }`) and the equality filters of the list (`listFilters`). The
-rest follows from it:
-
-| Flags | List order |
-|---|---|
-| `pinned: true, position: true` | pinned first, then position, then id |
-| `pinned: false, position: true` | position, then id |
-| `pinned: true, position: false` | pinned first, then newest |
-| `pinned: false, position: false` | newest first |
-
-```ts
-// packages/shared/src/<table>.ts
-export const postsConfig = { access: 'public-owner', order: { pinned: false, position: true }, listFilters: ['archived'] } as const
-const postFields = z.object({ title: z.string(), ...orderFields(postsConfig.order) })            // contract fields
-export type Post = { id: number; title: string } & OrderOutput<typeof postsConfig.order>          // output type
-
-// backend/src/db/schema.ts
-{ ...,  ...orderColumns(postsConfig.order) },                                                      // the columns
-(t) => [listIndex('posts_list_idx', t, { owner: 'userId', filters: postsConfig.listFilters, order: postsConfig.order })]  // the index
-
-// backend/src/resources/posts/posts.repo.ts
-const sort = listSort(sortColumnsOf(posts, postsConfig.order))      // orderBy, after(page), cursorOf
-toJson: { ..., ...pickOrder(row, postsConfig.order) }               // the output fields
-```
-
-Change a flag, run `npx drizzle-kit generate`, review the SQL, apply it: the columns, index, contract, output and query all follow
-(`lib/sort.ts`, `shared/src/order.ts`). Moving a row: `positionBetween(before, after)` so only that row is written.
-
-## The frontend part: show the table in the app
-
-The app has one place where a table is described for its screens: `app/src/resources/`. Add the table there and the sidebar section,
-the list page, the panel, the Dashboard column and row, the Trash, the navbar search and Recent show it (each `surfaces` flag turns one
-on). The notes are the example: `resources/notes/notes.resource.ts`.
-
-| Step | File |
-|---|---|
-| 1. The calls and the names: `createResourceApi<Post, PostListItem, PostInput, PostUpdate, PostFilter>('/api/posts')`, labels, icon, `ui.fields` (each `name` is checked against the contract's `Post`), `ui.row` (title, subtitle, pinned), `surfaces` | `app/src/resources/posts/posts.resource.ts` (new) |
-| 2. List it | `app/src/resources/registry.ts`: one line in `RESOURCES` |
-| 3. The panel, if `surfaces.panel` | `app/src/resources/posts/PostPanel.tsx` (loaded by `loadPanel`); `panels.ts` already spreads `resourcePanels()` |
-| 4. A list page, if `surfaces.page` | a page that renders `<ResourcePage resource={…}/>` and a route/panel entry for it |
-
-Adding a field to a table: the contract (see above), then one entry in `ui.fields` (`widget: 'text' | 'richText'`; a new kind of
-field is one entry in `FIELD_WIDGETS`, `components/ui/resource/FieldRenderer.tsx`). The data goes through hooks that keep no cache
-(`lib/resource/hooks.ts`): `useResourceList` (always asks for `archived=false` unless `trashed: true`: only the Trash does),
-`useResourceItem`, `useResourceActions`. A write tells every list and item on screen (`changes.ts`). Editing saves through
-`useAutosave` (5 s idle, 30 s at most, at once when the page is hidden, a draft in localStorage until the server has it).
+Lists should not send the whole text: `preview: '<field>'` in the table's config adds a `preview` column (plain text, `previewOf`),
+written by `ownedRepo` with the field; lists leave the field out and send the preview. Rows made before the column existed:
+`npm run backfill:previews -- --local|--remote --table <table> --column <field>` (in `backend/`).
 
 ## Relationships
+
+The tables of the data config point at a parent with the `link` pair (`object_type` + `object_id`, see `data-config.md`). What
+follows is for relations the generic code does not make yet (a real foreign key, link tables): the helpers exist in
+`lib/relations.ts`, and such a table passes overrides to `ownedRepo` or has a repo of its own.
 
 ### One-to-many (e.g. a project has many maps)
 
@@ -392,13 +179,9 @@ for admin actions), throw `HttpError` with a code for errors, and mount it the s
   `backend/`.
 - **Migrations:** apply every new migration with both `--local` and `--remote`, and commit `drizzle/`.
 
-## Checklist
+## Checklist (a table through the data config)
 
-- [ ] Table in `db/schema.ts` (with `userId` and indexes if user-owned)
-- [ ] Migration generated, checked, applied locally and remotely
-- [ ] Contract in `packages/shared/src/<name>.ts` (create, update, filter, output types), exported from `index.ts`
-- [ ] `resources/<name>/` with `<name>.repo.ts` and `<name>.routes.ts` (right `access`)
-- [ ] Mounted in `index.ts`
-- [ ] Typecheck passes for `backend` and `packages/shared`
+- [ ] Entry in `packages/shared/src/data.config.ts`, line in `backend/src/db/schema.ts`, entry in `app/src/resources/resources.config.ts`
+- [ ] Migration generated, read (only the new table), applied locally and remotely
+- [ ] Checks pass: `npx tsc --noEmit` + `npx vitest run` in `packages/shared` and `backend`; `npx tsc -b` + `npx vitest run` in `app`
 - [ ] Deployed
-- [ ] App API file and pages

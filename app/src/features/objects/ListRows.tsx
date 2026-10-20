@@ -4,17 +4,11 @@
 import { useState, type ReactNode } from 'react'
 import { LuChevronsDown, LuChevronsUp } from 'react-icons/lu'
 import { Link, useNavigate } from 'react-router-dom'
-import DropIcon from '../../components/ui/drop/DropIcon'
 import type { PlainIcon } from '../../components/ui/icons/IconSlot'
-import type { MockObject } from '../../mocks/projects'
-import { isLinkTarget, linksOf } from '../../mocks/projectsStore'
-import { KIND_ICON } from '../../mocks/sidebarTree'
-import type { useLinkNode } from '../links/linkNode'
-import { single, type WorkspaceLayout } from '../workspace/layout'
+import type { WorkspaceLayout } from '../workspace/layout'
 import { usePanelRegistry } from '../workspace/registryContext'
-import type { PanelRef } from '../workspace/types'
 import { hrefFor } from '../workspace/useWorkspace'
-import ObjectRow, { PLAIN_ROW } from './ObjectRow'
+import { PLAIN_ROW } from './ObjectRow'
 import { TEXT_BUTTON } from '../../components/ui/buttons/buttonStyles'
 
 /** Rows shown before "Show all" (the Dashboard's columns: three) */
@@ -65,47 +59,6 @@ export function Rows({ rows, empty, allHref, limit = MAX_ROWS }: { rows: ReactNo
           </button>
         ))}
     </>
-  )
-}
-
-/**
- * One object as a list row: drags anywhere, opens on click (`afterOpen`: e.g. close a popout), and a
- * project's or map's row takes notes (its link node). `place` keeps drag and link ids unique.
- */
-export function ObjectListRow({
-  object,
-  hint,
-  place,
-  linkNodeFor,
-  open,
-  afterOpen,
-}: {
-  object: MockObject
-  hint?: string
-  place: string
-  linkNodeFor: ReturnType<typeof useLinkNode>
-  open: (layout: WorkspaceLayout) => void
-  afterOpen?: () => void
-}) {
-  const panel: PanelRef = { type: object.kind, id: object.id }
-  // Projects, maps and object cards take links (a note dropped on the node at the row's end)
-  const link = isLinkTarget(object.kind) ? linkNodeFor(object.id, place, object.name) : undefined
-  return (
-    <ObjectRow
-      object={object}
-      icon={KIND_ICON[object.kind]}
-      dragId={`${place}:${object.id}`}
-      panel={panel}
-      hint={hint}
-      links={linksOf(object.id).length}
-      variant="plain"
-      onOpen={() => {
-        open(single(panel))
-        afterOpen?.()
-      }}
-      className={link?.active ? 'ring-2 ring-drop' : ''}
-      end={link && <DropIcon {...link} size="small" />}
-    />
   )
 }
 

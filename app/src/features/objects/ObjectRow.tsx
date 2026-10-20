@@ -51,7 +51,7 @@ export default function ObjectRow({ object, icon: Icon, dragId, panel, hint, lin
       ref={setNodeRef}
       {...listeners}
       {...dragAttributes}
-      data-share-id={object.id}
+      data-share-id={`${object.kind}:${object.id}`}
       onClick={onOpen}
       className={`${variant === 'plain' ? PLAIN_ROW : ROW} cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-40' : ''} ${className}`}
     >

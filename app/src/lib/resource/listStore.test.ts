@@ -337,4 +337,56 @@ describe('createListStore', () => {
       expect(get).toHaveBeenCalledTimes(1)
     })
   })
+
+  describe('filters and lookup', () => {
+    type Row = { id: number; archived: boolean; objectType: string | null; objectId: number | null; pinned: boolean; position: number }
+    const row = (id: number, extra: Partial<Row> = {}): Row => ({ id, archived: false, objectType: null, objectId: null, pinned: false, position: 0, ...extra })
+    function folders(rows: Row[]) {
+      const list = vi.fn(async (f: Record<string, unknown>) => ({
+        items: rows.filter((r) => r.archived === f.archived && (f.objectType !== 'none' || r.objectType === null)),
+        nextCursor: null,
+      }))
+      const source = { name: 'folders', api: { list }, list: { order: { pinned: true, position: true }, toItem: (i: Row) => i } } as unknown as ListSource
+      return { source, list }
+    }
+
+    it('keeps a filtered list apart, and moves a written item out of it when it gets a parent', async () => {
+      const store = createListStore()
+      const { source, list } = folders([row(1), row(2, { objectType: 'project', objectId: 5 })])
+      const orphans = { archived: false, objectType: 'none' }
+      const orphansKey = listKey('folders', orphans)
+      store.subscribe(orphansKey, source, orphans, 20, noop)
+      store.subscribe(listKey('folders', filter), source, filter, 20, noop)
+      await flush()
+      expect(list).toHaveBeenCalledTimes(2)
+      expect(store.snapshot(orphansKey).items.map((i) => (i as Row).id)).toEqual([1])
+      store.apply({ name: 'folders', item: row(1, { objectType: 'folder', objectId: 9 }) as never })
+      expect(store.snapshot(orphansKey).items).toEqual([])
+      store.apply({ name: 'folders', item: row(2) as never })
+      expect(store.snapshot(orphansKey).items.map((i) => (i as Row).id)).toEqual([2])
+      expect(list).toHaveBeenCalledTimes(2)
+    })
+
+    it('looks an item up in the lists it holds, without a request', async () => {
+      const store = createListStore()
+      expect(store.lookup('folders', 1)).toBeNull()
+      const { source } = folders([row(1)])
+      const all = listKey('folders', filter)
+      store.subscribe(all, source, filter, 20, noop)
+      expect(store.lookup('folders', 1)).toBe('wait')
+      await flush()
+      expect(store.lookup('folders', 1)).toMatchObject({ id: 1 })
+      // The whole live list is loaded and complete: an item it lacks is gone
+      expect(store.lookup('folders', 7)).toBe('gone')
+    })
+
+    it('does not call an item gone from a filtered list only', async () => {
+      const store = createListStore()
+      const { source } = folders([row(1)])
+      const orphans = { archived: false, objectType: 'none' }
+      store.subscribe(listKey('folders', orphans), source, orphans, 20, noop)
+      await flush()
+      expect(store.lookup('folders', 7)).toBeNull()
+    })
+  })
 })

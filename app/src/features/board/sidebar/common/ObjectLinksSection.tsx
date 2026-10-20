@@ -1,7 +1,7 @@
 import { LuX } from 'react-icons/lu'
 import IconButton from '../../../../components/ui/buttons/IconButton'
 import { toggleSidebarLink } from '../../../links/linkPick'
-import { linkName } from '../../linkName'
+import { LinkName } from '../../linkName'
 import type { ReactNode } from 'react'
 import type { BoardObject } from '../../types'
 
@@ -15,8 +15,8 @@ export default function ObjectLinksSection({ mapId, object, board, action }: { m
         <ul className="flex flex-col gap-0.5">
           {object.links.map((link, i) => (
             <li key={i} className="flex items-center justify-between gap-2 ps-2 text-body">
-              <span className="truncate">{linkName(link, board)}</span>
-              {link.to === 'sidebar' && <IconButton icon={LuX} label={`Unlink ${linkName(link, board)}`} onClick={() => toggleSidebarLink(mapId, object.id, link.id)} />}
+              <span className="truncate"><LinkName link={link} board={board} /></span>
+              {link.to === 'sidebar' && <IconButton icon={LuX} label="Unlink" onClick={() => toggleSidebarLink(mapId, object.id, link.id)} />}
             </li>
           ))}
         </ul>

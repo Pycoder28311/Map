@@ -54,6 +54,7 @@ export async function emptyTrashSections(sections: TrashSection[]): Promise<void
     for (const { resource, items } of sections) {
       for (const item of items) {
         await resource.api.remove(item.id)
+        resource.effects?.deleted?.(String(item.id))
         deleted.push({ name: resource.name, id: item.id })
       }
     }

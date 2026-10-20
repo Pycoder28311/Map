@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { authClient } from '../../lib/auth-client'
-import type { CardSort, RowId } from './rows'
+import type { CardSort } from './sortByDate'
 
+/** A row: its resource's name */
+type RowId = string
 type Sorts = Partial<Record<RowId, CardSort>>
 const storageKey = (userId: string) => `map:row-sort:${userId}`
 
@@ -15,7 +17,7 @@ function load(userId: string | undefined): Sorts {
   }
 }
 
-/** Each Dashboard row's sort (none: manual order), kept in this browser per user */
+/** Each Dashboard row's sort (none: the server's order), kept in this browser per user */
 export function useRowSort() {
   const { data: session } = authClient.useSession()
   const userId = session?.user.id

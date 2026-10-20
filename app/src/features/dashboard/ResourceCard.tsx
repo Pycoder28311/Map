@@ -2,7 +2,13 @@ import type { TreeMenuGroup } from '../../components/ui/tree/types'
 import TreeMenu from '../../components/ui/tree/TreeMenu'
 import type { AnyResource } from '../../resources/types'
 import { useObjectDrag } from '../drag/objectDrag'
-import { COMMENT_SIZE, cardOf } from './cards/CardShell'
+import { useState } from 'react'
+import { LuMaximize2 } from 'react-icons/lu'
+import IconButton from '../../components/ui/buttons/IconButton'
+import Modal from '../../components/ui/overlays/Modal'
+import { placeholderArt } from '../objects/placeholderArt'
+import { CARD_SIZE, COMMENT_SIZE, cardOf } from './cards/cardStyles'
+import MapPreview from './cards/MapPreview'
 
 const DATE = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' })
 // Shown on hover or keyboard focus, and while its menu is open
@@ -17,8 +23,10 @@ type Props = {
 }
 
 /**
- * An item of a resource as a Dashboard card, like a comment: a wide paper card, its title and date on top, its preview quoted below
- * behind a thin bar, fading out where it's cut. Drags like every card (onto pane edges, the Trash…), opens on a click, ⋯ menu on hover.
+ * An item of a resource as a Dashboard card, in its resource's look (ui.card): `plain`, like a comment: a wide paper card, its title and date on top, its preview quoted below
+ * behind a thin bar, fading out where it's cut; `image`, a picture on top (a placeholder made from its id: the list has no images), its
+ * title, date and two lines; `map`, its preview filling the card, its title at the bottom and a zoom button. Drags like every card (onto
+ * pane edges, the Trash…), opens on a click, ⋯ menu on hover.
  */
 export default function ResourceCard({ resource, item, menu, onOpen }: Props) {
   const id = String(item.id)
@@ -32,17 +40,55 @@ export default function ResourceCard({ resource, item, menu, onOpen }: Props) {
   })
   const { role: _role, ...dragAttributes } = attributes
   const created = item.createdAt ? new Date(item.createdAt) : null
+  const look = resource.ui.card ?? 'plain'
+  const [zoomed, setZoomed] = useState(false)
+  const box = `cursor-grab active:cursor-grabbing transition-[box-shadow,opacity] ${isDragging ? 'opacity-40' : ''}`
+  const card = { ref: setNodeRef, ...listeners, ...dragAttributes, 'data-card-id': id, 'data-card-kind': resource.panelType, onClick: onOpen }
+  const more = (
+    // Its own button: clicking it doesn't open the card
+    <div onClick={(e) => e.stopPropagation()} className={`absolute end-2 top-2 flex rounded-(--btn-close-radius) bg-surface/80 ${ON_HOVER}`}>
+      {look === 'map' && <IconButton icon={LuMaximize2} label={`Zoom ${title}`} onClick={() => setZoomed(true)} />}
+      <TreeMenu label={`More: ${title}`} groups={menu} />
+    </div>
+  )
+
+  if (look === 'map') {
+    return (
+      <>
+        <div {...card} className={`${cardOf(CARD_SIZE, false)} bg-surface ${box}`}>
+          <MapPreview id={id} className="min-h-0 flex-1" />
+          <span className="flex min-w-0 items-center gap-1.5 p-2 text-body font-medium">
+            <Icon className="size-3.5 shrink-0 text-fg-subtle" />
+            <span className="min-w-0 truncate">{title}</span>
+          </span>
+          {more}
+        </div>
+        <Modal open={zoomed} onClose={() => setZoomed(false)} title={title} size="lg">
+          <MapPreview id={id} pin="size-16" className="aspect-video w-full rounded-(--btn-radius)" />
+        </Modal>
+      </>
+    )
+  }
+
+  if (look === 'image') {
+    return (
+      <div {...card} className={`${cardOf(CARD_SIZE)} bg-surface ${box}`}>
+        <div style={placeholderArt(`${resource.panelType}${id}`)} className="h-24 shrink-0 rounded-(--btn-radius)" />
+        <div className="flex items-center justify-between gap-2 px-0.5">
+          <span className="flex min-w-0 items-center gap-1.5 text-body font-medium">
+            <Icon className="size-3.5 shrink-0 text-fg-subtle" />
+            <span className="min-w-0 truncate">{title}</span>
+          </span>
+          {created && <span className="shrink-0 text-small text-fg-subtle">{DATE.format(created)}</span>}
+        </div>
+        <p className="line-clamp-2 px-0.5 text-small text-fg-muted">{resource.ui.row.subtitle?.(item) || 'Empty'}</p>
+        {more}
+      </div>
+    )
+  }
 
   return (
-    <div
-      ref={setNodeRef}
-      {...listeners}
-      {...dragAttributes}
-      data-card-id={id}
-      data-card-kind={resource.panelType}
-      onClick={onOpen}
-      className={`${cardOf(COMMENT_SIZE)} bg-note cursor-grab active:cursor-grabbing transition-[box-shadow,opacity] ${isDragging ? 'opacity-40' : ''}`}
-    >
+    <div {...card} className={`${cardOf(COMMENT_SIZE)} bg-note ${box}`}>
       <div className="flex items-center gap-2 px-0.5 pe-8 pt-0.5">
         <span className="flex min-w-0 items-center gap-1.5 text-body font-medium">
           <Icon className="size-3.5 shrink-0 text-fg-subtle" />
@@ -53,10 +99,7 @@ export default function ResourceCard({ resource, item, menu, onOpen }: Props) {
       <p className="line-clamp-4 border-s-2 border-fg/20 ps-2 text-body text-fg-muted [mask-image:linear-gradient(to_bottom,black_65%,transparent)]">
         {resource.ui.row.subtitle?.(item) || 'Empty'}
       </p>
-      {/* Its own button: clicking it doesn't open the card */}
-      <div onClick={(e) => e.stopPropagation()} className={`absolute end-2 top-2 rounded-(--btn-close-radius) bg-surface/80 ${ON_HOVER}`}>
-        <TreeMenu label={`More: ${title}`} groups={menu} />
-      </div>
+      {more}
     </div>
   )
 }

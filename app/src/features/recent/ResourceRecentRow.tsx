@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
+import { useListStore } from '../../lib/resource/listStoreContext'
 import ResourceRow from '../../components/ui/resource/ResourceRow'
 import { useResourceItem } from '../../lib/resource/hooks'
 import type { AnyResource } from '../../resources/types'
@@ -19,12 +20,16 @@ type Props = {
 }
 
 /**
- * A Recent entry that is one item of a resource (a note). Whether it still exists is only known from the server, so the row loads it:
- * once it is found gone or in the Trash its entry is removed. While it loads (or fails) the row says so, with the resource's name.
+ * A Recent entry that is one item of a resource (a note). It is taken from the lists already loaded (the sidebar's, the Dashboard's):
+ * no request when it is there, or while such a list loads. Only an item none of them knows is read from the server. Once it is found
+ * gone or in the Trash its entry is removed. While it loads (or fails) the row says so, with the resource's name.
  */
 export default function ResourceRecentRow({ resource, id, entryKey, userId, place, open, afterOpen }: Props) {
-  const { item, notFound, status } = useResourceItem(resource, id)
-  const gone = notFound || item?.archived === true
+  const store = useListStore()
+  const known = useSyncExternalStore(store.watchAll, () => store.lookup(resource.name, id))
+  const { item: fetched, notFound, status } = useResourceItem(resource, known === null ? id : undefined)
+  const item = known !== null && typeof known === 'object' ? (known as typeof fetched) : fetched
+  const gone = known === 'gone' || notFound || item?.archived === true
 
   useEffect(() => {
     if (gone && userId) removeRecent(userId, entryKey)

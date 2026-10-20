@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { LuCornerUpRight } from 'react-icons/lu'
 import IconButton from '../../components/ui/buttons/IconButton'
 import HoverInfo from '../../components/ui/overlays/HoverInfo'
-import { findObject } from '../../mocks/projects'
 import { useWorkspace } from '../workspace/useWorkspace'
-import { linkName } from './linkName'
+import { parsePanelKey } from '../workspace/layout'
+import { LinkName } from './linkName'
 import type { BoardObject, Link } from './types'
 
 type Props = {
@@ -23,13 +23,14 @@ export default function ForwardLink({ object, onShowBoardObject, board }: Props 
   const go = (link: Link) => {
     setList(false)
     if (link.to === 'board') return onShowBoardObject(link.id)
-    const target = findObject(link.id)
-    if (target) workspace.open({ type: target.kind, id: target.id })
+    // A sidebar link's id is the item's panel key (`note:5`)
+    const panel = parsePanelKey(link.id)
+    if (panel) workspace.open(panel)
   }
 
   return (
     <span className="relative">
-      <HoverInfo title="See linked object" text={links.length === 1 ? linkName(links[0], board) : `${links.length} linked objects`} side="bottom">
+      <HoverInfo title="See linked object" text={links.length === 1 ? <LinkName link={links[0]} board={board} /> : `${links.length} linked objects`} side="bottom">
         <IconButton icon={LuCornerUpRight} label="See linked object" aria-expanded={links.length > 1 ? list : undefined} onClick={() => (links.length === 1 ? go(links[0]) : setList(!list))} />
       </HoverInfo>
       {list && (
@@ -37,7 +38,7 @@ export default function ForwardLink({ object, onShowBoardObject, board }: Props 
           {links.map((link, i) => (
             <li key={i}>
               <button type="button" onClick={() => go(link)} className="w-full cursor-pointer truncate rounded-(--corner-sm) px-2 py-1 text-start text-body hover-fill">
-                {linkName(link, board)}
+                <LinkName link={link} board={board} />
               </button>
             </li>
           ))}

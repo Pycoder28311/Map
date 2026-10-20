@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { columnLabel, menuEntries, moveColumn, pickColumn, RESOURCE_COLUMNS, sectionsBelow, validColumns, type ColumnId } from './columns'
+import { resourcesWith } from '../../resources/registry'
+import { columnLabel, DEFAULT_COLUMNS, menuEntries, moveColumn, pickColumn, sectionsBelow, validColumns, type ColumnId } from './columns'
 
 const cols: ColumnId[] = ['recent', 'notes', 'maps']
+const lists = resourcesWith('dashboard').map((r) => r.name)
+
+describe('the lists', () => {
+  it('are Recent and every resource with a Dashboard surface, in the UI config\'s order', () => {
+    expect(menuEntries(cols, 0).map((e) => e.id)).toEqual(['recent', ...lists])
+    expect(lists).toEqual(['projects', 'notes', 'folders', 'articles', 'objectCards', 'maps'])
+    expect(DEFAULT_COLUMNS).toEqual(['recent', 'notes', 'maps'])
+    expect(columnLabel('objectCards')).toBe('Object cards')
+  })
+})
 
 describe('pickColumn', () => {
   it('swaps with the column already showing it', () => {
@@ -24,10 +35,9 @@ describe('moveColumn', () => {
 })
 
 describe('sectionsBelow', () => {
-  it('lists Projects, Notes and Objects, minus the ones that are columns', () => {
-    expect(sectionsBelow(['recent', 'notes', 'maps'])).toEqual(['projects', 'objects'])
-    expect(sectionsBelow(['projects', 'notes', 'objects'])).toEqual([])
-    expect(sectionsBelow(['recent', 'maps', 'objects'])).toEqual(['projects', 'notes'])
+  it('lists every resource that is not a column (Recent is only a column)', () => {
+    expect(sectionsBelow(['recent', 'notes', 'maps'])).toEqual(['projects', 'folders', 'articles', 'objectCards'])
+    expect(sectionsBelow(['projects', 'folders', 'articles'])).toEqual(['notes', 'objectCards', 'maps'])
   })
 })
 
@@ -41,23 +51,16 @@ describe('validColumns', () => {
     expect(validColumns(['maps', 'projects'])).toEqual(['maps', 'projects', 'recent'])
     expect(validColumns(['recent', 'notes', 'maps', 'projects'])).toEqual(['recent', 'notes', 'maps'])
   })
-  it('drops what an older version stored (orphans, one column per project)', () => {
-    expect(validColumns(['orphans', 'project:p1', 'maps'])).toEqual(['recent', 'notes', 'maps'])
+  it('drops what an older version stored (orphans, objects)', () => {
+    expect(validColumns(['orphans', 'objects', 'maps'])).toEqual(['recent', 'notes', 'maps'])
   })
 })
 
 describe('menuEntries', () => {
   it('marks its own entry and the ones in other columns', () => {
     const entries = menuEntries(cols, 1)
-    expect(entries.map((e) => e.id)).toEqual(['recent', 'notes', 'projects', 'maps', 'objects'])
     expect(entries.find((e) => e.id === 'notes')).toMatchObject({ current: true, inColumn: undefined })
     expect(entries.find((e) => e.id === 'maps')).toMatchObject({ current: false, inColumn: 3 })
-    expect(columnLabel('projects')).toBe('Projects')
-  })
-})
-
-describe('RESOURCE_COLUMNS', () => {
-  it('names the columns that are the server\'s lists', () => {
-    expect(RESOURCE_COLUMNS).toEqual({ projects: 'projects', notes: 'notes' })
+    expect(entries.find((e) => e.id === 'folders')).toMatchObject({ label: 'Folders', current: false, inColumn: undefined })
   })
 })

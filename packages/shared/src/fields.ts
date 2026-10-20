@@ -1,0 +1,40 @@
+import { z } from 'zod'
+import { richText as richTextSchema } from './rich-text'
+
+/**
+ * The kinds of field a table can have. Each kind is one column type in the database (backend/src/lib/ownedTable.ts), one zod
+ * rule here, and one widget in the app's form (FieldRenderer): change a field's kind in data.config.ts and all three follow.
+ */
+export type FieldKind = 'text' | 'plainText' | 'richText' | 'int' | 'bool'
+
+/** One field of a table: its kind, the zod rule a client's value must pass, and the value a new row gets */
+export type Field<K extends FieldKind = FieldKind, V = unknown> = {
+  readonly kind: K
+  readonly zod: z.ZodType<V>
+  readonly default: V
+  /** Most characters (text kinds) */
+  readonly max?: number
+}
+
+/** The value type of a field */
+export type ValueOf<F> = F extends Field<FieldKind, infer V> ? V : never
+
+/**
+ * The field kinds, used in data.config.ts:
+ *   title: field.text(200)               one line, trimmed
+ *   description: field.plainText(2000)   several lines, no formatting
+ *   content: field.richText()            HTML from the editor, cleaned (rich-text.ts); can have a `preview`
+ *   rating: field.int({ min: 0, max: 5 })
+ *   done: field.bool()
+ */
+export const field = {
+  text: (max: number): Field<'text', string> => ({ kind: 'text', zod: z.string().trim().max(max), default: '', max }),
+  plainText: (max: number): Field<'plainText', string> => ({ kind: 'plainText', zod: z.string().max(max), default: '', max }),
+  richText: (): Field<'richText', string> => ({ kind: 'richText', zod: richTextSchema, default: '' }),
+  int: ({ min = 0, max = Number.MAX_SAFE_INTEGER }: { min?: number; max?: number } = {}): Field<'int', number> => ({
+    kind: 'int',
+    zod: z.number().int().min(min).max(max),
+    default: Math.max(0, min),
+  }),
+  bool: (): Field<'bool', boolean> => ({ kind: 'bool', zod: z.boolean(), default: false }),
+}

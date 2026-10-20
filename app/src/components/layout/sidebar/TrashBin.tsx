@@ -1,7 +1,6 @@
 import { useDroppable } from '@dnd-kit/core'
 import { useState } from 'react'
 import { useLayoutsState } from '../../../mocks/layoutsStore'
-import { useMockObjects } from '../../../mocks/projectsStore'
 import { useTrashedItems } from '../../../lib/resource/trash'
 import { resourcesWith } from '../../../resources/registry'
 import { TREE_ROW_LOOK, buttonClass } from '../../ui/buttons/buttonStyles'
@@ -52,10 +51,10 @@ export default function TrashBin({ compact }: { compact: boolean }) {
   const over = target?.kind === 'trash'
   const swallowing = useLidOpen(TRASH_ID)
   const [open, setOpen] = useState(false)
-  // The Trash holds mock objects, saved layouts, and the archived items of every resource that shows in it (the server's,
-  // asked only while the Trash is open, so the button's count leaves them out)
+  // The Trash holds saved layouts and the archived items of every resource that shows in it (asked only while the Trash is open,
+  // so the button's count leaves them out)
   const trashed = useTrashedItems(RESOURCES_IN_TRASH, open)
-  const count = useMockObjects().filter((o) => o.archived).length + useLayoutsState().layouts.filter((l) => l.archived).length
+  const count = useLayoutsState().layouts.filter((l) => l.archived).length
 
   return (
     <>

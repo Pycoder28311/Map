@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { useMockObjects } from '../../mocks/projectsStore'
+import { mapName, useMaps, type MapItem } from '../maps/maps'
 import { useWorkspace } from '../workspace/useWorkspace'
 import BarPopover from './BarPopover'
 import { mapTree, siblingMaps } from './branches'
-import type { MockObject } from '../../mocks/projects'
 
 // Tree lines: each branch has a line down its left side (to its middle for the last one) and a short one across
 const BRANCH =
@@ -12,20 +11,20 @@ const BRANCH =
 
 /** The map's name ; a click lists the maps (those with branches show them in a tree under them) */
 export default function MapPicker({ mapId, name }: { mapId: string; name: string }) {
-  const objects = useMockObjects()
+  const maps = useMaps()
   const workspace = useWorkspace()
   const [open, setOpen] = useState(false)
-  const tree = mapTree(siblingMaps(objects, mapId))
+  const tree = mapTree(siblingMaps(maps, mapId))
 
   const show = (id: string) => {
     setOpen(false)
     if (id !== mapId) workspace.replace({ type: 'map', id: mapId }, { type: 'map', id })
   }
-  const row = (map: MockObject, branches = 0, label = map.name) => (
+  const row = (map: MapItem, branches = 0, label = mapName(map)) => (
     <button
       type="button"
-      aria-current={map.id === mapId}
-      onClick={() => show(map.id)}
+      aria-current={String(map.id) === mapId}
+      onClick={() => show(String(map.id))}
       className={`flex w-full cursor-pointer items-baseline gap-2 rounded-(--corner-sm) px-2 py-1.5 text-start hover-fill`}
     >
       <span className="min-w-0 truncate text-body">{label}</span>
@@ -60,7 +59,7 @@ export default function MapPicker({ mapId, name }: { mapId: string; name: string
             {row(map, branches.length ? branches.length + 1 : 0)}
             {branches.length > 0 && (
               <ul className="ms-4">
-                <li className={BRANCH}>{row(map, 0, `${map.name} (main)`)}</li>
+                <li className={BRANCH}>{row(map, 0, `${mapName(map)} (main)`)}</li>
                 {branches.map((b) => (
                   <li key={b.id} className={BRANCH}>
                     {row(b)}

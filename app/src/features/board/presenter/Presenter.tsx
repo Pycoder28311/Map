@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { LuChevronLeft, LuChevronRight, LuExternalLink, LuX } from 'react-icons/lu'
 import Button from '../../../components/ui/buttons/Button'
 import IconButton from '../../../components/ui/buttons/IconButton'
-import { reorderObjects, useMockObjects } from '../../../mocks/projectsStore'
+import { mapName, reorderMaps, useMaps } from '../../maps/maps'
 import { useWorkspace } from '../../workspace/useWorkspace'
 import { getBoard } from '../boardStore'
 import { siblingMaps } from '../branches'
@@ -32,10 +32,10 @@ function pageStyle(style: PresenterStyle, index: number, current: number, count:
  * thumbnails to drag into another order (the maps' order follows). Arrows, the strip and the keys change the map.
  */
 export default function Presenter({ mapId, onClose }: { mapId: string; onClose: () => void }) {
-  const objects = useMockObjects()
   const workspace = useWorkspace()
   const style = usePresenterStyle()
-  const maps = siblingMaps(objects, mapId)
+  // With string ids (the boards' keys and the panels') and their names
+  const maps = siblingMaps(useMaps(), mapId).map((m) => ({ ...m, id: String(m.id), name: mapName(m) }))
   const [currentId, setCurrentId] = useState(mapId)
   const [dragging, setDragging] = useState<number | null>(null)
   const [over, setOver] = useState<number | null>(null)
@@ -48,7 +48,7 @@ export default function Presenter({ mapId, onClose }: { mapId: string; onClose: 
   const reorder = (from: number, to: number) => {
     const ids = moveItem(maps.map((m) => m.id), from, to)
     if (ids.every((id, i) => id === maps[i].id)) return
-    reorderObjects(ids)
+    void reorderMaps(ids)
     setAnnounce(`${maps[from].name} moved to place ${to + 1}`)
   }
   const open = () => {

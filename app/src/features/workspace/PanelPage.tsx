@@ -1,4 +1,5 @@
 import DropZones from './DropZones'
+import { panelKey } from './layout'
 import PanelContent from './PanelContent'
 import { usePanelRegistry } from './registryContext'
 import type { PanelRef } from './types'
@@ -12,8 +13,8 @@ export default function PanelPage({ panel }: { panel: PanelRef }) {
   const registry = usePanelRegistry()
 
   return (
-    // An object's page can be picked to share (features/share)
-    <div data-share-id={panel.id} className={registry[panel.type].fill ? 'relative h-full' : 'relative min-h-full pb-20'}>
+    // An item's page can be picked to share (features/share): its panel key, e.g. note:5
+    <div data-share-id={panel.id ? panelKey(panel) : undefined} className={registry[panel.type].fill ? 'relative h-full' : 'relative min-h-full pb-20'}>
       <PanelContent component={registry[panel.type].component} id={panel.id} />
       <DropZones slot="a" />
     </div>

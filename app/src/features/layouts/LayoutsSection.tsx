@@ -17,9 +17,10 @@ import {
   useLayoutsState,
   type SavedLayout,
 } from '../../mocks/layoutsStore'
-import { findObject } from '../../mocks/projects'
-import { useMockObjects } from '../../mocks/projectsStore'
-import { resourceByPanelType } from '../../resources/registry'
+import { listKey } from '../../lib/resource/listStore'
+import { useListStore } from '../../lib/resource/listStoreContext'
+import { resourceByPanelType, resourcesWith } from '../../resources/registry'
+import { sidebarFilter } from '../../components/layout/sidebar/sidebarLists'
 import { parsePanelKey, workspaceHref, type WorkspaceLayout } from '../workspace/layout'
 import { usePanelRegistry } from '../workspace/registryContext'
 import { setSplit, useSplit } from '../workspace/split'
@@ -50,12 +51,12 @@ const HINTS: Record<Hint['kind'], string> = {
 
 const cssPx = (name: string) => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0
 
-/** A panel still exists: its type is registered and, if it's an object, the object is there (not archived) */
+/** A panel still exists: its type is registered and, if it's an item, its id is a resource's (a number; whether it is still there shows in the panel) */
 function useExists() {
   const registry = usePanelRegistry()
   return {
     isKnown: (type: string) => type in registry,
-    exists: (panel: PanelRef) => panel.type in registry && (!panel.id || resourceByPanelType(panel.type) !== undefined || findObject(panel.id) !== undefined),
+    exists: (panel: PanelRef) => panel.type in registry && (!panel.id || (resourceByPanelType(panel.type) !== undefined && /^\d+$/.test(panel.id))),
     title: (panel: PanelRef) => registry[panel.type]?.title(panel.id) ?? 'Missing',
   }
 }
@@ -71,12 +72,12 @@ function useExists() {
  *   selected one)
  * - leaving the panes for a single page: the layout is unselected and its changes dropped; switching
  *   straight to another layout's tile keeps them (the tile stays blue with Save and ✕)
- * - Create (no tiles): opens two random objects as panes and shows a hint next to the sidebar
+ * - Create (no tiles): opens two random items as panes and shows a hint next to the sidebar
  */
 export default function LayoutsSection({ compact }: { compact: boolean }) {
   const { layouts, selectedId, pending } = useLayoutsState()
   const saved = layouts.filter((l) => !l.archived)
-  const objects = useMockObjects() // names and missing panels follow renames / archives
+  const store = useListStore()
   const { isKnown, exists, title } = useExists()
   const workspace = useWorkspace()
   const [split] = useSplit()
@@ -141,12 +142,12 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
     if (held) dropChanges(layout.id)
   }
 
-  /** Opens 2 random objects as panes; `save`: also saves them as a new layout (selected, its tile appears) */
+  /** Opens 2 random items as panes; `save`: also saves them as a new layout (selected, its tile appears) */
   function createRandom(save = false) {
-    // Every mock object that opens as a panel
-    const candidates: PanelRef[] = objects
-      .filter((o) => findObject(o.id))
-      .map((o) => ({ type: o.kind, id: o.id }))
+    // The items the sidebar has loaded (no request of its own), of every resource that opens as a panel
+    const candidates: PanelRef[] = resourcesWith('panel').flatMap((r) =>
+      store.snapshot(listKey(r.name, { archived: false, ...sidebarFilter(r) })).items.map((item) => ({ type: r.panelType, id: String((item as { id: number }).id) })),
+    )
     if (candidates.length < 2) return setHint({ kind: 'empty' })
     const shuffled = [...candidates].sort(() => Math.random() - 0.5)
     const layout: WorkspaceLayout = { template: '2-cols', panels: shuffled.slice(0, 2) }
@@ -224,7 +225,7 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
       <Divider label="Layouts" action={n > 0 ? create : undefined} compact={compact} className="my-(--divider-gap)" />
 
       {n === 0 ? (
-        // No layouts and no panes: opens two random objects as panes
+        // No layouts and no panes: opens two random items as panes
         <CreateButton compact={compact} onClick={() => createRandom()} />
       ) : (
         <>

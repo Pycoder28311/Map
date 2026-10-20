@@ -2,11 +2,8 @@ import type { ReactNode } from 'react'
 import { LuLayoutTemplate, LuPanelsTopLeft } from 'react-icons/lu'
 import { authClient } from '../../lib/auth-client'
 import { fromSaved, selectLayout, useLayoutsState } from '../../mocks/layoutsStore'
-import { findObject } from '../../mocks/projects'
-import { useMockObjects } from '../../mocks/projectsStore'
 import { resourceByPanelType } from '../../resources/registry'
-import { useLinkNode } from '../links/linkNode'
-import { LinkRow, ObjectListRow, Rows, useOpenLayout } from '../objects/ListRows'
+import { LinkRow, Rows, useOpenLayout } from '../objects/ListRows'
 import { parsePanelKey, single, type WorkspaceLayout } from '../workspace/layout'
 import { usePanelRegistry } from '../workspace/registryContext'
 import { setSplit } from '../workspace/split'
@@ -27,31 +24,28 @@ type Props = {
 }
 
 /**
- * What the user opened lately, newest first (recentStore.ts): objects (draggable, like everywhere),
+ * What the user opened lately, newest first (recentStore.ts): items (draggable, like everywhere),
  * pages, combinations of panes and saved layouts. Gone ones are left out. On the Dashboard (a column)
  * and in the navbar (Recent History).
  */
 export default function RecentList({ limit, allHref, afterOpen, place }: Props) {
   const { data: session } = authClient.useSession()
   const entries = useRecent(session?.user.id)
-  useMockObjects() // names follow renames, archived objects drop out
   const { layouts } = useLayoutsState()
   const registry = usePanelRegistry()
   const workspace = useWorkspace()
-  const linkNodeFor = useLinkNode()
   const openLayout = useOpenLayout()
   const open = (layout: WorkspaceLayout) => {
     openLayout(layout)
     afterOpen?.()
   }
 
-  // A resource's item (a note) is checked when its row loads: a gone one removes its entry (ResourceRecentRow)
-  // A resource's ids are the server's (numbers): an older id (a mock "n1") is never asked for, it is just left out
+  // A resource's item (a note) is checked when its row shows: a gone one removes its entry (ResourceRecentRow)
+  // A resource's ids are numbers: an older id (a mock "m1") is never asked for, it is just left out
   const exists = (panel: PanelRef) => {
     if (!(panel.type in registry)) return false
     if (!panel.id) return true
-    if (resourceByPanelType(panel.type)) return /^\d+$/.test(panel.id)
-    return findObject(panel.id) !== undefined
+    return resourceByPanelType(panel.type) !== undefined && /^\d+$/.test(panel.id)
   }
   const title = (panel: PanelRef) => registry[panel.type]?.title(panel.id) ?? 'Missing'
 
@@ -83,8 +77,6 @@ export default function RecentList({ limit, allHref, afterOpen, place }: Props) 
       if (resource && panel.id) {
         return <ResourceRecentRow resource={resource} id={panel.id} entryKey={entry.key} userId={session?.user.id} place={place} open={openLayout} afterOpen={afterOpen} />
       }
-      const object = panel.id ? findObject(panel.id) : undefined
-      if (object) return <ObjectListRow object={object} place={place} linkNodeFor={linkNodeFor} open={openLayout} afterOpen={afterOpen} />
       const Icon = registry[panel.type].icon
       return <LinkRow icon={Icon} label={title(panel)} onOpen={() => open(single(panel))} />
     }

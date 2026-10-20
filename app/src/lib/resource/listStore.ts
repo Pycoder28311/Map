@@ -3,7 +3,7 @@
 // (a second screen needing 100 when 20 are held reads the other 80), and a list that is complete is not read again.
 // One item by id (the whole note, with its content) is shared the same way, while some screen reads it: two screens that show the
 // same note ask once. Pure of React (listStore.test.ts); useResourceList, useResourceItem and useTrashedItems read it, ResourcesProvider owns it.
-import type { Page } from '@map/shared'
+import { matchesFilter, type Page } from '@map/shared'
 import { PAGE_SIZE_MAX } from '@map/shared/page-size'
 import type { ChangeEvent } from './changes'
 import { compareFor } from './order'
@@ -31,8 +31,6 @@ type ItemEntry = {
 
 type Row = Record<string, unknown> & { id: number | string }
 const sameId = (a: Row, id: number | string) => String(a.id) === String(id)
-/** Whether an item belongs in a list of this filter (e.g. { archived: false } holds the items that are not archived) */
-const fits = (filter: object, item: Row) => Object.entries(filter).every(([name, value]) => item[name] === value)
 
 /** How long a list that nobody was reading counts as fresh when it is read again (a change made here makes it stale at once) */
 export const STALE_MS = 5 * 60 * 1000
@@ -244,6 +242,25 @@ export function createListStore({ now = Date.now, staleMs = STALE_MS }: { now?: 
       manyCache.set(id, next)
       return next
     },
+    /**
+     * What the lists already hold about one item, without asking the server: the item (from a live list), 'gone' (a whole live list
+     * is loaded and complete without it), 'wait' (a list of its resource is loading: it may come) or null (nothing known)
+     */
+    lookup(name: string, id: number | string): Record<string, unknown> | 'gone' | 'wait' | null {
+      let loading = false
+      for (const entry of entries.values()) {
+        if (entry.source.name !== name || (entry.filter as { archived?: boolean }).archived !== false) continue
+        const found = (entry.state.items as Row[]).find((row) => sameId(row, id))
+        if (found) return found
+        if (!entry.state.loaded) loading = loading || entry.firstLoad !== null
+      }
+      if (loading) return 'wait'
+      for (const entry of entries.values()) {
+        const whole = entry.source.name === name && Object.keys(entry.filter).length === 1 && (entry.filter as { archived?: boolean }).archived === false
+        if (whole && entry.state.loaded && entry.state.nextCursor === null) return 'gone'
+      }
+      return null
+    },
     /** Called whenever any list changes (for a screen that reads several) */
     watchAll(onChange: () => void) {
       watchers.add(onChange)
@@ -274,7 +291,7 @@ export function createListStore({ now = Date.now, staleMs = STALE_MS }: { now?: 
         const held = entry.state.items as Row[]
         const without = held.filter((row) => !sameId(row, (event.removedId ?? item!.id) as number | string))
         let next = without
-        if (event.removedId === undefined && fits(entry.filter, item!)) {
+        if (event.removedId === undefined && matchesFilter(entry.filter, item!)) {
           const list = entry.source.list!
           const row = list.toItem(item as never) as Row
           const before = compareFor(list.order)

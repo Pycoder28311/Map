@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 import type { AnyField, FieldWidget } from '../../../resources/types'
 import RichTextField from '../fields/RichTextField'
+import TextAreaField from '../fields/TextAreaField'
 
 export type WidgetProps = {
   /** The value the field starts with (not followed afterwards: the field owns it while it is open) */
@@ -26,6 +27,10 @@ function TextWidget({ value, onChange, label, placeholder, autoFocus, heading }:
   )
 }
 
+function TextAreaWidget({ value, onChange, label, placeholder, autoFocus }: WidgetProps) {
+  return <TextAreaField value={value} onChange={(e) => onChange(e.target.value)} label={label} placeholder={placeholder} rows={3} data-autofocus={autoFocus || undefined} />
+}
+
 function RichTextWidget({ value, onChange, label, placeholder, autoFocus }: WidgetProps) {
   return <RichTextField value={value} onChange={onChange} label={label} placeholder={placeholder} autoFocus={autoFocus} toolbar />
 }
@@ -33,6 +38,7 @@ function RichTextWidget({ value, onChange, label, placeholder, autoFocus }: Widg
 /** One component per kind of field. A new kind: add its name to FIELD_WIDGET_NAMES (resources/types.ts) and its component here */
 export const FIELD_WIDGETS: Record<FieldWidget, ComponentType<WidgetProps>> = {
   text: TextWidget,
+  textarea: TextAreaWidget,
   richText: RichTextWidget,
 }
 

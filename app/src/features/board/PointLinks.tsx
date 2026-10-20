@@ -1,6 +1,6 @@
-import { findObject } from '../../mocks/projects'
 import { useWorkspace } from '../workspace/useWorkspace'
-import { linkName } from './linkName'
+import { parsePanelKey } from '../workspace/layout'
+import { LinkName } from './linkName'
 import type { BoardObject, Link } from './types'
 
 /** What a point is linked to, as buttons that open it (the modal's and the visitor's view). Nothing when there are none */
@@ -9,8 +9,9 @@ export default function PointLinks({ links, board, onShowBoardObject }: { links:
   if (links.length === 0) return null
   const go = (link: Link) => {
     if (link.to === 'board') return onShowBoardObject(link.id)
-    const target = findObject(link.id)
-    if (target) workspace.open({ type: target.kind, id: target.id })
+    // A sidebar link's id is the item's panel key (`note:5`)
+    const panel = parsePanelKey(link.id)
+    if (panel) workspace.open(panel)
   }
   return (
     <section aria-label="Linked objects" className="flex flex-col gap-1">
@@ -19,7 +20,7 @@ export default function PointLinks({ links, board, onShowBoardObject }: { links:
         {links.map((link, i) => (
           <li key={i}>
             <button type="button" onClick={() => go(link)} className="cursor-pointer rounded-(--radius-pill) border border-line bg-fill px-3 py-1 text-small hover:bg-surface-sunken">
-              {linkName(link, board)}
+              <LinkName link={link} board={board} />
             </button>
           </li>
         ))}

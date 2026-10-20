@@ -14,6 +14,8 @@ export type ListOptions = {
    * forget the rule that a trashed item shows only in the Trash
    */
   trashed?: boolean
+  /** More filters of the list, e.g. `{ objectType: 'none' }` (the items without a parent): a list of its own in the store */
+  filter?: Record<string, string | number | boolean | undefined>
   /** Items per page (default: the API's page size) */
   limit?: number
   /** false: does not load (e.g. a popout that is closed) */
@@ -39,10 +41,13 @@ export type ListResult<TListItem> = {
  */
 export function useResourceList<TItem, TListItem, TInput, TUpdate, TFilter extends { archived: boolean }>(
   resource: ResourceCore<TItem, TListItem, TInput, TUpdate, TFilter>,
-  { trashed = false, limit = PAGE_SIZE_DEFAULT, enabled = true }: ListOptions = {},
+  { trashed = false, filter: more, limit = PAGE_SIZE_DEFAULT, enabled = true }: ListOptions = {},
 ): ListResult<TListItem> {
   const store = useListStore()
-  const filter = useMemo(() => ({ archived: trashed }), [trashed])
+  // The same filter object while its values stay the same (the caller may pass a new object each render)
+  const moreKey = JSON.stringify(more ?? {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const filter = useMemo(() => ({ archived: trashed, ...more }), [trashed, moreKey])
   const key = listKey(resource.name, filter)
   const [shown, setShown] = useState(limit)
   const count = Math.max(limit, shown)
@@ -108,23 +113,32 @@ export type ResourceActions<TItem, TInput, TUpdate> = {
   restore: (id: number | string) => Promise<TItem>
 }
 
-/** The writes of a resource. Each tells the others on screen (lists load again, an open item takes the new version) and resolves with the server's answer */
+/**
+ * The writes of a resource. Each tells the screens what the server answered (the cached lists and an open item take it in, no read)
+ * and resolves with that answer. Not a hook: for code that writes to a resource it picks at run time (the Create modal)
+ */
+export function actionsOf<TItem extends { id: number | string }, TListItem, TInput, TUpdate extends { archived?: boolean }, TFilter extends object>(
+  resource: ResourceCore<TItem, TListItem, TInput, TUpdate, TFilter>,
+): ResourceActions<TItem, TInput, TUpdate> {
+  const { name, api } = resource
+  const written = (item: TItem) => (notifyChanged({ name, item }), item)
+  const update = async (id: number | string, patch: TUpdate, options?: { keepalive?: boolean }) => written(await api.update(id, patch, options))
+  return {
+    create: async (input) => written(await api.create(input)),
+    update,
+    remove: async (id) => {
+      await api.remove(id)
+      notifyChanged({ name, removedId: id })
+      resource.effects?.deleted?.(String(id))
+    },
+    trash: (id) => update(id, { archived: true } as TUpdate),
+    restore: (id) => update(id, { archived: false } as TUpdate),
+  }
+}
+
+/** The writes of a resource (actionsOf), the same object for the component's life */
 export function useResourceActions<TItem extends { id: number | string }, TListItem, TInput, TUpdate extends { archived?: boolean }, TFilter extends object>(
   resource: ResourceCore<TItem, TListItem, TInput, TUpdate, TFilter>,
 ): ResourceActions<TItem, TInput, TUpdate> {
-  return useMemo(() => {
-    const { name, api } = resource
-    const written = (item: TItem) => (notifyChanged({ name, item }), item)
-    const update = async (id: number | string, patch: TUpdate, options?: { keepalive?: boolean }) => written(await api.update(id, patch, options))
-    return {
-      create: async (input) => written(await api.create(input)),
-      update,
-      remove: async (id) => {
-        await api.remove(id)
-        notifyChanged({ name, removedId: id })
-      },
-      trash: (id) => update(id, { archived: true } as TUpdate),
-      restore: (id) => update(id, { archived: false } as TUpdate),
-    }
-  }, [resource])
+  return useMemo(() => actionsOf(resource), [resource])
 }

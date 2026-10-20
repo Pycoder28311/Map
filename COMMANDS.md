@@ -22,5 +22,6 @@ The 5 commands you need most. Paths are relative to the repo root (`Map/`).
 - **5:** pushing to GitHub does the same automatically through Workers Builds, once its settings
   point to the repo root (see `instructions/backend-setup.md` §6).
 
-More: [`instructions/backend-setup.md`](instructions/backend-setup.md) (setup, secrets, domains) and
-[`instructions/adding-a-resource.md`](instructions/adding-a-resource.md) (new tables).
+More: [`instructions/backend-setup.md`](instructions/backend-setup.md) (setup, secrets, domains),
+[`instructions/data-config.md`](instructions/data-config.md) (tables, fields and screens: the config files) and
+[`instructions/adding-a-resource.md`](instructions/adding-a-resource.md) (backend rules, relations, routes that are not CRUD).

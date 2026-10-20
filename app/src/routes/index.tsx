@@ -6,8 +6,8 @@ import Workspace from '../features/workspace/Workspace'
 import RequireAuth from '../features/auth/RequireAuth'
 import HomePage from '../pages/Home/HomePage'
 import DashboardPage from '../pages/Dashboard/DashboardPage'
-import ProjectsPage from '../pages/Projects/ProjectsPage'
-import NotesPage from '../pages/Notes/NotesPage'
+import ResourceListPage from '../components/ui/resource/ResourceListPage'
+import { resourcesWith } from '../resources/registry'
 import SignInPage from '../pages/SignIn/SignInPage'
 import SignUpPage from '../pages/SignUp/SignUpPage'
 import ForgotPasswordPage from '../pages/ForgotPassword/ForgotPasswordPage'
@@ -26,8 +26,10 @@ export default function AppRoutes() {
             <Route element={<RequireAuth />}>
                 <Route element={<AppLayout />}>
                     <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/projects" element={<ProjectsPage />} />
-                    <Route path="/notes" element={<NotesPage />} />
+                    {/* Each resource's list page (/projects, /notes, /object-cards…) */}
+                    {resourcesWith('page').map((resource) => (
+                        <Route key={resource.name} path={resource.surfaces.page} element={<ResourceListPage resource={resource} />} />
+                    ))}
                     <Route path={WORKSPACE_PATH} element={<Workspace />} />
                 </Route>
             </Route>

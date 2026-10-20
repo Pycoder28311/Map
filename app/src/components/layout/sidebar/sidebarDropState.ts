@@ -1,42 +1,24 @@
-// The sidebar's drop zones on the app's drop system (features/drag/objectDrop.ts): 'row' (move into
-// between rows, or pin) and 'trash' (archive). SidebarDropProvider registers
-// them; useSidebarDrop gives the sidebar what's dragged and where it would land.
-import type { DragMoveEvent, DragOverEvent } from '@dnd-kit/core'
-import { useObjectDrop, type DropTargetValue, type ZoneHandler } from '../../../features/drag/objectDrop'
+// The sidebar's drop zone on the app's drop system (features/drag/objectDrop.ts): the trash bin. SidebarDropProvider registers it;
+// useSidebarDrop gives the sidebar what's dragged and whether it would land in the bin.
+import { useObjectDrop, type ZoneHandler } from '../../../features/drag/objectDrop'
 import { objectOf } from '../../../features/drag/objectDrag'
 import type { PanelDragData } from '../../../features/workspace/types'
-import { dragPoint } from '../../../lib/dnd'
 import { archiveLayout } from '../../../mocks/layoutsStore'
-import { archiveObject, getObjects, getPins, moveObject, reorderPinned } from '../../../mocks/projectsStore'
-import { notifyChanged } from '../../../lib/resource/changes'
+import { actionsOf } from '../../../lib/resource/hooks'
 import { resourceByPanelType } from '../../../resources/registry'
 import { dropIconOf, fallInto } from '../../ui/drop/fallInto'
-import { snapshotRows } from '../../ui/tree/rowFlip'
 import { swallow } from '../../ui/tree/swallow'
-import { resolveDrop, rowDropPosition, type DropAction, type DropPosition, type RowDropData } from './treeDrop'
 
 /** Where the current drag would land in the sidebar */
-export type SidebarDropTarget =
-  | { kind: 'row'; nodeId: string; position: DropPosition; action: DropAction }
-  | { kind: 'trash' }
-  | null
+export type SidebarDropTarget = { kind: 'trash' } | null
 
 /** The droppable id of the trash bin, its zone and its drop key (data-drop-icon, lid) */
 export const TRASH_ID = 'trash'
 
-/** What the sidebar shows of the current drag: the row it left (an outline), and where it would land */
+/** What the sidebar shows of the current drag: the row it left (an outline), and whether it would land in the bin */
 export function useSidebarDrop(): { draggingNodeId: string | null; target: SidebarDropTarget } {
   const { item, target } = useObjectDrop()
-  const value = target?.value as (DropTargetValue & { nodeId: string; position: DropPosition; action: DropAction }) | undefined
-  return {
-    draggingNodeId: item?.nodeId ?? null,
-    target:
-      target?.zone === 'row' && value
-        ? { kind: 'row', nodeId: value.nodeId, position: value.position, action: value.action }
-        : target?.zone === 'trash'
-          ? { kind: 'trash' }
-          : null,
-  }
+  return { draggingNodeId: item?.nodeId ?? null, target: target?.zone === 'trash' ? { kind: 'trash' } : null }
 }
 
 /** A saved layout's tile being dragged (it can only go to the trash) */
@@ -45,39 +27,7 @@ const layoutOf = (data: unknown) => {
   return drag?.kind === 'layout' ? drag.layoutId : undefined
 }
 
-/**
- * Archives an object with the Zen effect: `source` (the floating copy, or the row itself when archived
- * from its menu) falls into the trash bin, whose lid opens
- */
-export function archiveWithEffect(objectId: string, source: Element | null, lifted = false) {
-  fallInto(source, TRASH_ID, { lifted })
-  snapshotRows()
-  archiveObject(objectId)
-}
-
-/** Rows: from the row under the pointer and the pointer's height on it (rules: treeDrop.ts) */
-export const rowZone: ZoneHandler = {
-  target: (e: DragMoveEvent | DragOverEvent, item) => {
-    if (!item?.objectId || !e.over) return null
-    const row = e.over.data.current as RowDropData | undefined
-    const point = dragPoint(e as DragMoveEvent)
-    if (!row?.section || !point) return null
-    const position = row.section === 'objects-end' ? 'after' : rowDropPosition(point.y, e.over.rect, false)
-    const action = resolveDrop(getObjects(), getPins(), item.objectId, row, position)
-    return action ? { key: `${row.nodeId}:${position}`, nodeId: row.nodeId, position, action } : null
-  },
-  drop: (data, target, float) => {
-    const object = objectOf(data)
-    if (!object?.objectId) return
-    const { action } = target as DropTargetValue & { nodeId: string; action: DropAction }
-    // The dropped row glides from where it was let go to its new place
-    snapshotRows(float && object.nodeId ? { [object.nodeId]: float.getBoundingClientRect() } : {})
-    if (action.kind === 'pin') return reorderPinned(object.objectId, action.beforeId)
-    moveObject(object.objectId, { beforeId: action.beforeId })
-  },
-}
-
-/** The trash bin: any object, or a saved layout's tile */
+/** The trash bin: any resource's item (it goes to the Trash on the server, or in its mock), or a saved layout's tile */
 export const trashZone: ZoneHandler = {
   target: (e, item) => (item?.objectId || layoutOf(e.active.data.current) ? { key: TRASH_ID } : null),
   drop: (data, _target, float) => {
@@ -90,17 +40,11 @@ export const trashZone: ZoneHandler = {
       return archiveLayout(layoutId)
     }
     const object = objectOf(data)
-    if (!object?.objectId) return
-    // A resource's item (a note) is archived on the server
-    const resource = resourceByPanelType(object.kind)
-    if (resource) {
-      fallInto(float, TRASH_ID, { lifted: true })
-      resource.api
-        .update(object.objectId, { archived: true })
-        .then((item) => notifyChanged({ name: resource.name, item }))
-        .catch((error) => console.error(`Could not move the ${resource.ui.label.toLowerCase()} to the Trash`, error))
-      return
-    }
-    archiveWithEffect(object.objectId, float, true)
+    const resource = resourceByPanelType(object?.kind)
+    if (!object?.objectId || !resource) return
+    fallInto(float, TRASH_ID, { lifted: true })
+    actionsOf(resource)
+      .trash(object.objectId)
+      .catch((error) => console.error(`Could not move the ${resource.ui.label.toLowerCase()} to the Trash`, error))
   },
 }

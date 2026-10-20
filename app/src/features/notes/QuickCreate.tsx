@@ -5,7 +5,7 @@ import RichTextToolbar from '../../components/ui/editors/RichTextToolbar'
 import RichTextField from '../../components/ui/fields/RichTextField'
 import PixelSprite from '../../components/ui/pixelart/PixelSprite'
 import { useResourceActions } from '../../lib/resource/hooks'
-import { notesResource } from '../../resources/notes/notes.resource'
+import { resourcesWith } from '../../resources/registry'
 import { isFirstLine } from './editorKeys'
 
 // Full class strings so Tailwind can detect them at build time.
@@ -14,6 +14,8 @@ const ANIMATE = 'duration-200 ease-out motion-reduce:transition-none'
 const GROW = `grid transition-[grid-template-rows,opacity] ${ANIMATE}`
 // Starts once the bottom part has grown (its duration, in ANIMATE)
 const AFTER_GROW = 'delay-200'
+// What the input makes: the resource with the quickCreate surface (the notes)
+const QUICK = resourcesWith('quickCreate')[0]
 const FIELD = 'w-full resize-none bg-transparent px-4 text-fg outline-none placeholder:text-fg-subtle'
 
 /**
@@ -37,7 +39,7 @@ export default function QuickCreate() {
   const [text, setText] = useState('')
   const [drafts, setDrafts] = useState(0)
   const [editor, setEditor] = useState<Editor | null>(null)
-  const { create: createNote } = useResourceActions(notesResource)
+  const { create: createNote } = useResourceActions(QUICK)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [titleFocused, setTitleFocused] = useState(false)

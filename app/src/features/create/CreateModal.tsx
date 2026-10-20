@@ -1,12 +1,9 @@
 import type { Editor } from '@tiptap/react'
 import { useId, useRef, useState, type KeyboardEvent } from 'react'
 import { LuPlus } from 'react-icons/lu'
-import { KIND_LABEL, type ObjectKind } from '../../mocks/projects'
-import { KIND_ICON } from '../../mocks/sidebarTree'
-import { useResourceActions } from '../../lib/resource/hooks'
-import { notesResource } from '../../resources/notes/notes.resource'
-import { projectsResource } from '../../resources/projects/projects.resource'
-import { createFromModal, CREATE_KINDS } from './createFromModal'
+import { actionsOf } from '../../lib/resource/hooks'
+import { resourcesWith } from '../../resources/registry'
+import type { AnyResource } from '../../resources/types'
 import { RAISED } from './buttonLook'
 import { FOCUS_RING } from '../../components/ui/buttons/buttonStyles'
 import RichTextToolbar from '../../components/ui/editors/RichTextToolbar'
@@ -25,18 +22,18 @@ const KIND_BUTTON =
   'flex shrink-0 cursor-pointer items-center gap-2 rounded-(--btn-radius) px-2.5 py-1.5 text-start text-body font-medium whitespace-nowrap transition-colors ' +
   'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40'
 
-/** What the modal can make: a project or a note (on the server) or an object card / a map (the mock objects) */
-type ResourceKind = 'project' | 'note'
-type ModalKind = ResourceKind | ObjectKind
-const MODAL_KINDS: ModalKind[] = ['note', 'project', ...CREATE_KINDS]
-const RESOURCE_OF = { project: projectsResource, note: notesResource } as const
-const isResourceKind = (kind: ModalKind): kind is ResourceKind => kind === 'project' || kind === 'note'
-const LABEL: Record<ModalKind, string> = { note: notesResource.ui.label, project: projectsResource.ui.label, object: KIND_LABEL.object, map: KIND_LABEL.map }
-const ICON: Record<ModalKind, (typeof KIND_ICON)[ObjectKind]> = { note: notesResource.ui.icon, project: projectsResource.ui.icon, object: KIND_ICON.object, map: KIND_ICON.map }
-const PLACEHOLDER: Record<ResourceKind, string> = { note: 'Take a note…', project: 'Describe the project…' }
+/** What the modal can make: every resource with a Create tab (surfaces.create), in the UI config's order */
+const KINDS = resourcesWith('create')
 
-/** The last kind picked, kept for the session; the first time: a note */
-let lastKind: ModalKind = 'note'
+/** The last kind picked (a resource's name), kept for the session; the first time: a note */
+let lastKind = 'notes'
+
+/** A resource's form here: its title field and the first other field (its text: rich text or plain) */
+function formOf(resource: AnyResource) {
+  const title = resource.ui.fields.find((f) => f.heading)
+  const body = resource.ui.fields.find((f) => !f.heading)
+  return { title, body, rich: body?.widget === 'richText' }
+}
 
 type Props = {
   /** Closing (the button flipped back): it shrinks back behind the button */
@@ -48,15 +45,15 @@ type Props = {
 }
 
 /**
- * The floating Create button's modal: the kinds as tabs, the form of the chosen kind below. A project or a note is made on the server;
- * an object card or a map is made in the mock store. The page behind never changes. Mounted fresh each time it opens, so a cancelled
+ * The floating Create button's modal: the kinds as tabs (the resources with a Create tab), the form of the chosen kind below (its title
+ * and its text). The page behind never changes. Mounted fresh each time it opens, so a cancelled
  * draft is gone.
  */
 export default function CreateModal({ closing, inset, onCreated }: Props) {
   const formId = useId()
-  const [kind, setKind] = useState<ModalKind>(lastKind)
-  const createNote = useResourceActions(notesResource).create
-  const createProject = useResourceActions(projectsResource).create
+  const [kindName, setKindName] = useState(lastKind)
+  const resource = KINDS.find((r) => r.name === kindName) ?? KINDS[0]
+  const { title: titleField, body: bodyField, rich } = formOf(resource)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [title, setTitle] = useState('')
@@ -65,31 +62,28 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
 
   const titleRef = useRef<HTMLInputElement>(null)
   const bodyRef = useRef<HTMLTextAreaElement>(null)
-  // A project's or note's text is the rich-text editor; an object card's description stays a plain textarea
+  // Rich text: the editor; plain text: a textarea
   const [editor, setEditor] = useState<Editor | null>(null)
-  const rich = isResourceKind(kind)
-  const hasBody = rich || kind === 'object'
-  // A project or a note needs a title or some text (the API's rule); the others a title
-  const canCreate = (rich ? title.trim() !== '' || text !== '' : title.trim() !== '') && !busy
+  const hasBody = bodyField !== undefined
+  const body = rich ? text : description
+  // A title or some text (the API's requireOneOf for most tables; it answers with the rule if not)
+  const canCreate = (title.trim() !== '' || body.trim() !== '') && !busy
 
   const create = async () => {
     if (!canCreate) return
-    if (isResourceKind(kind)) {
-      const resource = RESOURCE_OF[kind]
-      setBusy(true)
-      setError(null)
-      try {
-        const made = await (kind === 'note' ? createNote : createProject)({ title: title.trim(), content: text })
-        onCreated({ id: String(made.id), panelType: resource.panelType, label: LABEL[kind], name: title.trim() || resource.ui.untitled })
-      } catch (e) {
-        // The draft stays, so nothing typed is lost
-        setError(e instanceof Error ? e.message : `Could not create the ${LABEL[kind].toLowerCase()}.`)
-        setBusy(false)
-      }
-      return
+    setBusy(true)
+    setError(null)
+    try {
+      const input: Record<string, unknown> = {}
+      if (titleField) input[titleField.name] = title.trim()
+      if (bodyField) input[bodyField.name] = body
+      const made = await actionsOf(resource).create(input)
+      onCreated({ id: String(made.id), panelType: resource.panelType, label: resource.ui.label, name: resource.ui.row.title(made) })
+    } catch (e) {
+      // The draft stays, so nothing typed is lost
+      setError(e instanceof Error ? e.message : `Could not create the ${resource.ui.label.toLowerCase()}.`)
+      setBusy(false)
     }
-    const made = createFromModal(kind, { title, description })
-    onCreated({ id: made.id, panelType: kind, label: LABEL[kind], name: title.trim() || `Untitled ${LABEL[kind].toLowerCase()}` })
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -99,12 +93,12 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
     }
   }
 
-  const pick = (next: ModalKind) => {
+  const pick = (next: string) => {
     lastKind = next
-    setKind(next)
+    setKindName(next)
   }
 
-  const goes = isResourceKind(kind) ? `Saved with your ${RESOURCE_OF[kind].ui.plural.toLowerCase()}` : 'Created with your objects'
+  const goes = `Saved with your ${resource.ui.plural.toLowerCase()}`
 
   return (
     <div
@@ -127,18 +121,18 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
       <div className="flex min-h-0 flex-1 flex-col">
         {/* The kinds, as tabs above the form */}
         <ul aria-label="What to create" className="flex shrink-0 gap-1 overflow-x-auto border-b border-line px-3 py-2">
-          {MODAL_KINDS.map((k) => {
-            const Icon = ICON[k]
+          {KINDS.map((k) => {
+            const Icon = k.ui.icon
             return (
-              <li key={k} className="shrink-0">
+              <li key={k.name} className="shrink-0">
                 <button
                   type="button"
-                  aria-pressed={k === kind}
-                  onClick={() => pick(k)}
-                  className={`${KIND_BUTTON} ${k === kind ? 'bg-fill-strong text-fg' : 'text-fg-muted hover-fill hover:text-fg'}`}
+                  aria-pressed={k === resource}
+                  onClick={() => pick(k.name)}
+                  className={`${KIND_BUTTON} ${k === resource ? 'bg-fill-strong text-fg' : 'text-fg-muted hover-fill hover:text-fg'}`}
                 >
                   <Icon className="size-(--btn-icon-size) shrink-0" />
-                  {LABEL[k]}
+                  {k.ui.label}
                 </button>
               </li>
             )
@@ -171,9 +165,9 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
                   }
                 }
               }}
-              placeholder={rich ? 'Title' : `${LABEL[kind]} name`}
+              placeholder={titleField?.placeholder ?? 'Title'}
               aria-label="Name"
-              maxLength={rich ? 200 : 100}
+              maxLength={200}
               autoFocus
               className={`${INNER} py-2 font-medium`}
             />
@@ -193,7 +187,7 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
                         titleRef.current?.focus()
                         titleRef.current?.setSelectionRange(end, end)
                       }}
-                      placeholder={PLACEHOLDER[kind as ResourceKind]}
+                      placeholder={bodyField?.placeholder}
                       label="Text"
                       minHeight="min-h-20"
                       className="min-h-0 flex-1 overflow-y-auto px-(--field-px) py-2"
@@ -214,8 +208,8 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
                         titleRef.current?.setSelectionRange(end, end)
                       }
                     }}
-                    placeholder="Description"
-                    aria-label="Description"
+                    placeholder={bodyField?.placeholder}
+                    aria-label={bodyField?.label ?? bodyField?.name}
                     rows={3}
                     className={`${INNER} min-h-20 flex-1 resize-none py-2`}
                   />

@@ -4,7 +4,7 @@ import type { ResourceCore } from '../lib/resource/types'
 import type { PanelProps } from '../features/workspace/types'
 
 /** The kinds of input a field is edited with (resources/../components/ui/resource/FieldRenderer.tsx has one component for each) */
-export const FIELD_WIDGET_NAMES = ['text', 'richText'] as const
+export const FIELD_WIDGET_NAMES = ['text', 'textarea', 'richText'] as const
 export type FieldWidget = (typeof FIELD_WIDGET_NAMES)[number]
 
 /** One field of the edit form. `name` is checked against the resource's contract type: a field removed there fails the build here */
@@ -20,8 +20,8 @@ export type FieldDef<TItem> = {
 
 /** Where a resource shows up. Each flag turns one screen on for it: the Trash, the search, Recent… read these */
 export type Surfaces = {
-  /** The sidebar section, with the rows shown before "Show more" */
-  sidebar?: { limit: number }
+  /** In the sidebar: its own section, or a group of the Orphans section (the items without a parent); the rows shown before "Show more" */
+  sidebar?: { limit: number; group?: 'own' | 'orphans' }
   /** Its list page (route) */
   page?: string
   /** Can be opened as a workspace panel (type `panelType`) */
@@ -36,6 +36,8 @@ export type Surfaces = {
   dashboard?: boolean
   /** The Dashboard's "Take a note…" card creates one */
   quickCreate?: boolean
+  /** A tab of the floating Create button's modal */
+  create?: boolean
 }
 
 /** A field with its name forgotten to a plain string (what the generic form components take) */
@@ -46,7 +48,7 @@ type Identified = { id: number | string }
 /**
  * Everything the app's generic screens know about a table, in one object per table (resources/<table>/<table>.resource.ts), listed once in
  * resources/registry.ts. The types come from the shared contract:
- *   ResourceDefinition<Note, NoteListItem, NoteInput, NoteUpdate, NoteFilter>
+ *   ResourceDefinition<Item<'notes'>, ListItem<'notes'>, Input<'notes'>, Update<'notes'>, Filter<'notes'>>
  */
 export type ResourceDefinition<
   TItem extends Identified,
@@ -59,12 +61,24 @@ export type ResourceDefinition<
   panelType: string
   /** The panel component, loaded when first shown */
   loadPanel: () => Promise<{ default: ComponentType<PanelProps> }>
+  /** Its items can have a parent (objectType + objectId: the data config's `link`), so its lists can ask for the ones without */
+  linked?: boolean
+  /** Its panel is its own (a map's board), not the item's editor: it opens in a pane, not in the modal */
+  customPanel?: boolean
+  /** Its panel takes the whole pane, without padding or scrolling (a map's board) */
+  fillPanel?: boolean
+  /** What else happens when an item is copied (Duplicate) or deleted for good, e.g. a map's board is copied or dropped */
+  effects?: { copied?(fromId: string, toId: string): void; deleted?(id: string): void }
   ui: {
     label: string
     plural: string
     icon: PlainIcon
     /** What an item with an empty title is called */
     untitled: string
+    /** The line under the title of its list page */
+    pageDescription?: string
+    /** Its look as a Dashboard card: a quote of its text (default), a picture on top, or a map preview */
+    card?: 'plain' | 'image' | 'map'
     fields: FieldDef<TItem>[]
     /** A row of the item in a list (method syntax: see ResourceApi) */
     row: {
@@ -81,7 +95,7 @@ export type AnyResource = ResourceDefinition<
   Identified & Record<string, unknown>,
   Identified & Record<string, unknown>,
   Record<string, unknown>,
-  { archived?: boolean; pinned?: boolean; title?: string },
+  Record<string, unknown> & { archived?: boolean; pinned?: boolean; title?: string },
   { archived: boolean }
 >
 

@@ -14,6 +14,8 @@ export type ResourceCore<TItem, TListItem, TInput, TUpdate, TFilter extends obje
     order: ListOrder
     toItem(item: TItem): TListItem
   }
+  /** What else happens when an item is copied or deleted for good (a map's board) */
+  effects?: { copied?(fromId: string, toId: string): void; deleted?(id: string): void }
 }
 
 /** The order flags of a table's list (shared/order.ts): pinned first, then position, then id */

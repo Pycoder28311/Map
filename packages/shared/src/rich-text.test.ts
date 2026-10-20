@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { noteInput } from './notes'
+import { DATA } from './data.config'
+
+const noteInput = DATA.notes.input
 import { RICH_TEXT_MAX } from './rich-text-policy'
 
 describe('a contract field declared as richText', () => {

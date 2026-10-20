@@ -1,5 +1,5 @@
 import type { ButtonIcon } from '../../components/ui/icons/IconSlot'
-import { CARD } from './cards/CardShell'
+import { CARD } from './cards/cardStyles'
 
 /** How a dragged object looks over the Dashboard's rows (a drag surface's look): a blank card */
 export function SectionCardLook({ label, icon: Icon }: { label: string; icon?: ButtonIcon }) {

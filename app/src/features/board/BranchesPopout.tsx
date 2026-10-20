@@ -2,32 +2,32 @@ import { useRef, useState } from 'react'
 import { LuCheck, LuGitBranch, LuGitBranchPlus, LuPencil } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
-import { useMockObjects, createBranch, renameObject } from '../../mocks/projectsStore'
+import { createBranch, renameMap, useMaps } from '../maps/maps'
 import { useWorkspace } from '../workspace/useWorkspace'
 import { branchList, nextBranchName } from './branches'
 import BarPopover from './BarPopover'
 import { LIST_ITEM } from '../../components/ui/buttons/buttonStyles'
 
-const when = (ms: number) => new Date(ms).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+const when = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 
 /** The branches button: the maps that are versions of this one (the current one ticked), and a name with a button to make another from it */
 export default function BranchesPopout({ mapId }: { mapId: string }) {
-  const objects = useMockObjects()
+  const maps = useMaps()
   const workspace = useWorkspace()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
-  const group = branchList(objects, mapId)
+  const group = branchList(maps, mapId)
   // What the button says: the current branch's name (the first map of the group is the main one), or the way to make the first
-  const map = group.find((o) => o.id === mapId)
-  const main = !map || map.branchOf === undefined || map.branchOf === map.id
-  const current = main ? 'main' : map.name
+  const map = group.find((o) => String(o.id) === mapId)
+  const main = !map || !map.branchOf || map.branchOf === map.id
+  const current = main ? 'main' : map.title
 
   // The text while the branch is being renamed (only a branch: the main one is the map, renamed by its big name); null: not renaming
   const [draft, setDraft] = useState<string | null>(null)
   const cancelled = useRef(false)
   const commit = () => {
     const next = (draft ?? '').trim()
-    if (!cancelled.current && next && map && next !== map.name) renameObject(map.id, next)
+    if (!cancelled.current && next && map && next !== map.title) void renameMap(map.id, next)
     cancelled.current = false
     setDraft(null)
   }
@@ -36,8 +36,8 @@ export default function BranchesPopout({ mapId }: { mapId: string }) {
     setOpen(false)
     if (id !== mapId) workspace.replace({ type: 'map', id: mapId }, { type: 'map', id })
   }
-  const create = () => {
-    const id = createBranch(mapId, name.trim() || nextBranchName(group))
+  const create = async () => {
+    const id = await createBranch(maps, mapId, name.trim() || nextBranchName(group))
     if (!id) return
     setName('')
     show(id)
@@ -97,13 +97,13 @@ export default function BranchesPopout({ mapId }: { mapId: string }) {
           <li key={o.id}>
             <button
               type="button"
-              aria-current={o.id === mapId}
-              onClick={() => show(o.id)}
+              aria-current={String(o.id) === mapId}
+              onClick={() => show(String(o.id))}
               className={LIST_ITEM}
             >
-              <LuCheck className={`size-4 shrink-0 ${o.id === mapId ? '' : 'invisible'}`} aria-hidden />
+              <LuCheck className={`size-4 shrink-0 ${String(o.id) === mapId ? '' : 'invisible'}`} aria-hidden />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-body">{o.name}</span>
+                <span className="block truncate text-body">{o.title}</span>
                 <span className="block text-small text-fg-subtle">{when(o.createdAt)}</span>
               </span>
             </button>
@@ -114,7 +114,7 @@ export default function BranchesPopout({ mapId }: { mapId: string }) {
         className="mt-2 flex flex-col gap-2 border-t border-line pt-2"
         onSubmit={(e) => {
           e.preventDefault()
-          create()
+          void create()
         }}
       >
         <input

@@ -4,7 +4,6 @@ import { ResourcesProvider } from '../../lib/resource/ResourcesProvider'
 import { FocusModeProvider, useFocusMode } from '../../features/focus/FocusMode'
 import ShareMode from '../../features/share/ShareMode'
 import PageDropZones from '../../features/workspace/PageDropZones'
-import LinkZone from '../../features/links/LinkZone'
 import CreateFab from '../../features/create/CreateFab'
 import RecordRecent from '../../features/recent/RecordRecent'
 import { useWorkspace } from '../../features/workspace/useWorkspace'
@@ -25,8 +24,6 @@ export default function AppLayout() {
     return (
         <ResourcesProvider userId={session?.user.id}>
             <WorkspaceProvider panels={PANELS}>
-                {/* Notes dropped on link nodes (sidebar rows, Dashboard cards…) get linked */}
-                <LinkZone />
                 {/* What's opened, for the Dashboard's Recent column */}
                 <RecordRecent />
                 {/* The navbar's Share: the screen dims except what can be shared */}
