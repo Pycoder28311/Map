@@ -14,3 +14,12 @@
 input[type='number']:not(:focus):not(:disabled) {
   cursor: ew-resize;
 }
+
+/* The rich-text editor's placeholder (RichTextEditor `placeholder`): shown on the empty first paragraph */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--color-fg-subtle);
+}

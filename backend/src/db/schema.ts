@@ -1,26 +1,42 @@
-import { relations } from 'drizzle-orm'
-import { sqliteTable, integer, text, primaryKey, index } from 'drizzle-orm/sqlite-core'
+import { sql } from 'drizzle-orm'
+import { sqliteTable, integer, text, index, check } from 'drizzle-orm/sqlite-core'
 import { user } from './auth-schema'
 export * from './auth-schema'
 
 // Same columns in every table, written once
 const id = () => integer('id').primaryKey({ autoIncrement: true })
 const createdAt = () => integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date())
+// Whole seconds since 1970 (not milliseconds); refreshed by Drizzle on every update it runs
+const updatedAt = () =>
+    integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()).$onUpdate(() => new Date())
 const owner = () => text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' })
 
-/* ─────────────── Notes (example resource) ─────────────── */
+/* ─────────────── Notes ─────────────── */
 
 export const notes = sqliteTable(
     'notes',
     {
         id: id(),
         userId: owner(),
-        text: text('text').notNull(),
+        title: text('title').notNull().default(''),
+        content: text('content').notNull().default(''), // HTML from the editor, cleaned by the contract (richText)
+        // Later: connects the note to another object (a project, a map...). Both set or both empty
+        objectType: text('object_type'),
+        objectId: integer('object_id'),
+        createdAt: createdAt(),
+        updatedAt: updatedAt(),
+        archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
+        position: integer('position').notNull().default(0),
+        pinned: integer('pinned', { mode: 'boolean' }).notNull().default(false),
     },
-    (t) => [index('notes_user_id_idx').on(t.userId)],
+    (t) => [
+        // The list view: one user's notes, filtered by archived, pinned first, then in order (its first column also serves "all of a user's notes")
+        index('notes_user_list_idx').on(t.userId, t.archived, t.pinned, t.position),
+        check('notes_object_pair', sql`(${t.objectType} IS NULL) = (${t.objectId} IS NULL)`),
+    ],
 )
 
-/* ─────────────── Images: files in R2 (under IMAGES_FOLDER), one row per file ─────────────── */
+/* ─────────────── Images: files in R2 (under IMAGES_FOLDER), one row per file. Notes show them as <img> in their text; other tables link them with their own link tables ─────────────── */
 
 export const images = sqliteTable('images', {
     id: id(),
@@ -30,26 +46,3 @@ export const images = sqliteTable('images', {
     size: integer('size').notNull(),
     createdAt: createdAt(),
 })
-
-/* ─────────────── Image links: which images belong to a note, in carousel order ─────────────── */
-
-export const noteImages = sqliteTable(
-    'note_images',
-    {
-        noteId: integer('note_id').notNull().references(() => notes.id, { onDelete: 'cascade' }),
-        imageId: integer('image_id').notNull().references(() => images.id, { onDelete: 'cascade' }),
-        position: integer('position').notNull(),
-    },
-    (t) => [primaryKey({ columns: [t.noteId, t.imageId] })],
-)
-
-/* ─────────────── Relations: let one query load an item with its children ─────────────── */
-
-export const notesRelations = relations(notes, ({ many }) => ({
-    images: many(noteImages),
-}))
-
-export const noteImagesRelations = relations(noteImages, ({ one }) => ({
-    note: one(notes, { fields: [noteImages.noteId], references: [notes.id] }),
-    image: one(images, { fields: [noteImages.imageId], references: [images.id] }),
-}))

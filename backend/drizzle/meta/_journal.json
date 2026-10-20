@@ -8,6 +8,20 @@
       "when": 1791235876092,
       "tag": "0000_complete_venom",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1792489605850,
+      "tag": "0001_futuristic_blue_blade",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792490282551,
+      "tag": "0002_fat_shape",
+      "breakpoints": true
     }
   ]
 }

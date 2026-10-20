@@ -228,6 +228,22 @@ npm run deploy --workspace backend
 Add an API file in `app/src/` (one per resource, the only place that knows the URLs) and the pages
 under `app/src/pages/`.
 
+## Fields that hold formatted text (HTML)
+
+Declare the field in the contract with `richText` (may be empty) or `richTextRequired` (`packages/shared/src/rich-text.ts`) and
+nothing else is needed: every route validates its input with the contract, so the text is length-limited
+(`RICH_TEXT_MAX`) and cleaned to the allowed tags, attributes and links (`sanitize-html.ts`) before the repo sees it. Show it in the
+app with `RichTextField` (`editable={false}` to read); never with `dangerouslySetInnerHTML` (lint error). The rules live in
+`rich-text-policy.ts`; the website's CSP is `app/public/_headers`.
+
+Pictures in such a text are `<img>` tags of images uploaded through `/api/images`: the sanitizer keeps only those (their address must be
+a stored image's), and the field offers the image button when given `onUploadImage`. A resource that keeps formatted text this way
+needs no image table or `imageIds`; delete the files that leave the text like `notes.repo.ts` does (`deleteUnusedImages`).
+
+```ts
+export const postInput = z.object({ title: z.string().min(1).max(100), body: richTextRequired })
+```
+
 ## Relationships
 
 ### One-to-many (e.g. a project has many maps)

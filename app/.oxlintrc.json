@@ -3,6 +3,8 @@
   "plugins": ["react", "typescript", "oxc"],
   "rules": {
     "react/rules-of-hooks": "error",
+    // Note text is shown through the editor (RichTextField editable={false}), never as raw HTML
+    "react/no-danger": "error",
     "react/only-export-components": ["warn", { "allowConstantExport": true }]
   }
 }

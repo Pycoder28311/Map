@@ -1,3 +1,4 @@
+import type { Editor } from '@tiptap/react'
 import { useId, useRef, useState, type KeyboardEvent } from 'react'
 import { LuPlus } from 'react-icons/lu'
 import { findObject, KIND_LABEL } from '../../mocks/projects'
@@ -9,6 +10,9 @@ import { RAISED } from './buttonLook'
 import { CREATE_KINDS, eligibleFor, type CreateKind, type Path } from './place'
 import { useCurrentPlace } from './useCurrentPlace'
 import { FOCUS_RING } from '../../components/ui/buttons/buttonStyles'
+import RichTextToolbar from '../../components/ui/editors/RichTextToolbar'
+import RichTextField from '../../components/ui/fields/RichTextField'
+import { isFirstLine } from '../notes/editorKeys'
 
 // Full class strings so Tailwind can detect them at build time.
 // A field inside the title + body group (the group draws the border)
@@ -60,6 +64,9 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
 
   const titleRef = useRef<HTMLInputElement>(null)
   const bodyRef = useRef<HTMLTextAreaElement>(null)
+  // A note's or article's text is the rich-text editor; an object's description stays a plain textarea
+  const [editor, setEditor] = useState<Editor | null>(null)
+  const rich = kind === 'note' || kind === 'article'
   const hasBody = kind === 'note' || kind === 'article' || kind === 'object'
   const canCreate = title.trim() !== '' && fit.ok
 
@@ -150,8 +157,11 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
                 if (!hasBody || e.nativeEvent.isComposing) return
                 if (e.key === 'ArrowDown' || (e.key === 'Enter' && !e.ctrlKey && !e.metaKey)) {
                   e.preventDefault()
-                  bodyRef.current?.focus()
-                  bodyRef.current?.setSelectionRange(0, 0)
+                  if (rich) editor?.commands.focus('start')
+                  else {
+                    bodyRef.current?.focus()
+                    bodyRef.current?.setSelectionRange(0, 0)
+                  }
                 }
               }}
               placeholder={`${KIND_LABEL[kind]} name`}
@@ -163,24 +173,46 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
             {hasBody && (
               <>
                 <hr className="mx-1.5 my-0 border-0 border-t border-line-strong" />
-                <textarea
-                  ref={bodyRef}
-                  value={kind === 'object' ? description : text}
-                  onChange={(e) => (kind === 'object' ? setDescription : setText)(e.target.value)}
-                  onKeyDown={(e) => {
-                    const { selectionStart, selectionEnd } = e.currentTarget
-                    if (e.key === 'ArrowUp' && selectionStart === 0 && selectionEnd === 0) {
-                      e.preventDefault()
-                      const end = titleRef.current?.value.length ?? 0
-                      titleRef.current?.focus()
-                      titleRef.current?.setSelectionRange(end, end)
-                    }
-                  }}
-                  placeholder={kind === 'note' ? 'Take a note…' : kind === 'article' ? 'Write an article…' : 'Description'}
-                  aria-label={kind === 'object' ? 'Description' : 'Text'}
-                  rows={kind === 'object' ? 3 : 5}
-                  className={`${INNER} min-h-20 flex-1 resize-none py-2`}
-                />
+                {rich ? (
+                  <>
+                    <RichTextField
+                      value={text}
+                      onChange={setText}
+                      onEditor={setEditor}
+                      onKeyDown={(e) => {
+                        if (e.key !== 'ArrowUp' || !isFirstLine(editor)) return
+                        e.preventDefault()
+                        const end = titleRef.current?.value.length ?? 0
+                        titleRef.current?.focus()
+                        titleRef.current?.setSelectionRange(end, end)
+                      }}
+                      placeholder={kind === 'note' ? 'Take a note…' : 'Write an article…'}
+                      label="Text"
+                      minHeight="min-h-20"
+                      className="min-h-0 flex-1 overflow-y-auto px-(--field-px) py-2"
+                    />
+                    <RichTextToolbar editor={editor} only={['bold', 'italic', 'size']} className="border-t border-line px-1.5 py-1" />
+                  </>
+                ) : (
+                  <textarea
+                    ref={bodyRef}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    onKeyDown={(e) => {
+                      const { selectionStart, selectionEnd } = e.currentTarget
+                      if (e.key === 'ArrowUp' && selectionStart === 0 && selectionEnd === 0) {
+                        e.preventDefault()
+                        const end = titleRef.current?.value.length ?? 0
+                        titleRef.current?.focus()
+                        titleRef.current?.setSelectionRange(end, end)
+                      }
+                    }}
+                    placeholder="Description"
+                    aria-label="Description"
+                    rows={3}
+                    className={`${INNER} min-h-20 flex-1 resize-none py-2`}
+                  />
+                )}
               </>
             )}
           </div>

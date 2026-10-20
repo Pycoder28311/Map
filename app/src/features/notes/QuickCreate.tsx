@@ -1,9 +1,13 @@
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
+import type { Editor } from '@tiptap/react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { LuChevronDown, LuFileText, LuStickyNote } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
+import RichTextToolbar from '../../components/ui/editors/RichTextToolbar'
+import RichTextField from '../../components/ui/fields/RichTextField'
 import PixelSprite from '../../components/ui/pixelart/PixelSprite'
 import ExtendMenu, { type ExtendMenuItem } from '../../components/ui/overlays/ExtendMenu'
 import { createArticle, createNote } from '../../mocks/projectsStore'
+import { isFirstLine } from './editorKeys'
 
 type Kind = 'note' | 'article'
 
@@ -38,13 +42,16 @@ const FIELD = 'w-full resize-none bg-transparent px-4 text-fg outline-none place
 export default function QuickCreate() {
   const rootRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLInputElement>(null)
-  const textRef = useRef<HTMLTextAreaElement>(null)
+  const editorRef = useRef<Editor | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const createRef = useRef<HTMLDivElement>(null)
   const titleBoxRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
+  // The text is HTML ('' when it has no words); `drafts` starts a fresh editor after Create
   const [text, setText] = useState('')
+  const [drafts, setDrafts] = useState(0)
+  const [editor, setEditor] = useState<Editor | null>(null)
   const [kind, setKind] = useState<Kind>(lastKind)
   const [titleFocused, setTitleFocused] = useState(false)
   // The folded card's height (the place it keeps in the page), the title's (how far the card moves
@@ -52,7 +59,7 @@ export default function QuickCreate() {
   const [size, setSize] = useState({ folded: 0, title: 0, create: 0 })
 
   const KindIcon = KINDS.find((k) => k.value === kind)?.icon
-  const canCreate = title.trim() !== '' || text.trim() !== ''
+  const canCreate = title.trim() !== '' || text !== ''
   const bigTitle = titleFocused || title !== ''
 
   // Open: a press anywhere outside folds it back (the dropdown's menu is inside it in the DOM)
@@ -74,14 +81,6 @@ export default function QuickCreate() {
     })
   }, [])
 
-  // The text grows with its lines while open; folded, it shows its first line only
-  useLayoutEffect(() => {
-    const area = textRef.current
-    if (!area) return
-    area.style.height = ''
-    if (open) area.style.height = `${area.scrollHeight}px`
-  }, [text, open])
-
   const fold = () => {
     setOpen(false)
     const active = document.activeElement
@@ -91,11 +90,12 @@ export default function QuickCreate() {
   const create = () => {
     if (!canCreate) return
     const name = title.trim() || 'Untitled'
-    const body = text.trim() || undefined
+    const body = text || undefined
     if (kind === 'article') createArticle(name, body)
     else createNote(name, body)
     setTitle('')
     setText('')
+    setDrafts((n) => n + 1)
     fold()
   }
 
@@ -114,11 +114,14 @@ export default function QuickCreate() {
     }
   }
 
+  const onEditor = useCallback((next: Editor | null) => {
+    editorRef.current = next
+    setEditor(next)
+  }, [])
+
   // ArrowUp on the text's first line: to the title, caret at its end
-  const onTextKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    const area = e.currentTarget
-    const collapsed = area.selectionStart === area.selectionEnd
-    if (e.key !== 'ArrowUp' || e.shiftKey || !collapsed || area.value.slice(0, area.selectionStart).includes('\n')) return
+  const onTextKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'ArrowUp' || e.shiftKey || !isFirstLine(editorRef.current)) return
     e.preventDefault()
     const input = titleRef.current
     input?.focus()
@@ -129,8 +132,7 @@ export default function QuickCreate() {
   const onTitleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if ((e.key !== 'ArrowDown' && e.key !== 'Enter') || e.ctrlKey || e.metaKey) return
     e.preventDefault()
-    textRef.current?.focus()
-    textRef.current?.setSelectionRange(0, 0)
+    editorRef.current?.commands.focus('start')
   }
 
   return (
@@ -140,7 +142,7 @@ export default function QuickCreate() {
         ref={cardRef}
         // Only a field opens it (the text or the title): the Note / Article button, and its menu, don't
         onFocus={(e) => {
-          if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) setOpen(true)
+          if (e.target instanceof HTMLInputElement || (e.target instanceof HTMLElement && e.target.isContentEditable)) setOpen(true)
         }}
         // Tabbing out folds it too
         onBlur={(e) => {
@@ -201,23 +203,32 @@ export default function QuickCreate() {
           </div>
         </div>
 
-        <textarea
-          ref={textRef}
-          rows={1}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={onTextKeyDown}
-          placeholder={kind === 'article' ? 'Write an article…' : 'Take a note…'}
-          aria-label="Text"
-          // Folded: room on the right for the kind button
-          className={`${FIELD} max-h-[50vh] py-3 text-body ${open ? '' : 'overflow-hidden pe-28'}`}
-        />
+        {/* Folded, the text shows its first line only (room on the right for the kind button); open, it grows with its lines */}
+        <div className={`${FIELD} py-3 text-body`}>
+          <div className={`min-h-[1lh] ${open ? 'max-h-[50vh] overflow-y-auto' : 'max-h-[1lh] overflow-hidden pe-28'}`}>
+            <RichTextField
+              key={drafts}
+              value={text}
+              onChange={setText}
+              onEditor={onEditor}
+              onKeyDown={onTextKeyDown}
+              placeholder={kind === 'article' ? 'Write an article…' : 'Take a note…'}
+              label="Text"
+              minHeight="min-h-0"
+            />
+          </div>
+        </div>
 
         {/* The bottom part, growing below (Create and the kind button lie over it) */}
         <div className={`${GROW} ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
           <div className="min-h-0 overflow-hidden">
             <div className="h-11" />
           </div>
+        </div>
+
+        {/* The format buttons, at the bottom left of the open card */}
+        <div inert={!open} className={`absolute bottom-1 left-2 transition-opacity ${ANIMATE} ${open ? `opacity-100 ${AFTER_GROW}` : 'opacity-0'}`}>
+          <RichTextToolbar editor={editor} only={['bold', 'italic', 'size']} />
         </div>
 
         {/* The kind button. Folded: in the text's row. Opening: held to the card's bottom, it goes down with

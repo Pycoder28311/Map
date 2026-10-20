@@ -6,7 +6,8 @@
     "deploy": "wrangler deploy --minify",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
     "typecheck": "tsc --noEmit",
-    "secrets:production": "wrangler secret bulk .secrets.production.json"
+    "secrets:production": "wrangler secret bulk .secrets.production.json",
+    "test": "vitest run"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.9.1",
@@ -19,6 +20,7 @@
   "devDependencies": {
     "drizzle-kit": "^0.31.11",
     "typescript": "^5.9.3",
+    "vitest": "^5.0.5",
     "wrangler": "^4.147.0"
   }
 }

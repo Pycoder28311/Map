@@ -3,6 +3,7 @@ import { LuHand, LuSlidersHorizontal, LuX } from 'react-icons/lu'
 import type { MockObject, ObjectKind } from '../../mocks/projects'
 import { KIND_ICON } from '../../mocks/sidebarTree'
 import { useObjectDrag } from '../drag/objectDrag'
+import { htmlToPlain } from '../notes/noteHtml'
 import { hasFilters, KINDS, type SearchFilters } from './search'
 import { PILL_BUTTON } from '../../components/ui/buttons/buttonStyles'
 
@@ -179,7 +180,7 @@ export default function SearchPanel({
               <ResultRow
                 key={o.id}
                 object={o}
-                description={o.parentId ? projectName(o) : o.text?.split('\n')[0] || undefined}
+                description={o.parentId ? projectName(o) : htmlToPlain(o.text).split('\n')[0] || undefined}
                 active={i === active}
                 onHover={() => onActive(i)}
                 onOpen={() => onOpen(o)}

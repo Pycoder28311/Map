@@ -1,0 +1,9 @@
+# Second layer behind the HTML sanitizing (backend/src/lib/sanitize-html.ts): even if a script got into a note, the
+# browser would not run it. Served with the website by the Worker's assets (not with /api/* or /images/*).
+# - script-src 'self': only the app's own bundle; 'wasm-unsafe-eval' is for brotli-wasm
+# - style-src 'unsafe-inline': the editor writes style="font-size" on spans
+# - img-src: the app, inline/blob images, and the R2 images domain (IMAGES_URL in backend/wrangler.jsonc)
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.testingggg.lol; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

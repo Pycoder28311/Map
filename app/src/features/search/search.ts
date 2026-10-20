@@ -1,5 +1,6 @@
 // The navbar search: which objects match a query and the filters. Pure (search.test.ts).
 import type { MockObject, ObjectKind } from '../../mocks/projects'
+import { htmlToPlain } from '../notes/noteHtml'
 
 export const KINDS: ObjectKind[] = ['project', 'folder', 'object', 'map', 'note', 'article']
 
@@ -38,7 +39,7 @@ export function searchObjects(objects: MockObject[], query: string, filters: Sea
   for (const o of objects) {
     if (!kindOk(o) || !projectOk(o)) continue
     const name = fold(o.name)
-    const all = `${name} ${fold(o.text ?? '')} ${fold(o.description ?? '')}`
+    const all = `${name} ${fold(htmlToPlain(o.text))} ${fold(o.description ?? '')}`
     if (!words.every((w) => all.includes(w))) continue
     const score = q && name.startsWith(q) ? 0 : words.every((w) => name.includes(w)) ? 1 : 2
     scored.push({ o, score })

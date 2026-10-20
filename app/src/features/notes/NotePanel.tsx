@@ -1,6 +1,7 @@
 import { findObject } from '../../mocks/projects'
 import { useMockObjects } from '../../mocks/projectsStore'
 import { KIND_ICON } from '../../mocks/sidebarTree'
+import RichTextField from '../../components/ui/fields/RichTextField'
 import LinkedList from '../links/LinkedList'
 import type { PanelProps } from '../workspace/types'
 
@@ -18,7 +19,7 @@ export default function NotePanel({ id }: PanelProps) {
         {note.name}
       </h2>
       {note.text ? (
-        <p className="text-body whitespace-pre-wrap">{note.text}</p>
+        <RichTextField key={note.text} value={note.text} label="Text" editable={false} minHeight="min-h-0" />
       ) : (
         <p className="text-body text-fg-muted">No text yet.</p>
       )}

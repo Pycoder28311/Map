@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { HTTPException } from 'hono/http-exception'
+import { setRichTextImageBase } from '@map/shared'
 import { createAuth } from './auth'
 import { getConfig } from './lib/config'
 import { codeForStatus, errorBody, HttpError } from './lib/errors'
@@ -9,6 +10,7 @@ import { csrfProtection } from './middleware/csrf'
 import { checkEnv } from './middleware/env'
 import { rateLimit } from './middleware/rate-limit'
 import imagesRoutes from './resources/images/images.routes'
+import { imagesBase } from './resources/images/images.repo'
 import notesRoutes from './resources/notes/notes.routes'
 
 // Only /api/* and /images/* reach this code (wrangler.jsonc run_worker_first);
@@ -17,6 +19,12 @@ const app = new Hono<AppEnv>()
 
 // Fails loudly (500 SERVER_MISCONFIGURED) when variables or bindings are missing
 app.use('*', checkEnv)
+
+// Rich text (notes) keeps <img> only for images this app stored: tell the shared sanitizer where they are
+app.use('*', async (c, next) => {
+  setRichTextImageBase(imagesBase(c.env))
+  await next()
+})
 
 app.use(
   '/api/*',

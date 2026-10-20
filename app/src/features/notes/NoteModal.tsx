@@ -6,8 +6,10 @@ import Modal from '../../components/ui/overlays/Modal'
 import type { ChecklistItem } from '../../mocks/projects'
 import { findObject } from '../../mocks/projects'
 import { updateNote, useMockObjects } from '../../mocks/projectsStore'
+import RichTextField from '../../components/ui/fields/RichTextField'
 import ChecklistEditor from './ChecklistEditor'
 import { itemsToText, textToItems } from './checklist'
+import { htmlToPlain, toHtml } from './noteHtml'
 
 /** How long after the last keystroke the note is saved (ms) */
 const SAVE_AFTER = 300
@@ -65,8 +67,8 @@ function NoteEditor({ noteId, onClose }: { noteId: string; onClose: () => void }
   const toggleChecklist = () =>
     change(
       checklist
-        ? { ...draft, items: undefined, text: itemsToText(draft.items!) }
-        : { ...draft, items: textToItems(draft.text), text: '' },
+        ? { ...draft, items: undefined, text: toHtml(itemsToText(draft.items!)) }
+        : { ...draft, items: textToItems(htmlToPlain(draft.text)), text: '' },
     )
 
   return (
@@ -82,13 +84,12 @@ function NoteEditor({ noteId, onClose }: { noteId: string; onClose: () => void }
       {checklist ? (
         <ChecklistEditor items={draft.items!} onChange={(items) => change({ ...draft, items })} />
       ) : (
-        <textarea
+        <RichTextField
           value={draft.text}
-          onChange={(e) => change({ ...draft, text: e.target.value })}
+          onChange={(text) => change({ ...latest.current, text })}
           placeholder="Take a note…"
-          aria-label="Text"
-          rows={6}
-          className="min-h-32 w-full resize-none bg-transparent text-body outline-none [field-sizing:content] placeholder:text-fg-subtle"
+          label="Text"
+          toolbar
         />
       )}
       <div className="mt-2 flex items-center gap-2">
