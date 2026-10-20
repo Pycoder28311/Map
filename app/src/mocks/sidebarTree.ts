@@ -1,6 +1,6 @@
 // MOCK DATA: turns the mock objects into the sidebar's tree nodes. Replaced by the same mapping over
 // backend data later; the components stay the same.
-import { LuBox, LuFileText, LuFolder, LuFolderOpen, LuFolders, LuInfo, LuLayoutDashboard, LuMap, LuStickyNote } from 'react-icons/lu'
+import { LuBox, LuFolder, LuFolderOpen, LuInfo, LuLayoutDashboard, LuMap } from 'react-icons/lu'
 import type { ButtonIcon } from '../components/ui/icons/IconSlot'
 import type { TreeNode } from '../components/ui/tree/types'
 import type { MockObject, ObjectKind } from './projects'
@@ -12,10 +12,7 @@ export type SidebarItem = { kind: ObjectKind; id: string; name: string; parentId
 export const KIND_ICON: Record<ObjectKind, ButtonIcon> = {
   project: LuFolder,
   map: LuMap,
-  note: LuStickyNote,
-  article: LuFileText,
   object: LuBox,
-  folder: LuFolders,
 }
 
 /** The node id of an object's row (Pinned rows: `pin:` + it) */
@@ -36,15 +33,15 @@ const itemOf = (o: MockObject): SidebarItem => ({ kind: o.kind, id: o.id, name: 
 // An object's row can be picked to share (features/share)
 const shareData = (o: MockObject) => ({ 'data-share-id': o.id }) as const
 
-/** A map or note row (a leaf that opens its panel) */
+/** A map or object card row (a leaf that opens its panel; every object can be picked up, only a project takes a drop into it) */
 const leafOf = (o: MockObject, id = nodeIdOf(o), badge?: number): TreeNode => ({
   id,
   rowData: shareData(o),
   label: o.name,
   icon: KIND_ICON[o.kind],
   panel: { type: o.kind, id: o.id },
-  draggable: o.draggable,
-  locked: o.locked,
+  draggable: true,
+  locked: o.kind !== 'project',
   badge,
 })
 
@@ -52,7 +49,7 @@ const leafOf = (o: MockObject, id = nodeIdOf(o), badge?: number): TreeNode => ({
  * The sidebar's sections from the objects (archived ones left out):
  * - pinned: one leaf per pinned object (`pin:` ids), in pin order; a project opens its Overview
  * - projects: each project, its Overview, then its children
- * - notes: the top-level objects that aren't projects
+ * - objects: the top-level objects that aren't projects (notes are not here: they come from the server)
  * `items`: which rows are objects (by node id, Pinned rows included); the others are fixed.
  */
 export function buildSidebarSections(objects: MockObject[], pins: string[], links: Link[] = []) {
@@ -68,14 +65,10 @@ export function buildSidebarSections(objects: MockObject[], pins: string[], link
   }
   const badge = (id: string) => linked.get(id)
 
-  /** An object's row in a project or in Notes: a leaf, or a folder with its articles (nested) */
+  /** An object's row in a project or in Objects: a leaf */
   const rowOf = (o: MockObject): TreeNode => {
     items.set(nodeIdOf(o), itemOf(o))
-    if (o.kind !== 'folder') return leafOf(o, nodeIdOf(o), badge(o.id))
-    return {
-      ...leafOf(o, nodeIdOf(o), badge(o.id)),
-      children: visible.filter((c) => c.parentId === o.id).map(rowOf),
-    }
+    return leafOf(o, nodeIdOf(o), badge(o.id))
   }
 
   const projects = visible
@@ -88,8 +81,8 @@ export function buildSidebarSections(objects: MockObject[], pins: string[], link
         icon: KIND_ICON.project,
         openIcon: LuFolderOpen,
         rowData: shareData(p),
-        draggable: p.draggable,
-        locked: p.locked,
+        draggable: true,
+        locked: false,
         badge: badge(p.id),
         children: [
           {
@@ -105,7 +98,7 @@ export function buildSidebarSections(objects: MockObject[], pins: string[], link
       }
     })
 
-  const notes = visible.filter((o) => o.parentId === null && o.kind !== 'project').map(rowOf)
+  const objectRows = visible.filter((o) => o.parentId === null && o.kind !== 'project').map(rowOf)
 
   const pinned = pins.flatMap((id) => {
     const o = byId.get(id)
@@ -117,5 +110,5 @@ export function buildSidebarSections(objects: MockObject[], pins: string[], link
     return [o.kind === 'project' ? { ...node, panel: { type: 'project', id: o.id } } : node]
   })
 
-  return { pinned, projects, notes, items }
+  return { pinned, projects, objects: objectRows, items }
 }

@@ -24,7 +24,7 @@ describe('rowDropPosition', () => {
 })
 
 describe('resolveDrop', () => {
-  it('drops a map into an unlocked project (last)', () => {
+  it('drops a map into a project (last)', () => {
     expect(resolveDrop(objects, [], 'm1', row('p2', 'projects', { folder: true }), 'into')).toEqual({
       kind: 'move',
       parentId: 'p2',
@@ -33,8 +33,9 @@ describe('resolveDrop', () => {
     })
   })
 
-  it('refuses drops into locked objects and into projects for projects', () => {
+  it('refuses drops into maps and object cards, and projects into projects', () => {
     expect(resolveDrop(objects, [], 'm1', row('m3'), 'into')).toBeNull()
+    expect(resolveDrop(objects, [], 'm1', row('o1'), 'into')).toBeNull()
     expect(resolveDrop(objects, [], 'p1', row('p2', 'projects', { folder: true }), 'into')).toBeNull()
   })
 
@@ -42,22 +43,8 @@ describe('resolveDrop', () => {
     expect(resolveDrop(objects, [], 'm1', row('m3'), 'before')).toEqual({ kind: 'move', parentId: 'p2', beforeId: 'm3' })
     expect(resolveDrop(objects, [], 'm1', row('m3'), 'after')).toEqual({ kind: 'move', parentId: 'p2', beforeId: 'm4' })
     expect(resolveDrop(objects, [], 'm1', row('m4'), 'after')).toEqual({ kind: 'move', parentId: 'p2', beforeId: 'o1' })
-    // After a folder: past its articles, to the next sibling (none: last)
-    expect(resolveDrop(objects, [], 'm1', row('f1'), 'after')).toEqual({ kind: 'move', parentId: 'p2', beforeId: null })
-  })
-
-  it('takes only articles into folders and between their articles', () => {
-    const folder = row('f1', 'projects', { folder: true })
-    expect(resolveDrop(objects, [], 'a6', folder, 'into')).toEqual({ kind: 'move', parentId: 'f1', beforeId: null, into: 'f1' })
-    expect(resolveDrop(objects, [], 'n1', folder, 'into')).toBeNull()
-    expect(resolveDrop(objects, [], 'a6', row('a2'), 'before')).toEqual({ kind: 'move', parentId: 'f1', beforeId: 'a2' })
-    expect(resolveDrop(objects, [], 'n1', row('a2'), 'before')).toBeNull()
-  })
-
-  it('keeps folders out of folders, but lets them into projects and the top level', () => {
-    expect(resolveDrop(objects, [], 'f1', row('a2'), 'before')).toBeNull()
-    expect(resolveDrop(objects, [], 'f1', row('p1', 'projects', { folder: true }), 'into')).toMatchObject({ parentId: 'p1' })
-    expect(resolveDrop(objects, [], 'f1', row('n1', 'notes'), 'before')).toEqual({ kind: 'move', parentId: null, beforeId: 'n1' })
+    // After the last child: to the end of the project
+    expect(resolveDrop(objects, [], 'm1', row('o1'), 'after')).toEqual({ kind: 'move', parentId: 'p2', beforeId: null })
   })
 
   it('reorders projects among projects only', () => {
@@ -67,23 +54,23 @@ describe('resolveDrop', () => {
     expect(resolveDrop(objects, [], 'm1', row('p2'), 'before')).toBeNull()
   })
 
-  it('moves a map into Notes (parentless), next to a note or at the end', () => {
-    expect(resolveDrop(objects, [], 'm1', row('n2', 'notes'), 'before')).toEqual({ kind: 'move', parentId: null, beforeId: 'n2' })
-    expect(resolveDrop(objects, [], 'm1', { nodeId: 'notes-end', section: 'notes-end' }, 'after')).toEqual({
+  it('moves a map to the top level (Objects), next to an object card or at the end', () => {
+    expect(resolveDrop(objects, [], 'm1', row('o2', 'objects'), 'before')).toEqual({ kind: 'move', parentId: null, beforeId: 'o2' })
+    expect(resolveDrop(objects, [], 'm1', { nodeId: 'objects-end', section: 'objects-end' }, 'after')).toEqual({
       kind: 'move',
       parentId: null,
       beforeId: null,
     })
-    expect(resolveDrop(objects, [], 'p1', { nodeId: 'notes-end', section: 'notes-end' }, 'after')).toBeNull()
+    expect(resolveDrop(objects, [], 'p1', { nodeId: 'objects-end', section: 'objects-end' }, 'after')).toBeNull()
   })
 
   it('puts a child first in its project after the Overview row', () => {
-    expect(resolveDrop(objects, [], 'n1', row('x', 'projects', { objectId: undefined, overviewOf: 'p1' }), 'after')).toEqual({
+    expect(resolveDrop(objects, [], 'o2', row('x', 'projects', { objectId: undefined, overviewOf: 'p1' }), 'after')).toEqual({
       kind: 'move',
       parentId: 'p1',
       beforeId: 'm1',
     })
-    expect(resolveDrop(objects, [], 'n1', row('x', 'projects', { objectId: undefined, overviewOf: 'p1' }), 'before')).toBeNull()
+    expect(resolveDrop(objects, [], 'o2', row('x', 'projects', { objectId: undefined, overviewOf: 'p1' }), 'before')).toBeNull()
   })
 
   it('never drops on Dashboard or on itself', () => {
@@ -91,9 +78,13 @@ describe('resolveDrop', () => {
     expect(resolveDrop(objects, [], 'm1', row('m1'), 'before')).toBeNull()
   })
 
+  it('ignores something that is not a mock object (a note from the server)', () => {
+    expect(resolveDrop(objects, [], '5', row('m3'), 'before')).toBeNull()
+  })
+
   it('pins and reorders pins', () => {
-    expect(resolveDrop(objects, ['m3', 'n2'], 'p1', row('n2', 'pinned'), 'before')).toEqual({ kind: 'pin', beforeId: 'n2' })
-    expect(resolveDrop(objects, ['m3', 'n2'], 'm3', row('n2', 'pinned'), 'after')).toEqual({ kind: 'pin', beforeId: null })
-    expect(resolveDrop(objects, ['m3', 'n2'], 'n2', row('n2', 'pinned'), 'before')).toBeNull()
+    expect(resolveDrop(objects, ['m3', 'o2'], 'p1', row('o2', 'pinned'), 'before')).toEqual({ kind: 'pin', beforeId: 'o2' })
+    expect(resolveDrop(objects, ['m3', 'o2'], 'm3', row('o2', 'pinned'), 'after')).toEqual({ kind: 'pin', beforeId: null })
+    expect(resolveDrop(objects, ['m3', 'o2'], 'o2', row('o2', 'pinned'), 'before')).toBeNull()
   })
 })

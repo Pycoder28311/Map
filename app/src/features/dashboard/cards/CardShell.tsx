@@ -33,8 +33,6 @@ export type CardProps = {
   menu: (onRename: () => void) => TreeMenuGroup[]
   onOpen: () => void
   linkNodeFor: ReturnType<typeof useLinkNode>
-  /** A dragged article would fall into it (a folder card) */
-  dropActive?: boolean
   /** Starts with its name being edited (just created) */
   renameOnMount?: boolean
   /** Just created and not confirmed yet: Cancel / Create buttons show along its bottom */
@@ -54,7 +52,7 @@ const CORNER_EDGES = `linear-gradient(to bottom left, transparent 0 calc(${TIP_S
 
 type SizeProp = {
   size?: string
-  /** The folded top-right corner (see CORNER above): articles and objects */
+  /** The folded top-right corner (see CORNER above): object cards */
   corner?: boolean
   /**
    * 'media': the content is a picture filling the card; the name sits over it at the bottom, and on hover
@@ -73,11 +71,11 @@ type ShellProps = CardProps & SizeProp & {
 }
 
 /**
- * What every Dashboard card shares: its size, the drag (anywhere objects go: rows, folders, the
+ * What every Dashboard card shares: its size, the drag (anywhere objects go: rows, the
  * sidebar, panes, link nodes, the trash), click to open, the ⋯ menu (the sidebar's actions), renaming
  * in place, a link node for what notes link to, and the marks for share mode and row drops.
  */
-export default function CardShell({ object, menu, onOpen, linkNodeFor, dropActive, renameOnMount, pending, size = CARD_SIZE, variant, onZoom, corner, className = 'bg-surface', children }: ShellProps) {
+export default function CardShell({ object, menu, onOpen, linkNodeFor, renameOnMount, pending, size = CARD_SIZE, variant, onZoom, corner, className = 'bg-surface', children }: ShellProps) {
   const Icon = KIND_ICON[object.kind]
   const media = variant === 'media'
   const selected = useSelected(object.id)
@@ -142,7 +140,7 @@ export default function CardShell({ object, menu, onOpen, linkNodeFor, dropActiv
       onClick={renaming ? undefined : onOpen}
       style={corner ? { clipPath: CORNER_CLIP } : undefined}
       className={`${cardOf(size, !media)} ${corner ? 'ring-inset' : ''} ${className} cursor-grab active:cursor-grabbing transition-[box-shadow,opacity] ${
-        dropActive || link?.active ? 'ring-2 ring-drop' : selected ? 'ring-2 ring-accent' : ''
+        link?.active ? 'ring-2 ring-drop' : selected ? 'ring-2 ring-accent' : ''
       } ${isDragging ? 'opacity-40' : ''}`}
     >
       {children(name)}

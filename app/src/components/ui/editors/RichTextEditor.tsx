@@ -1,5 +1,6 @@
 import { isSafeLink } from '@map/shared/rich-text-policy'
 import Image from '@tiptap/extension-image'
+import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { Color, FontSize, TextStyle } from '@tiptap/extension-text-style'
 import { EditorContent, useEditor, type Editor, type Extensions, type JSONContent } from '@tiptap/react'
 import { Placeholder } from '@tiptap/extensions'
@@ -38,6 +39,9 @@ const LINKS = {
 /** Pictures in the text: only stored ones count (the server drops any other address), never inline data */
 const IMAGES = Image.configure({ allowBase64: false, HTMLAttributes: { loading: 'lazy' } })
 
+/** Checklists (the note's HTML keeps them as <ul data-type="taskList">; the server's sanitizer allows exactly that markup) */
+const TASKS = [TaskList, TaskItem.configure({ nested: true })]
+
 const PLAIN = { heading: false, blockquote: false, bulletList: false, orderedList: false, listItem: false, listKeymap: false, code: false, codeBlock: false, horizontalRule: false, dropcursor: false, gapcursor: false, link: false } as const
 
 /** Hands the image files of a paste or drop on, and tells the editor it was handled (true); other pastes and drops go on as usual */
@@ -57,7 +61,7 @@ export default function RichTextEditor({ content, placeholder, label, extensions
   // The placeholder can change while the editor lives (a different kind of note): the extension reads it from here
   const placeholderRef = useRef(placeholder)
   const editor = useEditor({
-    extensions: [StarterKit.configure(plain ? PLAIN : { link: LINKS }), ...(plain ? [] : [IMAGES]), TextStyle, Color, FontSize, ...(placeholder === undefined ? [] : [Placeholder.configure({ placeholder: () => placeholderRef.current ?? '' })]), ...extensions],
+    extensions: [StarterKit.configure(plain ? PLAIN : { link: LINKS }), ...(plain ? [] : [IMAGES, ...TASKS]), TextStyle, Color, FontSize, ...(placeholder === undefined ? [] : [Placeholder.configure({ placeholder: () => placeholderRef.current ?? '' })]), ...extensions],
     content,
     editable,
     autofocus: autoFocus ? 'end' : false,

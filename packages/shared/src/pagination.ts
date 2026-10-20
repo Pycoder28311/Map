@@ -1,7 +1,7 @@
 import { z } from 'zod'
+import { PAGE_SIZE_DEFAULT, PAGE_SIZE_MAX } from './page-size'
 
-export const PAGE_SIZE_DEFAULT = 20
-export const PAGE_SIZE_MAX = 100
+export { PAGE_SIZE_DEFAULT, PAGE_SIZE_MAX }
 
 /** Query string of paginated lists: ?limit=20&cursor=<nextCursor from the previous page> */
 export const pageQuery = z.object({

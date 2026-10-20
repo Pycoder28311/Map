@@ -19,6 +19,7 @@ import {
 } from '../../mocks/layoutsStore'
 import { findObject } from '../../mocks/projects'
 import { useMockObjects } from '../../mocks/projectsStore'
+import { resourceByPanelType } from '../../resources/registry'
 import { parsePanelKey, workspaceHref, type WorkspaceLayout } from '../workspace/layout'
 import { usePanelRegistry } from '../workspace/registryContext'
 import { setSplit, useSplit } from '../workspace/split'
@@ -54,7 +55,7 @@ function useExists() {
   const registry = usePanelRegistry()
   return {
     isKnown: (type: string) => type in registry,
-    exists: (panel: PanelRef) => panel.type in registry && (!panel.id || findObject(panel.id) !== undefined),
+    exists: (panel: PanelRef) => panel.type in registry && (!panel.id || resourceByPanelType(panel.type) !== undefined || findObject(panel.id) !== undefined),
     title: (panel: PanelRef) => registry[panel.type]?.title(panel.id) ?? 'Missing',
   }
 }

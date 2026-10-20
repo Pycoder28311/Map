@@ -1,16 +1,21 @@
-import { findObject, isNoteLike, type MockObject } from '../../mocks/projects'
+import { findObject, type MockObject } from '../../mocks/projects'
 import { useLinks, useMockObjects } from '../../mocks/projectsStore'
 import { useLinkNode } from '../links/linkNode'
 import { ObjectListRow, Rows, useOpenLayout } from '../objects/ListRows'
 import RecentList from '../recent/RecentList'
+import { resourceByName } from '../../resources/registry'
 import { projectIdOf, type ColumnId } from './columns'
+import ResourceColumn from './ResourceColumn'
 
 /** Where "Show all" goes, for the lists that have a page */
-const ALL_PAGE: Partial<Record<ColumnId, string>> = { notes: '/notes', projects: '/projects' }
+const ALL_PAGE: Partial<Record<ColumnId, string>> = { projects: '/projects' }
 
-/** A column's rows: one kind of list per column id (Recent, or objects) */
+/** A column's rows: one kind of list per column id (Recent, a resource's, or the mock objects) */
 export default function ColumnBody({ id }: { id: ColumnId }) {
   if (id === 'recent') return <RecentList place="dash-col-recent" />
+  // The Notes column is the server's notes
+  const resource = id === 'notes' ? resourceByName('notes') : undefined
+  if (resource) return <ResourceColumn resource={resource} place={`dash-col-${id}`} />
   return <ObjectList id={id} />
 }
 
@@ -19,25 +24,21 @@ function objectsOf(id: ColumnId, objects: MockObject[]): { object: MockObject; h
   const visible = objects.filter((o) => findObject(o.id))
   const projectName = (o: MockObject) => (o.parentId ? findObject(o.parentId)?.name : undefined)
   const projectId = projectIdOf(id)
-  // A project's or Orphans' list is its row's: no notes (they live in the Notes list)
-  if (projectId) return visible.filter((o) => o.parentId === projectId && o.kind !== 'note').map((object) => ({ object }))
+  if (projectId) return visible.filter((o) => o.parentId === projectId).map((object) => ({ object }))
   switch (id) {
-    case 'notes':
-      return visible.filter((o) => isNoteLike(o.kind)).map((object) => ({ object, hint: projectName(object) }))
     case 'maps':
       return visible.filter((o) => o.kind === 'map').map((object) => ({ object, hint: projectName(object) }))
     case 'projects':
       return visible.filter((o) => o.kind === 'project').map((object) => ({ object }))
     case 'orphans':
-      // Every top-level object that isn't a project or a note
-      return visible.filter((o) => o.parentId === null && o.kind !== 'project' && o.kind !== 'note').map((object) => ({ object }))
+      // Every top-level object that isn't a project
+      return visible.filter((o) => o.parentId === null && o.kind !== 'project').map((object) => ({ object }))
     default:
       return []
   }
 }
 
 const EMPTY: Partial<Record<ColumnId, string>> = {
-  notes: 'No notes yet.',
   maps: 'No maps yet.',
   projects: 'No projects yet.',
   orphans: 'Nothing outside projects.',

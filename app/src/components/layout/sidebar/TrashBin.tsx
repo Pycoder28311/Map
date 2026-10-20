@@ -2,6 +2,8 @@ import { useDroppable } from '@dnd-kit/core'
 import { useState } from 'react'
 import { useLayoutsState } from '../../../mocks/layoutsStore'
 import { useMockObjects } from '../../../mocks/projectsStore'
+import { useTrashedItems } from '../../../lib/resource/trash'
+import { resourcesWith } from '../../../resources/registry'
 import { TREE_ROW_LOOK, buttonClass } from '../../ui/buttons/buttonStyles'
 import { useLidOpen } from '../../ui/tree/swallow'
 import { TRASH_ID, useSidebarDrop } from './sidebarDropState'
@@ -38,6 +40,8 @@ function TrashIcon({ open }: { open: boolean }) {
   )
 }
 
+const RESOURCES_IN_TRASH = resourcesWith('trash')
+
 /**
  * The trash bin at the bottom of the sidebar: drop an object on it to archive it (it falls in, the
  * lid opens). Click: what's in it, to restore or delete for good.
@@ -47,7 +51,9 @@ export default function TrashBin({ compact }: { compact: boolean }) {
   const { target } = useSidebarDrop()
   const over = target?.kind === 'trash'
   const swallowing = useLidOpen(TRASH_ID)
-  const count = useMockObjects().filter((o) => o.archived).length + useLayoutsState().layouts.filter((l) => l.archived).length
+  // The Trash holds mock objects, saved layouts, and the archived items of every resource that shows in it (the server's)
+  const trashed = useTrashedItems(RESOURCES_IN_TRASH)
+  const count = useMockObjects().filter((o) => o.archived).length + useLayoutsState().layouts.filter((l) => l.archived).length + trashed.total
   const [open, setOpen] = useState(false)
 
   return (
@@ -83,10 +89,11 @@ export default function TrashBin({ compact }: { compact: boolean }) {
             }`}
           >
             {count}
+            {trashed.more ? '+' : ''}
           </span>
         )}
       </button>
-      {open && <TrashModal onClose={() => setOpen(false)} />}
+      {open && <TrashModal trashed={trashed} onClose={() => setOpen(false)} />}
     </>
   )
 }

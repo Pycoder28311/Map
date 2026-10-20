@@ -1,8 +1,7 @@
 // Where a dragged sidebar object lands, and whether it may (pure: tested in treeDrop.test.ts).
-// Rules: an object goes into an unlocked project or folder, between rows inside one, or into Notes
-// (parentless), wherever canPlace allows it (e.g. only articles into a folder, folders never into a
-// folder); projects are reordered among projects, never nested; Pinned rows reorder pins (a dropped
-// object gets pinned); Dashboard never takes a drop.
+// Rules: an object goes into a project, between rows inside one, or into Objects (parentless),
+// wherever canPlace allows it; projects are reordered among projects, never nested; Pinned rows
+// reorder pins (a dropped object gets pinned); Dashboard never takes a drop.
 import { canPlace, type MockObject } from '../../../mocks/projects'
 
 export type DropPosition = 'before' | 'after' | 'into'
@@ -13,17 +12,17 @@ export type RowDropData = {
   zone?: 'row'
   priority?: number
   nodeId: string
-  section: 'pinned' | 'projects' | 'notes' | 'notes-end' | 'fixed'
+  section: 'pinned' | 'projects' | 'objects' | 'objects-end' | 'fixed'
   /** The object this row is */
   objectId?: string
   /** A project's Overview row: which project */
   overviewOf?: string
-  /** An unlocked container (a project or a folder): may take drops into it */
+  /** A container (a project): may take drops into it */
   folder?: boolean
 }
 
 export type DropAction =
-  /** Move to `parentId` (null: top level), just before `beforeId` (null: last). `into`: dropped on that folder's row */
+  /** Move to `parentId` (null: top level), just before `beforeId` (null: last). `into`: dropped on that project's row */
   | { kind: 'move'; parentId: string | null; beforeId: string | null; into?: string }
   /** Pin (or move the pin) just before `beforeId` among the pins (null: last) */
   | { kind: 'pin'; beforeId: string | null }
@@ -53,7 +52,7 @@ export function resolveDrop(
   position: DropPosition,
 ): DropAction | null {
   const dragged = objects.find((o) => o.id === draggedId)
-  if (!dragged || !dragged.draggable) return null
+  if (!dragged) return null
   const isProject = dragged.kind === 'project'
 
   switch (row.section) {
@@ -65,7 +64,7 @@ export function resolveDrop(
       const beforeId = position === 'after' ? (pins.slice(i + 1).find((p) => p !== draggedId) ?? null) : row.objectId
       return beforeId === draggedId ? null : { kind: 'pin', beforeId }
     }
-    case 'notes-end':
+    case 'objects-end':
       return canPlace(dragged.kind, null) && !isProject ? { kind: 'move', parentId: null, beforeId: null } : null
   }
 
@@ -80,7 +79,7 @@ export function resolveDrop(
   if (!target || target.id === draggedId) return null
 
   if (position === 'into') {
-    if (target.locked || !canPlace(dragged.kind, target.kind)) return null
+    if (target.kind !== 'project' || !canPlace(dragged.kind, target.kind)) return null
     return { kind: 'move', parentId: target.id, beforeId: null, into: target.id }
   }
 
@@ -92,8 +91,8 @@ export function resolveDrop(
     return { kind: 'move', parentId: null, beforeId }
   }
 
-  // Any other object: next to a sibling (in its project or folder, or in Notes), never among
-  // projects, and only where it may go (e.g. a note never between a folder's articles)
+  // Any other object: next to a sibling (in its project, or in Objects), never among projects,
+  // and only where it may go
   if (target.kind === 'project') return null
   const parent = target.parentId ? objects.find((o) => o.id === target.parentId) : null
   if (parent === undefined || !canPlace(dragged.kind, parent?.kind ?? null)) return null

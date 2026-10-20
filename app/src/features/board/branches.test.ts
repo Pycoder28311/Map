@@ -3,7 +3,7 @@ import type { MockObject } from '../../mocks/projects'
 import { branchList, nextBranchName, siblingMaps } from './branches'
 
 const map = (id: string, extra: Partial<MockObject> = {}): MockObject => ({
-  id, kind: 'map', name: id, parentId: 'p1', draggable: true, locked: true, archived: false, createdAt: Number(id.slice(1)), likes: 0, ...extra,
+  id, kind: 'map', name: id, parentId: 'p1', archived: false, createdAt: Number(id.slice(1)), ...extra,
 })
 
 describe('branches', () => {
@@ -25,7 +25,7 @@ describe('branches', () => {
     expect(nextBranchName([map('m1'), map('m2', { name: 'Branch 2' })])).toBe('Branch 3')
   })
   it("presents the project's maps in list order", () => {
-    const all = [map('m1'), { ...map('n1'), kind: 'note' as const }, map('m2'), map('m3', { archived: true }), map('m4', { parentId: 'p2' })]
+    const all = [map('m1'), { ...map('o1'), kind: 'object' as const }, map('m2'), map('m3', { archived: true }), map('m4', { parentId: 'p2' })]
     expect(siblingMaps(all, 'm2').map((o) => o.id)).toEqual(['m1', 'm2'])
     expect(siblingMaps([map('m9', { parentId: null })], 'm9').map((o) => o.id)).toEqual(['m9'])
   })

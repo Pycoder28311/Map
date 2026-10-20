@@ -22,7 +22,7 @@ const SPLIT_HOVER = {
 const SORTS: ExtendMenuItem<SortChoice>[] = (Object.keys(SORT_LABEL) as CardSort[]).map((value) => ({ value, label: SORT_LABEL[value] }))
 // While a sort is on, its button shows it (and leaves it out of its options); this one goes back to the manual order
 const MANUAL: ExtendMenuItem<SortChoice> = { value: 'manual', label: 'Manual order' }
-const CREATE_ORDER: CreatableKind[] = ['object', 'article', 'note', 'map', 'folder']
+const CREATE_ORDER: CreatableKind[] = ['object', 'map']
 
 type Props = {
   name: string
@@ -37,6 +37,8 @@ type Props = {
   /** What Create offers here (e.g. no Map at the top level) */
   creatable: CreatableKind[]
   onCreate: (kind: CreatableKind) => void
+  /** A row of a resource (the server's notes): one plain green button with this label, instead of the kinds */
+  createOne?: { label: string; onCreate: () => void }
   /**
    * Create names what it makes: "<kind> +", a click on the name creates it at once (Notes: its only
    * kind; a project's: the kind last picked, from the + part's menu, where the arrow was). Off
@@ -50,14 +52,14 @@ type Props = {
  * on its left, to move the row, and ✎ on its right, which edits the name in place), Sort by (a background only on hover) and Create (green) on the
  * right, as big as a sidebar row; they extend (ExtendMenu: the button grows to show its options).
  * Create is split in two parts with a small gap between (Create ▾); both open its menu. Named
- * (`named`): "Note +" creates a note at once; in a project, "<last kind> | +" creates it from the name,
+ * (`named`): a resource's row (`createOne`) has "Note +"; in a project, "<last kind> | +" creates it from the name,
  * and the + part (where the arrow was) opens the menu to create another kind (which it then remembers).
  */
-export default function RowHeader({ name, onRename, onOpen, onGripDown, sort, onSort, creatable, onCreate, named = false }: Props) {
+export default function RowHeader({ name, onRename, onOpen, onGripDown, sort, onSort, creatable, onCreate, createOne, named = false }: Props) {
   const [editing, setEditing] = useState(false)
   // The kind a named Create makes: the last one picked from its menu (the first at the start)
   const [picked, setPicked] = useState<CreatableKind | null>(null)
-  const kind = picked && creatable.includes(picked) ? picked : (creatable[0] ?? 'note')
+  const kind = picked && creatable.includes(picked) ? picked : (creatable[0] ?? 'object')
   const createItems = CREATE_ORDER.filter((k) => creatable.includes(k)).map((value) => ({ value, label: KIND_LABEL[value], icon: KIND_ICON[value] }))
 
   return (
@@ -145,10 +147,10 @@ export default function RowHeader({ name, onRename, onOpen, onGripDown, sort, on
           // One kind (the Notes row): a plain green button that creates it
           <button
             type="button"
-            onClick={() => onCreate(kind)}
+            onClick={() => (createOne ? createOne.onCreate() : onCreate(kind))}
             className={`${PART} ${PART_HOVER.closed} corner-marks relative cursor-pointer gap-1.5 rounded-(--btn-radius) px-(--pill-px) text-body font-medium text-create-fg [box-shadow:var(--btn-create-shadow)] hover:[box-shadow:var(--btn-hover-inset-dark),var(--btn-create-shadow)] active:[box-shadow:var(--btn-active-inset-dark),var(--btn-create-shadow)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`}
           >
-            {KIND_LABEL[kind]}
+            {createOne?.label ?? KIND_LABEL[kind]}
             <LuPlus aria-hidden className="size-4" />
           </button>
         ) : (

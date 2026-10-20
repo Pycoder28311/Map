@@ -10,7 +10,7 @@ import { isSafeImageSrc, isSafeLink } from './rich-text-policy'
 const TAGS = new Set([
   'p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'hr', 'a', 'span', 'img',
 ])
-const VOID = new Set(['br', 'hr', 'img'])
+const VOID = new Set(['br', 'hr', 'img', 'input'])
 /** Tags dropped together with everything inside them (others only lose the tag and keep their words) */
 const DROP_WITH_CONTENT = new Set(['script', 'style', 'iframe', 'object', 'embed', 'template', 'noscript', 'textarea', 'title', 'svg', 'math', 'head'])
 
@@ -34,6 +34,20 @@ function safeStyle(raw: string | undefined): string | null {
   return kept.length ? kept.join('; ') : null
 }
 
+/**
+ * The checklist the editor writes (Tiptap's TaskList / TaskItem), kept only in exactly this shape:
+ *   <ul data-type="taskList"><li data-type="taskItem" data-checked="false"><label><input type="checkbox"><span></span></label><div><p>…</p></div></li></ul>
+ * `label`, `input` and `div` are allowed only at their place in it, and with no other attribute than the ones named here.
+ */
+type Part = 'taskList' | 'taskItem' | 'taskLabel'
+
+/** Whether a tag outside TAGS is one of the checklist's own, given the tag it sits in */
+function isTaskTag(tag: string, parent: Part | undefined, attribs: Record<string, string>): boolean {
+  if (tag === 'label' || tag === 'div') return parent === 'taskItem'
+  if (tag === 'input') return parent === 'taskLabel' && attribs.type === 'checkbox'
+  return false
+}
+
 /** The text is HTML from the editor when it starts with a tag; otherwise it is plain text */
 const isHtml = (text: string) => /^\s*<[a-z]/i.test(text)
 
@@ -50,20 +64,34 @@ export function sanitizeRichText(text: string): string {
   let out = ''
   let dropping = 0
   // One entry per open tag: whether its tag was written (so its closing tag is, too)
-  const open: { tag: string; written: boolean; dropped: boolean }[] = []
+  const open: { tag: string; written: boolean; dropped: boolean; part?: Part }[] = []
 
   const parser = new Parser({
     onopentag(tag, attribs) {
       const dropped = dropping > 0 || DROP_WITH_CONTENT.has(tag)
       if (dropped) dropping++
-      const written = !dropped && TAGS.has(tag)
-      open.push({ tag, written, dropped })
+      // The tag this one sits in, if it was written: the checklist's pieces check their place against it
+      const parent = open.at(-1)
+      const parentPart = parent?.written ? parent.part : undefined
+      const written = !dropped && (TAGS.has(tag) || isTaskTag(tag, parentPart, attribs))
+      const entry: (typeof open)[number] = { tag, written, dropped }
+      open.push(entry)
       if (!written) return
       let attrs = ''
-      if (tag === 'img') {
+      if (tag === 'ul' && attribs['data-type'] === 'taskList') {
+        entry.part = 'taskList'
+        attrs = ' data-type="taskList"'
+      } else if (tag === 'li' && attribs['data-type'] === 'taskItem' && parentPart === 'taskList') {
+        entry.part = 'taskItem'
+        attrs = ` data-type="taskItem" data-checked="${attribs['data-checked'] === 'true' ? 'true' : 'false'}"`
+      } else if (tag === 'label') {
+        entry.part = 'taskLabel'
+      } else if (tag === 'input') {
+        attrs = ` type="checkbox"${'checked' in attribs ? ' checked="checked"' : ''}`
+      } else if (tag === 'img') {
         // Only the app's own stored images; any other picture (an outside address, data:) is dropped with its tag
         if (!isSafeImageSrc(attribs.src)) {
-          open[open.length - 1].written = false
+          entry.written = false
           return
         }
         const alt = (attribs.alt ?? '').slice(0, 200)

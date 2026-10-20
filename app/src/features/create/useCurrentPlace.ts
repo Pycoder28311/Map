@@ -4,11 +4,11 @@ import { useWorkspace } from '../workspace/useWorkspace'
 import { pathOf, type Path } from './place'
 
 /** What a page can be for the Create button: somewhere to create in or link to */
-const PLACE_TYPES = new Set(['project', 'folder', 'map', 'object'])
+const PLACE_TYPES = new Set(['project', 'map', 'object'])
 
 /**
  * The place the page on screen is: one page open (an object's own page, also as /workspace?panels=…)
- * that is a project, folder, map or object card → its path. Several panes, the Dashboard, the Notes
+ * that is a project, map or object card → its path. Several panes, the Dashboard, the Notes
  * page… → none ([]): the Create button's path starts empty and the user picks.
  */
 export function useCurrentPlace(): Path {

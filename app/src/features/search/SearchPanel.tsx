@@ -1,20 +1,9 @@
 import type { RefObject } from 'react'
 import { LuHand, LuSlidersHorizontal, LuX } from 'react-icons/lu'
-import type { MockObject, ObjectKind } from '../../mocks/projects'
-import { KIND_ICON } from '../../mocks/sidebarTree'
 import { useObjectDrag } from '../drag/objectDrag'
-import { htmlToPlain } from '../notes/noteHtml'
-import { hasFilters, KINDS, type SearchFilters } from './search'
+import { kindEntry, SEARCH_KINDS } from './kinds'
+import { hasFilters, type SearchFilters, type SearchResult } from './search'
 import { PILL_BUTTON } from '../../components/ui/buttons/buttonStyles'
-
-const KIND_NAME: Record<ObjectKind, string> = {
-  project: 'Projects',
-  map: 'Maps',
-  note: 'Notes',
-  article: 'Articles',
-  object: 'Object cards',
-  folder: 'Folders',
-}
 
 // Full class strings so Tailwind can detect them at build time.
 const HEADING = 'text-small font-medium uppercase tracking-wide text-fg-subtle'
@@ -29,14 +18,12 @@ type Props = {
   query: string
   filters: SearchFilters
   onFilters: (filters: SearchFilters) => void
-  results: MockObject[]
+  results: SearchResult[]
   /** The result chosen with ↑/↓ (Enter opens it) */
   active: number
   onActive: (index: number) => void
-  onOpen: (object: MockObject) => void
+  onOpen: (result: SearchResult) => void
   projects: { id: string; name: string }[]
-  /** A result's project name, for its description */
-  projectName: (object: MockObject) => string | undefined
   /** The filters column is shown (Open Filters) */
   filtersOpen: boolean
   onFiltersOpen: (open: boolean) => void
@@ -58,7 +45,6 @@ export default function SearchPanel({
   onActive,
   onOpen,
   projects,
-  projectName,
   filtersOpen,
   onFiltersOpen,
   resultsRef,
@@ -67,7 +53,7 @@ export default function SearchPanel({
   const chips = [
     ...filters.types.map((k) => ({
       key: `t:${k}`,
-      label: `${filters.typeMode === 'exclude' ? 'Not ' : ''}${KIND_NAME[k]}`,
+      label: `${filters.typeMode === 'exclude' ? 'Not ' : ''}${kindEntry(k)?.label ?? k}`,
       remove: () => onFilters({ ...filters, types: filters.types.filter((x) => x !== k) }),
     })),
     ...filters.projects.map((p) => ({
@@ -105,8 +91,7 @@ export default function SearchPanel({
                   </button>
                 ))}
               </div>
-              {KINDS.map((kind) => {
-                const Icon = KIND_ICON[kind]
+              {SEARCH_KINDS.map(({ kind, label, icon: Icon }) => {
                 return (
                   <label key={kind} className={CHECK}>
                     <input
@@ -116,7 +101,7 @@ export default function SearchPanel({
                       className="accent-accent"
                     />
                     <Icon className="size-3.5 text-fg-subtle" />
-                    {KIND_NAME[kind]}
+                    {label}
                   </label>
                 )
               })}
@@ -178,9 +163,8 @@ export default function SearchPanel({
           ) : (
             results.map((o, i) => (
               <ResultRow
-                key={o.id}
-                object={o}
-                description={o.parentId ? projectName(o) : htmlToPlain(o.text).split('\n')[0] || undefined}
+                key={`${o.kind}:${o.id}`}
+                result={o}
                 active={i === active}
                 onHover={() => onActive(i)}
                 onOpen={() => onOpen(o)}
@@ -194,21 +178,20 @@ export default function SearchPanel({
 }
 
 function ResultRow({
-  object,
-  description,
+  result: object,
   active,
   onHover,
   onOpen,
 }: {
-  object: MockObject
-  description?: string
+  result: SearchResult
   active: boolean
   onHover: () => void
   onOpen: () => void
 }) {
-  const Icon = KIND_ICON[object.kind]
+  const Icon = kindEntry(object.kind)?.icon ?? SEARCH_KINDS[0].icon
+  const description = object.description
   const { setNodeRef, listeners, attributes, isDragging } = useObjectDrag({
-    id: `nav-search:${object.id}`,
+    id: `nav-search:${object.kind}:${object.id}`,
     label: object.name,
     panel: { type: object.kind, id: object.id },
     object: { objectId: object.id, kind: object.kind, icon: Icon, source: 'pane' },

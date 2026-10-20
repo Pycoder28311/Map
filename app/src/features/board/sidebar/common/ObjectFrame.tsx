@@ -27,7 +27,7 @@ type Props = ObjectFrameContext & {
   top?: ReactNode
   /** Before the header's buttons (a point's pin) */
   leading?: ReactNode
-  /** In place of the "Link to other objects" button at the bottom (null: no button) */
+  /** Under the links list, at the bottom */
   footerAction?: ReactNode
   /** The kind's own sections */
   children?: ReactNode

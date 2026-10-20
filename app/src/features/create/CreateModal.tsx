@@ -4,6 +4,8 @@ import { LuPlus } from 'react-icons/lu'
 import { findObject, KIND_LABEL } from '../../mocks/projects'
 import { getObjects, useMockObjects } from '../../mocks/projectsStore'
 import { KIND_ICON } from '../../mocks/sidebarTree'
+import { useResourceActions } from '../../lib/resource/hooks'
+import { notesResource } from '../../resources/notes/notes.resource'
 import { createFromModal } from './createFromModal'
 import CreatePath from './CreatePath'
 import { RAISED } from './buttonLook'
@@ -21,13 +23,19 @@ const INNER = 'w-full bg-transparent px-(--field-px) text-body text-fg outline-n
 const CREATE_BUTTON =
   'corner-marks relative inline-flex h-11 w-36 cursor-pointer items-center justify-center gap-2 rounded-(--corner-xl) bg-create text-base font-medium text-create-fg ' +
   `transition-[background-color,box-shadow,translate] ${RAISED} hover:bg-(--btn-create-hover-bg) ${FOCUS_RING} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-create`
-// A tab: one of the five kinds, in a row above the form
+// A tab: one of the kinds, in a row above the form
 const KIND_BUTTON =
   'flex shrink-0 cursor-pointer items-center gap-2 rounded-(--btn-radius) px-2.5 py-1.5 text-start text-body font-medium whitespace-nowrap transition-colors ' +
   'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40'
 
+/** What the modal can make: a note (on the server, no place) or an object card / a map (in a place) */
+type ModalKind = 'note' | CreateKind
+const MODAL_KINDS: ModalKind[] = ['note', ...CREATE_KINDS]
+const LABEL: Record<ModalKind, string> = { note: notesResource.ui.label, object: KIND_LABEL.object, map: KIND_LABEL.map }
+const ICON: Record<ModalKind, (typeof KIND_ICON)[CreateKind]> = { note: notesResource.ui.icon, object: KIND_ICON.object, map: KIND_ICON.map }
+
 /** The last kind picked, kept for the session; the first time: a note */
-let lastKind: CreateKind = 'note'
+let lastKind: ModalKind = 'note'
 
 type Props = {
   /** Closing (the button flipped back): it shrinks back behind the button */
@@ -35,20 +43,22 @@ type Props = {
   /** Space (px) the page's own sidebar takes at the right: the modal stays left of it */
   inset: number
   /** It made something: what and where (the button flips back and says so) */
-  onCreated: (made: { id: string; kind: CreateKind; name: string; where: string | null }) => void
+  onCreated: (made: { id: string; panelType: string; label: string; name: string; where: string | null }) => void
 }
 
 /**
- * The floating Create button's modal: the path of where it goes on top, the five kinds on the left, the
- * form of the chosen kind on the right. A note is linked to the place in the path; the other kinds are
- * created inside it. The page behind never changes. Mounted fresh each time it opens, so a cancelled
+ * The floating Create button's modal: the kinds as tabs, the form of the chosen kind below. A note is made on the server and has no
+ * place; an object card or a map is created in the place in the path (shown on top). The page behind never changes. Mounted fresh each time it opens, so a cancelled
  * draft is gone and the path starts from the page's own place.
  */
 export default function CreateModal({ closing, inset, onCreated }: Props) {
   const current = useCurrentPlace()
   useMockObjects() // names and existence follow changes
   const formId = useId()
-  const [kind, setKind] = useState<CreateKind>(lastKind)
+  const [kind, setKind] = useState<ModalKind>(lastKind)
+  const { create: createNote } = useResourceActions(notesResource)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [chosen, setChosen] = useState<Path | null>(null)
   const [title, setTitle] = useState('')
   const [text, setText] = useState('')
@@ -60,40 +70,50 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
   const firstGone = wanted.findIndex((id) => !findObject(id))
   const path = firstGone === -1 ? wanted : wanted.slice(0, firstGone)
   const last = path.length ? (findObject(path.at(-1)) ?? null) : null
-  const fit = eligibleFor(kind, last)
+  // A note has no place; the others need one they can go in
+  const fit = kind === 'note' ? ({ ok: true } as const) : eligibleFor(kind, last)
 
   const titleRef = useRef<HTMLInputElement>(null)
   const bodyRef = useRef<HTMLTextAreaElement>(null)
-  // A note's or article's text is the rich-text editor; an object's description stays a plain textarea
+  // A note's text is the rich-text editor; an object card's description stays a plain textarea
   const [editor, setEditor] = useState<Editor | null>(null)
-  const rich = kind === 'note' || kind === 'article'
-  const hasBody = kind === 'note' || kind === 'article' || kind === 'object'
-  const canCreate = title.trim() !== '' && fit.ok
+  const rich = kind === 'note'
+  const hasBody = kind === 'note' || kind === 'object'
+  // A note needs a title or some text (the API's rule); the others a title
+  const canCreate = (kind === 'note' ? title.trim() !== '' || text !== '' : title.trim() !== '') && fit.ok && !busy
 
-  const create = () => {
+  const create = async () => {
     if (!canCreate) return
-    const made = createFromModal(kind, path, { title, text, description })
-    if (made) onCreated({ id: made.id, kind, name: title.trim() || 'Untitled', where: made.where })
+    if (kind === 'note') {
+      setBusy(true)
+      setError(null)
+      try {
+        const note = await createNote({ title: title.trim(), content: text })
+        onCreated({ id: String(note.id), panelType: notesResource.panelType, label: LABEL.note, name: title.trim() || notesResource.ui.untitled, where: null })
+      } catch (e) {
+        // The draft stays, so nothing typed is lost
+        setError(e instanceof Error ? e.message : 'Could not create the note.')
+        setBusy(false)
+      }
+      return
+    }
+    const made = createFromModal(kind, path, { title, description })
+    if (made) onCreated({ id: made.id, panelType: kind, label: LABEL[kind], name: title.trim() || 'Untitled', where: made.where })
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault()
-      create()
+      void create()
     }
   }
 
-  const pick = (next: CreateKind) => {
+  const pick = (next: ModalKind) => {
     lastKind = next
     setKind(next)
   }
 
-  const goes =
-    kind === 'note'
-      ? last
-        ? `Linked to ${last.name}`
-        : 'Not linked to anything'
-      : `Created ${last ? `in ${last.name}` : 'at the top level'}`
+  const goes = kind === 'note' ? 'Saved with your notes' : `Created ${last ? `in ${last.name}` : 'at the top level'}`
 
   return (
     <div
@@ -108,18 +128,18 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
         closing ? 'animate-create-unpop' : 'animate-create-pop'
       }`}
     >
-      {/* Where it goes */}
+      {/* Where it goes (a note has no place) */}
       <div className="flex flex-col gap-0.5 border-b border-line px-3 py-2">
-        <CreatePath objects={visible} path={path} kind={kind} onChange={setChosen} />
+        {kind !== 'note' && <CreatePath objects={visible} path={path} onChange={setChosen} />}
         <p className="px-1.5 text-small text-fg-subtle">{goes}</p>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col">
-        {/* The five kinds, as tabs above the form */}
+        {/* The kinds, as tabs above the form */}
         <ul aria-label="What to create" className="flex shrink-0 gap-1 overflow-x-auto border-b border-line px-3 py-2">
-          {CREATE_KINDS.map((k) => {
-            const Icon = KIND_ICON[k]
-            const ok = eligibleFor(k, last)
+          {MODAL_KINDS.map((k) => {
+            const Icon = ICON[k]
+            const ok = k === 'note' ? ({ ok: true } as const) : eligibleFor(k, last)
             return (
               <li key={k} className="shrink-0">
                 <button
@@ -131,7 +151,7 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
                   className={`${KIND_BUTTON} ${k === kind ? 'bg-fill-strong text-fg' : 'text-fg-muted hover-fill hover:text-fg'}`}
                 >
                   <Icon className="size-(--btn-icon-size) shrink-0" />
-                  {KIND_LABEL[k]}
+                  {LABEL[k]}
                 </button>
               </li>
             )
@@ -144,7 +164,7 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
           className="flex min-w-0 flex-1 flex-col gap-3 overflow-y-auto p-3"
           onSubmit={(e) => {
             e.preventDefault()
-            create()
+            void create()
           }}
         >
           {/* Title and body: two fields drawn as one, split by a line; ↓ / Enter and ↑ move between them */}
@@ -164,9 +184,9 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
                   }
                 }
               }}
-              placeholder={`${KIND_LABEL[kind]} name`}
+              placeholder={kind === 'note' ? 'Title' : `${LABEL[kind]} name`}
               aria-label="Name"
-              maxLength={100}
+              maxLength={kind === 'note' ? 200 : 100}
               autoFocus
               className={`${INNER} py-2 font-medium`}
             />
@@ -186,7 +206,7 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
                         titleRef.current?.focus()
                         titleRef.current?.setSelectionRange(end, end)
                       }}
-                      placeholder={kind === 'note' ? 'Take a note…' : 'Write an article…'}
+                      placeholder="Take a note…"
                       label="Text"
                       minHeight="min-h-20"
                       className="min-h-0 flex-1 overflow-y-auto px-(--field-px) py-2"
@@ -217,6 +237,11 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
             )}
           </div>
           {!fit.ok && <p className="text-small text-danger">{fit.why}</p>}
+          {error && (
+            <p role="alert" className="text-small text-danger">
+              {error}
+            </p>
+          )}
         </form>
       </div>
 
@@ -226,7 +251,7 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
         <span className="text-small text-fg-subtle">Ctrl+Enter</span>
         <button type="submit" form={formId} disabled={!canCreate} className={CREATE_BUTTON}>
           <LuPlus aria-hidden className="size-5" />
-          Create
+          {busy ? 'Creating…' : 'Create'}
         </button>
       </div>
     </div>

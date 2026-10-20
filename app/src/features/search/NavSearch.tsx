@@ -2,13 +2,18 @@ import { useDndMonitor } from '@dnd-kit/core'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import SearchInput from '../../components/ui/fields/SearchInput'
 import BarPopout from '../../components/ui/overlays/BarPopout'
-import { findObject, type MockObject } from '../../mocks/projects'
+import { findObject } from '../../mocks/projects'
 import { useMockObjects, useMockProjects } from '../../mocks/projectsStore'
 import { useOpenLayout } from '../objects/ListRows'
 import { single } from '../workspace/layout'
 import type { PanelDragData } from '../workspace/types'
-import { NO_FILTERS, searchObjects, type SearchFilters } from './search'
+import { resourcesWith } from '../../resources/registry'
+import { NO_FILTERS, searchAll, type SearchFilters, type SearchResult } from './search'
+import { useSearchItems } from './useSearchItems'
 import SearchPanel from './SearchPanel'
+
+// The resources the search looks in (the server's notes), besides the mock objects
+const SEARCHABLE = resourcesWith('search')
 
 // The filters, and whether they're shown, kept for the session (not saved)
 let lastFilters: SearchFilters = NO_FILTERS
@@ -31,9 +36,10 @@ export default function NavSearch() {
   const projects = useMockProjects()
   const openLayout = useOpenLayout()
 
+  // The resources' live items are read while the search is open (archived ones are never asked for)
+  const resourceItems = useSearchItems(SEARCHABLE, open)
   const visible = objects.filter((o) => findObject(o.id))
-  const results = searchObjects(visible, query, filters)
-  const projectName = (o: MockObject) => (o.parentId ? findObject(o.parentId)?.name : undefined)
+  const results = searchAll(visible, resourceItems.items, query, filters)
 
   const changeFilters = (next: SearchFilters) => {
     lastFilters = next
@@ -41,7 +47,7 @@ export default function NavSearch() {
     setActive(0)
   }
 
-  const openResult = (o: MockObject) => {
+  const openResult = (o: SearchResult) => {
     openLayout(single({ type: o.kind, id: o.id }))
     setOpen(false)
     inputRef.current?.blur()
@@ -124,7 +130,6 @@ export default function NavSearch() {
         onActive={setActive}
         onOpen={openResult}
         projects={projects}
-        projectName={projectName}
         resultsRef={resultsRef}
         filtersOpen={filtersOpen}
         onFiltersOpen={(next) => {

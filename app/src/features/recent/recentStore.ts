@@ -29,6 +29,9 @@ export function addRecent(list: RecentEntry[], entry: RecentEntry): RecentEntry[
   return [entry, ...list.filter((e) => e.key !== entry.key)].slice(0, MAX_RECENT)
 }
 
+/** The list without the entry of this key */
+export const withoutRecent = (list: RecentEntry[], key: string): RecentEntry[] => list.filter((e) => e.key !== key)
+
 /* ─────────────── Store (per user, in localStorage) ─────────────── */
 
 const storageKey = (userId: string) => `map:recent:${userId}`
@@ -51,8 +54,7 @@ export function getRecent(userId: string | undefined): RecentEntry[] {
   return lists.get(userId)!
 }
 
-export function recordRecent(userId: string, entry: RecentEntry) {
-  const next = addRecent(getRecent(userId), entry)
+function save(userId: string, next: RecentEntry[]) {
   lists.set(userId, next)
   try {
     localStorage.setItem(storageKey(userId), JSON.stringify(next))
@@ -60,6 +62,17 @@ export function recordRecent(userId: string, entry: RecentEntry) {
     // Storage full or blocked: kept for this session only
   }
   listeners.forEach((listener) => listener())
+}
+
+export function recordRecent(userId: string, entry: RecentEntry) {
+  save(userId, addRecent(getRecent(userId), entry))
+}
+
+/** Forgets an entry (e.g. a note that is gone or in the Trash) */
+export function removeRecent(userId: string, key: string) {
+  const current = getRecent(userId)
+  const next = withoutRecent(current, key)
+  if (next.length !== current.length) save(userId, next)
 }
 
 function subscribe(listener: () => void) {

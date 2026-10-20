@@ -6,6 +6,10 @@ import { usePanelRegistry } from '../../../features/workspace/registryContext'
 import { deleteArchivedLayouts, deleteLayout, restoreLayout, useLayoutsState, type SavedLayout } from '../../../mocks/layoutsStore'
 import { emptyTrash, restoreObject, useMockObjects } from '../../../mocks/projectsStore'
 import { KIND_ICON, type SidebarItem } from '../../../mocks/sidebarTree'
+import { useResourceActions } from '../../../lib/resource/hooks'
+import { emptyTrashSections, type TrashedItem, type useTrashedItems } from '../../../lib/resource/trash'
+import type { AnyResource } from '../../../resources/types'
+import ResourceDeleteDialog from '../../ui/resource/ResourceDeleteDialog'
 import Button from '../../ui/buttons/Button'
 import IconButton from '../../ui/buttons/IconButton'
 import Modal from '../../ui/overlays/Modal'
@@ -14,19 +18,50 @@ import { DeleteDialog } from '../../../features/objects/ObjectDialogs'
 
 const ROW = 'flex items-center gap-2 rounded-(--btn-radius) px-2 py-1.5 hover-fill'
 
+/** A resource's item in the Trash (a note): restore it, or delete it for good (the parent asks first) */
+function ResourceTrashRow({ resource, item, onDelete }: { resource: AnyResource; item: TrashedItem; onDelete: () => void }) {
+  const { restore } = useResourceActions(resource)
+  const [error, setError] = useState<string | null>(null)
+  const Icon = resource.ui.icon
+  const title = resource.ui.row.title(item)
+  return (
+    <li className={`${ROW} flex-wrap`}>
+      <Icon className="size-(--btn-icon-size) shrink-0 text-fg-subtle" />
+      <span className="min-w-0 flex-1 truncate text-body">{title}</span>
+      <IconButton
+        icon={LuRotateCcw}
+        label={`Restore ${title}`}
+        onClick={() => {
+          setError(null)
+          restore(item.id).catch((e) => setError(e instanceof Error ? e.message : 'Could not restore it.'))
+        }}
+      />
+      <IconButton icon={LuTrash2} label={`Delete ${title} for good`} className="text-danger" onClick={onDelete} />
+      {error && (
+        <p role="alert" className="basis-full ps-8 text-small text-danger">
+          {error}
+        </p>
+      )}
+    </li>
+  )
+}
+
 /**
- * What's in the trash (objects, then saved layouts): restore one, delete it for good, or empty the
- * trash (deleting always asks first)
+ * What's in the trash (objects, saved layouts, then the resources' items, e.g. notes): restore one, delete it for good, or empty the
+ * trash (deleting always asks first). `trashed`: the resources' items, loaded by the Trash button
  */
-export default function TrashModal({ onClose }: { onClose: () => void }) {
+export default function TrashModal({ trashed, onClose }: { trashed: ReturnType<typeof useTrashedItems>; onClose: () => void }) {
   const objects = useMockObjects()
   const archived = objects.filter((o) => o.archived)
   const layouts = useLayoutsState().layouts.filter((l) => l.archived)
   const registry = usePanelRegistry()
-  const total = archived.length + layouts.length
+  const total = archived.length + layouts.length + trashed.total
   const [deleting, setDeleting] = useState<SidebarItem | null>(null)
   const [deletingLayout, setDeletingLayout] = useState<SavedLayout | null>(null)
+  const [deletingItem, setDeletingItem] = useState<{ resource: AnyResource; item: TrashedItem } | null>(null)
   const [emptying, setEmptying] = useState(false)
+  const [emptyBusy, setEmptyBusy] = useState(false)
+  const [emptyError, setEmptyError] = useState<string | null>(null)
 
   const namesOf = (layout: SavedLayout) =>
     layout.panels.map((key) => {
@@ -49,7 +84,9 @@ export default function TrashModal({ onClose }: { onClose: () => void }) {
         }
       >
         {total === 0 ? (
-          <p className="text-body text-fg-muted">The trash is empty. Drag an object onto the bin to archive it.</p>
+          <p className="text-body text-fg-muted">
+            {trashed.status === 'loading' ? 'Loading…' : trashed.status === 'error' ? 'Could not load the trash.' : 'The trash is empty. Drag an object onto the bin to archive it.'}
+          </p>
         ) : (
           <ul className="flex flex-col gap-1">
             {archived.map((o) => {
@@ -92,8 +129,14 @@ export default function TrashModal({ onClose }: { onClose: () => void }) {
                 </li>
               )
             })}
+            {trashed.sections.flatMap(({ resource, items }) =>
+              items.map((item) => (
+                <ResourceTrashRow key={`${resource.name}:${item.id}`} resource={resource} item={item} onDelete={() => setDeletingItem({ resource, item })} />
+              )),
+            )}
           </ul>
         )}
+        {trashed.more && <p className="mt-2 text-small text-fg-subtle">Showing the first {trashed.total} of the items kept in the trash.</p>}
       </Modal>
 
       {deletingLayout && (
@@ -125,27 +168,45 @@ export default function TrashModal({ onClose }: { onClose: () => void }) {
       )}
 
       {deleting && <DeleteDialog item={deleting} onClose={() => setDeleting(null)} />}
+      {deletingItem && (
+        <ResourceDeleteDialog
+          resource={deletingItem.resource}
+          item={{ id: deletingItem.item.id, title: deletingItem.resource.ui.row.title(deletingItem.item) }}
+          onClose={() => setDeletingItem(null)}
+        />
+      )}
       {emptying && (
         <Modal
           open
-          onClose={() => setEmptying(false)}
+          onClose={() => !emptyBusy && setEmptying(false)}
           title="Empty trash"
           size="sm"
           footer={
             <>
-              <Button variant="secondary" onClick={() => setEmptying(false)}>
+              <Button variant="secondary" onClick={() => setEmptying(false)} disabled={emptyBusy}>
                 Cancel
               </Button>
               <Button
                 variant="secondary"
                 className="text-danger"
-                onClick={() => {
-                  emptyTrash()
-                  deleteArchivedLayouts()
-                  setEmptying(false)
+                disabled={emptyBusy}
+                onClick={async () => {
+                  setEmptyBusy(true)
+                  setEmptyError(null)
+                  try {
+                    // The server's items first: if one fails, nothing local is lost yet
+                    await emptyTrashSections(trashed.sections)
+                    emptyTrash()
+                    deleteArchivedLayouts()
+                    setEmptying(false)
+                  } catch (e) {
+                    setEmptyError(e instanceof Error ? e.message : 'Could not delete everything.')
+                  } finally {
+                    setEmptyBusy(false)
+                  }
                 }}
               >
-                Delete all
+                {emptyBusy ? 'Deleting…' : 'Delete all'}
               </Button>
             </>
           }
@@ -153,6 +214,11 @@ export default function TrashModal({ onClose }: { onClose: () => void }) {
           <p className="text-body">
             Delete the {total} {total === 1 ? 'item' : 'items'} in the trash for good? This can't be undone.
           </p>
+          {emptyError && (
+            <p role="alert" className="mt-2 text-small text-danger">
+              {emptyError}
+            </p>
+          )}
         </Modal>
       )}
     </>

@@ -1,5 +1,5 @@
 // MOCK DATA: in-memory create / rename / duplicate / move / pin / archive / delete of the mock
-// sidebar objects (projects, maps, notes). Nothing is saved: a reload starts again from the seed data.
+// sidebar objects (projects, maps, object cards). Nothing is saved: a reload starts again from the seed data.
 // Replaced by API calls later (same function names, async then); the UI only uses what's exported here.
 import { useSyncExternalStore } from 'react'
 import { copyBoard, dropBoard } from '../features/board/boardStore'
@@ -21,7 +21,7 @@ export type Link = { noteId: string; targetId: string }
 let state: State | null = null
 const listeners = new Set<() => void>()
 
-// New ids never clash with the seed's (p1…, m1…, n1…)
+// New ids never clash with the seed's (p1…, m1…, o1…)
 let nextId = 101
 const newId = (kind: MockObject['kind']) => `${kind[0]}${nextId++}`
 
@@ -120,8 +120,8 @@ function add(object: MockObject) {
   return object.id
 }
 
-// A new object: made now, no likes yet
-const fresh = () => ({ draggable: true, archived: false, createdAt: Date.now(), likes: 0 })
+// A new object: made now
+const fresh = () => ({ archived: false, createdAt: Date.now() })
 
 /** The kind of an object's parent (null: top level; undefined: no such parent) */
 const parentKind = (parentId: string | null): ObjectKind | null | undefined =>
@@ -135,7 +135,7 @@ export function createObjectOf(
   kind: ObjectKind,
   parentId: string | null,
   name: string,
-  { text, description, first = false }: { text?: string; description?: string; first?: boolean } = {},
+  { description, first = false }: { description?: string; first?: boolean } = {},
 ) {
   const parent = parentKind(parentId)
   if (parent === undefined || !canPlace(kind, parent)) return undefined
@@ -145,11 +145,8 @@ export function createObjectOf(
     id: newId(kind),
     kind,
     name,
-    text,
     description,
     parentId,
-    // Containers take drops into them; the rest never do
-    locked: kind !== 'project' && kind !== 'folder',
   })
   if (firstSibling) moveObject(id, { parentId, beforeId: firstSibling.id })
   return id
@@ -159,27 +156,9 @@ export const createProject = (name: string) => createObjectOf('project', null, n
 
 export const createMap = (projectId: string, name: string) => createObjectOf('map', projectId, name)
 
-export const createNote = (name: string, text?: string) => createObjectOf('note', null, name, { text })!
-
-export const createArticle = (name: string, text?: string) => createObjectOf('article', null, name, { text })!
-
-/** Likes it, or takes the like back */
-export function toggleLike(id: string) {
-  if (!has(id)) return
-  set({
-    objects: getObjects().map((o) => (o.id === id ? { ...o, liked: !o.liked, likes: Math.max(0, o.likes + (o.liked ? -1 : 1)) } : o)),
-  })
-}
-
 export function renameObject(id: string, name: string) {
   if (!has(id)) return
   set({ objects: getObjects().map((o) => (o.id === id ? { ...o, name } : o)) })
-}
-
-/** Changes a note's (or article's) title, text and/or checklist items */
-export function updateNote(id: string, patch: Partial<Pick<MockObject, 'name' | 'text' | 'items'>>) {
-  if (!has(id)) return
-  set({ objects: getObjects().map((o) => (o.id === id ? { ...o, ...patch } : o)) })
 }
 
 /** A copy of the object and everything under it (new ids) right after it; the copy is named "(copy)" */
@@ -319,7 +298,7 @@ const visibleById = (id: string) => {
 /** What notes can be linked to */
 export const isLinkTarget = (kind?: string) => kind === 'project' || kind === 'folder' || kind === 'map' || kind === 'object'
 
-/** Whether a note may be linked to a target: a visible note or article, a visible project, folder, map or object card, not linked yet */
+/** Whether a note may be linked to a target (dormant: notes are on the server now and have no link route, so this is never true) */
 export function canLink(noteId: string, targetId: string) {
   const note = visibleById(noteId)
   const target = visibleById(targetId)

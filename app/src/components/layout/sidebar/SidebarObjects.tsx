@@ -7,11 +7,11 @@ import Divider from '../../ui/Divider'
 import type { TreeNode } from '../../ui/tree/types'
 import TreeView from '../../ui/tree/TreeView'
 
-/** How many notes show before "Show more" */
+/** How many rows show before "Show more" */
 const LIMIT = 5
 
-/** The node id of the Notes header as a drop target: dropped there, an object becomes a note (last) */
-export const NOTES_END = 'notes-end'
+/** The node id of the Objects header as a drop target: dropped there, an object goes to the top level (last) */
+export const OBJECTS_END = 'objects-end'
 
 type Props = {
   nodes: TreeNode[]
@@ -19,30 +19,30 @@ type Props = {
   tree: Omit<ComponentProps<typeof TreeView>, 'nodes' | 'label'>
   compact: boolean
   onCreate: () => void
-  /** The current drag would land on the header (at the end of Notes) */
+  /** The current drag would land on the header (at the end of Objects) */
   dropAtEnd?: boolean
 }
 
-/** The Notes section: objects without a parent or children, the first few, then Show more / less */
-export default function SidebarNotes({ nodes, tree, compact, onCreate, dropAtEnd = false }: Props) {
+/** The Objects section (mock objects without a project: maps and object cards), the first few, then Show more / less. Notes have their own section (ResourceSidebarSection) */
+export default function SidebarObjects({ nodes, tree, compact, onCreate, dropAtEnd = false }: Props) {
   const [showAll, setShowAll] = useState(false)
-  // The header takes drops too (e.g. when there are no notes yet)
-  const { setNodeRef } = useDroppable({ id: `row:${NOTES_END}`, data: { zone: 'row', priority: 2, nodeId: NOTES_END, section: 'notes-end' } })
+  // The header takes drops too (e.g. when there are no objects yet)
+  const { setNodeRef } = useDroppable({ id: `row:${OBJECTS_END}`, data: { zone: 'row', priority: 2, nodeId: OBJECTS_END, section: 'objects-end' } })
   const hidden = nodes.length - LIMIT
   const shown = showAll || hidden <= 0 ? nodes : nodes.slice(0, LIMIT)
 
   return (
-    <section aria-label="Notes">
+    <section aria-label="Objects">
       <div ref={setNodeRef} className={`rounded-(--btn-radius) ${dropAtEnd ? 'bg-drop/16 ring-[1.4px] ring-inset ring-drop/55' : ''}`}>
-        <Divider label="Notes" labelTo="/notes" action={{ icon: LuPlus, label: 'New note', onClick: onCreate }} compact={compact} className="my-(--divider-gap)" />
+        <Divider label="Objects" action={{ icon: LuPlus, label: 'New object', onClick: onCreate }} compact={compact} className="my-(--divider-gap)" />
       </div>
       {nodes.length === 0 ? (
         // Same height as one row, so the rail keeps its layout
         <p className={`h-[calc(var(--pill-py)*2+1.25rem)] px-(--btn-px) text-small leading-[calc(var(--pill-py)*2+1.25rem)] text-fg-subtle ${compact ? 'opacity-0' : ''}`}>
-          No notes yet
+          No objects yet
         </p>
       ) : (
-        <TreeView nodes={shown} label="Notes" {...tree} />
+        <TreeView nodes={shown} label="Objects" {...tree} />
       )}
       {hidden > 0 && (
         <Button

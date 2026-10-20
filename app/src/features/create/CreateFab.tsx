@@ -2,12 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { LuPlus, LuX } from 'react-icons/lu'
 import { usePageInset } from '../../lib/pageInset'
 import { useTimeout } from '../../lib/useTimeout'
-import { KIND_LABEL } from '../../mocks/projects'
 import { useOpenLayout } from '../objects/ListRows'
 import { single } from '../workspace/layout'
 import CreateModal from './CreateModal'
 import { RAISED } from './buttonLook'
-import type { CreateKind } from './place'
 
 /** The modal's shrink-back (its animation, in animations.css) before it's removed (ms) */
 const CLOSE_MS = 200
@@ -20,7 +18,8 @@ const FACE =
   'absolute inset-0 corner-marks flex cursor-pointer items-center justify-center gap-2 rounded-(--corner-xl) text-base font-medium [backface-visibility:hidden] ' +
   `transition-[background-color,box-shadow,translate] ${RAISED} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`
 
-type Made = { id: string; kind: CreateKind; name: string; where: string | null }
+/** What was made: its panel type (to open it), what to call it ("note"), its name, and where it went */
+type Made = { id: string; panelType: string; label: string; name: string; where: string | null }
 
 /**
  * The floating Create button (bottom right of the page area, over the page and its panes, not in them).
@@ -84,13 +83,13 @@ export default function CreateFab() {
             className="absolute end-0 bottom-[calc(100%+0.5rem)] flex w-max max-w-[min(24rem,calc(100vw-2rem))] animate-[labels-in_200ms_ease-out] items-center gap-3 rounded-(--btn-radius) border border-line-strong bg-surface px-3 py-2 text-body shadow-lg"
           >
             <span className="min-w-0 truncate">
-              Created {KIND_LABEL[made.kind].toLowerCase()} <strong className="font-medium">{made.name}</strong>
+              Created {made.label.toLowerCase()} <strong className="font-medium">{made.name}</strong>
               {made.where ? ` in ${made.where}` : ''}
             </span>
             <button
               type="button"
               onClick={() => {
-                openLayout(single({ type: made.kind, id: made.id }))
+                openLayout(single({ type: made.panelType, id: made.id }))
                 setMade(null)
               }}
               className="shrink-0 cursor-pointer font-medium text-highlight underline-offset-2 hover:underline"

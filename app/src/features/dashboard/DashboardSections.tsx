@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 import { findObject, KIND_LABEL, type MockObject, type ObjectKind } from '../../mocks/projects'
 import { createObjectOf, deleteObject, getObjects, renameObject, useLinks, useMockObjects } from '../../mocks/projectsStore'
 import { useTimeout } from '../../lib/useTimeout'
-import NoteModal from '../notes/NoteModal'
+import NoteModal from '../../resources/notes/NoteModal'
+import { resourceByName } from '../../resources/registry'
 import { clearSelected } from '../select/selectStore'
 import { useObjectDrop } from '../drag/objectDrop'
 import { useDragSurface } from '../drag/surfaces'
@@ -13,7 +14,7 @@ import { useObjectActions } from '../objects/useObjectActions'
 import { single } from '../workspace/layout'
 import { useBlockFlip } from './blockFlip'
 import Card from './cards/Cards'
-import { CARD_SIZE, COMMENT_SIZE, cardOf } from './cards/CardShell'
+import { CARD_SIZE, cardOf } from './cards/CardShell'
 import { columnLabel, sectionsBelow, type ColumnId } from './columns'
 import RowHeader from './RowHeader'
 import { describeDrop, rowItems, rowParent, sortCards, type CardSort, type RowId } from './rows'
@@ -21,16 +22,15 @@ import { undoRowDrop, useCardFlip, useRowDrop, type RowTarget, type RowUndo } fr
 import { useRowReorder } from './useRowReorder'
 import { useRowSort } from './useRowSort'
 import { SectionCardLook } from './SectionCard'
+import ResourceSection from './ResourceSection'
 
 /** How long the "Moved to…" note (with Undo) stays (ms) */
 const NOTE_FOR = 6000
 
 type Creatable = Exclude<ObjectKind, 'project'>
-// A project's Create: no notes (they live in the Notes list), Orphans' also no maps (they live in projects);
-// the Notes row creates notes only
-const PROJECT_KINDS: Creatable[] = ['object', 'article', 'map', 'folder']
-const ROOT_KINDS: Creatable[] = ['object', 'article', 'folder']
-const NOTE_KINDS: Creatable[] = ['note']
+// A project's Create: no maps at the top level (Orphans: they live in projects). The Notes row is the server's (ResourceSection)
+const PROJECT_KINDS: Creatable[] = ['object', 'map']
+const ROOT_KINDS: Creatable[] = ['object']
 
 type Props = {
   columns: ColumnId[]
@@ -43,7 +43,7 @@ type Note = { row: RowId; text: string; undo: RowUndo }
  * Under the columns: Orphans (every top-level object that isn't a project), then a row per project,
  * each a strip of cards that scrolls sideways (one shown as a column, ⋯ on a column, isn't here).
  * A row's header renames a project in place, sorts its cards and creates new ones. Cards are dragged
- * to another place in their row, into another row, or into a folder card; a note then says where it
+ * to another place in their row or into another row; a note then says where it
  * went, with Undo.
  */
 export default function DashboardSections({ columns, projects }: Props) {
@@ -88,15 +88,14 @@ export default function DashboardSections({ columns, projects }: Props) {
     shownIds: (row) => shown(row).map((o) => o.id),
     sortOf,
     onDropped: (row, plan, id, undo) => {
-      if (plan.kind !== 'into-folder' && undo.sort) setSort(row, null)
+      if (undo.sort) setSort(row, null)
       // Its place in the row's (now manual) order
       const now = rowItems(
         getObjects().filter((o) => findObject(o.id)),
         row,
       )
       const place = now.findIndex((o) => o.id === id) + 1
-      const folder = plan.kind === 'into-folder' ? findObject(plan.folderId)?.name : undefined
-      setNote({ row, text: describeDrop(plan, { row: rowName(row), folder }, place), undo })
+      setNote({ row, text: describeDrop(plan, { row: rowName(row) }, place), undo })
       noteTimer.set(() => setNote(null), NOTE_FOR)
     },
   })
@@ -119,6 +118,9 @@ export default function DashboardSections({ columns, projects }: Props) {
   return (
     <div ref={rootRef} data-flip-root="sections" className="flex flex-col gap-8">
       {rows.map((row) => {
+        // A resource's row (Notes): its own section, from the server
+        const resource = row === 'notes' ? resourceByName('notes') : undefined
+        if (resource) return <ResourceSection key={row} resource={resource} row="notes" onOpen={setNoteId} />
         const projectId = rowParent(row)
         return (
           <section
@@ -142,9 +144,9 @@ export default function DashboardSections({ columns, projects }: Props) {
               onGripDown={projectId ? reorder.start(projectId) : undefined}
               sort={sortOf(row)}
               onSort={(sort: CardSort | null) => setSort(row, sort)}
-              creatable={row === 'notes' ? NOTE_KINDS : projectId ? PROJECT_KINDS : ROOT_KINDS}
+              creatable={projectId ? PROJECT_KINDS : ROOT_KINDS}
               onCreate={(kind) => create(row, kind)}
-              // Create names what it makes ("+ Note", "+ Article"…) everywhere but Orphans ("Create ▾")
+              // Create names what it makes in a project ("Object +"…), and is "Create ▾" in Orphans
               named={row !== 'orphans'}
             />
             {note?.row === row && (
@@ -163,8 +165,7 @@ export default function DashboardSections({ columns, projects }: Props) {
                 <Card
                   object={o}
                   linkNodeFor={linkNodeFor}
-                  onOpen={() => (o.kind === 'note' ? setNoteId(o.id) : open(single({ type: o.kind, id: o.id })))}
-                  dropActive={rowTarget?.folderId === o.id}
+                  onOpen={() => open(single({ type: o.kind, id: o.id }))}
                   renameOnMount={o.id === created}
                   // A just-created element: Cancel removes it, Create keeps it
                   pending={o.id === created ? { onCancel: () => (deleteObject(o.id), setCreated(null)), onCreate: () => setCreated(null) } : undefined}
@@ -190,7 +191,7 @@ export default function DashboardSections({ columns, projects }: Props) {
 type StripProps = {
   row: RowId
   items: MockObject[]
-  /** Where a drag would land in this row (a gap opens there; a folder lights up instead) */
+  /** Where a drag would land in this row (a gap opens there) */
   target: RowTarget | null
   renderCard: (object: MockObject) => React.ReactNode
 }
@@ -198,10 +199,9 @@ type StripProps = {
 /** A row's cards, sideways: a drop target ('row-card' zone) where a gap opens for what's dragged over it */
 function RowStrip({ row, items, target, renderCard }: StripProps) {
   const stripRef = useRef<HTMLDivElement | null>(null)
-  // The Notes row takes no drops (every note is there already, wherever it is)
-  const { setNodeRef } = useDroppable({ id: `dash-row:${row}`, data: { zone: 'row-card', priority: 2, row }, disabled: row === 'notes' })
-  const size = row === 'notes' ? COMMENT_SIZE : CARD_SIZE
-  const gapAt = target && !target.folderId ? (target.beforeId ? items.findIndex((o) => o.id === target.beforeId) : items.length) : -1
+  const { setNodeRef } = useDroppable({ id: `dash-row:${row}`, data: { zone: 'row-card', priority: 2, row } })
+  const size = CARD_SIZE
+  const gapAt = target ? (target.beforeId ? items.findIndex((o) => o.id === target.beforeId) : items.length) : -1
   const slots: (MockObject | 'gap')[] = [...items]
   if (gapAt >= 0) slots.splice(gapAt, 0, 'gap')
   useCardFlip(stripRef, slots.map((s) => (s === 'gap' ? 'gap' : s.id)).join(','))
@@ -217,7 +217,7 @@ function RowStrip({ row, items, target, renderCard }: StripProps) {
     >
       {slots.length === 0 ? (
         <p className={`${cardOf(size)} items-center justify-center border border-dashed border-line-strong text-body text-fg-subtle shadow-none ring-0`}>
-          {row === 'notes' ? 'No notes yet' : 'Nothing here yet'}
+          Nothing here yet
         </p>
       ) : (
         slots.map((slot) =>

@@ -2,7 +2,7 @@ import { LuMousePointer2, LuWaypoints } from 'react-icons/lu'
 
 type Props = { on: boolean; onToggle: () => void; /** What it edits: "line" or "border" */ what: string }
 
-// The same tabs as the Add note / Add article ones (AddNoteForm): the picked one is half as wide again, the width gliding
+// Two tabs: the picked one is half as wide again, the width gliding
 const TAB =
   'flex basis-0 cursor-pointer items-center justify-center gap-2 rounded-(--btn-radius) border px-2.5 py-1.5 text-body font-medium whitespace-nowrap transition-[flex-grow,background-color,color] duration-200 ' +
   'motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent'

@@ -1,5 +1,5 @@
 import { useEditorState, type Editor } from '@tiptap/react'
-import { LuBold, LuImage, LuItalic, LuList, LuListOrdered, LuStrikethrough, LuUnderline } from 'react-icons/lu'
+import { LuBold, LuImage, LuItalic, LuList, LuListChecks, LuListOrdered, LuStrikethrough, LuUnderline } from 'react-icons/lu'
 import IconButton from '../buttons/IconButton'
 import type { PlainIcon } from '../icons/IconSlot'
 
@@ -12,6 +12,7 @@ const FORMATS: Format[] = [
   { label: 'Strikethrough', icon: LuStrikethrough, mark: 'strike', run: (e) => e.chain().focus().toggleStrike().run() },
   { label: 'Bulleted list', icon: LuList, mark: 'bulletList', run: (e) => e.chain().focus().toggleBulletList().run() },
   { label: 'Numbered list', icon: LuListOrdered, mark: 'orderedList', run: (e) => e.chain().focus().toggleOrderedList().run() },
+  { label: 'Checklist', icon: LuListChecks, mark: 'taskList', run: (e) => e.chain().focus().toggleTaskList().run() },
 ]
 
 /** The sizes offered (px); '' is the editor's own size */

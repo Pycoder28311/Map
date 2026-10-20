@@ -1,23 +1,12 @@
 import type { Editor } from '@tiptap/react'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { LuChevronDown, LuFileText, LuStickyNote } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import RichTextToolbar from '../../components/ui/editors/RichTextToolbar'
 import RichTextField from '../../components/ui/fields/RichTextField'
 import PixelSprite from '../../components/ui/pixelart/PixelSprite'
-import ExtendMenu, { type ExtendMenuItem } from '../../components/ui/overlays/ExtendMenu'
-import { createArticle, createNote } from '../../mocks/projectsStore'
+import { useResourceActions } from '../../lib/resource/hooks'
+import { notesResource } from '../../resources/notes/notes.resource'
 import { isFirstLine } from './editorKeys'
-
-type Kind = 'note' | 'article'
-
-const KINDS: ExtendMenuItem<Kind>[] = [
-  { value: 'note', label: 'Note', icon: LuStickyNote },
-  { value: 'article', label: 'Article', icon: LuFileText },
-]
-
-// The last chosen kind, kept for the session (not across reloads)
-let lastKind: Kind = 'note'
 
 // Full class strings so Tailwind can detect them at build time.
 const ANIMATE = 'duration-200 ease-out motion-reduce:transition-none'
@@ -25,9 +14,6 @@ const ANIMATE = 'duration-200 ease-out motion-reduce:transition-none'
 const GROW = `grid transition-[grid-template-rows,opacity] ${ANIMATE}`
 // Starts once the bottom part has grown (its duration, in ANIMATE)
 const AFTER_GROW = 'delay-200'
-// The kind button (a sidebar row tall, 36px) and Create: the same distance from the top or bottom and from the right
-// edge (px), which centres them in the 44px text row and bottom part
-const KIND_INSET = 4
 const FIELD = 'w-full resize-none bg-transparent px-4 text-fg outline-none placeholder:text-fg-subtle'
 
 /**
@@ -36,15 +22,14 @@ const FIELD = 'w-full resize-none bg-transparent px-4 text-fg outline-none place
  * exactly where it was: the card grows upward (title) and downward (Create) over the page, which
  * keeps the folded card's place, so nothing around it moves. ArrowUp on the
  * text's first line moves to the title; the title grows to heading size while focused or filled.
- * The dropdown on the right chooses Note or Article; opening, it moves down to the bottom part and
- * Create slides in on its right. Create (or Ctrl/⌘+Enter) adds it at the sidebar's top level. A click outside or Esc folds it back, keeping the draft.
+ * Opening, Create slides in at the bottom right, with the format buttons on the left. Create (or Ctrl/⌘+Enter) makes the note
+ * on the server (and says so if it could not); a click outside or Esc folds the card back, keeping the draft.
  */
 export default function QuickCreate() {
   const rootRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLInputElement>(null)
   const editorRef = useRef<Editor | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
-  const createRef = useRef<HTMLDivElement>(null)
   const titleBoxRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
@@ -52,13 +37,13 @@ export default function QuickCreate() {
   const [text, setText] = useState('')
   const [drafts, setDrafts] = useState(0)
   const [editor, setEditor] = useState<Editor | null>(null)
-  const [kind, setKind] = useState<Kind>(lastKind)
+  const { create: createNote } = useResourceActions(notesResource)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [titleFocused, setTitleFocused] = useState(false)
-  // The folded card's height (the place it keeps in the page), the title's (how far the card moves
-  // up) and Create's width (how far it pushes the kind button)
-  const [size, setSize] = useState({ folded: 0, title: 0, create: 0 })
+  // The folded card's height (the place it keeps in the page) and the title's (how far the card moves up)
+  const [size, setSize] = useState({ folded: 0, title: 0 })
 
-  const KindIcon = KINDS.find((k) => k.value === kind)?.icon
   const canCreate = title.trim() !== '' || text !== ''
   const bigTitle = titleFocused || title !== ''
 
@@ -77,7 +62,6 @@ export default function QuickCreate() {
     setSize({
       folded: cardRef.current?.offsetHeight ?? 0,
       title: titleBoxRef.current?.scrollHeight ?? 0,
-      create: createRef.current?.offsetWidth ?? 0,
     })
   }, [])
 
@@ -87,27 +71,28 @@ export default function QuickCreate() {
     if (active instanceof HTMLElement && rootRef.current?.contains(active)) active.blur()
   }
 
-  const create = () => {
-    if (!canCreate) return
-    const name = title.trim() || 'Untitled'
-    const body = text || undefined
-    if (kind === 'article') createArticle(name, body)
-    else createNote(name, body)
-    setTitle('')
-    setText('')
-    setDrafts((n) => n + 1)
-    fold()
-  }
-
-  const chooseKind = (next: Kind) => {
-    lastKind = next
-    setKind(next)
+  const create = async () => {
+    if (!canCreate || busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      await createNote({ title: title.trim(), content: text })
+      setTitle('')
+      setText('')
+      setDrafts((n) => n + 1)
+      fold()
+    } catch (e) {
+      // The draft stays, so nothing typed is lost
+      setError(e instanceof Error ? e.message : 'Could not create the note.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault()
-      create()
+      void create()
     } else if (e.key === 'Escape' && !rootRef.current?.querySelector(':popover-open, [aria-haspopup="menu"][aria-expanded="true"]')) {
       // (Esc in an open menu only closes the menu)
       fold()
@@ -153,7 +138,7 @@ export default function QuickCreate() {
         style={open ? { boxShadow: 'var(--lift-shadow)', transform: `translateY(${-size.title}px)` } : undefined}
         // overflow-hidden: Create slides in from beyond the right edge
       className={`absolute inset-x-0 top-0 flex flex-col rounded-(--card-radius) border border-line bg-surface transition-[box-shadow,transform] ${ANIMATE} ${
-        // Open: clips Create sliding in from the right. Folded: nothing, so the kind button can extend below the card
+        // Open: clips Create sliding in from the right. Folded: nothing
         open ? 'overflow-hidden' : ''
       }`}
       >
@@ -176,13 +161,13 @@ export default function QuickCreate() {
           </div>
         </div>
 
-        {/* A faint pixel-art papyrus floating in the card's background, left of the kind button. Opening, it
+        {/* A faint pixel-art papyrus floating in the card's background, at its right. Opening, it
             unrolls downward: the ribbon comes off, and the sheet with its bottom roll drops out from under the
             top roll. It keeps the text row's place while the card grows upward (same timing as the card's move) */}
         <div
           aria-hidden
           style={{ top: open ? 8 + size.title : 8 }}
-          className={`pointer-events-none absolute end-32 h-[78px] w-[54px] opacity-25 transition-[top] ${ANIMATE}`}
+          className={`pointer-events-none absolute end-6 h-[78px] w-[54px] opacity-25 transition-[top] ${ANIMATE}`}
         >
           <div className="size-full motion-reduce:animate-none animate-float">
             {/* The sheet and the bottom roll: out of sight above while rolled, clipped by this box */}
@@ -203,23 +188,29 @@ export default function QuickCreate() {
           </div>
         </div>
 
-        {/* Folded, the text shows its first line only (room on the right for the kind button); open, it grows with its lines */}
+        {/* Folded, the text shows its first line only ; open, it grows with its lines */}
         <div className={`${FIELD} py-3 text-body`}>
-          <div className={`min-h-[1lh] ${open ? 'max-h-[50vh] overflow-y-auto' : 'max-h-[1lh] overflow-hidden pe-28'}`}>
+          <div className={`min-h-[1lh] ${open ? 'max-h-[50vh] overflow-y-auto' : 'max-h-[1lh] overflow-hidden'}`}>
             <RichTextField
               key={drafts}
               value={text}
               onChange={setText}
               onEditor={onEditor}
               onKeyDown={onTextKeyDown}
-              placeholder={kind === 'article' ? 'Write an article…' : 'Take a note…'}
+              placeholder="Take a note…"
               label="Text"
               minHeight="min-h-0"
             />
           </div>
         </div>
 
-        {/* The bottom part, growing below (Create and the kind button lie over it) */}
+        {open && error && (
+          <p role="alert" className="px-4 pb-1 text-small text-danger">
+            {error}
+          </p>
+        )}
+
+        {/* The bottom part, growing below (Create lies over it) */}
         <div className={`${GROW} ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
           <div className="min-h-0 overflow-hidden">
             <div className="h-11" />
@@ -231,28 +222,14 @@ export default function QuickCreate() {
           <RichTextToolbar editor={editor} only={['bold', 'italic', 'size']} />
         </div>
 
-        {/* The kind button. Folded: in the text's row. Opening: held to the card's bottom, it goes down with
-            the bottom part; then Create slides in from the right and pushes it left. Folding: back at once */}
         <div
-          style={open ? { bottom: KIND_INSET, right: KIND_INSET + size.create + KIND_INSET } : { top: KIND_INSET, right: KIND_INSET }}
-          className={`absolute ${open ? `transition-[right] ${ANIMATE} ${AFTER_GROW}` : ''}`}
-        >
-          {/* It extends (ExtendMenu): down from the text's row while folded, up from the bottom part while open */}
-          <ExtendMenu variant="ghost" direction={open ? 'up' : 'down'} label="Kind" items={KINDS} value={kind} onSelect={chooseKind}>
-            {KindIcon && <KindIcon className="size-4 shrink-0 text-fg-subtle" />}
-            {KINDS.find((k) => k.value === kind)?.label}
-            <LuChevronDown aria-hidden className="size-4 shrink-0" />
-          </ExtendMenu>
-        </div>
-        <div
-          ref={createRef}
           inert={!open}
           className={`absolute right-1 bottom-1 ${
             open ? `translate-x-0 opacity-100 transition-[translate,opacity] ${ANIMATE} ${AFTER_GROW}` : 'translate-x-[calc(100%+1rem)] opacity-0'
           }`}
         >
-          <Button onClick={create} disabled={!canCreate} title="Create (Ctrl+Enter)">
-            Create
+          <Button onClick={() => void create()} disabled={!canCreate || busy} title="Create (Ctrl+Enter)">
+            {busy ? 'Creating…' : 'Create'}
           </Button>
         </div>
       </div>

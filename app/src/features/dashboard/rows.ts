@@ -2,24 +2,23 @@
 // a dropped card goes, and what the undo note says. Pure (rows.test.ts).
 import { canPlace, type MockObject } from '../../mocks/projects'
 
-/** A row: Notes (every note), Orphans (the top level, projects and notes aside) or a project's */
+/** A row: Notes (the server's notes: ResourceSection), Orphans (the top-level objects, projects aside) or a project's */
 export type RowId = 'notes' | 'orphans' | `project:${string}`
 
-export type CardSort = 'newest' | 'oldest' | 'liked'
-export const SORT_LABEL: Record<CardSort, string> = { newest: 'Newest', oldest: 'Oldest', liked: 'Most liked' }
+export type CardSort = 'newest' | 'oldest'
+export const SORT_LABEL: Record<CardSort, string> = { newest: 'Newest', oldest: 'Oldest' }
 
 /** The parent a row's cards have (null: the top level; Notes, new ones too) */
 export const rowParent = (row: RowId): string | null => (row === 'orphans' || row === 'notes' ? null : row.slice('project:'.length))
 
 /**
- * A row's cards in manual order (the sidebar's). Notes: every note, wherever it is. The others: the
- * parent's direct children, never projects and never notes (those live in the Notes row or column).
- * `objects`: the visible ones
+ * A row's cards in manual order (the sidebar's): the parent's direct children, never projects. The Notes row has none here: its
+ * notes come from the server. `objects`: the visible ones
  */
 export function rowItems(objects: MockObject[], row: RowId): MockObject[] {
-  if (row === 'notes') return objects.filter((o) => o.kind === 'note')
+  if (row === 'notes') return []
   const parent = rowParent(row)
-  return objects.filter((o) => o.parentId === parent && o.kind !== 'project' && o.kind !== 'note')
+  return objects.filter((o) => o.parentId === parent && o.kind !== 'project')
 }
 
 /** Sorted (a copy), or as they are without a sort. Ties: by name */
@@ -29,30 +28,23 @@ export function sortCards(items: MockObject[], sort: CardSort | null): MockObjec
   const compare = {
     newest: (a: MockObject, b: MockObject) => b.createdAt - a.createdAt || byName(a, b),
     oldest: (a: MockObject, b: MockObject) => a.createdAt - b.createdAt || byName(a, b),
-    liked: (a: MockObject, b: MockObject) => b.likes - a.likes || byName(a, b),
   }[sort]
   return [...items].sort(compare)
 }
 
-/** Where a dropped card goes: before `beforeId` in a row (null: last), or into a folder card */
-export type DropTarget = { row: RowId; beforeId: string | null } | { folderId: string }
+/** Where a dropped card goes: before `beforeId` in a row (null: last) */
+export type DropTarget = { row: RowId; beforeId: string | null }
 
 export type DropPlan =
   /** Same row, another place */
   | { kind: 'reorder'; parentId: string | null; beforeId: string | null }
   /** Another row */
   | { kind: 'move'; parentId: string | null; beforeId: string | null }
-  /** Into a folder (articles only) */
-  | { kind: 'into-folder'; folderId: string }
 
 /** What dropping `dragged` on `target` does, or null when it may not go there (canPlace) or nothing changes */
 export function dropPlan(dragged: MockObject, target: DropTarget): DropPlan | null {
-  // Notes move in the sidebar or the Notes list, not between these rows; and nothing lands in the Notes row
-  if (dragged.kind === 'project' || dragged.kind === 'note') return null
-  if ('folderId' in target) {
-    if (target.folderId === dragged.id || dragged.parentId === target.folderId || !canPlace(dragged.kind, 'folder')) return null
-    return { kind: 'into-folder', folderId: target.folderId }
-  }
+  // Nothing lands in the Notes row (it shows the server's notes)
+  if (dragged.kind === 'project') return null
   if (target.row === 'notes') return null
   const parentId = rowParent(target.row)
   if (!canPlace(dragged.kind, parentId === null ? null : 'project')) return null
@@ -68,14 +60,12 @@ export function ordinal(n: number) {
 }
 
 /** The undo note's text after a drop: `place` is the card's new place (1-based) in its row */
-export function describeDrop(plan: DropPlan, names: { row: string; folder?: string }, place: number) {
+export function describeDrop(plan: DropPlan, names: { row: string }, place: number) {
   switch (plan.kind) {
     case 'reorder':
       return `Moved to ${ordinal(place)} in manual order`
     case 'move':
       return `Moved to ${names.row}`
-    case 'into-folder':
-      return `Put in ${names.folder ?? 'the folder'}`
   }
 }
 

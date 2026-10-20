@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { LuArchive, LuColumns2, LuCopy, LuFolderInput, LuPencil, LuPin, LuPinOff, LuStickyNote, LuTrash2, LuUnlink } from 'react-icons/lu'
+import { LuArchive, LuColumns2, LuCopy, LuFolderInput, LuPencil, LuPin, LuPinOff, LuTrash2, LuUnlink } from 'react-icons/lu'
 import { archiveWithEffect } from '../../components/layout/sidebar/sidebarDropState'
 import type { TreeMenuGroup } from '../../components/ui/tree/types'
-import { canLink, createNote, duplicateObject, isLinkTarget, linkNote, togglePin, usePins } from '../../mocks/projectsStore'
+import { duplicateObject, togglePin, usePins } from '../../mocks/projectsStore'
 import type { SidebarItem } from '../../mocks/sidebarTree'
 import type { PanelRef } from '../workspace/types'
 import { useWorkspace } from '../workspace/useWorkspace'
@@ -19,7 +19,7 @@ type MenuOptions = {
 
 /**
  * An object's actions, the same wherever it's shown (a sidebar row, a Dashboard card): the groups of
- * its ⋯ menu (Rename, Pin, Duplicate, Move to, Add note, Add in screen, Archive, Delete) and the
+ * its ⋯ menu (Rename, Pin, Duplicate, Move to, Add in screen, Archive, Delete) and the
  * dialogs they open (render `dialogs` once where the menus are).
  */
 export function useObjectActions() {
@@ -40,19 +40,6 @@ export function useObjectActions() {
         { label: 'Duplicate', icon: LuCopy, onClick: () => duplicateObject(item.id) },
         // Projects stay top level: reordered by dragging, never moved into another
         ...(item.kind !== 'project' ? [{ label: 'Move to', icon: LuFolderInput, onClick: () => setDialog({ kind: 'move', item }) }] : []),
-        // A new note, linked to it (only what notes can link to)
-        ...(isLinkTarget(item.kind)
-          ? [
-              {
-                label: 'Add note',
-                icon: LuStickyNote,
-                onClick: () => {
-                  const note = createNote(`Note on ${item.name}`)
-                  if (canLink(note, item.id)) linkNote(note, item.id)
-                },
-              },
-            ]
-          : []),
         // Open it as a panel next to what's on screen
         ...(panel ? [{ label: 'Add in screen', icon: LuColumns2, onClick: () => workspace.open(panel) }] : []),
         // Into the trash (restorable): it falls into the bin

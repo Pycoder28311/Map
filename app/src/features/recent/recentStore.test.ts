@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addRecent, entryForLayout, entryForSavedLayout, MAX_RECENT, type RecentEntry } from './recentStore'
+import { addRecent, entryForLayout, entryForSavedLayout, MAX_RECENT, withoutRecent, type RecentEntry } from './recentStore'
 
 describe('entryForLayout', () => {
   it('keys one panel by itself and a combination by its URL', () => {
@@ -40,5 +40,16 @@ describe('addRecent', () => {
 
   it('keys saved layouts by their id', () => {
     expect(entryForSavedLayout('l1', 3)).toEqual({ key: 'layout:l1', kind: 'layout', layoutId: 'l1', at: 3 })
+  })
+})
+
+describe('withoutRecent', () => {
+  const entry = (key: string): RecentEntry => ({ key, kind: 'panels', template: '1', panels: [key], at: 1 })
+  it('drops the entry of that key and keeps the rest in order', () => {
+    expect(withoutRecent([entry('note:5'), entry('map:m1'), entry('note:6')], 'map:m1').map((e) => e.key)).toEqual(['note:5', 'note:6'])
+  })
+  it('changes nothing for a key that is not there', () => {
+    const list = [entry('note:5')]
+    expect(withoutRecent(list, 'note:9')).toEqual(list)
   })
 })

@@ -108,3 +108,42 @@ describe('sanitizeRichText', () => {
     })
   })
 })
+
+describe('sanitizeRichText: the checklist', () => {
+  // Tiptap's TaskList / TaskItem output (@tiptap/extension-list), one open and one ticked item
+  const checklist =
+    '<ul data-type="taskList">' +
+    '<li data-type="taskItem" data-checked="false"><label><input type="checkbox"><span></span></label><div><p>Bread</p></div></li>' +
+    '<li data-type="taskItem" data-checked="true"><label><input type="checkbox" checked="checked"><span></span></label><div><p>Milk</p></div></li>' +
+    '</ul>'
+
+  it('keeps what the editor writes', () => {
+    expect(sanitizeRichText(checklist)).toBe(checklist)
+  })
+
+  it('normalizes data-checked and drops other attributes of the pieces', () => {
+    const dirty =
+      '<ul data-type="taskList" onclick="x()" class="y"><li data-type="taskItem" data-checked="maybe" id="z"><label for="q"><input type="checkbox" checked name="n" onfocus="x()"><span class="s"></span></label><div class="d"><p>Item</p></div></li></ul>'
+    expect(sanitizeRichText(dirty)).toBe(
+      '<ul data-type="taskList"><li data-type="taskItem" data-checked="false"><label><input type="checkbox" checked="checked"><span></span></label><div><p>Item</p></div></li></ul>',
+    )
+  })
+
+  it('drops label, input and div outside a checklist item', () => {
+    expect(sanitizeRichText('<p>a</p><label>l<input type="checkbox"></label><div>d</div><input type="text" value="x">')).toBe('<p>a</p>ld')
+  })
+
+  it('does not take another input type, even in its place', () => {
+    const html = '<ul data-type="taskList"><li data-type="taskItem" data-checked="false"><label><input type="text" value="x"><span></span></label><div><p>t</p></div></li></ul>'
+    expect(sanitizeRichText(html)).not.toContain('<input type="text"')
+    expect(sanitizeRichText(html)).not.toContain('value=')
+  })
+
+  it('does not take a task item outside a task list', () => {
+    expect(sanitizeRichText('<ul><li data-type="taskItem" data-checked="true"><label><input type="checkbox"></label><div><p>t</p></div></li></ul>')).toBe('<ul><li><p>t</p></li></ul>')
+  })
+
+  it('keeps nothing of the markup that is not the checklist: any other data-type goes', () => {
+    expect(sanitizeRichText('<ul data-type="evil"><li data-type="x">a</li></ul>')).toBe('<ul><li>a</li></ul>')
+  })
+})

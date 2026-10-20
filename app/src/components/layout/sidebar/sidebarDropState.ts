@@ -9,6 +9,8 @@ import { dragPoint } from '../../../lib/dnd'
 import { archiveLayout } from '../../../mocks/layoutsStore'
 import { canPlace } from '../../../mocks/projects'
 import { archiveObject, getObjects, getPins, moveObject, reorderPinned } from '../../../mocks/projectsStore'
+import { notifyChanged } from '../../../lib/resource/changes'
+import { resourceByPanelType } from '../../../resources/registry'
 import { dropIconOf, fallInto } from '../../ui/drop/fallInto'
 import { snapshotRows } from '../../ui/tree/rowFlip'
 import { swallow } from '../../ui/tree/swallow'
@@ -68,7 +70,7 @@ export const rowZone: ZoneHandler = {
     // A container that may hold it (e.g. a folder only takes articles): a middle band for "into"
     const container = objects.find((o) => o.id === row.objectId)
     const canInto = !!row.folder && !!dragged && !!container && canPlace(dragged.kind, container.kind)
-    const position = row.section === 'notes-end' ? 'after' : rowDropPosition(point.y, e.over.rect, canInto)
+    const position = row.section === 'objects-end' ? 'after' : rowDropPosition(point.y, e.over.rect, canInto)
     const action = resolveDrop(objects, getPins(), item.objectId, row, position)
     return action ? { key: `${row.nodeId}:${position}`, nodeId: row.nodeId, position, action } : null
   },
@@ -99,6 +101,17 @@ export const trashZone: ZoneHandler = {
       return archiveLayout(layoutId)
     }
     const object = objectOf(data)
-    if (object?.objectId) archiveWithEffect(object.objectId, float, true)
+    if (!object?.objectId) return
+    // A resource's item (a note) is archived on the server
+    const resource = resourceByPanelType(object.kind)
+    if (resource) {
+      fallInto(float, TRASH_ID, { lifted: true })
+      resource.api
+        .update(object.objectId, { archived: true })
+        .then((item) => notifyChanged({ name: resource.name, item }))
+        .catch((error) => console.error(`Could not move the ${resource.ui.label.toLowerCase()} to the Trash`, error))
+      return
+    }
+    archiveWithEffect(object.objectId, float, true)
   },
 }

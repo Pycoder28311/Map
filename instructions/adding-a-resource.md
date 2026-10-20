@@ -281,6 +281,25 @@ toJson: { ..., ...pickOrder(row, postsConfig.order) }               // the outpu
 Change a flag, run `npx drizzle-kit generate`, review the SQL, apply it: the columns, index, contract, output and query all follow
 (`lib/sort.ts`, `shared/src/order.ts`). Moving a row: `positionBetween(before, after)` so only that row is written.
 
+## The frontend part: show the table in the app
+
+The app has one place where a table is described for its screens: `app/src/resources/`. Add the table there and the sidebar section,
+the list page, the panel, the Dashboard column and row, the Trash, the navbar search and Recent show it (each `surfaces` flag turns one
+on). The notes are the example: `resources/notes/notes.resource.ts`.
+
+| Step | File |
+|---|---|
+| 1. The calls and the names: `createResourceApi<Post, PostListItem, PostInput, PostUpdate, PostFilter>('/api/posts')`, labels, icon, `ui.fields` (each `name` is checked against the contract's `Post`), `ui.row` (title, subtitle, pinned), `surfaces` | `app/src/resources/posts/posts.resource.ts` (new) |
+| 2. List it | `app/src/resources/registry.ts`: one line in `RESOURCES` |
+| 3. The panel, if `surfaces.panel` | `app/src/resources/posts/PostPanel.tsx` (loaded by `loadPanel`); `panels.ts` already spreads `resourcePanels()` |
+| 4. A list page, if `surfaces.page` | a page that renders `<ResourcePage resource={…}/>` and a route/panel entry for it |
+
+Adding a field to a table: the contract (see above), then one entry in `ui.fields` (`widget: 'text' | 'richText'`; a new kind of
+field is one entry in `FIELD_WIDGETS`, `components/ui/resource/FieldRenderer.tsx`). The data goes through hooks that keep no cache
+(`lib/resource/hooks.ts`): `useResourceList` (always asks for `archived=false` unless `trashed: true`: only the Trash does),
+`useResourceItem`, `useResourceActions`. A write tells every list and item on screen (`changes.ts`). Editing saves through
+`useAutosave` (5 s idle, 30 s at most, at once when the page is hidden, a draft in localStorage until the server has it).
+
 ## Relationships
 
 ### One-to-many (e.g. a project has many maps)

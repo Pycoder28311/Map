@@ -4,6 +4,7 @@ import { authClient } from '../../lib/auth-client'
 import { fromSaved, selectLayout, useLayoutsState } from '../../mocks/layoutsStore'
 import { findObject } from '../../mocks/projects'
 import { useMockObjects } from '../../mocks/projectsStore'
+import { resourceByPanelType } from '../../resources/registry'
 import { useLinkNode } from '../links/linkNode'
 import { LinkRow, ObjectListRow, Rows, useOpenLayout } from '../objects/ListRows'
 import { parsePanelKey, single, type WorkspaceLayout } from '../workspace/layout'
@@ -11,6 +12,7 @@ import { usePanelRegistry } from '../workspace/registryContext'
 import { setSplit } from '../workspace/split'
 import type { PanelRef } from '../workspace/types'
 import { useWorkspace } from '../workspace/useWorkspace'
+import ResourceRecentRow from './ResourceRecentRow'
 import { useRecent, type RecentEntry } from './recentStore'
 
 type Props = {
@@ -43,7 +45,8 @@ export default function RecentList({ limit, allHref, afterOpen, place }: Props) 
     afterOpen?.()
   }
 
-  const exists = (panel: PanelRef) => panel.type in registry && (!panel.id || findObject(panel.id) !== undefined)
+  // A resource's item (a note) is checked when its row loads: a gone one removes its entry (ResourceRecentRow)
+  const exists = (panel: PanelRef) => panel.type in registry && (!panel.id || resourceByPanelType(panel.type) !== undefined || findObject(panel.id) !== undefined)
   const title = (panel: PanelRef) => registry[panel.type]?.title(panel.id) ?? 'Missing'
 
   const rowOf = (entry: RecentEntry): ReactNode => {
@@ -70,6 +73,10 @@ export default function RecentList({ limit, allHref, afterOpen, place }: Props) 
     if (panels.length === 0) return null
     if (panels.length === 1) {
       const panel = panels[0]
+      const resource = resourceByPanelType(panel.type)
+      if (resource && panel.id) {
+        return <ResourceRecentRow resource={resource} id={panel.id} entryKey={entry.key} userId={session?.user.id} place={place} open={openLayout} afterOpen={afterOpen} />
+      }
       const object = panel.id ? findObject(panel.id) : undefined
       if (object) return <ObjectListRow object={object} place={place} linkNodeFor={linkNodeFor} open={openLayout} afterOpen={afterOpen} />
       const Icon = registry[panel.type].icon

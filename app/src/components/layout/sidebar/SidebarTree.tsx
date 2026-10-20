@@ -6,23 +6,28 @@ import { useLinkPick } from '../../../features/links/linkPick'
 import PanelDragLink from '../../../features/workspace/PanelDragLink'
 import { useWorkspace } from '../../../features/workspace/useWorkspace'
 import { useObjectActions } from '../../../features/objects/useObjectActions'
+import ResourceCreateDialog from '../../ui/resource/ResourceCreateDialog'
+import { resourcesWith } from '../../../resources/registry'
+import type { AnyResource } from '../../../resources/types'
 import { isNoteLike } from '../../../mocks/projects'
 import { isLinkTarget, renameObject, useLinks, useMockObjects, usePins } from '../../../mocks/projectsStore'
 import { buildSidebarSections, DASHBOARD_NODE, type SidebarItem } from '../../../mocks/sidebarTree'
-import { NOTES_END } from './SidebarNotes'
+import { OBJECTS_END } from './SidebarObjects'
 import Divider from '../../ui/Divider'
 import { useRowFlip } from '../../ui/tree/rowFlip'
 import { useLids } from '../../ui/tree/swallow'
 import type { TreeDnd, TreeMenuGroup, TreeNode, TreeRightIcon } from '../../ui/tree/types'
 import TreeView from '../../ui/tree/TreeView'
 import { useSidebarDrop } from './sidebarDropState'
-import SidebarNotes from './SidebarNotes'
+import SidebarObjects from './SidebarObjects'
+import ResourceSidebarSection from './ResourceSidebarSection'
 import type { RowDropData } from './treeDrop'
 
 const DIVIDER = 'my-(--divider-gap)'
 
 /**
- * The sidebar's content, in sections (top to bottom): Layouts, Pinned, Dashboard, Projects, Notes.
+ * The sidebar's content, in sections (top to bottom): Layouts, Pinned, Dashboard, Projects, then one section per resource
+ * (Notes: from the server) and Objects (mock objects without a project).
  * Objects can be created (+), renamed in place (menu or double-click on the name), pinned,
  * duplicated, moved and deleted. Rows open on screen stay visible under their collapsed parent.
  */
@@ -30,7 +35,7 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
     const objects = useMockObjects()
     const pins = usePins()
     const links = useLinks()
-    const { pinned, projects, notes, items } = useMemo(() => buildSidebarSections(objects, pins, links), [objects, pins, links])
+    const { pinned, projects, objects: objectRows, items } = useMemo(() => buildSidebarSections(objects, pins, links), [objects, pins, links])
     const linkNodeFor = useLinkNode()
     const picking = useLinkPick() !== null
     const workspace = useWorkspace()
@@ -41,6 +46,8 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
     const actions = useObjectActions()
     // The row whose name is being edited in place (one for all sections)
     const [editingId, setEditingId] = useState<string | null>(null)
+    // The resource whose "New …" dialog is open
+    const [creating, setCreating] = useState<AnyResource | null>(null)
 
     // Actions of an object: groups of the ⋯ menu, a line between them (shared with the Dashboard's cards)
     const menuOf = (node: TreeNode, item: SidebarItem): TreeMenuGroup[] =>
@@ -84,7 +91,7 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
                 return { zone: 'row', priority: 2, nodeId: node.id, section, overviewOf: node.panel.id }
             }
             if (!item) return undefined
-            return { zone: 'row', priority: 2, nodeId: node.id, section, objectId: item.id, folder: (item.kind === 'project' || item.kind === 'folder') && !node.locked }
+            return { zone: 'row', priority: 2, nodeId: node.id, section, objectId: item.id, folder: item.kind === 'project' }
         },
         // Rows that aren't links (projects) drag themselves
         dragData: (node) => {
@@ -145,15 +152,20 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
                 <TreeView nodes={projects} label="Projects" {...tree} dnd={dndFor('projects')} />
             </section>
 
-            <SidebarNotes
-                nodes={notes}
-                tree={{ ...tree, dnd: dndFor('notes') }}
-                dropAtEnd={drop.target?.kind === 'row' && drop.target.nodeId === NOTES_END}
+            {resourcesWith('sidebar').map((resource) => (
+                <ResourceSidebarSection key={resource.name} resource={resource} tree={tree} compact={compact} onCreate={() => setCreating(resource)} />
+            ))}
+
+            <SidebarObjects
+                nodes={objectRows}
+                tree={{ ...tree, dnd: dndFor('objects') }}
+                dropAtEnd={drop.target?.kind === 'row' && drop.target.nodeId === OBJECTS_END}
                 compact={compact}
-                onCreate={() => actions.openDialog({ kind: 'create', parent: { kind: 'notes' } })}
+                onCreate={() => actions.openDialog({ kind: 'create', parent: { kind: 'objects' } })}
             />
 
             {actions.dialogs}
+            {creating && <ResourceCreateDialog resource={creating} onClose={() => setCreating(null)} />}
         </>
     )
 }

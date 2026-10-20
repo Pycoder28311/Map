@@ -50,3 +50,12 @@ describe('previewOf', () => {
     expect(Date.now() - start).toBeLessThan(50)
   })
 })
+
+describe('previewOf: a checklist', () => {
+  it('is the words of the items, without the checkboxes', () => {
+    const html =
+      '<ul data-type="taskList"><li data-type="taskItem" data-checked="false"><label><input type="checkbox"><span></span></label><div><p>Bread</p></div></li>' +
+      '<li data-type="taskItem" data-checked="true"><label><input type="checkbox" checked="checked"><span></span></label><div><p>Milk</p></div></li></ul>'
+    expect(previewOf(html)).toBe('Bread Milk')
+  })
+})

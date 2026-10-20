@@ -24,7 +24,7 @@ type Props = ObjectFrameContext & {
 export default function LineSidebar({ object, apply, pointTool = false, onPointTool, ...context }: Props) {
   const section = { style: object.style, onChange: (style: typeof object.style, commit: boolean) => apply(lineStylePatch(object, style), commit) }
   return (
-    <ObjectFrame object={object} header={null} footerAction={null} {...context}>
+    <ObjectFrame object={object} header={null} {...context}>
       <div className="flex flex-col gap-3">
         {onPointTool && (
           <div className="flex flex-col gap-2">

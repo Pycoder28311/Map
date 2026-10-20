@@ -38,12 +38,12 @@ with a page of its own (e.g. the dashboard) uses that page's URL instead.
 ### 1. Register the kind of panel once, in `app/src/panels.ts`
 
 ```ts
-note: {
-  title: (id) => findNote(id)?.title ?? 'Note',
-  icon: LuStickyNote,
-  component: lazy(() => import('./features/notes/NotePanel')),  // gets { id }
+object: {
+  title: (id) => findObject(id)?.name ?? 'Object',
+  icon: LuBox,
+  component: lazy(() => import('./features/objects/ObjectPanel')),  // gets { id }
   draggable: true,            // may be combined with other panels
-  // route: (id) => `/notes/${id}`, matchRoute: '/notes/:id',   // only if it also has its own page
+  // route: (id) => `/objects/${id}`, matchRoute: '/objects/:id',   // only if it also has its own page
 },
 ```
 
@@ -56,8 +56,11 @@ note: {
 ### 2. Put the button next to the element, anywhere
 
 ```tsx
-<OpenAsPanelButton panel={{ type: 'note', id: note.id }} />
+<OpenAsPanelButton panel={{ type: 'object', id: object.id }} />
 ```
+
+(A table that comes from the server, like the notes, is registered as a panel by its resource instead:
+`app/src/resources/registry.ts` → `resourcePanels()`, see `adding-a-resource.md`.)
 
 That's all: clicking it opens the panel beside the current page (or alone if they can't be
 combined). It's disabled when the panel is already open or 4 are open.
@@ -65,11 +68,12 @@ combined). It's disabled when the panel is already open or 4 are open.
 ## Sidebar items (drag & drop)
 
 A tree leaf becomes draggable with `panel` + `draggable`. The sidebar's nodes are built from the mock
-objects by `buildSidebarSections()` (`app/src/mocks/sidebarTree.ts`, later from backend data); an
-object's `draggable` / `locked` fields become the node's:
+objects by `buildSidebarSections()` (`app/src/mocks/sidebarTree.ts`); every object can be picked up and only a project takes a drop
+into it, so the node's `draggable` / `locked` come from the object's kind. A resource's items (the notes) have their own section
+(`ResourceSidebarSection`), built from the server's list:
 
 ```ts
-{ id: 'note-n1', label: 'Shopping list', icon: LuStickyNote, panel: { type: 'note', id: 'n1' }, draggable: true, locked: true }
+{ id: 'map-m1', label: 'Parks overview', icon: LuMap, panel: { type: 'map', id: 'm1' }, draggable: true, locked: true }
 ```
 
 `draggable: false` (e.g. Dashboard) can't be picked up at all; `locked: true` never takes a drop into it.
