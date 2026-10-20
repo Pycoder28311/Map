@@ -1,5 +1,7 @@
+import { notesConfig } from '@map/shared'
 import { sql } from 'drizzle-orm'
-import { sqliteTable, integer, text, index, check } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, integer, text, check } from 'drizzle-orm/sqlite-core'
+import { listIndex, orderColumns } from '../lib/sort'
 import { user } from './auth-schema'
 export * from './auth-schema'
 
@@ -20,23 +22,24 @@ export const notes = sqliteTable(
         userId: owner(),
         title: text('title').notNull().default(''),
         content: text('content').notNull().default(''), // HTML from the editor, cleaned by the contract (richText)
+        // The first words of the content as plain text (shared previewOf), written with it by the notes repo: lists show this instead of the content
+        preview: text('preview').notNull().default(''),
         // Later: connects the note to another object (a project, a map...). Both set or both empty
         objectType: text('object_type'),
         objectId: integer('object_id'),
         createdAt: createdAt(),
         updatedAt: updatedAt(),
         archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
-        position: integer('position').notNull().default(0),
-        pinned: integer('pinned', { mode: 'boolean' }).notNull().default(false),
+        ...orderColumns(notesConfig.order), // pinned and position, whichever notesConfig (shared/src/notes.ts) turns on
     },
     (t) => [
-        // The list view: one user's notes, filtered by archived, pinned first, then in order (its first column also serves "all of a user's notes")
-        index('notes_user_list_idx').on(t.userId, t.archived, t.pinned, t.position),
+        // The list: one user's notes, filtered (notesConfig.listFilters), in the list's order (notesConfig.order; lib/sort.ts)
+        listIndex('notes_list_idx', t, { owner: 'userId', filters: notesConfig.listFilters, order: notesConfig.order }),
         check('notes_object_pair', sql`(${t.objectType} IS NULL) = (${t.objectId} IS NULL)`),
     ],
 )
 
-/* ─────────────── Images: files in R2 (under IMAGES_FOLDER), one row per file. Notes show them as <img> in their text; other tables link them with their own link tables ─────────────── */
+/* ─────────────── Images: files in R2 (under IMAGES_FOLDER), one row per file. Notes show them as <img> in their text (no link to this table); other tables link them with their own link tables ─────────────── */
 
 export const images = sqliteTable('images', {
     id: id(),

@@ -92,10 +92,3 @@ export function sanitizeRichText(text: string): string {
   // Nothing but empty tags (an empty paragraph): no text at all. A picture or a rule is content too
   return /[^\s]/.test(out.replace(/<[^>]*>/g, '')) || /<(?:hr|img)\b/.test(out) ? out : ''
 }
-
-/** The addresses of the images in HTML that sanitizeRichText has cleaned, in order, without repeats */
-export function imageSrcsIn(html: string): string[] {
-  const found = new Set<string>()
-  for (const match of html.matchAll(/<img src="([^"]+)"/g)) found.add(match[1].replace(/&amp;/g, '&'))
-  return [...found]
-}

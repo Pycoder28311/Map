@@ -1,5 +1,5 @@
 import type { ImageRef } from '@map/shared'
-import { and, eq, inArray } from 'drizzle-orm'
+import { inArray } from 'drizzle-orm'
 import { images } from '../../db/schema'
 import { getConfig } from '../../lib/config'
 import { userId, type Ctx } from '../../lib/crud'
@@ -35,14 +35,4 @@ export async function deleteImages({ db, env }: Ctx, ids: number[]) {
   if (ids.length === 0) return
   const rows = await db.delete(images).where(inArray(images.id, ids)).returning()
   await env.BUCKET.delete(rows.map((img) => img.key))
-}
-
-/** Deletes the signed-in user's images with these keys (rows and files); other users' images are never touched */
-export async function deleteImagesByKey(ctx: Ctx, keys: string[]) {
-  if (keys.length === 0) return
-  const rows = await ctx.db
-    .delete(images)
-    .where(and(inArray(images.key, keys), eq(images.userId, userId(ctx))))
-    .returning()
-  await ctx.env.BUCKET.delete(rows.map((img) => img.key))
 }

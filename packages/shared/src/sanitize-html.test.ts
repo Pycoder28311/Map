@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { setRichTextImageBase } from './rich-text-policy'
-import { imageSrcsIn, sanitizeRichText } from './sanitize-html'
+import { sanitizeRichText } from './sanitize-html'
 
 describe('sanitizeRichText', () => {
   it('keeps what the editor writes', () => {
@@ -105,10 +105,6 @@ describe('sanitizeRichText', () => {
     })
     it('counts a picture alone as content', () => {
       expect(sanitizeRichText(`<p><img src="${base}${file}"></p>`)).not.toBe('')
-    })
-    it('lists the images in a text', () => {
-      const html = sanitizeRichText(`<p><img src="${base}${file}"><img src="${base}${file}"></p>`)
-      expect(imageSrcsIn(html)).toEqual([`${base}${file}`])
     })
   })
 })

@@ -1,0 +1,2 @@
+-- Notes get a preview (the first words of the content as plain text). Existing notes are filled by `npm run backfill:previews`; new and changed ones by the notes repo.
+ALTER TABLE `notes` ADD `preview` text DEFAULT '' NOT NULL;

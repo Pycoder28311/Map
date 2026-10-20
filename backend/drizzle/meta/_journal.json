@@ -22,6 +22,20 @@
       "when": 1792490282551,
       "tag": "0002_fat_shape",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1792493127151,
+      "tag": "0003_rich_dark_beast",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792495095480,
+      "tag": "0004_thin_hairball",
+      "breakpoints": true
     }
   ]
 }

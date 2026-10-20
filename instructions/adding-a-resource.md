@@ -238,11 +238,48 @@ app with `RichTextField` (`editable={false}` to read); never with `dangerouslySe
 
 Pictures in such a text are `<img>` tags of images uploaded through `/api/images`: the sanitizer keeps only those (their address must be
 a stored image's), and the field offers the image button when given `onUploadImage`. A resource that keeps formatted text this way
-needs no image table or `imageIds`; delete the files that leave the text like `notes.repo.ts` does (`deleteUnusedImages`).
+needs no image table or `imageIds`. Nothing deletes the files when a picture leaves the text or the note is removed (the notes code
+does not use the images table), so they stay in R2 and the `images` table until a clean-up job removes them.
+
+Lists should not read or send the whole text. Give the table a `preview` column (plain text, `previewOf` in `shared/src/plain-text.ts`),
+write it in the repo together with the content (`withPreview` in `notes.repo.ts`), select the list without the content column
+(`columns: { content: false }`) and return a list type without it (`NoteListItem`; `Repo`'s fifth type parameter). Show the preview as
+text, never as HTML. Notes made before the column existed: `npm run backfill:previews -- --local|--remote` (in `backend/`).
 
 ```ts
 export const postInput = z.object({ title: z.string().min(1).max(100), body: richTextRequired })
 ```
+
+## Table config and list order (pinned, position)
+
+Each table's file in `packages/shared/src/<table>.ts` has a config object (see `notesConfig` in `notes.ts`): who may access it
+(`access`), the list order as flags (`order: { pinned, position }`) and the equality filters of the list (`listFilters`). The
+rest follows from it:
+
+| Flags | List order |
+|---|---|
+| `pinned: true, position: true` | pinned first, then position, then id |
+| `pinned: false, position: true` | position, then id |
+| `pinned: true, position: false` | pinned first, then newest |
+| `pinned: false, position: false` | newest first |
+
+```ts
+// packages/shared/src/<table>.ts
+export const postsConfig = { access: 'public-owner', order: { pinned: false, position: true }, listFilters: ['archived'] } as const
+const postFields = z.object({ title: z.string(), ...orderFields(postsConfig.order) })            // contract fields
+export type Post = { id: number; title: string } & OrderOutput<typeof postsConfig.order>          // output type
+
+// backend/src/db/schema.ts
+{ ...,  ...orderColumns(postsConfig.order) },                                                      // the columns
+(t) => [listIndex('posts_list_idx', t, { owner: 'userId', filters: postsConfig.listFilters, order: postsConfig.order })]  // the index
+
+// backend/src/resources/posts/posts.repo.ts
+const sort = listSort(sortColumnsOf(posts, postsConfig.order))      // orderBy, after(page), cursorOf
+toJson: { ..., ...pickOrder(row, postsConfig.order) }               // the output fields
+```
+
+Change a flag, run `npx drizzle-kit generate`, review the SQL, apply it: the columns, index, contract, output and query all follow
+(`lib/sort.ts`, `shared/src/order.ts`). Moving a row: `positionBetween(before, after)` so only that row is written.
 
 ## Relationships
 

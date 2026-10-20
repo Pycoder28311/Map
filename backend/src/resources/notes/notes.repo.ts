@@ -1,94 +1,74 @@
-import { imageSrcsIn, type Note, type NoteInput, type NoteUpdate } from '@map/shared'
-import { and, desc, eq, like, ne, or } from 'drizzle-orm'
+import { notesConfig, previewOf, type Note, type NoteFilter, type NoteInput, type NoteListItem, type NoteUpdate } from '@map/shared'
+import { and, eq } from 'drizzle-orm'
 import { notes } from '../../db/schema'
-import { userId, type Ctx, type Repo } from '../../lib/crud'
-import { beforeCursor, fetchLimit, mapPage, toPage } from '../../lib/pagination'
-import { deleteImagesByKey, imagesBase } from '../images/images.repo'
+import { hasChanges, userId, type Ctx, type Repo } from '../../lib/crud'
+import { fetchLimit, mapPage, toPage } from '../../lib/pagination'
+import { listSort, pickOrder, sortColumnsOf } from '../../lib/sort'
 
-const find = (ctx: Ctx, id: number) =>
-  ctx.db.query.notes.findFirst({ where: and(eq(notes.id, id), eq(notes.userId, userId(ctx))) })
+// The list's order comes from notesConfig.order (shared/src/notes.ts); the table's index (notes_list_idx) has the same order
+const noteSort = listSort(sortColumnsOf(notes, notesConfig.order))
 
-type Row = NonNullable<Awaited<ReturnType<typeof find>>>
+type Row = typeof notes.$inferSelect
+
+/** A note without its content: what a list reads and returns (the content column is not even selected) */
+type ListRow = Omit<Row, 'content'>
 
 /** The only fields that leave the server; typed by the shared contract */
-const toJson = (note: Row): Note => ({
+const toListItem = (note: ListRow): NoteListItem => ({
   id: note.id,
   title: note.title,
-  content: note.content,
-  pinned: note.pinned,
+  preview: note.preview,
   archived: note.archived,
-  position: note.position,
+  ...pickOrder(note, notesConfig.order), // pinned and position, whichever the config turns on
   createdAt: note.createdAt.toISOString(),
   updatedAt: note.updatedAt.toISOString(),
 })
 
-/** Most keys checked in one query (D1 allows 100 bound values in a statement) */
-const MAX_KEYS = 90
-
-/** The keys of the stored images shown in a note's text (the text is already cleaned: only this app's images are in it) */
-const imageKeysIn = (env: CloudflareBindings, content: string) => {
-  const base = imagesBase(env)
-  const prefix = base.slice(0, base.length - 'img/'.length) // "<IMAGES_URL>/<folder>/": a key is what follows
-  return imageSrcsIn(content)
-    .filter((src) => src.startsWith(base))
-    .map((src) => src.slice(prefix.length))
-}
+const toJson = (note: Row): Note => ({ ...toListItem(note), content: note.content })
 
 /**
- * Deletes the images that left a note's text (rows and files), except those another of the user's notes still shows
- * (a picture copied from one note into another). `exceptNoteId`: the note whose text is being changed or removed.
+ * The preview is derived from the content in the same write, so the two never differ: only a write that sets the content
+ * sets the preview (the content is already cleaned by the contract; the preview is plain text made from it).
  */
-async function deleteUnusedImages(ctx: Ctx, keys: string[], exceptNoteId: number) {
-  const checked = keys.slice(0, MAX_KEYS)
-  if (checked.length === 0) return
-  const others = await ctx.db
-    .select({ content: notes.content })
-    .from(notes)
-    .where(and(eq(notes.userId, userId(ctx)), ne(notes.id, exceptNoteId), or(...checked.map((key) => like(notes.content, `%${key}%`)))))
-  const stillShown = (key: string) => others.some((n) => n.content.includes(key))
-  await deleteImagesByKey(ctx, checked.filter((key) => !stillShown(key)))
-}
+const withPreview = <T extends { content?: string }>(fields: T) =>
+  fields.content === undefined ? fields : { ...fields, preview: previewOf(fields.content) }
 
-export const notesRepo: Repo<NoteInput, NoteUpdate, Note> = {
-  async list(ctx, page) {
+const mine = (ctx: Ctx, id: number) => and(eq(notes.id, id), eq(notes.userId, userId(ctx)))
+
+/**
+ * A note's pictures are <img> tags in its content: nothing here uses the images table, so the files are not deleted when a
+ * picture leaves the text or the note goes (the sanitizer only keeps images of this app's storage).
+ */
+export const notesRepo: Repo<NoteInput, NoteUpdate, Note, NoteFilter, NoteListItem> = {
+  async list(ctx, page, { archived }) {
     const rows = await ctx.db.query.notes.findMany({
-      where: and(eq(notes.userId, userId(ctx)), beforeCursor(notes.id, page)),
-      orderBy: desc(notes.id),
+      where: and(eq(notes.userId, userId(ctx)), eq(notes.archived, archived), noteSort.after(page)),
+      columns: { content: false }, // a list shows the preview: the (up to 100 KB) content is not read
+      orderBy: noteSort.orderBy,
       limit: fetchLimit(page),
     })
-    return mapPage(
-      toPage(rows, page, (n) => n.id),
-      toJson,
-    )
+    return mapPage(toPage(rows, page, noteSort.cursorOf), toListItem)
   },
 
   async get(ctx, id) {
-    const note = await find(ctx, id)
+    const note = await ctx.db.query.notes.findFirst({ where: mine(ctx, id) })
     return note ? toJson(note) : null
   },
 
   async create(ctx, fields) {
-    const note = await ctx.db.insert(notes).values({ ...fields, userId: userId(ctx) }).returning().get()
+    const note = await ctx.db.insert(notes).values({ ...withPreview(fields), userId: userId(ctx) }).returning().get()
     return toJson(note)
   },
 
+  // updated_at is refreshed by the schema on every update
   async update(ctx, id, fields) {
-    const existing = await find(ctx, id)
-    if (!existing) return null
-    // updated_at is refreshed by the schema on every update
-    const note = await ctx.db.update(notes).set(fields).where(and(eq(notes.id, id), eq(notes.userId, userId(ctx)))).returning().get()
-    if (fields.content !== undefined) {
-      const kept = new Set(imageKeysIn(ctx.env, note.content))
-      await deleteUnusedImages(ctx, imageKeysIn(ctx.env, existing.content).filter((key) => !kept.has(key)), id)
-    }
-    return toJson(note)
+    if (!hasChanges(fields)) return notesRepo.get(ctx, id) // nothing to change (Drizzle rejects an empty SET): the note as it is
+    const note = await ctx.db.update(notes).set(withPreview(fields)).where(mine(ctx, id)).returning().get()
+    return note ? toJson(note) : null
   },
 
   async remove(ctx, id) {
-    const existing = await find(ctx, id)
-    if (!existing) return false
-    await ctx.db.delete(notes).where(and(eq(notes.id, id), eq(notes.userId, userId(ctx))))
-    await deleteUnusedImages(ctx, imageKeysIn(ctx.env, existing.content), id)
-    return true
+    const gone = await ctx.db.delete(notes).where(mine(ctx, id)).returning({ id: notes.id }).get()
+    return gone !== undefined
   },
 }
