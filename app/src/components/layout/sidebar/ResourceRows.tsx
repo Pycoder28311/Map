@@ -27,6 +27,8 @@ const parentOf = (item: Item | undefined) =>
   item ? { type: (item.objectType as string | null | undefined) ?? null, id: (item.objectId as number | null | undefined) ?? null } : undefined
 /** How many levels of folders are followed under a project (a cycle cannot be saved, but old data might have one) */
 const MAX_DEPTH = 20
+/** The projects' section also shows the orphans (items with no parent) among the projects; false leaves them to the Dashboard's Orphans row */
+const ORPHANS_IN_SIDEBAR = true
 
 export type SidebarTreeSettings = Omit<ComponentProps<typeof TreeView>, 'nodes' | 'label'>
 
@@ -82,34 +84,61 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
   const items = only ? (list.items as Item[]).filter(only) : (list.items as Item[])
   const nodeId = (item: Item) => `${prefix}${resource.panelType}-${item.id}`
   const byNode = useMemo(() => new Map(items.map((item) => [nodeId(item), item])), [items]) // eslint-disable-line react-hooks/exhaustive-deps
-  // The rows of the children (and of what is in their folders), by node id: they are of other resources than this one
+
+  // The section's own rows; the projects' section also holds the orphans (items with no parent, of the resources with no section of
+  // their own), among the projects by their position: where an item was let go out of its project is where it shows
+  const topEntries = useMemo(() => {
+    const own = items.map((item) => ({ resource, item }) as Entry)
+    if (!withKids || !ORPHANS_IN_SIDEBAR) return own
+    const orphans = kids.lists.flatMap(({ resource: r, items: rows }) =>
+      r.parents?.length && !r.surfaces.sidebar ? rows.filter((row) => row.objectType == null).map((item) => ({ resource: r, item }) as Entry) : [],
+    )
+    return [...own, ...orphans].sort(compareEntries)
+  }, [items, resource, withKids, kids.lists])
+  // What can sit in the top list: its own resource and the orphans' resources (the others, e.g. notes, have a section of their own)
+  const accepts = useMemo(() => (withKids && ORPHANS_IN_SIDEBAR ? [resource.name, ...CHILDREN.filter((r) => r.parents?.length && !r.surfaces.sidebar).map((r) => r.name)] : undefined), [withKids, resource])
+
+  // The rows of the children (and of what is in their folders) and of the orphans, by node id: they are of other resources than this one
   const childByNode = new Map<string, Entry>()
+  /** The row of an item of another resource: under a parent (`parentNodeId`) or, with none, at the top (an orphan) */
+  const childNode = (entry: Entry, parentNodeId: string, entries: Entry[], parent: PlaceParent, depth: number): TreeNode => {
+    const { resource: r, item } = entry
+    const id = parentNodeId ? `${parentNodeId}/${r.panelType}-${item.id}` : `${r.panelType}-${item.id}`
+    childByNode.set(id, entry)
+    placeOf.set(id, { kind: 'node', nodeId: id, entry, list: () => entries, parent, accepts: parent === null ? accepts : undefined, into: intoOf(r, item) })
+    const type = parentTypeOf(r, RESOURCES)
+    return {
+      id,
+      label: r.ui.row.title(item),
+      icon: r.ui.icon,
+      panel: { type: r.panelType, id: String(item.id) },
+      draggable: true,
+      locked: true,
+      rowData: { 'data-share-id': `${r.panelType}:${item.id}`, 'data-glide': `${r.panelType}:${item.id}`, 'data-glide-in': 'sidebar' },
+      children: type ? childNodes(`${r.name}:${item.id}`, id, { type, resource: r.name, id: item.id }, depth + 1) : undefined,
+    }
+  }
   const childNodes = (parentKey: string, parentNodeId: string, parent: NonNullable<PlaceParent>, depth: number): TreeNode[] | undefined => {
     const entries = kidsOf.get(parentKey)
     if (!entries?.length || depth >= MAX_DEPTH) return undefined
-    return entries.map((entry) => {
-      const { resource: r, item } = entry
-      const id = `${parentNodeId}/${r.panelType}-${item.id}`
-      childByNode.set(id, entry)
-      placeOf.set(id, { kind: 'node', nodeId: id, entry, list: () => entries, parent, into: intoOf(r, item) })
-      const type = parentTypeOf(r, RESOURCES)
-      return {
-        id,
-        label: r.ui.row.title(item),
-        icon: r.ui.icon,
-        panel: { type: r.panelType, id: String(item.id) },
-        draggable: true,
-        locked: true,
-        rowData: { 'data-share-id': `${r.panelType}:${item.id}`, 'data-glide': `${r.panelType}:${item.id}`, 'data-glide-in': 'sidebar' },
-        children: type ? childNodes(`${r.name}:${item.id}`, id, { type, resource: r.name, id: item.id }, depth + 1) : undefined,
-      }
-    })
+    return entries.map((entry) => childNode(entry, parentNodeId, entries, parent, depth))
   }
   const ownType = parentTypeOf(resource, RESOURCES)
-  const ownEntries = items.map((item) => ({ resource, item }))
-  const nodes: TreeNode[] = items.map((item, i) => {
-    // At the top of a section: among the section's own items, each keeping its parent
-    if (!only) placeOf.set(nodeId(item), { kind: 'node', nodeId: nodeId(item), entry: ownEntries[i], list: () => ownEntries, only: resource.name, into: withKids ? intoOf(resource, item) : undefined })
+  const nodes: TreeNode[] = topEntries.map((entry) => {
+    // An orphan, among the projects
+    if (entry.resource !== resource) return childNode(entry, '', topEntries, null, 0)
+    const item = entry.item
+    // At the top of a section: among the section's own rows (the projects' section: and the orphans), each keeping its parent
+    if (!only) {
+      placeOf.set(nodeId(item), {
+        kind: 'node',
+        nodeId: nodeId(item),
+        entry,
+        list: () => topEntries,
+        ...(withKids ? { accepts, parent: null } : { only: resource.name }),
+        into: withKids ? intoOf(resource, item) : undefined,
+      })
+    }
     return {
       id: nodeId(item),
       label: resource.ui.row.title(item),

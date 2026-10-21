@@ -37,14 +37,14 @@ describe('sideOf', () => {
 describe('resolvePlace', () => {
   it('puts an item from its row after a card, writing a key between the neighbours and no parent', () => {
     const result = resolvePlace(row({ entry: f2 }), 'after', moved(articles, 1))!
-    expect(comparePositions('a1', result.place.position)).toBeLessThan(0)
+    expect(comparePositions('a1', result.place.position!)).toBeLessThan(0)
     expect(result.parent).toBeUndefined()
   })
 
   it('gives an item from another list the row\'s parent, in the same update', () => {
     const result = resolvePlace(row({ entry: a1 }), 'before', moved(articles, 9), { type: null, id: null })!
     expect(result.parent).toEqual(project5)
-    expect(comparePositions(result.place.position, 'a0')).toBeLessThan(0)
+    expect(comparePositions(result.place.position!, 'a0')).toBeLessThan(0)
   })
 
   it('does nothing where the item already is', () => {
@@ -67,7 +67,7 @@ describe('resolvePlace', () => {
     expect(resolvePlace(section, 'after', moved(articles, 4))).toBeNull()
     const result = resolvePlace(section, 'after', moved(notes, 8))!
     expect(result.parent).toBeUndefined()
-    expect(comparePositions('a1', result.place.position)).toBeLessThan(0)
+    expect(comparePositions('a1', result.place.position!)).toBeLessThan(0)
   })
 
   it('takes another resource inside a project row of a section, wherever on the row it is dropped', () => {
@@ -85,6 +85,54 @@ describe('resolvePlace', () => {
     }
     // Without somewhere to go inside, it still takes no other resource
     expect(resolvePlace({ ...project, into: undefined }, 'before', moved(notes, 8))).toBeNull()
+  })
+
+  it('takes an item out of its parent when it is let go by the edge of a project row (between two parents), not by its middle', () => {
+    const project: PlaceTarget = {
+      kind: 'node',
+      entry: entry(projects, 5, 'a0'),
+      list: () => [entry(projects, 5, 'a0')],
+      only: 'projects',
+      into: { parent: project5, list: () => [a1, f2] },
+    }
+    const inProject5 = { type: 'project', id: 5 }
+    for (const side of ['before', 'after'] as const) {
+      const result = resolvePlace(project, side, moved(notes, 8), inProject5)!
+      // Only the parent changes: the item keeps its place
+      expect(result).toMatchObject({ side: 'out', edge: side, parent: null, place: { fixes: [] } })
+      expect(result.place.position).toBeUndefined()
+    }
+    // The middle of another project's row puts it inside that one; the middle of its own does nothing
+    expect(resolvePlace(project, 'into', moved(notes, 8), { type: 'project', id: 9 })!.parent).toEqual(project5)
+    const withIt = { ...project, into: { parent: project5, list: () => [a1, f2, entry(notes, 8, 'a2', { objectType: 'project', objectId: 5 })] } }
+    expect(resolvePlace(withIt, 'into', moved(notes, 8), inProject5)).toBeNull()
+    // An item with no parent has nothing to leave: the edge puts it inside, like the middle
+    expect(resolvePlace(project, 'before', moved(notes, 8), { type: null, id: null })!.side).toBe('into')
+  })
+
+  it('puts an item out of its project exactly where it is let go among the projects and orphans of the sidebar', () => {
+    const p1 = entry(projects, 1, 'a0')
+    const p2 = entry(projects, 2, 'a2')
+    const orphan = entry(articles, 7, 'a1')
+    const top = [p1, orphan, p2]
+    const accepts = ['projects', 'articles', 'folders']
+    const row = (e: Entry): PlaceTarget => ({ kind: 'node', entry: e, list: () => top, parent: null, accepts, into: { parent: { type: 'project', resource: 'projects', id: e.item.id }, list: () => [] } })
+    const inProject5 = { type: 'project', id: 5 }
+    // Let go by the top edge of the second project: between the orphan and it, with no parent
+    const result = resolvePlace(row(p2), 'before', moved(articles, 9), inProject5)!
+    expect(result.parent).toBeNull()
+    expect(comparePositions('a1', result.place.position!)).toBeLessThan(0)
+    expect(comparePositions(result.place.position!, 'a2')).toBeLessThan(0)
+    // An orphan already in the list is only moved (its parent stays none); a project is placed among them too
+    expect(resolvePlace(row(p1), 'after', moved(articles, 7), { type: null, id: null })).toBeNull()
+    expect(resolvePlace(row(p2), 'before', moved(articles, 7), { type: null, id: null })).toBeNull()
+    const project = resolvePlace(row(orphan), 'after', moved(projects, 1))!
+    expect(project.parent).toBeUndefined()
+    expect(comparePositions('a1', project.place.position!)).toBeLessThan(0)
+    // The middle of a project row still puts it inside
+    expect(resolvePlace(row(p2), 'into', moved(articles, 9), inProject5)!.parent).toEqual({ type: 'project', resource: 'projects', id: 2 })
+    // A note has a section of its own: not among them
+    expect(resolvePlace(row(p2), 'before', moved(notes, 8), inProject5)!.side).toBe('out')
   })
 
   it('keeps pinned items among the pinned', () => {

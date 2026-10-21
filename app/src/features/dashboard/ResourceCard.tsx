@@ -2,6 +2,7 @@ import type { TreeMenuGroup } from '../../components/ui/tree/types'
 import TreeMenu from '../../components/ui/tree/TreeMenu'
 import type { AnyResource } from '../../resources/types'
 import { useDroppable } from '@dnd-kit/core'
+import { useHeldKey } from '../drag/held'
 import { useObjectDrag } from '../drag/objectDrag'
 import { useObjectDrop } from '../drag/objectDrop'
 import { PLACE_ZONE, placeDropData, type PlaceTarget, type PlaceValue } from '../drag/placeDrop'
@@ -50,6 +51,8 @@ export default function ResourceCard({ resource, item, menu, onOpen, place }: Pr
       pinned: item.pinned === true,
     },
   })
+  // Let go into a new parent, it stays faded until the dragged copy has fallen in
+  const held = useHeldKey(`${resource.panelType}:${id}`)
   const { setNodeRef: setDropRef } = useDroppable({ id: `dash-card-drop:${resource.name}:${id}`, data: place && placeDropData(place), disabled: !place })
   // Where a drop would land by it: a bar along its left (before) or right (after) edge, inside it (the card clips what sticks out)
   const { target } = useObjectDrop()
@@ -62,7 +65,7 @@ export default function ResourceCard({ resource, item, menu, onOpen, place }: Pr
   const created = item.createdAt ? new Date(item.createdAt) : null
   const look = resource.ui.card ?? 'plain'
   const [zoomed, setZoomed] = useState(false)
-  const box = `cursor-grab active:cursor-grabbing transition-[box-shadow,opacity] ${isDragging ? 'opacity-40' : ''}`
+  const box = `cursor-grab active:cursor-grabbing transition-[box-shadow,opacity] ${isDragging || held ? 'opacity-40' : ''}`
   const ref = (element: HTMLDivElement | null) => {
     setNodeRef(element)
     setDropRef(element)

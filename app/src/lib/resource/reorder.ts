@@ -27,6 +27,8 @@ export function compareEntries(a: Entry, b: Entry): number {
 /** A position update of another item, to make room (equal keys around the place: two tabs moved at once) */
 export type Fix = { entry: Entry; position: string }
 export type Placement = { position: string; fixes: Fix[] }
+/** What a move writes: a new place (none: the item keeps its place and only its parent changes) and the new keys of tied items */
+export type MovePlan = { position?: string; fixes: Fix[] }
 
 /**
  * The position of `moved` put at `index` of `list` (the ordered list without it; index 0 = first, list.length = last). Null when
@@ -84,8 +86,8 @@ export const positionAtStart = (list: Entry[]) => positionBefore(keyOf(list[0]))
  * Moves an item: one update of its position (and its parent, when `parent` is given: null = none), and of the tied items when
  * there are fixes. Each is shown at once and taken back if the server refuses (useResourceActions' update)
  */
-export function moveItem(moved: Entry, { position, fixes }: Placement, parent?: { type: string; id: number } | null) {
-  const patch = { position, ...(parent !== undefined ? { objectType: parent?.type ?? null, objectId: parent?.id ?? null } : {}) }
+export function moveItem(moved: Entry, { position, fixes }: MovePlan, parent?: { type: string; id: number } | null) {
+  const patch = { ...(position !== undefined ? { position } : {}), ...(parent !== undefined ? { objectType: parent?.type ?? null, objectId: parent?.id ?? null } : {}) }
   const sent = [
     actionsOf(moved.resource).update(moved.item.id, patch as never),
     ...fixes.map(({ entry, position: key }) => actionsOf(entry.resource).update(entry.item.id, { position: key } as never)),

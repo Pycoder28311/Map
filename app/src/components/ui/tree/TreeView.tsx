@@ -1,4 +1,5 @@
-import { useState, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
+import { withoutEmptyFolders } from './openFolders'
 import TreeItem, { type RenderLink } from './TreeItem'
 import type { TreeDnd, TreeIcons, TreeNode } from './types'
 
@@ -49,6 +50,8 @@ export default function TreeView({
 }: Props) {
   // Ids of open folders. One Set for the whole tree, so items stay simple.
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  // A folder that lost its last child closes (so it starts closed when something is put in it again)
+  useEffect(() => setExpanded((open) => withoutEmptyFolders(open, nodes)), [nodes])
   // The row being renamed, when the parent doesn't control it
   const [ownEditingId, setOwnEditingId] = useState<string | null>(null)
   const editing = onEditingChange ? (editingId ?? null) : ownEditingId

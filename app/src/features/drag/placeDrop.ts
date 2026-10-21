@@ -6,10 +6,12 @@
 import type { DragMoveEvent, DragOverEvent } from '@dnd-kit/core'
 import { dropIconOf, fallInto } from '../../components/ui/drop/fallInto'
 import { dragPoint } from '../../lib/dnd'
-import { endIndex, moveItem, placement, sameEntry, type Entry, type Placement } from '../../lib/resource/reorder'
+import { endIndex, moveItem, placement, sameEntry, type Entry, type MovePlan } from '../../lib/resource/reorder'
 import { resourceByName, resourceByPanelType } from '../../resources/registry'
 import type { ObjectDragInfo } from '../workspace/types'
+import { reducedMotion, TIMING } from '../../components/ui/tree/dragEffects'
 import { beginGlide, playGlide, playReflow, snapshotReflow } from './glide'
+import { holdFaded, releaseFaded } from './held'
 import { objectOf } from './objectDrag'
 import type { ZoneHandler } from './objectDrop'
 
@@ -30,6 +32,8 @@ export type PlaceTarget = {
   parent?: PlaceParent
   /** Only this resource may land in the list (a sidebar section: its own) */
   only?: string
+  /** Only these resources sit in the list (the sidebar's projects and orphans); the others go inside a row or out of their parent */
+  accepts?: string[]
   /** A row that can be a parent: dropped in its middle, the item becomes its last child */
   into?: { parent: NonNullable<PlaceParent>; list: () => Entry[] }
   /** The sidebar row (its highlight and the fall-in effect) */
@@ -41,7 +45,8 @@ export type PlaceTarget = {
 // A card lies over its Dashboard row: it wins (priority 3), the row (2) takes the rest of its area. Sidebar rows: 2, as before
 export const placeDropData = (target: PlaceTarget) => ({ zone: PLACE_ZONE, priority: target.kind === 'card' ? 3 : 2, ...target })
 
-export type PlaceSide = 'before' | 'after' | 'into' | 'end'
+/** `out`: out of its parent, to none (let go between two parents) */
+export type PlaceSide = 'before' | 'after' | 'into' | 'end' | 'out'
 
 /** What a drop here would do: the place (its key: what is highlighted) and the update it makes */
 export type PlaceValue = {
@@ -51,7 +56,9 @@ export type PlaceValue = {
   /** `<resource>:<id>` of the card the bar is drawn by, or `row:<id>` for the end of a row */
   mark: string
   moved: Entry
-  place: Placement
+  place: MovePlan
+  /** `out`: the edge of the row it was let go by, where the line is drawn */
+  edge?: 'before' | 'after'
   /** The new parent; undefined: the parent stays */
   parent?: PlaceParent
 }
@@ -87,8 +94,14 @@ export function resolvePlace(
   moved: Entry,
   current?: ObjectDragInfo['parent'],
 ): Omit<PlaceValue, 'key' | 'mark' | 'nodeId'> | null {
-  // A row of a section that takes only its own resource (the Projects) takes any other one inside it: the whole row is "into"
-  if (target.only && moved.resource.name !== target.only) {
+  // A row of a section that takes only its own resource (the Projects) takes any other one inside it: its middle is "into". An item that
+  // is inside a parent and is let go by the row's top or bottom edge (between two parents, not between children) leaves its parent
+  const sits = target.accepts ?? (target.only ? [target.only] : undefined)
+  if (sits && !sits.includes(moved.resource.name)) {
+    const edge = side === 'before' || side === 'after' ? side : null
+    if (edge && current && current.type !== null && moved.resource.parents?.length) {
+      return { side: 'out', edge, moved, place: { fixes: [] }, parent: null }
+    }
     if (!target.into) return null
     side = 'into'
   }
@@ -141,7 +154,7 @@ export const placeZone: ZoneHandler = {
     const resolved = resolvePlace(target, side, moved, item?.parent)
     if (!resolved) return null
     const mark = target.kind === 'row' ? `row:${target.rowId}` : target.entry ? `${target.entry.resource.name}:${target.entry.item.id}` : ''
-    const value: PlaceValue = { ...resolved, key: `${target.nodeId ?? mark}:${resolved.side}`, mark, nodeId: target.nodeId }
+    const value: PlaceValue = { ...resolved, key: `${target.nodeId ?? mark}:${resolved.edge ?? resolved.side}`, mark, nodeId: target.nodeId }
     return value
   },
   drop: (data, target, float) => {
@@ -153,11 +166,26 @@ export const placeZone: ZoneHandler = {
     const iconKey = value.side === 'into' && value.nodeId ? value.nodeId : value.parent ? sidebarIconOf(value.parent) : undefined
     const falls = iconKey !== undefined && float !== null && dropIconOf(iconKey) !== null
     if (falls) fallInto(float, iconKey, { lifted: true })
+    const key = `${object.kind}:${object.objectId}`
+    const parent = value.parent === undefined ? undefined : value.parent && { type: value.parent.type, id: Number(value.parent.id) }
+    const send = () =>
+      moveItem(value.moved, value.place, parent).catch((error) => console.error(`Could not move the ${value.moved.resource.ui.label.toLowerCase()}`, error))
+
+    // The faded copy stays where it was until the dragged one is in the parent (not when the pointer is let go), then the move shows
+    if (falls && !reducedMotion()) {
+      holdFaded(key, object.nodeId)
+      window.setTimeout(() => {
+        releaseFaded(key)
+        const reflow = snapshotReflow(key)
+        void send()
+        if (reflow) playReflow(reflow)
+      }, TIMING.openLead + TIMING.swallow)
+      return
+    }
     const glide = falls ? null : beginGlide(object, float)
     // The others make room smoothly too
-    const reflow = snapshotReflow(`${object.kind}:${object.objectId}`)
-    const parent = value.parent === undefined ? undefined : value.parent && { type: value.parent.type, id: Number(value.parent.id) }
-    moveItem(value.moved, value.place, parent).catch((error) => console.error(`Could not move the ${value.moved.resource.ui.label.toLowerCase()}`, error))
+    const reflow = snapshotReflow(key)
+    void send()
     if (glide) playGlide(glide)
     if (reflow) playReflow(reflow)
   },

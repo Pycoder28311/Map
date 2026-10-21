@@ -89,7 +89,9 @@ export function swallow({ source, to, lidKey, lifted = false }: Options) {
   requestAnimationFrame(() => fall(clone, from, to, lidKey, lifted))
 }
 
-function fall(clone: HTMLElement, from: DOMRect, to: Element, lidKey: string, lifted: boolean) {
+function fall(clone: HTMLElement, from: DOMRect, dropIcon: Element, lidKey: string, lifted: boolean) {
+  // The drop changed the tree: a row that got its first child became a folder, with a new icon element under the same key
+  const to = dropIcon.isConnected ? dropIcon : (document.querySelector(`[data-drop-icon="${CSS.escape(lidKey)}"]`) ?? dropIcon)
   const target = to.getBoundingClientRect()
   if (!to.isConnected || !target.width) {
     clone.remove()

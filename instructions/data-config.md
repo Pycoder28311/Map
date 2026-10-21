@@ -183,6 +183,13 @@ each type to the table it is: `{ project: 'projects', folder: 'folders' }`.
   Dashboard cards (before/after: left/right half), Dashboard rows (the end), sidebar rows (before/after: top/bottom; into a project or
   folder: the middle). The rules are one pure function, `resolvePlace` (tested). Pinned items stay among the pinned; a row sorted by date
   takes no drops on its cards.
+- **Orphans in the sidebar:** the Projects section also lists the orphans (no parent) of the resources that can have a parent but no section
+  of their own (folders, articles, object cards), among the projects by `position` (keys compare across tables). An item of those let go
+  by a project row's edge loses its parent and takes the place where it was let go. Turn it off with `ORPHANS_IN_SIDEBAR` in
+  `components/layout/sidebar/ResourceRows.tsx` (they stay on the Dashboard's Orphans row).
+- **Leaving a parent:** an item that is inside a parent and is let go by the top or bottom edge of a project row in the sidebar (between two
+  parents, not between children) loses its parent: one update of `objectType`/`objectId` to none, its place unchanged (`side: 'out'`).
+  Let go by the row's middle it goes inside that project; between two children it moves among them. On the Dashboard, the Orphans row does it.
 - **After a drop** the item's faded copy (what it left in its place) slides to where it landed and turns solid (`features/drag/glide.ts`),
   unless it falls into its new parent's icon (a move into a project or folder). A surface takes part by marking its elements
   `data-glide="<panelType>:<id>"` and `data-glide-in="sidebar|dashboard"` (sidebar rows, Dashboard cards).
