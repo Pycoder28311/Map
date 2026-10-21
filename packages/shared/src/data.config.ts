@@ -27,8 +27,6 @@ export const DATA = defineTables({
     preview: 'content',
     requireOneOf: ['title', 'content'],
     link: PARENT,
-    // Its index stays as it was (no migration for the notes): its lists by parent read through the owner and archived
-    listFilters: ['archived'],
   },
   folders: {
     access: 'owner',

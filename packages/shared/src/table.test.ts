@@ -32,7 +32,7 @@ describe('names', () => {
   it('filters by parent where the table has a link, unless it says otherwise', () => {
     expect(DATA.folders.listFilters).toEqual(['archived', 'link'])
     expect(DATA.projects.listFilters).toEqual(['archived'])
-    expect(DATA.notes.listFilters).toEqual(['archived'])
+    expect(DATA.notes.listFilters).toEqual(['archived', 'link'])
   })
 })
 
