@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { authClient } from '../../lib/auth-client'
-import { useLayoutsState } from '../../mocks/layoutsStore'
+import { useSelectedLayoutId } from '../layouts/layoutsStore'
 import { workspaceHref } from '../workspace/layout'
 import { useWorkspace } from '../workspace/useWorkspace'
 import { entryForLayout, entryForSavedLayout, recordRecent } from './recentStore'
@@ -15,7 +15,7 @@ export default function RecordRecent() {
   const { data: session } = authClient.useSession()
   const userId = session?.user.id
   const { layout, onWorkspace } = useWorkspace()
-  const { selectedId } = useLayoutsState()
+  const selectedId = useSelectedLayoutId()
   const key = layout ? workspaceHref(layout) : ''
 
   useEffect(() => {

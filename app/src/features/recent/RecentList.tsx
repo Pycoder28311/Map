@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { LuLayoutTemplate, LuPanelsTopLeft } from 'react-icons/lu'
 import { authClient } from '../../lib/auth-client'
-import { fromSaved, selectLayout, useLayoutsState } from '../../mocks/layoutsStore'
+import { fromSaved, selectLayout, useLayoutsState } from '../layouts/layoutsStore'
 import { resourceByPanelType } from '../../resources/registry'
 import { LinkRow, Rows, useOpenLayout } from '../objects/ListRows'
 import { parsePanelKey, single, type WorkspaceLayout } from '../workspace/layout'

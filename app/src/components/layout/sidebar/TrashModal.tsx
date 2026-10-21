@@ -3,7 +3,7 @@ import { LuRotateCcw, LuTrash2 } from 'react-icons/lu'
 import LayoutThumb from '../../../features/layouts/LayoutThumb'
 import { parsePanelKey } from '../../../features/workspace/layout'
 import { usePanelRegistry } from '../../../features/workspace/registryContext'
-import { deleteArchivedLayouts, deleteLayout, restoreLayout, useLayoutsState, type SavedLayout } from '../../../mocks/layoutsStore'
+import { deleteLayout, fromRow, restoreLayout, type SavedLayout } from '../../../features/layouts/layoutsStore'
 import { useResourceActions } from '../../../lib/resource/hooks'
 import { emptyTrashSections, type TrashedItem, type useTrashedItems } from '../../../lib/resource/trash'
 import type { AnyResource } from '../../../resources/types'
@@ -43,13 +43,16 @@ function ResourceTrashRow({ resource, item, onDelete }: { resource: AnyResource;
 }
 
 /**
- * What's in the trash (saved layouts, then the resources' items: projects, notes, maps…): restore one, delete it for good, or empty the
- * trash (deleting always asks first). `trashed`: the resources' items, loaded by the Trash button
+ * What's in the trash (saved layouts first, then the other resources' items: projects, notes, maps…): restore one, delete it for good,
+ * or empty the trash (deleting always asks first). `trashed`: the archived items of every resource in it, loaded by the Trash button
  */
 export default function TrashModal({ trashed, onClose }: { trashed: ReturnType<typeof useTrashedItems>; onClose: () => void }) {
-  const layouts = useLayoutsState().layouts.filter((l) => l.archived)
+  // The layouts are a resource like the others, drawn with their tile (the rest as rows)
+  const layouts = (trashed.sections.find((s) => s.resource.name === 'layouts')?.items ?? []).map(fromRow)
+  const sections = trashed.sections.filter((s) => s.resource.name !== 'layouts')
   const registry = usePanelRegistry()
-  const total = layouts.length + trashed.total
+  const total = trashed.total
+  const [layoutError, setLayoutError] = useState<string | null>(null)
   const [deletingLayout, setDeletingLayout] = useState<SavedLayout | null>(null)
   const [deletingItem, setDeletingItem] = useState<{ resource: AnyResource; item: TrashedItem } | null>(null)
   const [emptying, setEmptying] = useState(false)
@@ -57,7 +60,7 @@ export default function TrashModal({ trashed, onClose }: { trashed: ReturnType<t
   const [emptyError, setEmptyError] = useState<string | null>(null)
 
   const namesOf = (layout: SavedLayout) =>
-    layout.panels.map((key) => {
+    layout.panels.map((key: string) => {
       const panel = parsePanelKey(key)
       return (panel && registry[panel.type]?.title(panel.id)) || 'Missing'
     })
@@ -90,17 +93,29 @@ export default function TrashModal({ trashed, onClose }: { trashed: ReturnType<t
                   <span className="min-w-0 flex-1 truncate text-body">
                     Layout <span className="text-fg-subtle">· {names.join(', ')}</span>
                   </span>
-                  <IconButton icon={LuRotateCcw} label="Restore layout" onClick={() => restoreLayout(layout.id)} />
+                  <IconButton
+                    icon={LuRotateCcw}
+                    label="Restore layout"
+                    onClick={() => {
+                      setLayoutError(null)
+                      restoreLayout(layout.id).catch((e) => setLayoutError(e instanceof Error ? e.message : 'Could not restore it.'))
+                    }}
+                  />
                   <IconButton icon={LuTrash2} label="Delete layout for good" className="text-danger" onClick={() => setDeletingLayout(layout)} />
                 </li>
               )
             })}
-            {trashed.sections.flatMap(({ resource, items }) =>
+            {sections.flatMap(({ resource, items }) =>
               items.map((item) => (
                 <ResourceTrashRow key={`${resource.name}:${item.id}`} resource={resource} item={item} onDelete={() => setDeletingItem({ resource, item })} />
               )),
             )}
           </ul>
+        )}
+        {layoutError && (
+          <p role="alert" className="mt-2 text-small text-danger">
+            {layoutError}
+          </p>
         )}
         {trashed.more && <p className="mt-2 text-small text-fg-subtle">Showing the first {trashed.total} of the items kept in the trash.</p>}
       </Modal>
@@ -120,7 +135,8 @@ export default function TrashModal({ trashed, onClose }: { trashed: ReturnType<t
                 variant="secondary"
                 className="text-danger"
                 onClick={() => {
-                  deleteLayout(deletingLayout.id)
+                  setLayoutError(null)
+                  deleteLayout(deletingLayout.id).catch((e) => setLayoutError(e instanceof Error ? e.message : 'Could not delete it.'))
                   setDeletingLayout(null)
                 }}
               >
@@ -159,9 +175,7 @@ export default function TrashModal({ trashed, onClose }: { trashed: ReturnType<t
                   setEmptyBusy(true)
                   setEmptyError(null)
                   try {
-                    // The resources' items first: if one fails, the layouts are not lost yet
                     await emptyTrashSections(trashed.sections)
-                    deleteArchivedLayouts()
                     setEmptying(false)
                   } catch (e) {
                     setEmptyError(e instanceof Error ? e.message : 'Could not delete everything.')

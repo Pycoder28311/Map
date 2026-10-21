@@ -47,8 +47,11 @@ function sample(table: Table, n = 1): Record<string, unknown> {
           return [name, f.default]
         case 'bool':
           return [name, false]
-        default:
-          return [name, `${name} ${n}`]
+        default: {
+          // A field with a pattern (a layout's panes and template) does not take just any text: a word and number, else its default
+          const text = [`${name} ${n}`, `${name}${n}`].find((candidate) => f.zod.safeParse(candidate).success)
+          return [name, text ?? f.default]
+        }
       }
     }),
   )

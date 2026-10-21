@@ -59,7 +59,7 @@ describe('the resource registry', () => {
   })
 
   it('lists the resources that turned a screen on, and knows which can have a parent', () => {
-    expect(resourcesWith('trash').map((r) => r.name)).toEqual(['projects', 'notes', 'folders', 'articles', 'objectCards', 'maps'])
+    expect(resourcesWith('trash').map((r) => r.name)).toEqual(['projects', 'notes', 'folders', 'articles', 'objectCards', 'layouts', 'maps'])
     expect(resourcesWith('quickCreate').map((r) => r.name)).toEqual(['notes'])
     expect(RESOURCES.filter((r) => r.linked).map((r) => r.name)).toEqual(['notes', 'folders', 'articles', 'objectCards'])
     expect(resourcesWith('sidebar').map((r) => r.name)).toEqual(['projects', 'notes'])
@@ -69,6 +69,13 @@ describe('the resource registry', () => {
       ['articles', ['project:projects', 'folder:folders']],
       ['objectCards', ['project:projects', 'folder:folders']],
     ])
+  })
+
+  it('shows the layouts only in the Trash (their section is the sidebar\'s Layouts)', () => {
+    const layouts = resourceByName('layouts')!
+    expect(layouts.surfaces).toEqual({ trash: true, page: undefined })
+    expect(resourceByPanelType('layout')?.name).toBe('layouts')
+    expect(RESOURCES.filter((r) => r.surfaces.dashboard || r.surfaces.search || r.surfaces.create).map((r) => r.name)).not.toContain('layouts')
   })
 
   it('makes a list page per resource with one, at its API path', () => {

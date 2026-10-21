@@ -1,7 +1,7 @@
 import { useDraggable } from '@dnd-kit/core'
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import type { PlainIcon } from '../../components/ui/icons/IconSlot'
-import type { SavedLayout } from '../../mocks/layoutsStore'
+import type { SavedLayout } from './layoutsStore'
 import type { PanelDragData } from '../workspace/types'
 import { layoutLines } from './geometry'
 import LayoutHoverLabels from './LayoutHoverLabels'

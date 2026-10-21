@@ -4,6 +4,8 @@ import Button from '../../components/ui/buttons/Button'
 import Divider from '../../components/ui/Divider'
 import Callout from '../../components/ui/overlays/Callout'
 import Modal from '../../components/ui/overlays/Modal'
+import { SectionNote } from '../../components/layout/sidebar/ResourceRows'
+import ResourceErrorDialog from '../../components/ui/resource/ResourceErrorDialog'
 import {
   deleteLayout,
   dropChanges,
@@ -16,7 +18,7 @@ import {
   updateLayout,
   useLayoutsState,
   type SavedLayout,
-} from '../../mocks/layoutsStore'
+} from './layoutsStore'
 import { listKey } from '../../lib/resource/listStore'
 import { useListStore } from '../../lib/resource/listStoreContext'
 import { resourceByPanelType, resourcesWith } from '../../resources/registry'
@@ -74,8 +76,8 @@ function useExists() {
  * - Create (no tiles): opens two random items as panes and shows a hint next to the sidebar
  */
 export default function LayoutsSection({ compact }: { compact: boolean }) {
-  const { layouts, selectedId, pending } = useLayoutsState()
-  const saved = layouts.filter((l) => !l.archived)
+  const { layouts, status, refresh, selectedId, pending } = useLayoutsState()
+  const saved = layouts
   const store = useListStore()
   const { isKnown, exists, title } = useExists()
   const workspace = useWorkspace()
@@ -87,6 +89,10 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
   const [expanded, setExpanded] = useState(false)
   const [deleting, setDeleting] = useState<SavedLayout | null>(null)
   const [hint, setHint] = useState<Hint | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  /** Runs a change of the layouts (a request); a refusal opens the error dialog */
+  const attempt = (what: string, run: () => Promise<unknown>) =>
+    void run().catch((e) => setError(`Could not ${what}: ${e instanceof Error ? e.message : 'unknown error'}`))
   // The panes (their URL) whose unsaved tile was closed with ✕: hidden until they change
   const [dismissed, setDismissed] = useState<string | null>(null)
   // The section's element: the hints point at it
@@ -156,7 +162,7 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
       // Even halves, so the new tile matches what opens (nothing to save yet)
       const even = { x: 0.5, y: 0.5 }
       setSplit(even)
-      saveLayout(layout, even)
+      attempt('save the layout', () => saveLayout(layout, even))
     }
     workspace.openLayout(layout)
   }
@@ -187,8 +193,8 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
           },
         ]
       : []),
-    // Newest first; one with changes kept from before shows them (blue, until saved or dropped)
-    ...[...saved].reverse().map((layout) => {
+    // Newest first (the server's order); one with changes kept from before shows them (blue, until saved or dropped)
+    ...saved.map((layout) => {
       const held = pending[layout.id]
       const shape = held ? { ...layout, ...toSaved(held.layout, held.split) } : layout
       return { layout: shape, names: namesOf(shape), unsaved: false as const }
@@ -204,12 +210,12 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
     return (
       <>
         {layout.id === selectedId && changed && (
-          <TileAction icon={LuSave} label="Save changes" tone="highlight" onClick={() => updateLayout(layout.id, workspace.layout!, split)} />
+          <TileAction icon={LuSave} label="Save changes" tone="highlight" onClick={() => attempt('save the layout', () => updateLayout(layout.id, workspace.layout!, split))} />
         )}
         {/* Changes kept after its panes were left: save them, or drop them (✕) */}
         {held && (
           <>
-            <TileAction icon={LuSave} label="Save changes" tone="highlight" onClick={() => updateLayout(layout.id, held.layout, held.split)} />
+            <TileAction icon={LuSave} label="Save changes" tone="highlight" onClick={() => attempt('save the layout', () => updateLayout(layout.id, held.layout, held.split))} />
             <TileAction icon={LuX} label="Discard changes" onClick={() => dropChanges(layout.id)} />
           </>
         )}
@@ -223,7 +229,16 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
       {/* + at the right edge: a new layout, like the first Create button (that one shows while there are no tiles) */}
       <Divider label="Layouts" action={n > 0 ? create : undefined} compact={compact} className="my-(--divider-gap)" />
 
-      {n === 0 ? (
+      {n === 0 && status !== 'ready' ? (
+        // The layouts are on their way (or could not be read)
+        status === 'error' ? (
+          <button type="button" onClick={refresh} className="cursor-pointer text-start underline-offset-2 hover:underline">
+            <SectionNote compact={compact}>Could not load. Try again</SectionNote>
+          </button>
+        ) : (
+          <SectionNote compact={compact}>Loading…</SectionNote>
+        )
+      ) : n === 0 ? (
         // No layouts and no panes: opens two random items as panes
         <CreateButton compact={compact} onClick={() => createRandom()} />
       ) : (
@@ -240,7 +255,7 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
                   actions={
                     !compact && (
                       <>
-                        <TileAction icon={LuSave} label="Save layout" tone="highlight" onClick={() => saveLayout(draft!, split)} />
+                        <TileAction icon={LuSave} label="Save layout" tone="highlight" onClick={() => attempt('save the layout', () => saveLayout(draft!, split))} />
                         <TileAction icon={LuX} label="Close" onClick={() => setDismissed(currentKey)} />
                       </>
                     )
@@ -268,7 +283,7 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
             )}
           </div>
           {/* The open layout changed: save the panes as a new layout instead (it becomes the selected one) */}
-          {changed && <CreateButton compact={compact} onClick={() => saveLayout(workspace.layout!, split)} className="mt-2" />}
+          {changed && <CreateButton compact={compact} onClick={() => attempt('save the layout', () => saveLayout(workspace.layout!, split))} className="mt-2" />}
           {hidden > 0 && (
             <Button
               variant="ghost"
@@ -293,6 +308,8 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
         </Callout>
       )}
 
+      {error && <ResourceErrorDialog message={error} onClose={() => setError(null)} />}
+
       {deleting && (
         <Modal
           open
@@ -308,7 +325,7 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
                 variant="secondary"
                 className="text-danger"
                 onClick={() => {
-                  deleteLayout(deleting.id)
+                  attempt('delete the layout', () => deleteLayout(deleting.id))
                   setDeleting(null)
                 }}
               >

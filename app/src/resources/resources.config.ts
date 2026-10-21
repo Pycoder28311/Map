@@ -5,7 +5,7 @@ import type { TableName } from '@map/shared'
 import type { ComponentType } from 'react'
 import type { PanelProps } from '../features/workspace/types'
 import type { MockTableName } from './mock.config'
-import { LuBox, LuFileText, LuFolder, LuFolderClosed, LuMap, LuStickyNote } from 'react-icons/lu'
+import { LuBox, LuFileText, LuFolder, LuFolderClosed, LuLayoutTemplate, LuMap, LuStickyNote } from 'react-icons/lu'
 import type { PlainIcon } from '../components/ui/icons/IconSlot'
 import type { FieldWidget } from './types'
 
@@ -101,6 +101,18 @@ export const RESOURCE_UI: Record<TableName | MockTableName, ResourceUi> = {
     card: 'image',
     fields: { title: { placeholder: 'Title' }, content: { label: 'Text', placeholder: 'Describe it (pictures too)…' } },
     surfaces: { ...EVERYWHERE },
+  },
+  // Saved pane layouts: shown by the sidebar's Layouts section (features/layouts), and in the Trash when archived. No other screen
+  layouts: {
+    panelType: 'layout',
+    label: 'Layout',
+    plural: 'Layouts',
+    icon: LuLayoutTemplate,
+    untitled: 'Layout',
+    fields: Object.fromEntries(
+      ['template', 'panelA', 'panelB', 'panelC', 'panelD'].map((name) => [name, { hidden: true }]),
+    ),
+    surfaces: { trash: true },
   },
   // In memory only (mock.config.ts): no table on the server yet
   maps: {

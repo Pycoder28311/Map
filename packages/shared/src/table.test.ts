@@ -27,7 +27,7 @@ describe('names', () => {
     expect(snakeCase('objectCards')).toBe('object_cards')
     expect(kebabCase('objectCards')).toBe('object-cards')
     expect(DATA.objectCards).toMatchObject({ name: 'objectCards', tableName: 'object_cards', path: 'object-cards' })
-    expect(TABLE_NAMES).toEqual(['projects', 'notes', 'folders', 'articles', 'objectCards'])
+    expect(TABLE_NAMES).toEqual(['projects', 'notes', 'folders', 'articles', 'objectCards', 'layouts'])
   })
   it('filters by parent where the table has a link, unless it says otherwise', () => {
     expect(DATA.folders.listFilters).toEqual(['archived', 'link'])
@@ -108,5 +108,24 @@ describe('types', () => {
   it('works for any config', () => {
     const tables = defineTables({ tags: { access: 'owner', order: { pinned: false, position: false }, fields: { name: field.text(20) } } })
     expect(tables.tags.input.parse({ name: 'x' })).toEqual({ name: 'x' })
+  })
+})
+
+describe('layouts', () => {
+  const ok = { template: '3-left', splitX: 400, splitY: 600, splitX2: 0, splitY2: 0, panelA: 'note:5', panelB: 'article:12', panelC: 'dashboard', panelD: '' }
+  it('takes a template, lines in thousandths and panes as panel keys', () => {
+    expect(DATA.layouts.input.parse(ok)).toEqual(ok)
+    expect(DATA.layouts.input.safeParse({ ...ok, splitX2: 700, panelB: '', panelC: '' }).success).toBe(true)
+  })
+  it('refuses a template, a line or a pane of another shape, and a layout without its first pane', () => {
+    for (const bad of [{ template: '5' }, { splitX: 100 }, { splitX: 900 }, { splitY2: 900 }, { splitX: 0.5 }, { panelB: 'note 5' }, { panelB: 'note:' }, { panelB: 'Note:5' }]) {
+      expect(DATA.layouts.input.safeParse({ ...ok, ...bad }).success).toBe(false)
+    }
+    expect(DATA.layouts.input.safeParse({ ...ok, panelA: '' }).success).toBe(false)
+    expect(DATA.layouts.update.safeParse({ panelB: '' }).success).toBe(true)
+  })
+  it('is listed newest first, with no parent', () => {
+    expect(DATA.layouts.order).toEqual({ pinned: false, position: false })
+    expect(DATA.layouts.listFilters).toEqual(['archived'])
   })
 })

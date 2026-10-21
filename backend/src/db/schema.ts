@@ -10,6 +10,7 @@ export const notes = ownedTable(DATA.notes)
 export const folders = ownedTable(DATA.folders)
 export const articles = ownedTable(DATA.articles)
 export const objectCards = ownedTable(DATA.objectCards)
+export const layouts = ownedTable(DATA.layouts)
 
 /* ─────────────── Images: files in R2 (under IMAGES_FOLDER), one row per file. Notes show them as <img> in their text (no link to this table); other tables link them with their own link tables ─────────────── */
 

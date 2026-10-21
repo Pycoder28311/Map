@@ -186,6 +186,19 @@ each type to the table it is: `{ project: 'projects', folder: 'folders' }`.
 - **Migration `0008`** turned the integer positions into keys (`a0, a1, …` per user, in the old order) without copying the tables; it is
   written by hand (drizzle-kit would rebuild every table). Its test runs it on an in-memory SQLite (`backend/src/db/migrations.test.ts`).
 
+### Saved layouts (the `layouts` table)
+
+- One row per layout: `template`, its lines (`splitX`, `splitY`, and `splitX2`/`splitY2` for the uneven halves of a 2×2; thousandths, 0 = joined),
+  and its up to four panes as panel keys in `panelA`…`panelD` (`note:5`, `dashboard`, empty = none). Newest first (`order`: neither flag).
+  Field options used: `field.text(max, { pattern, default })` and `field.int({ min, max, default })` (`fields.ts`).
+- Its resource shows only in the Trash (`surfaces: { trash: true }`); the sidebar's Layouts section is its own screen
+  (`app/src/features/layouts`). `layoutsStore.ts` turns a row into a `SavedLayout` (`fromRow`) and back (`toFields`), keeps what only this
+  tab knows (the layout last opened, the unsaved changes kept per layout) and makes each change one request through the resource's actions
+  (`saveLayout` = create, `updateLayout` = update shown at once and undone on a refusal, `archiveLayout`/`restoreLayout`, `deleteLayout`).
+- Clicking a tile opens its panes through the workspace URL (`/workspace?layout=…&panels=…`): no endpoint of its own; each pane reads
+  its own item. A pane whose item is gone is left out when the layout opens.
+- Migration `0009_layouts.sql` creates the table.
+
 ### Something a table does its own way
 
 - **One repo method:** in `backend/src/index.ts`, give that table `ownedRepo(schema.x, DATA.x, { toJson, beforeCreate, beforeUpdate })`.
