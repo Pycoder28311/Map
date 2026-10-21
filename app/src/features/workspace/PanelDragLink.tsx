@@ -27,7 +27,7 @@ export default function PanelDragLink({ node, object, className = '', style, chi
   const open = panel ? isOpen(panel) : false
   const disabled = !panel || !node.draggable || (!object && (!isDraggable(panel) || open || !canAdd))
 
-  const { setNodeRef, listeners, attributes, isDragging } = useObjectDrag({
+  const { setNodeRef, listeners, attributes } = useObjectDrag({
     id: `tree:${node.id}`,
     label: node.label,
     panel,
@@ -43,7 +43,7 @@ export default function PanelDragLink({ node, object, className = '', style, chi
       {...(disabled ? {} : { ...listeners, ...dragAttributes })}
       to={node.to ?? (panel ? hrefOf(panel) : '/')}
       active={panel ? open : undefined}
-      className={`${className} ${isDragging ? 'opacity-50' : ''}`}
+      className={className}
       style={style}
     >
       {children}

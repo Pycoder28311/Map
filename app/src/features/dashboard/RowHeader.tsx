@@ -16,6 +16,8 @@ const MANUAL: ExtendMenuItem<SortChoice> = { value: 'manual', label: 'Manual ord
 
 type Props = {
   name: string
+  /** Marks the header as something that glides when the cards around it make room (features/drag/glide.ts) */
+  reflowId?: string
   /** Renames the row's item in place (a project); none: the name cannot be edited (Orphans) */
   onRename?: (name: string) => void
   /** A click on the name opens the row's item (a project) */
@@ -31,11 +33,11 @@ type Props = {
  * ExtendMenu grows to show its options) and a green "Add +" on the right that makes an item in the row (a menu of kinds), as big as a
  * sidebar row.
  */
-export default function RowHeader({ name, onRename, onOpen, sort, onSort, create }: Props) {
+export default function RowHeader({ name, reflowId, onRename, onOpen, sort, onSort, create }: Props) {
   const [only] = create.kinds
   const [editing, setEditing] = useState(false)
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div data-reflow={reflowId} className="flex items-center justify-between gap-3">
       <div className="group/name flex min-w-0 items-center">
         {editing && onRename ? (
           <input

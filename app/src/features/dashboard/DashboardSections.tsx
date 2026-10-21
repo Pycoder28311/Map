@@ -114,6 +114,7 @@ export default function DashboardSections() {
           >
             <RowHeader
               name={row.title}
+              reflowId={`header:${row.id}`}
               onRename={row.root && titleFieldOf(row.root.resource) ? (name) => void actionsOf(row.root.resource).update(row.root.item.id, { [titleFieldOf(row.root.resource)!]: name }).catch(() => {}) : undefined}
               onOpen={row.root ? () => openItem(row.root.resource, String(row.root.item.id)) : undefined}
               sort={sort}
@@ -129,7 +130,13 @@ export default function DashboardSections() {
                 cards.map((item) => {
                   const entry = entryOf.get(item)!
                   return (
-                    <div key={`${entry.resource.name}:${item.id}`} data-flip-card={`${entry.resource.name}:${item.id}`} className="shrink-0">
+                    <div
+                      key={`${entry.resource.name}:${item.id}`}
+                      data-flip-card={`${entry.resource.name}:${item.id}`}
+                      data-glide={`${entry.resource.panelType}:${item.id}`}
+                      data-glide-in="dashboard"
+                      className="shrink-0"
+                    >
                       <ItemCard
                         resource={entry.resource}
                         item={item}

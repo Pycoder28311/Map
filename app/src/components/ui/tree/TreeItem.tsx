@@ -65,9 +65,9 @@ const LINE: Record<'before' | 'after', string> = {
   before: '-top-[3px]',
   after: '-bottom-[3px]',
 }
-// The row being dragged: its place shows as a dashed outline of its shape (its contents hidden; an
-// outline, not a border, so the row keeps its exact size)
-const LEFT_BEHIND = 'outline-1 outline-dashed -outline-offset-1 outline-line-strong [&>*]:invisible hover:bg-transparent'
+// The row being dragged: its place keeps a faded copy of it (icon and name; the hover icons are hidden), while the
+// lifted copy follows the pointer
+const LEFT_BEHIND = 'opacity-50 hover:bg-transparent [&_[data-row-icons]]:invisible'
 // A folder about to receive something: tinted, with a ring
 const INTO = 'bg-drop/16 ring-[1.4px] ring-inset ring-drop/55'
 
@@ -162,7 +162,12 @@ export default function TreeItem({
   // starts after it; leaves: [icon] inside the row
   const rowProps = state.isFolder
     ? { className: ROW_CLASS, style: INDENT_AFTER_ICON, children: content() }
-    : { className: ROW_CLASS, style: INDENT, children: content(icon && <TreeRowIcon icon={icon} />) }
+    : {
+        className: ROW_CLASS,
+        style: INDENT,
+        // A row that takes drops marks its icon too: what is dropped on it falls in (a folder's icon is marked above)
+        children: content(icon && (dropData ? <span data-drop-icon={node.id} className="flex shrink-0"><TreeRowIcon icon={icon} /></span> : <TreeRowIcon icon={icon} />)),
+      }
 
   return (
     <li role="treeitem" aria-expanded={state.isFolder ? state.isOpen : undefined} className="relative">
@@ -217,7 +222,7 @@ export default function TreeItem({
         {link && <DropIcon {...link} className="absolute end-0 top-0 z-20" />}
 
         {right.length > 0 && (
-          <div className="absolute inset-y-0 end-0 z-10 flex items-center gap-0.5 pe-(--btn-px)">
+          <div data-row-icons className="absolute inset-y-0 end-0 z-10 flex items-center gap-0.5 pe-(--btn-px)">
             {right.map((icon, i) => (
               <TreeIcon key={i} {...icon} />
             ))}

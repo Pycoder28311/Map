@@ -4,11 +4,12 @@
 // is a key between the neighbours (lib/resource/reorder.ts), sent through the resource's update in one request: shown at once, put
 // back if the server refuses.
 import type { DragMoveEvent, DragOverEvent } from '@dnd-kit/core'
-import { fallInto } from '../../components/ui/drop/fallInto'
+import { dropIconOf, fallInto } from '../../components/ui/drop/fallInto'
 import { dragPoint } from '../../lib/dnd'
 import { endIndex, moveItem, placement, sameEntry, type Entry, type Placement } from '../../lib/resource/reorder'
-import { resourceByPanelType } from '../../resources/registry'
+import { resourceByName, resourceByPanelType } from '../../resources/registry'
 import type { ObjectDragInfo } from '../workspace/types'
+import { beginGlide, playGlide, playReflow, snapshotReflow } from './glide'
 import { objectOf } from './objectDrag'
 import type { ZoneHandler } from './objectDrop'
 
@@ -122,6 +123,14 @@ export function resolvePlace(
   return place ? { side, moved, place, parent: newParent } : null
 }
 
+/** The drop key of a parent's icon in the sidebar (its row's id: a top-level row, or inside its parent's rows), when it is on screen */
+function sidebarIconOf(parent: NonNullable<PlaceParent>): string | undefined {
+  const panelType = resourceByName(parent.resource)?.panelType
+  if (!panelType) return undefined
+  const own = `${panelType}-${parent.id}`
+  return [...document.querySelectorAll('[data-drop-icon]')].map((el) => el.getAttribute('data-drop-icon') ?? '').find((key) => key === own || key.endsWith(`/${own}`))
+}
+
 export const placeZone: ZoneHandler = {
   target: (e: DragMoveEvent | DragOverEvent, item) => {
     const target = e.over?.data.current as PlaceTarget | undefined
@@ -137,9 +146,19 @@ export const placeZone: ZoneHandler = {
   },
   drop: (data, target, float) => {
     const value = target as unknown as PlaceValue
-    if (!objectOf(data)) return
-    if (value.side === 'into' && value.nodeId) fallInto(float, value.nodeId, { lifted: true })
+    const object = objectOf(data)
+    if (!object) return
+    // Into a new parent it falls into that parent's icon: the row it was dropped on, or (dropped in a Dashboard row) the parent's row in
+    // the sidebar. Otherwise its faded copy slides to where it landed (glide.ts)
+    const iconKey = value.side === 'into' && value.nodeId ? value.nodeId : value.parent ? sidebarIconOf(value.parent) : undefined
+    const falls = iconKey !== undefined && float !== null && dropIconOf(iconKey) !== null
+    if (falls) fallInto(float, iconKey, { lifted: true })
+    const glide = falls ? null : beginGlide(object, float)
+    // The others make room smoothly too
+    const reflow = snapshotReflow(`${object.kind}:${object.objectId}`)
     const parent = value.parent === undefined ? undefined : value.parent && { type: value.parent.type, id: Number(value.parent.id) }
     moveItem(value.moved, value.place, parent).catch((error) => console.error(`Could not move the ${value.moved.resource.ui.label.toLowerCase()}`, error))
+    if (glide) playGlide(glide)
+    if (reflow) playReflow(reflow)
   },
 }

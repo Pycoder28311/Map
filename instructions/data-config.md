@@ -183,6 +183,9 @@ each type to the table it is: `{ project: 'projects', folder: 'folders' }`.
   Dashboard cards (before/after: left/right half), Dashboard rows (the end), sidebar rows (before/after: top/bottom; into a project or
   folder: the middle). The rules are one pure function, `resolvePlace` (tested). Pinned items stay among the pinned; a row sorted by date
   takes no drops on its cards.
+- **After a drop** the item's faded copy (what it left in its place) slides to where it landed and turns solid (`features/drag/glide.ts`),
+  unless it falls into its new parent's icon (a move into a project or folder). A surface takes part by marking its elements
+  `data-glide="<panelType>:<id>"` and `data-glide-in="sidebar|dashboard"` (sidebar rows, Dashboard cards).
 - **Migration `0008`** turned the integer positions into keys (`a0, a1, …` per user, in the old order) without copying the tables; it is
   written by hand (drizzle-kit would rebuild every table). Its test runs it on an in-memory SQLite (`backend/src/db/migrations.test.ts`).
 

@@ -100,7 +100,7 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
         panel: { type: r.panelType, id: String(item.id) },
         draggable: true,
         locked: true,
-        rowData: { 'data-share-id': `${r.panelType}:${item.id}` },
+        rowData: { 'data-share-id': `${r.panelType}:${item.id}`, 'data-glide': `${r.panelType}:${item.id}`, 'data-glide-in': 'sidebar' },
         children: type ? childNodes(`${r.name}:${item.id}`, id, { type, resource: r.name, id: item.id }, depth + 1) : undefined,
       }
     })
@@ -117,7 +117,8 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
       panel: { type: resource.panelType, id: String(item.id) },
       draggable: true,
       locked: true,
-      rowData: { 'data-share-id': `${resource.panelType}:${item.id}` },
+      // data-glide: where a dropped object's faded copy slides to (features/drag/glide.ts); the Pinned copies are no place for it
+      rowData: { 'data-share-id': `${resource.panelType}:${item.id}`, 'data-glide': `${resource.panelType}:${item.id}`, 'data-glide-in': only ? 'pinned' : 'sidebar' },
       children: withKids && ownType ? childNodes(`${resource.name}:${item.id}`, nodeId(item), { type: ownType, resource: resource.name, id: item.id }, 0) : undefined,
     }
   })
