@@ -1,6 +1,6 @@
 // The tests every user-owned table must pass (ownedRepo.test.ts runs them for each table of the data config). A table with
 // overrides runs them too: `describeOwnedRepo('notes', ownedRepo(schema.notes, DATA.notes, { … }))`.
-import { DATA, previewOf, TABLE_NAMES, type Table, type TableName } from '@map/shared'
+import { comparePositions, DATA, positionBetween, previewOf, TABLE_NAMES, type Table, type TableName } from '@map/shared'
 import { generateSQLiteDrizzleJson, generateSQLiteMigration } from 'drizzle-kit/api'
 import { drizzle } from 'drizzle-orm/sqlite-proxy'
 import { DatabaseSync } from 'node:sqlite'
@@ -69,7 +69,7 @@ export function describeOwnedRepo(name: TableName, repo: AnyRepo) {
       const row = await create(ctx, sample(table))
       expect(row).toMatchObject({ ...table.input.parse(sample(table)), archived: false })
       if (table.order.pinned) expect(row.pinned).toBe(false)
-      if (table.order.position) expect(row.position).toBe(0)
+      if (table.order.position) expect(row.position).toBe('a0')
       if (table.link) expect(row).toMatchObject({ objectType: null, objectId: null })
       expect(row).not.toHaveProperty('userId')
       expect(new Date(row.createdAt as string).toISOString()).toBe(row.createdAt)
@@ -107,16 +107,49 @@ export function describeOwnedRepo(name: TableName, repo: AnyRepo) {
     if (table.order.pinned && table.order.position) {
       it('lists pinned first, then by position, then by id, a page at a time', async () => {
         const ctx = newUser()
-        const a = await create(ctx, { ...sample(table, 1), position: 5 })
-        const b = await create(ctx, { ...sample(table, 2), position: 1 })
-        const c = await create(ctx, { ...sample(table, 3), position: 5, pinned: true })
-        const d = await create(ctx, { ...sample(table, 4), position: 1 })
+        const a = await create(ctx, { ...sample(table, 1), position: 'a5' })
+        const b = await create(ctx, { ...sample(table, 2), position: 'a1' })
+        const c = await create(ctx, { ...sample(table, 3), position: 'a5', pinned: true })
+        const d = await create(ctx, { ...sample(table, 4), position: 'a1' })
         expect(ids((await list(ctx)).items)).toEqual([c.id, b.id, d.id, a.id])
         const first = await list(ctx, {}, 2)
         expect(ids(first.items)).toEqual([c.id, b.id])
         const second = await list(ctx, {}, 2, first.nextCursor)
         expect(ids(second.items)).toEqual([d.id, a.id])
         expect(second.nextCursor).toBeNull()
+      })
+    }
+
+    if (table.order.position) {
+      it('puts a new row without a position last in its group, and keeps a position it is given', async () => {
+        const ctx = newUser()
+        const a = await create(ctx, sample(table, 1))
+        const b = await create(ctx, sample(table, 2))
+        const given = await create(ctx, { ...sample(table, 3), position: positionBetween(a.position as string, b.position as string) })
+        expect(comparePositions(a.position as string, b.position as string)).toBeLessThan(0)
+        expect(ids((await list(ctx)).items)).toEqual([a.id, given.id, b.id])
+        // Each group has its own end: a pinned row (and a child of another parent) starts its own
+        if (table.order.pinned) expect((await create(ctx, { ...sample(table, 4), pinned: true })).position).toBe('a0')
+      })
+
+      it('moves a row by writing its position only, and refuses a bad one', async () => {
+        const ctx = newUser()
+        const [a, b, c] = [await create(ctx, sample(table, 1)), await create(ctx, sample(table, 2)), await create(ctx, sample(table, 3))]
+        await update(ctx, c.id as number, { position: positionBetween(a.position as string, b.position as string) })
+        expect(ids((await list(ctx)).items)).toEqual([a.id, c.id, b.id])
+        expect(await repo.get(ctx, a.id as number)).toEqual(a)
+        expect(() => table.update.parse({ position: 'a-' })).toThrow()
+        expect(() => table.update.parse({ position: 3 })).toThrow()
+      })
+
+      it('pages through rows with equal positions', async () => {
+        const ctx = newUser()
+        const rows = []
+        for (let n = 0; n < 5; n++) rows.push(await create(ctx, { ...sample(table, n), position: 'a1' }))
+        const first = await list(ctx, {}, 2)
+        const second = await list(ctx, {}, 2, first.nextCursor)
+        const third = await list(ctx, {}, 2, second.nextCursor)
+        expect([...ids(first.items), ...ids(second.items), ...ids(third.items)]).toEqual(rows.map((r) => r.id))
       })
     }
 

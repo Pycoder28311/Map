@@ -1,5 +1,5 @@
 // Which droppable a drag is over when several are under the pointer: the one with the highest
-// `data.priority` (link nodes 3, sidebar rows / cards / the trash 2, anything else, e.g. a pane's edge
+// `data.priority` (link nodes and Dashboard cards 3; sidebar rows, Dashboard rows and the trash 2; anything else, e.g. a pane's edge
 // zones, 1). Without it, a pane's edge zones (which cover the whole pane) would take drops meant for
 // the list inside it.
 import { pointerWithin, rectIntersection, type Collision, type CollisionDetection } from '@dnd-kit/core'

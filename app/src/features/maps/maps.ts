@@ -1,17 +1,14 @@
 // The maps (a mock resource for now: resources/mock.config.ts), as the board's code reads and writes them. Every screen shares the
 // same list in the store, so the sidebar, the Dashboard, the map picker and the presenter agree.
-import { PAGE_SIZE_MAX } from '@map/shared'
+import { PAGE_SIZE_MAX, positionsBetween } from '@map/shared'
 import { actionsOf, useResourceItem, useResourceList } from '../../lib/resource/hooks'
 import { resourceByName } from '../../resources/registry'
 import { copyBoard } from '../board/boardStore'
 
 export const mapsResource = resourceByName('maps')!
 
-/** Space left between neighbouring positions (as the backend's lib/sort.ts), so moving one map later changes only that map */
-const POSITION_STEP = 1024
-
 /** A map as its resource holds it. `branchOf`: the first map of its branch group (0: not a branch) */
-export type MapItem = { id: number; title: string; branchOf: number; archived: boolean; pinned: boolean; position: number; createdAt: string }
+export type MapItem = { id: number; title: string; branchOf: number; archived: boolean; pinned: boolean; position: string; createdAt: string }
 
 /** Every live map, in the list's order (pinned, position, id) */
 export function useMaps(): MapItem[] {
@@ -43,10 +40,11 @@ export async function createBranch(maps: MapItem[], mapId: string, name: string)
   return String(made.id)
 }
 
-/** The maps in this order: each gets its place (position), in steps so a later move changes one map */
+/** The maps in this order: each gets a new key (shared/position.ts), in this order */
 export async function reorderMaps(ids: (number | string)[]) {
   const { update } = actionsOf(mapsResource)
-  await Promise.all(ids.map((id, i) => update(id, { position: (i + 1) * POSITION_STEP })))
+  const keys = positionsBetween(null, null, ids.length) ?? []
+  await Promise.all(ids.map((id, i) => update(id, { position: keys[i] })))
 }
 
 /** Renames a map */

@@ -189,6 +189,45 @@ export function createListStore({ now = Date.now, staleMs = STALE_MS }: { now?: 
     else entry.stale = true
   }
 
+  /**
+   * A write that succeeded (create, update or delete): the lists of the resource take the server's answer in, without reading
+   * again. Each list of the resource takes the item out and puts it back where the server would list it (or leaves it out, if it
+   * belongs after what the list holds, or to another filter: archived items go to the Trash's list). A list with a read
+   * running is read again, since that read may have been answered before the write. Without enough to patch, the lists load again.
+   */
+  function applyEvent(event: ChangeEvent, optimistic = false) {
+    // An item being read takes the server's version, or is gone
+    const changed = event.removedId ?? event.item?.id
+    const entry = changed === undefined ? undefined : items.get(itemKey(event.name, changed))
+    // (a change shown ahead of the answer is not put into an item still being read: it would show it without its content)
+    if (entry && !(optimistic && !entry.state.item)) dispatchItem(entry, event.removedId !== undefined ? { type: 'gone' } : { type: 'set', item: event.item })
+    entries.forEach((entry, key) => {
+      if (entry.source.name !== event.name) return
+      const item = event.item as Row | undefined
+      const patchable = event.removedId !== undefined || (item !== undefined && entry.source.list !== undefined)
+      if (!patchable) return refresh(key, entry)
+      if (!entry.state.loaded && !entry.controller) return // never read: it is read when it is next needed
+      // A read running may have been answered before the write: read again (a change shown ahead of the server's answer is not worth a read)
+      if (entry.controller || entry.more) return optimistic ? undefined : refresh(key, entry)
+      const held = entry.state.items as Row[]
+      const without = held.filter((row) => !sameId(row, (event.removedId ?? item!.id) as number | string))
+      let next = without
+      if (event.removedId === undefined && matchesFilter(entry.filter, item!)) {
+        const list = entry.source.list!
+        const row = list.toItem(item as never) as Row
+        const before = compareFor(list.order)
+        const last = without[without.length - 1]
+        // After the last item held, in a list with more to read: it comes with the next page
+        if (entry.state.nextCursor === null || !last || before(row, last) < 0) {
+          const at = without.findIndex((other) => before(row, other) < 0)
+          next = at < 0 ? [...without, row] : [...without.slice(0, at), row, ...without.slice(at)]
+        }
+      }
+      if (next.length === held.length && next.every((row, i) => row === held[i])) return
+      dispatch(entry, { type: 'items', items: next })
+    })
+  }
+
   return {
     /**
      * A screen reads a list and needs at least `count` items of it while it reads. A new list is loaded, one that is held but
@@ -270,41 +309,28 @@ export function createListStore({ now = Date.now, staleMs = STALE_MS }: { now?: 
     },
     /** Reads the list from its start again */
     load,
+    apply: (event: ChangeEvent) => applyEvent(event),
     /**
-     * A write that succeeded (create, update or delete): the lists of the resource take the server's answer in, without reading
-     * again. Each list of the resource takes the item out and puts it back where the server would list it (or leaves it out, if it
-     * belongs after what the list holds, or to another filter: archived items go to the Trash's list). A list with a read
-     * running is read again, since that read may have been answered before the write. Without enough to patch, the lists load again.
+     * Changes some fields of an item in every place the store holds it, at once (before the server has answered): the lists put it
+     * where the new values belong, an item being read takes them. Fields with `onlyIf` change only where the item still has that
+     * value, so a change that is taken back does not undo a newer one. Gives the values the fields had and the item as it was, or
+     * null when the store holds the item nowhere (there is nothing to show yet).
      */
-    apply(event: ChangeEvent) {
-      // An item being read takes the server's version, or is gone
-      const changed = event.removedId ?? event.item?.id
-      const entry = changed === undefined ? undefined : items.get(itemKey(event.name, changed))
-      if (entry) dispatchItem(entry, event.removedId !== undefined ? { type: 'gone' } : { type: 'set', item: event.item })
-      entries.forEach((entry, key) => {
-        if (entry.source.name !== event.name) return
-        const item = event.item as Row | undefined
-        const patchable = event.removedId !== undefined || (item !== undefined && entry.source.list !== undefined)
-        if (!patchable) return refresh(key, entry)
-        if (!entry.state.loaded && !entry.controller) return // never read: it is read when it is next needed
-        if (entry.controller || entry.more) return refresh(key, entry)
-        const held = entry.state.items as Row[]
-        const without = held.filter((row) => !sameId(row, (event.removedId ?? item!.id) as number | string))
-        let next = without
-        if (event.removedId === undefined && matchesFilter(entry.filter, item!)) {
-          const list = entry.source.list!
-          const row = list.toItem(item as never) as Row
-          const before = compareFor(list.order)
-          const last = without[without.length - 1]
-          // After the last item held, in a list with more to read: it comes with the next page
-          if (entry.state.nextCursor === null || !last || before(row, last) < 0) {
-            const at = without.findIndex((other) => before(row, other) < 0)
-            next = at < 0 ? [...without, row] : [...without.slice(0, at), row, ...without.slice(at)]
-          }
+    patch(name: string, id: number | string, fields: Record<string, unknown>, onlyIf?: Record<string, unknown>): { before: Record<string, unknown>; row: Row } | null {
+      let base = items.get(itemKey(name, id))?.state.item as Row | null | undefined
+      if (!base) {
+        for (const entry of entries.values()) {
+          if (entry.source.name !== name) continue
+          base = (entry.state.items as Row[]).find((row) => sameId(row, id))
+          if (base) break
         }
-        if (next.length === held.length && next.every((row, i) => row === held[i])) return
-        dispatch(entry, { type: 'items', items: next })
-      })
+      }
+      if (!base) return null
+      const held = base
+      const applied = Object.fromEntries(Object.entries(fields).filter(([key]) => !onlyIf || !(key in onlyIf) || held[key] === onlyIf[key]))
+      const before = Object.fromEntries(Object.keys(applied).filter((key) => key in held).map((key) => [key, held[key]]))
+      if (Object.keys(applied).length > 0) applyEvent({ name, item: { ...held, ...applied } }, true)
+      return { before, row: held }
     },
     /** A resource changed in a way that says nothing of what changed: its lists that are read load again, the others when they are read next */
     reloadResource(name: string) {

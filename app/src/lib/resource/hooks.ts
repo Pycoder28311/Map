@@ -3,7 +3,7 @@
 import { PAGE_SIZE_DEFAULT, PAGE_SIZE_MAX } from '@map/shared/page-size'
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import type { AnyResource } from '../../resources/types'
-import { notifyChanged } from './changes'
+import { notifyChanged, patchChanged } from './changes'
 import { itemKey, listKey, NO_ITEM } from './listStore'
 import { useListStore } from './listStoreContext'
 import type { ItemState, ListState } from './state'
@@ -160,7 +160,35 @@ export function actionsOf<TItem extends { id: number | string }, TListItem, TInp
 ): ResourceActions<TItem, TInput, TUpdate> {
   const { name, api } = resource
   const written = (item: TItem) => (notifyChanged({ name, item }), item)
-  const update = async (id: number | string, patch: TUpdate, options?: { keepalive?: boolean }) => written(await api.update(id, patch, options))
+  /**
+   * The change shows at once (patchChanged); the request follows. Updates of one item go to the server one after the other, in the
+   * order they were made. The answer replaces what was shown (with the fields of updates still waiting on top of it, so they do not
+   * flicker back). A refusal takes the change back, field by field (undo).
+   */
+  const update = async (id: number | string, patch: TUpdate, options?: { keepalive?: boolean }) => {
+    const key = itemKey(name, id)
+    const queue = queues.get(key) ?? { last: Promise.resolve(), ops: [] }
+    queues.set(key, queue)
+    const fields = patch as Record<string, unknown>
+    const shown = patchChanged(name, id, fields)
+    const op: Op = { fields, before: shown?.before ?? {}, row: shown?.row ?? null }
+    queue.ops.push(op)
+    const send = () => api.update(id, patch, options)
+    // A request that must leave now (the page is closing) does not wait for the others
+    const request = options?.keepalive ? send() : queue.last.then(send)
+    queue.last = request.catch(() => undefined)
+    try {
+      const item = await request
+      queue.ops.splice(queue.ops.indexOf(op), 1)
+      return written(queue.ops.length > 0 ? ({ ...item, ...Object.assign({}, ...queue.ops.map((o) => o.fields)) } as TItem) : item)
+    } catch (error) {
+      queue.ops.splice(queue.ops.indexOf(op), 1)
+      undo(name, id, op, queue.ops)
+      throw error
+    } finally {
+      if (queue.ops.length === 0 && queues.get(key) === queue) queues.delete(key)
+    }
+  }
   return {
     create: async (input) => written(await api.create(input)),
     update,
@@ -172,6 +200,33 @@ export function actionsOf<TItem extends { id: number | string }, TListItem, TInp
     trash: (id) => update(id, { archived: true } as TUpdate),
     restore: (id) => update(id, { archived: false } as TUpdate),
   }
+}
+
+/** An update that was shown and has not been answered: its fields, the values they had, and the item as it was */
+type Op = { fields: Record<string, unknown>; before: Record<string, unknown>; row: Record<string, unknown> | null }
+/** The updates of each item that are on their way (`last`: the request the next one waits for) */
+const queues = new Map<string, { last: Promise<unknown>; ops: Op[] }>()
+
+/**
+ * Takes back what a refused update showed. A field that a later update of the item also changes is not touched (the screen shows
+ * that update's value): it is handed the value this one had, so if that one is refused too the field goes back to what the server has.
+ * The others go back to their old value only where they still show this update's value. `rest`: the updates still waiting.
+ */
+function undo(name: string, id: number | string, op: Op, rest: Op[]) {
+  const back: Record<string, unknown> = {}
+  const expected: Record<string, unknown> = {}
+  for (const field of Object.keys(op.fields)) {
+    if (!(field in op.before)) continue
+    const later = rest.find((o) => field in o.fields)
+    if (later) later.before[field] = op.before[field]
+    else {
+      back[field] = op.before[field]
+      expected[field] = op.fields[field]
+    }
+  }
+  if (Object.keys(back).length === 0) return
+  // The item left the lists it was shown in (it went to the Trash, or to another parent): it goes back as it was
+  if (!patchChanged(name, id, back, expected) && op.row) notifyChanged({ name, item: { ...op.row, ...back } as { id: number | string } })
 }
 
 /** The writes of a resource (actionsOf), the same object for the component's life */

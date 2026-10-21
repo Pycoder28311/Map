@@ -48,8 +48,9 @@ describe('input', () => {
     expect(parsed).toEqual({ title: 't', content: '<p>a</p>' })
   })
   it('takes the order fields and archived', () => {
-    expect(DATA.projects.input.parse({ title: 't', pinned: true, position: 5, archived: false })).toEqual({ title: 't', pinned: true, position: 5, archived: false })
-    expect(DATA.projects.input.safeParse({ title: 't', position: -1 }).success).toBe(false)
+    expect(DATA.projects.input.parse({ title: 't', pinned: true, position: 'a5', archived: false })).toEqual({ title: 't', pinned: true, position: 'a5', archived: false })
+    expect(DATA.projects.input.safeParse({ title: 't', position: 5 }).success).toBe(false)
+    expect(DATA.projects.input.safeParse({ title: 't', position: 'not a key' }).success).toBe(false)
   })
   it('takes a parent only as a pair of a known table and an id', () => {
     expect(DATA.folders.input.safeParse({ title: 't', objectType: 'project', objectId: 1 }).success).toBe(true)
@@ -95,7 +96,7 @@ describe('matchesFilter', () => {
 
 describe('types', () => {
   it('derives each table\'s item, list item, input and filter', () => {
-    expectTypeOf<Item<'folders'>>().toMatchTypeOf<{ id: number; title: string; description: string; pinned: boolean; position: number; objectType: 'project' | 'folder' | null }>()
+    expectTypeOf<Item<'folders'>>().toMatchTypeOf<{ id: number; title: string; description: string; pinned: boolean; position: string; objectType: 'project' | 'folder' | null }>()
     expectTypeOf<Item<'folders'>>().not.toHaveProperty('preview')
     expectTypeOf<Item<'articles'>>().toHaveProperty('content')
     expectTypeOf<ListItem<'articles'>>().not.toHaveProperty('content')

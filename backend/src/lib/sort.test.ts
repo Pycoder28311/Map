@@ -3,9 +3,9 @@ import { drizzle } from 'drizzle-orm/sqlite-proxy'
 import { getTableConfig, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { generateSQLiteDrizzleJson, generateSQLiteMigration } from 'drizzle-kit/api'
 import { DatabaseSync } from 'node:sqlite'
-import { orderFields, type OrderSpec, type Page } from '@map/shared'
+import { comparePositions, integerKey, orderFields, type OrderSpec, type Page } from '@map/shared'
 import { describe, expect, it } from 'vitest'
-import { listIndex, listSort, orderColumns, pickOrder, positionBetween, sortColumnsOf, POSITION_STEP } from './sort'
+import { listIndex, listSort, orderColumns, pickOrder, sortColumnsOf } from './sort'
 import { toPage, type PageParams } from './pagination'
 
 // The four cases, each table built the way the schema builds one: orderColumns + listIndex from the order flags
@@ -57,7 +57,7 @@ const rows = Array.from({ length: 70 }, (_, i) => ({
   title: `n${i}`,
   archived: i % 7 === 0,
   pinned: rnd(3) === 0,
-  position: rnd(6) * 10,
+  position: integerKey(rnd(6) * 10),
 }))
 const insert = (table: string, columns: string[], values: unknown[]) =>
   sqlite.prepare(`INSERT INTO ${table} (${columns.join(',')}) VALUES (${columns.map(() => '?').join(',')})`).run(...values)
@@ -69,10 +69,10 @@ for (const r of rows) {
   insert('neither', ['user_id', 'title', 'archived'], base)
 }
 
-type Row = { id: number; pinned?: boolean; position?: number }
+type Row = { id: number; pinned?: boolean; position?: string }
 const mine = rows.map((r, i) => ({ ...r, id: i + 1 })).filter((r) => r.userId === 'me' && !r.archived)
 const compare = (order: OrderSpec) => (a: (typeof mine)[0], b: (typeof mine)[0]) =>
-  (order.pinned ? Number(b.pinned) - Number(a.pinned) : 0) || (order.position ? a.position - b.position || a.id - b.id : b.id - a.id)
+  (order.pinned ? Number(b.pinned) - Number(a.pinned) : 0) || (order.position ? comparePositions(a.position, b.position) || a.id - b.id : b.id - a.id)
 
 /** Reads the whole (not archived) list page by page (limit 4), the way the repo does */
 async function readAll<O extends OrderSpec>(table: ReturnType<typeof makeTable<O>>, order: O) {
@@ -117,9 +117,9 @@ describe('the flags decide the columns, the index and the output', () => {
     expect(names(tables.neither)).not.toEqual(expect.arrayContaining(['position']))
   })
   it('keeps only the flagged fields in the output', () => {
-    const row = { id: 1, pinned: true, position: 3 }
-    expect(pickOrder(row, CASES.both)).toEqual({ pinned: true, position: 3 })
-    expect(pickOrder(row, CASES.posOnly)).toEqual({ position: 3 })
+    const row = { id: 1, pinned: true, position: 'a3' }
+    expect(pickOrder(row, CASES.both)).toEqual({ pinned: true, position: 'a3' })
+    expect(pickOrder(row, CASES.posOnly)).toEqual({ position: 'a3' })
     expect(pickOrder(row, CASES.pinOnly)).toEqual({ pinned: true })
     expect(pickOrder(row, CASES.neither)).toEqual({})
   })
@@ -149,21 +149,8 @@ describe('the index serves the order', () => {
 describe('cursors', () => {
   it('rejects a cursor that is not ours', () => {
     const sort = listSort(sortColumnsOf(tables.both as never, CASES.both))
-    for (const cursor of ['%%%', btoa('[1,2]'), btoa('{"a":1}'), btoa('[1,"x",3]')]) {
+    for (const cursor of ['%%%', btoa('[1,2]'), btoa('{"a":1}'), btoa('[1,"x",3]'), btoa('[1,5,3]'), btoa('[1,"a-",3]')]) {
       expect(() => sort.after({ limit: 4, cursor })).toThrow()
     }
-  })
-})
-
-describe('positionBetween', () => {
-  it('starts a list, appends, prepends and fills a gap', () => {
-    expect(positionBetween(undefined, undefined)).toBe(POSITION_STEP)
-    expect(positionBetween(2048, undefined)).toBe(2048 + POSITION_STEP)
-    expect(positionBetween(undefined, 1000)).toBe(500)
-    expect(positionBetween(1000, 2000)).toBe(1500)
-  })
-  it('says when the gap is used up', () => {
-    expect(positionBetween(5, 6)).toBeNull()
-    expect(positionBetween(undefined, 0)).toBeNull()
   })
 })

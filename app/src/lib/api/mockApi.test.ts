@@ -22,7 +22,7 @@ describe('createMockApi', () => {
   it('starts from its seed, with the server\'s defaults', async () => {
     const page = await api.list({ archived: false })
     expect(ids(page.items)).toEqual([1, 2])
-    expect(page.items[1]).toMatchObject({ title: 'b', preview: 'words', archived: false, pinned: false, position: 0, objectType: null, objectId: null })
+    expect(page.items[1]).toMatchObject({ title: 'b', preview: 'words', archived: false, pinned: false, position: 'a1', objectType: null, objectId: null })
     expect(page.items[1]).not.toHaveProperty('content')
     expect((await api.get(2)).content).toBe('<p>words</p>')
   })

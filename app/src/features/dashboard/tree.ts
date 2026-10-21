@@ -48,3 +48,28 @@ export function groupByRoot(entries: Entry[], roots: { resource: AnyResource; it
   }
   return { byRoot, orphans }
 }
+
+/**
+ * The items by their direct parent (`<parent resource>:<id>`): what a tree shows under a node (a project's items, a folder's items).
+ * Items without a parent are not in it. Order inside a parent: the order given.
+ */
+export function groupByParent(entries: Entry[]): Map<string, Entry[]> {
+  const byParent = new Map<string, Entry[]>()
+  for (const entry of entries) {
+    const { objectType, objectId } = entry.item
+    const parent = entry.resource.parents?.find((p) => p.type === objectType)
+    if (!parent || objectId === null || objectId === undefined) continue
+    const key = keyOf(parent.resource, objectId as number)
+    byParent.set(key, [...(byParent.get(key) ?? []), entry])
+  }
+  return byParent
+}
+
+/** The `objectType` that names this resource as a parent (a key of the data config's `link.types`), when some resource can be its child */
+export function parentTypeOf(resource: AnyResource, resources: AnyResource[]): string | undefined {
+  for (const r of resources) {
+    const found = r.parents?.find((p) => p.resource === resource.name)
+    if (found) return found.type
+  }
+  return undefined
+}

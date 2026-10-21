@@ -1,9 +1,15 @@
-import { useMemo, useState, type ComponentProps } from 'react'
+import { PAGE_SIZE_DEFAULT } from '@map/shared/page-size'
+import { Fragment, useMemo, useState, type ComponentProps } from 'react'
 import { LuChevronsDown, LuChevronsUp, LuPin, LuUnlink } from 'react-icons/lu'
+import { CHILDREN, ROOTS } from '../../../features/dashboard/childResources'
+import { groupByParent, parentTypeOf, type Entry } from '../../../features/dashboard/tree'
+import { placeDropData, type PlaceParent, type PlaceTarget } from '../../../features/drag/placeDrop'
+import { compareEntries } from '../../../lib/resource/reorder'
+import { RESOURCES } from '../../../resources/registry'
 import PanelDragLink from '../../../features/workspace/PanelDragLink'
 import { useWorkspace } from '../../../features/workspace/useWorkspace'
 import { useResourceMenu } from '../../../lib/resource/actions'
-import { useResourceList } from '../../../lib/resource/hooks'
+import { useResourceList, useResourceLists } from '../../../lib/resource/hooks'
 import type { AnyResource } from '../../../resources/types'
 import Button from '../../ui/buttons/Button'
 import { TREE_ROW_LOOK } from '../../ui/buttons/buttonStyles'
@@ -11,8 +17,16 @@ import { useLids } from '../../ui/tree/swallow'
 import TreeView from '../../ui/tree/TreeView'
 import type { TreeNode, TreeRightIcon } from '../../ui/tree/types'
 import { useSidebarDrop } from './sidebarDropState'
+import { useChildMenus } from './useChildMenus'
 
 type Item = Record<string, unknown> & { id: number | string }
+
+const NONE: AnyResource[] = []
+/** The parent an item is in (what a drop on that same parent leaves as it is) */
+const parentOf = (item: Item | undefined) =>
+  item ? { type: (item.objectType as string | null | undefined) ?? null, id: (item.objectId as number | null | undefined) ?? null } : undefined
+/** How many levels of folders are followed under a project (a cycle cannot be saved, but old data might have one) */
+const MAX_DEPTH = 20
 
 export type SidebarTreeSettings = Omit<ComponentProps<typeof TreeView>, 'nodes' | 'label'>
 
@@ -30,9 +44,11 @@ type Props = {
 }
 
 /**
- * A resource's rows in the sidebar: its list, the first few, then Show more / less. The rows open its panel,
- * drag onto pane edges and the Trash, rename in place, and have the ⋯ menu (pin, duplicate, trash, delete…). They take no drops:
- * their order comes from the server (pinned first).
+ * A resource's rows in the sidebar: its list, the first few, then Show more / less. A resource others point at (the projects) has its
+ * children under each row (open with the arrow): their lists are the Dashboard's, so a child made anywhere shows in both at once.
+ * The rows open its panel, drag onto pane edges and the Trash, rename in place, and have the ⋯ menu (pin, duplicate, trash, delete…).
+ * They take drops (features/drag/placeDrop.ts): before or after a row moves an item there (among the section's own items at the top;
+ * under a project, into that parent), and the middle of a project or folder row puts it inside as its last child. Pinned copies take none.
  */
 export default function ResourceRows({ resource, tree, compact, only, prefix = '', quiet = false }: Props) {
   const limit = resource.surfaces.sidebar?.limit ?? 5
@@ -42,34 +58,97 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
   const drop = useSidebarDrop()
   const lidOpen = useLids()
   const [showAll, setShowAll] = useState(false)
-  const titleField = resource.ui.fields.find((f) => f.heading)?.name
+  const withKids = !only && ROOTS.includes(resource)
+  const kids = useResourceLists(CHILDREN, { limit: PAGE_SIZE_DEFAULT, enabled: withKids })
+  const childMenus = useChildMenus(withKids ? CHILDREN : NONE)
+  const kidsOf = useMemo(
+    () => {
+      if (!withKids) return new Map<string, Entry[]>()
+      const byParent = groupByParent(kids.lists.flatMap(({ resource: r, items }) => items.map((item) => ({ resource: r, item }) as Entry)))
+      // Under a parent, the items of every resource in one order (the server's rule across them)
+      byParent.forEach((entries) => entries.sort(compareEntries))
+      return byParent
+    },
+    [withKids, kids.lists],
+  )
+  /** The place of each row in its list, for drops (none in the Pinned section) */
+  const placeOf = new Map<string, PlaceTarget>()
+  /** A row that can be a parent: dropped in its middle, an item goes in as its last child */
+  const intoOf = (r: AnyResource, item: Item) => {
+    const type = parentTypeOf(r, RESOURCES)
+    return type ? { parent: { type, resource: r.name, id: item.id }, list: () => kidsOf.get(`${r.name}:${item.id}`) ?? [] } : undefined
+  }
 
   const items = only ? (list.items as Item[]).filter(only) : (list.items as Item[])
   const nodeId = (item: Item) => `${prefix}${resource.panelType}-${item.id}`
   const byNode = useMemo(() => new Map(items.map((item) => [nodeId(item), item])), [items]) // eslint-disable-line react-hooks/exhaustive-deps
-  const nodes: TreeNode[] = items.map((item) => ({
-    id: nodeId(item),
-    label: resource.ui.row.title(item),
-    icon: resource.ui.icon,
-    panel: { type: resource.panelType, id: String(item.id) },
-    draggable: true,
-    locked: true,
-    rowData: { 'data-share-id': `${resource.panelType}:${item.id}` },
-  }))
+  // The rows of the children (and of what is in their folders), by node id: they are of other resources than this one
+  const childByNode = new Map<string, Entry>()
+  const childNodes = (parentKey: string, parentNodeId: string, parent: NonNullable<PlaceParent>, depth: number): TreeNode[] | undefined => {
+    const entries = kidsOf.get(parentKey)
+    if (!entries?.length || depth >= MAX_DEPTH) return undefined
+    return entries.map((entry) => {
+      const { resource: r, item } = entry
+      const id = `${parentNodeId}/${r.panelType}-${item.id}`
+      childByNode.set(id, entry)
+      placeOf.set(id, { kind: 'node', nodeId: id, entry, list: () => entries, parent, into: intoOf(r, item) })
+      const type = parentTypeOf(r, RESOURCES)
+      return {
+        id,
+        label: r.ui.row.title(item),
+        icon: r.ui.icon,
+        panel: { type: r.panelType, id: String(item.id) },
+        draggable: true,
+        locked: true,
+        rowData: { 'data-share-id': `${r.panelType}:${item.id}` },
+        children: type ? childNodes(`${r.name}:${item.id}`, id, { type, resource: r.name, id: item.id }, depth + 1) : undefined,
+      }
+    })
+  }
+  const ownType = parentTypeOf(resource, RESOURCES)
+  const ownEntries = items.map((item) => ({ resource, item }))
+  const nodes: TreeNode[] = items.map((item, i) => {
+    // At the top of a section: among the section's own items, each keeping its parent
+    if (!only) placeOf.set(nodeId(item), { kind: 'node', nodeId: nodeId(item), entry: ownEntries[i], list: () => ownEntries, only: resource.name, into: withKids ? intoOf(resource, item) : undefined })
+    return {
+      id: nodeId(item),
+      label: resource.ui.row.title(item),
+      icon: resource.ui.icon,
+      panel: { type: resource.panelType, id: String(item.id) },
+      draggable: true,
+      locked: true,
+      rowData: { 'data-share-id': `${resource.panelType}:${item.id}` },
+      children: withKids && ownType ? childNodes(`${resource.name}:${item.id}`, nodeId(item), { type: ownType, resource: resource.name, id: item.id }, 0) : undefined,
+    }
+  })
   const hidden = nodes.length - limit
   const shown = showAll || hidden <= 0 ? nodes : nodes.slice(0, limit)
 
-  const menuItem = (item: Item) => ({ id: item.id, title: resource.ui.row.title(item), pinned: resource.ui.row.pinned?.(item) })
+  /** What a row is: its item, its resource and that resource's menu */
+  const rowOf = (id: string) => {
+    const own = byNode.get(id)
+    if (own) return { resource, item: own, menu: { menuOf, actions, attempt } }
+    const entry = childByNode.get(id)
+    const menu = entry && childMenus.get(entry.resource.name)
+    return entry && menu ? { resource: entry.resource, item: entry.item, menu } : undefined
+  }
+  const titleFieldOf = (r: AnyResource) => r.ui.fields.find((f) => f.heading)?.name
+
+  const menuItem = (r: AnyResource, item: Item) => ({ id: item.id, title: r.ui.row.title(item), pinned: r.ui.row.pinned?.(item) })
 
   const rightIcons = (node: TreeNode): TreeRightIcon[] => {
-    const item = byNode.get(node.id)
+    const row = rowOf(node.id)
     const undrag: TreeRightIcon[] =
       node.panel && workspace.isPane(node.panel)
         ? [{ icon: LuUnlink, label: `Remove from screen: ${node.label}`, show: 'hover', onClick: () => workspace.close(node.panel!) }]
         : []
-    if (!item) return undrag
-    const pin: TreeRightIcon[] = !only && resource.ui.row.pinned?.(item) ? [{ icon: LuPin, label: 'Pinned', show: 'always' }] : []
-    const more: TreeRightIcon = { label: `More: ${node.label}`, show: 'hover', menu: menuOf(menuItem(item), { onRename: () => tree.onEditingChange?.(node.id) }) }
+    if (!row) return undrag
+    const pin: TreeRightIcon[] = !only && row.resource.ui.row.pinned?.(row.item) ? [{ icon: LuPin, label: 'Pinned', show: 'always' }] : []
+    const more: TreeRightIcon = {
+      label: `More: ${node.label}`,
+      show: 'hover',
+      menu: row.menu.menuOf(menuItem(row.resource, row.item), { onRename: () => tree.onEditingChange?.(node.id) }),
+    }
     return [...undrag, ...pin, more]
   }
 
@@ -79,17 +158,37 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
     renderLink: (node, props) => (
       <PanelDragLink
         node={node}
-        object={{ nodeId: node.id, objectId: String(byNode.get(node.id)?.id ?? ''), kind: resource.panelType, icon: node.icon, source: 'sidebar' }}
+        object={{
+          nodeId: node.id,
+          objectId: String(rowOf(node.id)?.item.id ?? ''),
+          kind: rowOf(node.id)?.resource.panelType ?? resource.panelType,
+          icon: node.icon,
+          source: 'sidebar',
+          parent: parentOf(rowOf(node.id)?.item),
+          pinned: rowOf(node.id)?.item.pinned === true,
+        }}
         {...props}
       />
     ),
     onRename: (node, name) => {
-      const item = byNode.get(node.id)
-      if (item && titleField) void attempt('rename it', () => actions.update(item.id, { [titleField]: name }))
+      const row = rowOf(node.id)
+      const titleField = row && titleFieldOf(row.resource)
+      if (row && titleField) void row.menu.attempt('rename it', () => row.menu.actions.update(row.item.id, { [titleField]: name }))
     },
-    canRename: (node) => byNode.has(node.id) && titleField !== undefined,
+    canRename: (node) => {
+      const row = rowOf(node.id)
+      return row !== undefined && titleFieldOf(row.resource) !== undefined
+    },
     icons: { right: rightIcons },
-    dnd: { draggingId: drop.draggingNodeId, lidOpen },
+    dnd: {
+      draggingId: drop.draggingNodeId,
+      lidOpen,
+      dropData: (node) => {
+        const place = placeOf.get(node.id)
+        return place ? placeDropData(place) : undefined
+      },
+      target: drop.place,
+    },
   }
 
   const status =
@@ -129,6 +228,9 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
         </Button>
       )}
       {dialogs}
+      {[...childMenus.values()].map((menu, i) => (
+        <Fragment key={i}>{menu.dialogs}</Fragment>
+      ))}
     </>
   )
 }

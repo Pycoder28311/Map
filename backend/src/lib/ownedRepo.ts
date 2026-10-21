@@ -1,5 +1,5 @@
-import { DATA, previewOf, TABLE_NAMES, type Table } from '@map/shared'
-import { and, eq, getTableColumns, isNull, sql, type SQL } from 'drizzle-orm'
+import { DATA, positionAfter, previewOf, TABLE_NAMES, type Table } from '@map/shared'
+import { and, desc, eq, getTableColumns, isNull, sql, type SQL } from 'drizzle-orm'
 import * as schema from '../db/schema'
 import { hasChanges, userId, type Ctx, type Repo } from './crud'
 import { HttpError } from './errors'
@@ -29,6 +29,7 @@ export type RepoOverrides = {
  * - the preview is written with its field, in the same write, so the two never differ
  * - a parent (`objectType` + `objectId`) is checked when a write sets it: the parent row exists in the table its type names, is the
  *   user's, and does not make a cycle (a folder in itself or in its own children). Writes that do not set a parent read nothing for it
+ * - a new row without a `position` goes last in its group (same parent, pinned or not): one read through the list index
  * - deleting a row sets the parent of its children (rows of any table pointing at it) to none: they become orphans, not lost
  */
 /** How many levels up a parent chain is followed looking for a cycle */
@@ -100,6 +101,29 @@ export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverr
     if (cycle.length > 0) throw bad('Cannot be inside its own children', 'VALIDATION_FAILED')
   }
 
+  /**
+   * The position of a new row that has none: after the last row of its group (the user's live rows with the same parent and the
+   * same pinned flag), read through the list index (its columns are exactly these, then position): one row read
+   */
+  async function lastPosition(ctx: Ctx, fields: Fields): Promise<string> {
+    const same = (column: (typeof columns)[string], value: unknown) => (value === null || value === undefined ? isNull(column) : eq(column, value))
+    const last = await ctx.db
+      .select({ position: columns.position })
+      .from(table)
+      .where(
+        and(
+          eq(columns.userId, userId(ctx)),
+          eq(columns.archived, (fields.archived as boolean | undefined) ?? false),
+          ...(config.link ? [same(columns.objectType, fields.objectType), same(columns.objectId, fields.objectId)] : []),
+          ...(config.order.pinned ? [eq(columns.pinned, (fields.pinned as boolean | undefined) ?? false)] : []),
+        ),
+      )
+      .orderBy(desc(columns.position), desc(columns.id))
+      .limit(1)
+      .get()
+    return positionAfter(last?.position as string | undefined)
+  }
+
   /** The tables whose rows can have a row of this table as their parent: [table, the objectType naming this table] */
   const childTables = TABLE_NAMES.flatMap((name) =>
     Object.entries((DATA[name] as unknown as Table).link?.types ?? {})
@@ -137,7 +161,8 @@ export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverr
     async create(ctx, input) {
       const fields = overrides.beforeCreate ? await overrides.beforeCreate(ctx, input) : input
       await checkParent(ctx, fields)
-      const row = (await ctx.db.insert(table).values({ ...withPreview(fields), userId: userId(ctx) }).returning().get()) as Row
+      const placed = config.order.position && fields.position === undefined ? { ...fields, position: await lastPosition(ctx, fields) } : fields
+      const row = (await ctx.db.insert(table).values({ ...withPreview(placed), userId: userId(ctx) }).returning().get()) as Row
       return toJson(row)
     },
 

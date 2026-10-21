@@ -19,6 +19,10 @@ export type ObjectDragInfo = {
   nodeId?: string
   icon?: ButtonIcon
   source: 'sidebar' | 'pane'
+  /** The parent it is in now (a project or folder item has one): a drop on that same parent changes nothing; unknown: any drop may */
+  parent?: { type: string | null; id: number | null }
+  /** Pinned items stay among the pinned (a drop keeps it in its group) */
+  pinned?: boolean
 }
 
 /**

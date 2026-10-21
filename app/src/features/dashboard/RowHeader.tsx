@@ -1,4 +1,5 @@
-import { LuChevronDown, LuPlus, LuX } from 'react-icons/lu'
+import { useState } from 'react'
+import { LuChevronDown, LuPencil, LuPlus, LuX } from 'react-icons/lu'
 import ExtendMenu, { type ExtendMenuItem } from '../../components/ui/overlays/ExtendMenu'
 import { SORT_LABEL, type CardSort } from './sortByDate'
 
@@ -15,6 +16,8 @@ const MANUAL: ExtendMenuItem<SortChoice> = { value: 'manual', label: 'Manual ord
 
 type Props = {
   name: string
+  /** Renames the row's item in place (a project); none: the name cannot be edited (Orphans) */
+  onRename?: (name: string) => void
   /** A click on the name opens the row's item (a project) */
   onOpen?: () => void
   sort: CardSort | null
@@ -24,21 +27,60 @@ type Props = {
 }
 
 /**
- * A Dashboard row's header: its name on the left (a project's opens it on a click), Sort by (a background only on hover; it extends:
+ * A Dashboard row's header: its name on the left (a project's opens it on a click; the ✎ on its right, on hover, renames it in place), Sort by (a background only on hover; it extends:
  * ExtendMenu grows to show its options) and a green "Add +" on the right that makes an item in the row (a menu of kinds), as big as a
  * sidebar row.
  */
-export default function RowHeader({ name, onOpen, sort, onSort, create }: Props) {
+export default function RowHeader({ name, onRename, onOpen, sort, onSort, create }: Props) {
   const [only] = create.kinds
+  const [editing, setEditing] = useState(false)
   return (
     <div className="flex items-center justify-between gap-3">
-      {onOpen ? (
-        <button type="button" onClick={onOpen} title={`Open ${name}`} className="min-w-0 cursor-pointer truncate rounded-(--corner-sm) text-start text-title hover:underline focus-visible:outline-2 focus-visible:outline-accent">
-          {name}
-        </button>
-      ) : (
-        <h2 className="min-w-0 truncate text-title">{name}</h2>
-      )}
+      <div className="group/name flex min-w-0 items-center">
+        {editing && onRename ? (
+          <input
+            defaultValue={name}
+            aria-label="Project name"
+            autoFocus
+            onFocus={(e) => e.currentTarget.select()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur()
+              if (e.key === 'Escape') {
+                e.currentTarget.value = name
+                e.currentTarget.blur()
+              }
+            }}
+            onBlur={(e) => {
+              const next = e.currentTarget.value.trim()
+              if (next && next !== name) onRename(next)
+              setEditing(false)
+            }}
+            className="min-w-0 flex-1 rounded-(--corner-sm) bg-transparent text-title outline-2 outline-accent [field-sizing:content]"
+          />
+        ) : (
+          <>
+            {onOpen ? (
+              <button type="button" onClick={onOpen} title={`Open ${name}`} className="min-w-0 cursor-pointer truncate rounded-(--corner-sm) text-start text-title hover:underline focus-visible:outline-2 focus-visible:outline-accent">
+                {name}
+              </button>
+            ) : (
+              <h2 className="min-w-0 truncate text-title">{name}</h2>
+            )}
+            {/* ✎ on the name's right, on hover: renames it in place */}
+            {onRename && (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                aria-label={`Rename ${name}`}
+                title="Rename"
+                className="ms-2 inline-flex shrink-0 cursor-pointer rounded-(--btn-close-radius) p-1 text-fg-subtle opacity-0 transition-opacity group-hover/name:opacity-100 hover:text-fg focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent"
+              >
+                <LuPencil aria-hidden className="size-4" />
+              </button>
+            )}
+          </>
+        )}
+      </div>
       <div className="flex shrink-0 items-center gap-2">
         <ExtendMenu
           variant="ghost"

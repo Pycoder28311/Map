@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { resourceByName } from '../../resources/registry'
-import { groupByRoot, rootResources, type Entry } from './tree'
+import { groupByParent, groupByRoot, parentTypeOf, rootResources, type Entry } from './tree'
 import { RESOURCES } from '../../resources/registry'
 
 const projects = resourceByName('projects')!
@@ -48,5 +48,23 @@ describe('groupByRoot', () => {
   it('does not loop on a circular folder chain', () => {
     const list = [entry(folders, 1, ['folder', 2]), entry(folders, 2, ['folder', 1])]
     expect(ids(groupByRoot(list, roots([5])).orphans)).toEqual(['folders:1', 'folders:2'])
+  })
+})
+
+describe('groupByParent', () => {
+  it('lists the items under their direct parent, folders under their project and their own items under them', () => {
+    const list = [entry(folders, 1, ['project', 5]), entry(articles, 2, ['folder', 1]), entry(articles, 3, ['project', 5]), entry(articles, 4)]
+    const byParent = groupByParent(list)
+    expect(ids(byParent.get('projects:5')!)).toEqual(['folders:1', 'articles:3'])
+    expect(ids(byParent.get('folders:1')!)).toEqual(['articles:2'])
+    expect([...byParent.keys()]).toEqual(['projects:5', 'folders:1'])
+  })
+})
+
+describe('parentTypeOf', () => {
+  it('names the types projects and folders are parents under, and nothing for what has no children', () => {
+    expect(parentTypeOf(projects, RESOURCES)).toBe('project')
+    expect(parentTypeOf(folders, RESOURCES)).toBe('folder')
+    expect(parentTypeOf(articles, RESOURCES)).toBeUndefined()
   })
 })

@@ -159,12 +159,32 @@ each type to the table it is: `{ project: 'projects', folder: 'folders' }`.
 - **Create a child:** `create({ ..., objectType: 'project', objectId: 5 })` (the Dashboard's Add in a project's row does this).
 - **Change the parent:** `update(id, { objectType, objectId })`, or `{ objectType: null, objectId: null }` for none. "Move to…" in the ⋯ menu
   (`ResourceMoveDialog`) does this for any table with a `link`, and the lists in the store follow without reading again.
+- **Drag and drop:** see "Order (position) and reordering" below: a drop in another list also sets that list's parent, in the same update.
 - **What the server checks** (`ownedRepo`, only when a write sets a parent): the parent exists in the table of its type, is the user's, and
   is not the row itself or one of its own children (a recursive query up the chain, at most 20 levels). A write that sets no parent
   reads nothing for this. A failed check is `400` (`UNKNOWN_REFERENCE` or `VALIDATION_FAILED`) with the field `objectId`.
 - **Deleting a parent** sets the parent of its children (rows of every table that can point at it) to none: they become orphans. Archiving
   a parent keeps them as they are; the Dashboard shows them in the Orphans row while it is in the Trash.
 - **A new kind of parent:** add it to `PARENT.types` in `data.config.ts` (and, for a table of its own, give that table a `link` to nest it).
+
+### Order (position) and reordering
+
+- **`position` is a string:** a fractional-indexing key (`a0`, `a1`, `a0V`…), compared byte by byte (never `localeCompare`). Lists are
+  ordered pinned first, then `position`, then id. Keys of every table compare with each other, so a Dashboard row that mixes tables is
+  sorted with `compareEntries` (`app/src/lib/resource/reorder.ts`).
+- **One place makes keys:** `packages/shared/src/position.ts` (on the `fractional-indexing` library): `positionBetween`, `positionsBetween`,
+  `positionAfter`, `positionBefore`, `isPosition`, `comparePositions`, and `positionField` (the contract's rule). Do not make keys anywhere else.
+- **Moving an item writes that row only:** `placement(list, index, moved)` gives the key between the new neighbours (when they have equal
+  keys it also gives new keys to the tied run: `fixes`), `moveItem(...)` sends it through the resource's `update` (with the new parent when
+  the list has one). It shows at once and goes back if the server refuses, like every update.
+- **A new row without a `position`** goes last in its group (same parent, same pinned flag): `ownedRepo.create` reads the group's last
+  key through the list index (one row read). The Dashboard's Add sends the key itself when its row holds all of its items.
+- **Drop targets** (`features/drag/placeDrop.ts`, zone `place`): a droppable gives `placeDropData({ kind, list, entry, parent, only, into })`.
+  Dashboard cards (before/after: left/right half), Dashboard rows (the end), sidebar rows (before/after: top/bottom; into a project or
+  folder: the middle). The rules are one pure function, `resolvePlace` (tested). Pinned items stay among the pinned; a row sorted by date
+  takes no drops on its cards.
+- **Migration `0008`** turned the integer positions into keys (`a0, a1, …` per user, in the old order) without copying the tables; it is
+  written by hand (drizzle-kit would rebuild every table). Its test runs it on an in-memory SQLite (`backend/src/db/migrations.test.ts`).
 
 ### Something a table does its own way
 

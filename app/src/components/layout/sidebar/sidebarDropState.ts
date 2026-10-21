@@ -2,6 +2,8 @@
 // useSidebarDrop gives the sidebar what's dragged and whether it would land in the bin.
 import { useObjectDrop, type ZoneHandler } from '../../../features/drag/objectDrop'
 import { objectOf } from '../../../features/drag/objectDrag'
+import { PLACE_ZONE, type PlaceValue } from '../../../features/drag/placeDrop'
+import type { TreeDropPosition } from '../../ui/tree/types'
 import type { PanelDragData } from '../../../features/workspace/types'
 import { archiveLayout } from '../../../mocks/layoutsStore'
 import { actionsOf } from '../../../lib/resource/hooks'
@@ -15,10 +17,12 @@ export type SidebarDropTarget = { kind: 'trash' } | null
 /** The droppable id of the trash bin, its zone and its drop key (data-drop-icon, lid) */
 export const TRASH_ID = 'trash'
 
-/** What the sidebar shows of the current drag: the row it left (an outline), and whether it would land in the bin */
-export function useSidebarDrop(): { draggingNodeId: string | null; target: SidebarDropTarget } {
+/** What the sidebar shows of the current drag: the row it left (an outline), whether it would land in the bin, and the place it would go (before, after or into a row) */
+export function useSidebarDrop(): { draggingNodeId: string | null; target: SidebarDropTarget; place: { nodeId: string; position: TreeDropPosition } | null } {
   const { item, target } = useObjectDrop()
-  return { draggingNodeId: item?.nodeId ?? null, target: target?.zone === 'trash' ? { kind: 'trash' } : null }
+  const value = target?.zone === PLACE_ZONE ? (target.value as unknown as PlaceValue) : null
+  const place = value?.nodeId && value.side !== 'end' ? { nodeId: value.nodeId, position: value.side } : null
+  return { draggingNodeId: item?.nodeId ?? null, target: target?.zone === 'trash' ? { kind: 'trash' } : null, place }
 }
 
 /** A saved layout's tile being dragged (it can only go to the trash) */

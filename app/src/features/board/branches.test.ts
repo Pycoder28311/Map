@@ -8,7 +8,7 @@ const map = (id: number, extra: Partial<MapItem> = {}): MapItem => ({
   branchOf: 0,
   archived: false,
   pinned: false,
-  position: 0,
+  position: 'a0',
   createdAt: new Date(Date.UTC(2026, 0, id)).toISOString(),
   ...extra,
 })

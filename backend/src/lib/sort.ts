@@ -1,6 +1,6 @@
-import type { OrderOutput, OrderSpec } from '@map/shared'
+import { isPosition, type OrderOutput, type OrderSpec } from '@map/shared'
 import { and, asc, desc, eq, gt, lt, or, sql, type SQL } from 'drizzle-orm'
-import { index, integer, type SQLiteColumn } from 'drizzle-orm/sqlite-core'
+import { index, integer, text, type SQLiteColumn } from 'drizzle-orm/sqlite-core'
 import { HttpError } from './errors'
 import type { PageParams } from './pagination'
 
@@ -37,7 +37,8 @@ export function sortKeys({ id, pinned, position }: SortColumns): SortKey[] {
 
 /** The columns the order flags turn on, to spread into the table: `...orderColumns(config.order)` */
 const pinnedColumn = () => integer('pinned', { mode: 'boolean' }).notNull().default(false)
-const positionColumn = () => integer('position').notNull().default(0)
+// A fractional-indexing key (shared/position.ts). The server always sets it; the default only matters to raw SQL
+const positionColumn = () => text('position').notNull().default('a0')
 
 export function orderColumns<const O extends OrderSpec>(order: O) {
   return {
@@ -59,7 +60,7 @@ export function sortColumnsOf<O extends OrderSpec>(table: OrderedTable<O>, order
 
 /** The output fields of the flags that are on, from a row: `...pickOrder(row, config.order)` in the repo's toJson */
 export function pickOrder<O extends OrderSpec>(row: OrderOutput<O>, order: O): OrderOutput<O> {
-  const fields = row as { pinned?: boolean; position?: number }
+  const fields = row as { pinned?: boolean; position?: string }
   return {
     ...(order.pinned ? { pinned: fields.pinned } : {}),
     ...(order.position ? { position: fields.position } : {}),
@@ -89,16 +90,19 @@ export function listIndex<T extends { id: SQLiteColumn }, O extends OrderSpec>(
 
 const badCursor = () => new HttpError(400, 'VALIDATION_FAILED', 'Invalid input', [{ path: 'cursor', message: 'Invalid cursor' }])
 
+/** A cursor's value for one key: the position is a key (a string), the others numbers */
+const validValue = (key: SortKey, value: unknown) => (key.name === 'position' ? isPosition(value) : Number.isFinite(value))
+
 /** Cursors are opaque to clients: base64 of the last row's sort values */
-function decodeValues(cursor: string, keys: SortKey[]): number[] {
+function decodeValues(cursor: string, keys: SortKey[]): (number | string)[] {
   let values: unknown
   try {
     values = JSON.parse(atob(cursor))
   } catch {
     throw badCursor()
   }
-  if (!Array.isArray(values) || values.length !== keys.length || !values.every((v) => Number.isFinite(v))) throw badCursor()
-  return values as number[]
+  if (!Array.isArray(values) || values.length !== keys.length || !values.every((v, i) => validValue(keys[i], v))) throw badCursor()
+  return values as (number | string)[]
 }
 
 export function listSort(columns: SortColumns) {
@@ -134,23 +138,8 @@ export function listSort(columns: SortColumns) {
     },
 
     /** The cursor that continues after this row */
-    cursorOf(row: { id: number; pinned?: boolean | number; position?: number }): string {
-      return btoa(JSON.stringify(keys.map((key) => Number(row[key.name]))))
+    cursorOf(row: { id: number; pinned?: boolean | number; position?: string }): string {
+      return btoa(JSON.stringify(keys.map((key) => (key.name === 'position' ? String(row.position) : Number(row[key.name])))))
     },
   }
-}
-
-/** Space left between neighbouring positions, so moving one row changes only that row */
-export const POSITION_STEP = 1024
-
-/**
- * The position for a row dropped between two neighbours (undefined = no neighbour on that side). Only the moved row is
- * written; null means the gap is used up, and the caller renumbers the list in steps of POSITION_STEP.
- */
-export function positionBetween(before: number | undefined, after: number | undefined): number | null {
-  if (before === undefined && after === undefined) return POSITION_STEP
-  if (before === undefined) return after! > 0 ? Math.floor(after! / 2) : null
-  if (after === undefined) return before + POSITION_STEP
-  const middle = Math.floor((before + after) / 2)
-  return middle > before && middle < after ? middle : null
 }
