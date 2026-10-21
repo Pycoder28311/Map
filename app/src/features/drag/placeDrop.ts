@@ -86,7 +86,11 @@ export function resolvePlace(
   moved: Entry,
   current?: ObjectDragInfo['parent'],
 ): Omit<PlaceValue, 'key' | 'mark' | 'nodeId'> | null {
-  if (target.only && moved.resource.name !== target.only) return null
+  // A row of a section that takes only its own resource (the Projects) takes any other one inside it: the whole row is "into"
+  if (target.only && moved.resource.name !== target.only) {
+    if (!target.into) return null
+    side = 'into'
+  }
   const into = side === 'into' ? target.into : undefined
   const full = into ? into.list() : target.list()
   const parent = into ? into.parent : target.parent
@@ -128,7 +132,7 @@ export const placeZone: ZoneHandler = {
     const resolved = resolvePlace(target, side, moved, item?.parent)
     if (!resolved) return null
     const mark = target.kind === 'row' ? `row:${target.rowId}` : target.entry ? `${target.entry.resource.name}:${target.entry.item.id}` : ''
-    const value: PlaceValue = { ...resolved, key: `${target.nodeId ?? mark}:${side}`, mark, nodeId: target.nodeId }
+    const value: PlaceValue = { ...resolved, key: `${target.nodeId ?? mark}:${resolved.side}`, mark, nodeId: target.nodeId }
     return value
   },
   drop: (data, target, float) => {

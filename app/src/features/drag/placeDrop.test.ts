@@ -70,6 +70,23 @@ describe('resolvePlace', () => {
     expect(comparePositions('a1', result.place.position)).toBeLessThan(0)
   })
 
+  it('takes another resource inside a project row of a section, wherever on the row it is dropped', () => {
+    const project: PlaceTarget = {
+      kind: 'node',
+      entry: entry(projects, 5, 'a0'),
+      list: () => [entry(projects, 5, 'a0')],
+      only: 'projects',
+      into: { parent: project5, list: () => [a1, f2] },
+    }
+    for (const side of ['before', 'after', 'into'] as const) {
+      const result = resolvePlace(project, side, moved(notes, 8), { type: null, id: null })!
+      expect(result.side).toBe('into')
+      expect(result.parent).toEqual(project5)
+    }
+    // Without somewhere to go inside, it still takes no other resource
+    expect(resolvePlace({ ...project, into: undefined }, 'before', moved(notes, 8))).toBeNull()
+  })
+
   it('keeps pinned items among the pinned', () => {
     const pinned = entry(articles, 3, 'a0', { pinned: true, objectType: 'project', objectId: 5 })
     const target = row({ list: () => [pinned, a1, f2], entry: pinned })
