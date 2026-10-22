@@ -36,7 +36,12 @@ class FakeStorage implements DraftStorage {
 describe('dueAt', () => {
   const t = { dirty: true, saving: false, firstChange: 1_000, lastChange: 1_000 }
   it('is the idle time after the last change', () => {
-    expect(dueAt({ ...t, lastChange: 4_000 })).toBe(4_000 + IDLE_MS)
+    expect(dueAt({ ...t, lastChange: 4_000 }, 5_000, 60_000)).toBe(9_000)
+  })
+  it('saves 30 s after the first change by default, however it is typed', () => {
+    expect(IDLE_MS).toBe(30_000)
+    expect(dueAt({ ...t, firstChange: 1_000, lastChange: 1_000 })).toBe(31_000)
+    expect(dueAt({ ...t, firstChange: 1_000, lastChange: 20_000 })).toBe(31_000)
   })
   it('is never later than the max wait after the first change (continuous typing)', () => {
     expect(dueAt({ ...t, firstChange: 1_000, lastChange: 1_000 + MAX_WAIT_MS - 1_000 })).toBe(1_000 + MAX_WAIT_MS)

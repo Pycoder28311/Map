@@ -5,7 +5,7 @@ import { useTimeout } from '../../lib/useTimeout'
 import { useOpenLayout } from '../objects/ListRows'
 import { single } from '../workspace/layout'
 import CreateModal from './CreateModal'
-import { RAISED } from './buttonLook'
+import PixelSquare from '../../components/ui/pixel/PixelSquare'
 
 /** The modal's shrink-back (its animation, in animations.css) before it's removed (ms) */
 const CLOSE_MS = 200
@@ -15,8 +15,8 @@ const TOAST_MS = 6000
 // Full class strings so Tailwind can detect them at build time.
 // The two faces of the button, back to back: they never show through each other
 const FACE =
-  'absolute inset-0 corner-marks flex cursor-pointer items-center justify-center gap-2 rounded-(--corner-xl) text-base font-medium [backface-visibility:hidden] ' +
-  `transition-[background-color,box-shadow,translate] ${RAISED} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`
+  'absolute inset-0 flex cursor-pointer items-center justify-center gap-2 text-base font-medium [backface-visibility:hidden] ' +
+  'transition-[background-color,translate] active:translate-y-0.5 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-accent'
 
 /** What was made: its panel type (to open it), what to call it ("note") and its name */
 type Made = { id: string; panelType: string; label: string; name: string }
@@ -103,7 +103,9 @@ export default function CreateFab() {
           }`}
         >
           {/* Front: Create (green, like the rows' Create buttons) */}
-          <button
+          <PixelSquare
+            as="button"
+            bevel
             ref={buttonRef}
             type="button"
             onClick={show}
@@ -111,22 +113,24 @@ export default function CreateFab() {
             aria-hidden={open}
             aria-expanded={open}
             aria-controls="create-modal"
-            className={`${FACE} bg-create text-create-fg hover:bg-(--btn-create-hover-bg)`}
+            className={`${FACE} text-create-fg [--pixel-face:var(--create)] hover:[--pixel-face:var(--btn-create-hover-bg)]`}
           >
             <LuPlus aria-hidden className="size-5" />
             Create
-          </button>
+          </PixelSquare>
           {/* Back: ✕ Cancel (gray), turned round so it reads right when the button is flipped */}
-          <button
+          <PixelSquare
+            as="button"
+            bevel
             type="button"
             onClick={hide}
             tabIndex={open ? 0 : -1}
             aria-hidden={!open}
-            className={`${FACE} bg-fill-strong text-fg hover:bg-fill [transform:rotateY(180deg)]`}
+            className={`${FACE} text-fg [--pixel-face:var(--fill-strong)] hover:[--pixel-face:var(--fill)] [transform:rotateY(180deg)]`}
           >
             <LuX aria-hidden className="size-5" />
             Cancel
-          </button>
+          </PixelSquare>
         </div>
       </div>
     </>

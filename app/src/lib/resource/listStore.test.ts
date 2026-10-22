@@ -325,6 +325,29 @@ describe('createListStore', () => {
       expect(get).toHaveBeenCalledTimes(2)
     })
 
+    it('opens on an item the server just answered with (a create) without reading it, and drops it with its last screen', async () => {
+      const store = createListStore()
+      const { source, get } = itemSource()
+      store.seedItem(source, { id: 1, title: 'made' } as never)
+      const stop = store.subscribeItem(source, 1, noop)
+      await flush()
+      expect(get).not.toHaveBeenCalled()
+      expect((store.itemSnapshot(k).item as { title: string }).title).toBe('made')
+      store.apply({ name: 'notes', item: { id: 1, title: 'typed' } as never })
+      expect((store.itemSnapshot(k).item as { title: string }).title).toBe('typed')
+      stop()
+      expect(store.itemSnapshot(k).item).toBeNull()
+    })
+
+    it('does not seed over an item that is already held', async () => {
+      const store = createListStore()
+      const { source } = itemSource()
+      store.subscribeItem(source, 1, noop)
+      await flush()
+      store.seedItem(source, { id: 1, title: 'other' } as never)
+      expect((store.itemSnapshot(k).item as { title: string }).title).toBe('n1')
+    })
+
     it('takes the server version of a write, and is gone when deleted, without reading', async () => {
       const store = createListStore()
       const { source, get } = itemSource()

@@ -11,6 +11,7 @@ import { actionsOf } from '../../../lib/resource/hooks'
 import { resourceByPanelType } from '../../../resources/registry'
 import { dropIconOf, fallInto } from '../../ui/drop/fallInto'
 import { swallow } from '../../ui/tree/swallow'
+import { burnDown } from './burnDown'
 
 /** Where the current drag would land in the sidebar */
 export type SidebarDropTarget = { kind: 'trash' } | null
@@ -44,13 +45,14 @@ export const trashZone: ZoneHandler = {
       // The tile itself falls into the bin
       const tile = document.querySelector(`[data-layout-tile="${CSS.escape(layoutId)}"]`)
       const bin = dropIconOf(TRASH_ID)
-      if (tile && bin) swallow({ source: tile, to: bin, lidKey: TRASH_ID })
+      // With the embers on it goes behind the rows and breaks at the bottom; else it falls into the bin
+      if (tile && !burnDown(tile) && bin) swallow({ source: tile, to: bin, lidKey: TRASH_ID })
       return archiveLayout(layoutId)
     }
     const object = objectOf(data)
     const resource = resourceByPanelType(object?.kind)
     if (!object?.objectId || !resource) return
-    fallInto(float, TRASH_ID, { lifted: true })
+    if (!burnDown(float, { lifted: true })) fallInto(float, TRASH_ID, { lifted: true })
     actionsOf(resource)
       .trash(object.objectId)
       .catch((error) => console.error(`Could not move the ${resource.ui.label.toLowerCase()} to the Trash`, error))

@@ -1,6 +1,7 @@
-// A deleted object goes behind the sidebar's rows, falls to its bottom and sinks into the embers, which catch fire
-// (SidebarPixels listens for BURN_EVENT). Only where the embers are on (a theme turns them on).
+// An object dropped on the trash bin goes behind the sidebar's rows, falls to its bottom and breaks into small squares that sink into the embers, which catch fire
+// (SidebarPixels listens for BURN_EVENT). Only where the embers are on (a theme turns them on): otherwise the item falls into the bin (fallInto).
 import { reducedMotion } from '../../ui/tree/dragEffects'
+import { freezeCopy } from '../../ui/tree/swallow'
 
 /** Fired on `window` when the fallen object reaches the bottom */
 export const BURN_EVENT = 'sidebar-burn'
@@ -13,10 +14,10 @@ const PARTICLES = 16
 const REST_GAP = 14
 
 /**
- * Plays the fall for a copy of `source`; false (nothing played) when the embers are off, the sidebar isn't there or motion is
+ * Plays the fall for a copy of `source` (`lifted`: the floating copy of a dragged row, which keeps its tilt); false (nothing played) when the embers are off, the sidebar isn't there or motion is
  * reduced, so the caller can use another effect. Call it right before the data changes: the copy is taken at once.
  */
-export function burnDown(source: Element | null): boolean {
+export function burnDown(source: Element | null, { lifted = false } = {}): boolean {
   const nav = document.getElementById('sidebar')
   if (!source || !nav || reducedMotion()) return false
   if (getComputedStyle(nav).getPropertyValue('--sidebar-pixels-display').trim() === 'none') return false
@@ -38,6 +39,7 @@ export function burnDown(source: Element | null): boolean {
     zIndex: BEHIND,
     transform: 'none',
   })
+  freezeCopy(clone, source, lifted)
   nav.appendChild(clone)
 
   // Gravity: slow at first, quick at the end; it tips a little, shrinks and fades as it falls, then is gone

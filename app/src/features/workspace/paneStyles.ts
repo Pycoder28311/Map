@@ -17,11 +17,14 @@ export const PANE_GAP = 6
 /** Space between the panels and the edges of the app around them: sidebar, navbar, window (px) */
 export const PANE_INSET = 6
 
-/** A panel's outline (--pane-border: e.g. the hovered pane's colour, Pane) */
-export const PANE_BORDER = '1px solid var(--pane-border, var(--color-line))'
+/**
+ * A panel's frame: a thick gray border (--pane-frame, --pane-frame-w in styles/tokens.css) with a very thin light line just outside it
+ * (the outline, --pane-hairline: the hovered pane's turns blue, Pane)
+ */
+export const PANE_BORDER = 'var(--pane-frame-w) solid var(--pane-frame)'
 
 /** One panel (Pane) */
-export const paneStyle: CSSProperties = { borderRadius: PANE_RADIUS, border: PANE_BORDER }
+export const paneStyle: CSSProperties = { borderRadius: PANE_RADIUS, border: PANE_BORDER, outline: '1px solid var(--pane-hairline)', outlineOffset: 0 }
 
 /** The highlight shown where a dragged item would land (DropZones) */
 export const dropPreviewStyle: CSSProperties = { borderRadius: PANE_RADIUS }

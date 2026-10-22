@@ -1,6 +1,7 @@
 // What the user opened lately (the Dashboard's Recent column), newest first. Kept in this browser,
 // per user (localStorage); the helpers that build and add entries are pure (recentStore.test.ts).
 import { useSyncExternalStore } from 'react'
+import { isNewId } from '../../lib/resource/newItem'
 import { panelKey, workspaceHref, type Template, type WorkspaceLayout } from '../workspace/layout'
 
 export const MAX_RECENT = 20
@@ -18,6 +19,8 @@ export type RecentEntry =
 export function entryForLayout(layout: WorkspaceLayout, at: number): RecentEntry | null {
   const panels = layout.panels.map(panelKey)
   if (panels.length === 1 && panels[0] === 'dashboard') return null
+  // An item that is not made yet (a "new …" page) is not something that was opened
+  if (layout.panels.some((panel) => isNewId(panel.id))) return null
   const key = panels.length === 1 ? panels[0] : workspaceHref(layout)
   return { key, kind: 'panels', template: layout.template, panels, at }
 }

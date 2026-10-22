@@ -23,14 +23,18 @@ type Props = {
   id: string
   /** Set in the modal: a Close button saves first, then calls it */
   onClose?: () => void
+  /** The field that gets the cursor when it opens (default: the title) */
+  focusField?: string
+  /** With `onClose`, a Close button at the bottom (default); false when the modal has its own X (onClose is still called after a delete) */
+  showClose?: boolean
 }
 
 /**
  * One item of a resource (a note, a project), edited in place (the modal and the panel use it): the resource's fields, saved as you
- * write (useAutosave: 5 s without a change, 30 s at most, at once when the page is hidden, a draft on this device meanwhile).
+ * write (useAutosave: 30 s without a change, and 30 s at most after the first, at once when the page is hidden, a draft on this device meanwhile).
  * An item in the Trash says so, with Restore.
  */
-export default function ResourceEditor({ resource, id, onClose }: Props) {
+export default function ResourceEditor({ resource, id, onClose, focusField, showClose = true }: Props) {
   const { item, status, error, notFound, refresh } = useResourceItem(resource, id)
   const note = item as Item | null
   const what = resource.ui.label.toLowerCase()
@@ -68,10 +72,10 @@ export default function ResourceEditor({ resource, id, onClose }: Props) {
       </div>
     )
   }
-  return <ItemForm key={note.id} resource={resource} note={note} onClose={onClose} />
+  return <ItemForm key={note.id} resource={resource} note={note} onClose={onClose} focusField={focusField} showClose={showClose} />
 }
 
-function ItemForm({ resource, note, onClose }: { resource: AnyResource; note: Item; onClose?: () => void }) {
+function ItemForm({ resource, note, onClose, focusField = 'title', showClose = true }: { resource: AnyResource; note: Item; onClose?: () => void; focusField?: string; showClose?: boolean }) {
   const what = resource.ui.label.toLowerCase()
   const { update } = useResourceActions(resource)
   const { data: session } = authClient.useSession()
@@ -132,14 +136,14 @@ function ItemForm({ resource, note, onClose }: { resource: AnyResource; note: It
 
   return (
     <div className="flex flex-col gap-2 p-4">
-      <ResourceForm key={start.version} resource={resource} initial={start.values} onChange={autosave.change} autoFocusField="title" />
+      <ResourceForm key={start.version} resource={resource} initial={start.values} onChange={autosave.change} autoFocusField={focusField} />
       <div className="mt-2 flex items-center gap-2">
         <Button variant="ghost" icon={LuTrash2} className="text-danger" onClick={() => setDeleting(true)}>
           Delete
         </Button>
         <SaveStatus status={autosave.status} />
         <span className="ms-auto text-small text-fg-subtle">Created {DATE.format(new Date(note.createdAt))}</span>
-        {onClose && (
+        {onClose && showClose && (
           <Button
             variant="ghost"
             onClick={() => {

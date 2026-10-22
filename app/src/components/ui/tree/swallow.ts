@@ -63,6 +63,30 @@ type Options = {
 }
 
 /**
+ * Makes a copy of a floating or lifted element continue what it was instead of starting over. A copy put in the page starts every CSS
+ * animation of it again: the float's own "grows in" (opacity and scale from 0) would play on the copy at the moment it takes over, as if
+ * it appeared anew. An animation is not copied with an element either: the copy of a lifted row would show it flat and small for a
+ * moment, then snap. So it starts as the row looks now (the tilt and size the lift animation has reached), and the fall goes on from
+ * there. `lifted`: the source is the lifted row (its lift animation is on an inner `[data-lifted-row]`). Gives whether it kept a tilt.
+ */
+export function freezeCopy(clone: HTMLElement, source: Element, lifted: boolean): boolean {
+  for (const el of [clone, ...clone.querySelectorAll<HTMLElement>('*')]) el.style.animation = 'none'
+  let liftedNow = false
+  if (lifted) {
+    const copies = clone.querySelectorAll<HTMLElement>('[data-lifted-row]')
+    source.querySelectorAll<HTMLElement>('[data-lifted-row]').forEach((row, i) => {
+      const transform = getComputedStyle(row).transform
+      if (transform !== 'none' && copies[i]) {
+        copies[i].style.transform = transform
+        copies[i].style.animation = 'none'
+        liftedNow = true
+      }
+    })
+  }
+  return liftedNow
+}
+
+/**
  * Plays the swallow; does nothing with reduced motion. Call it right before changing the data: the
  * copy is taken at once (the source may go away), and the target is measured on the next frame,
  * after the tree has settled in its new layout.
@@ -88,23 +112,7 @@ export function swallow({ source, to, lidKey, lifted = false }: Options) {
     transformOrigin: 'center',
   })
   clone.setAttribute('aria-hidden', 'true')
-  // A copy put in the page starts every CSS animation of it again: the float's own "grows in" (opacity and scale from 0) would play
-  // on the copy at the moment it takes over, as if it appeared anew. The copy only continues what the float was
-  for (const el of [clone, ...clone.querySelectorAll<HTMLElement>('*')]) el.style.animation = 'none'
-  // An animation is not copied with an element: the copy of a lifted row would show it flat and small for a moment, then snap. So it
-  // starts as the row looks now (the tilt and size the lift animation has reached), and the fall goes on from there
-  let liftedNow = false
-  if (lifted) {
-    const copies = clone.querySelectorAll<HTMLElement>('[data-lifted-row]')
-    source.querySelectorAll<HTMLElement>('[data-lifted-row]').forEach((row, i) => {
-      const transform = getComputedStyle(row).transform
-      if (transform !== 'none' && copies[i]) {
-        copies[i].style.transform = transform
-        copies[i].style.animation = 'none'
-        liftedNow = true
-      }
-    })
-  }
+  const liftedNow = freezeCopy(clone, source, lifted)
   document.body.appendChild(clone)
 
   setLid(lidKey, true)

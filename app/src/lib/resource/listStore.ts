@@ -268,6 +268,15 @@ export function createListStore({ now = Date.now, staleMs = STALE_MS }: { now?: 
         dropIfIdle(key, entry)
       }
     },
+    /**
+     * Puts an item the server has just answered with (a create) where an editor opening on it finds it: it is not read again. Held like an
+     * item being read: dropped when the last screen showing it stops (or kept as the answer until one does). Not on top of a held one
+     */
+    seedItem(source: ItemSource, item: { id: number | string }) {
+      const key = itemKey(source.name, item.id)
+      if (items.has(key)) return
+      items.set(key, { source, id: item.id, state: itemReducer(initialItem<unknown>(), { type: 'set', item }), readers: new Set(), controller: null })
+    },
     itemSnapshot: (key: string): ItemState<unknown> => items.get(key)?.state ?? NO_ITEM,
     loadItem,
     /** The list as it is now (the same object until it changes) */

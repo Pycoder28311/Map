@@ -24,6 +24,8 @@ export type UiSurfaces = {
   quickCreate?: boolean
   /** A tab of the floating Create button's modal */
   create?: boolean
+  /** Opens in a centred modal (with a button to its page) from the sidebar, instead of going to its page */
+  modal?: boolean
 }
 
 /** How one field shows in the form. By default every field shows, with the widget of its kind (text, textarea, rich text) */
@@ -72,7 +74,7 @@ export const RESOURCE_UI: Record<TableName | MockTableName, ResourceUi> = {
     untitled: 'Untitled note',
     pageDescription: 'Pinned notes come first.',
     fields: { title: { placeholder: 'Title' }, content: { label: 'Text', placeholder: 'Take a note…' } },
-    surfaces: { ...EVERYWHERE, sidebar: { limit: 5 }, quickCreate: true },
+    surfaces: { ...EVERYWHERE, sidebar: { limit: 5 }, quickCreate: true, modal: true },
   },
   folders: {
     panelType: 'folder',

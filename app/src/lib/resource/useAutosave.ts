@@ -1,4 +1,4 @@
-// Saves what is being edited, as autosave.ts decides (5 s idle, at most 30 s of continuous typing, at once when the page is
+// Saves what is being edited, as autosave.ts decides (30 s idle, at most 30 s of continuous typing, at once when the page is
 // hidden), and keeps a draft in localStorage until the server has it.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { browserStorage, clearDraft, dueAt, fitsKeepalive, retryDelay, writeDraft } from './autosave'

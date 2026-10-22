@@ -6,7 +6,7 @@ import ShareButton from '../../features/share/ShareButton'
 import PopoutLayer from '../ui/overlays/PopoutLayer'
 import GlobeLogo from '../ui/icons/GlobeLogo'
 import MenuToggleIcon from '../ui/icons/MenuToggleIcon'
-import SpaceStrip from '../ui/icons/SpaceStrip'
+import DeskStrip from '../ui/icons/DeskStrip'
 import ProfileCircle from './ProfileCircle'
 import { frameRadiusPx } from '../../features/workspace/paneStyles'
 import { useWorkspace } from '../../features/workspace/useWorkspace'
@@ -51,14 +51,14 @@ export default function Navbar() {
                 >
                     <MenuToggleIcon open={sidebar.expanded} className="size-full" />
                 </button>
-                {/* The name, and a faint pixel sky behind it that reaches towards the Recent button (centred, 14rem wide: 8rem from the centre
+                {/* The name, and a faint pixel desk behind it that reaches towards the Recent button (centred, 14rem wide: 8rem from the centre
                     keeps a gap) and fills the bar's height; on narrow screens only the name */}
                 <div className="flex h-full min-w-0 items-center gap-2 lg:w-[calc(50%-8rem-var(--sidebar-rail))]">
                     <Link to="/" className="inline-flex shrink-0 items-center gap-2 text-heading font-semibold">
                         <GlobeLogo className="h-11 w-auto shrink-0" />
                         Map
                     </Link>
-                    <SpaceStrip className="h-full min-w-0 flex-1 max-lg:hidden" />
+                    <DeskStrip className="h-full min-w-0 flex-1 max-lg:hidden" />
                 </div>
 
                 {/* Centred in the bar, whatever the sides hold */}

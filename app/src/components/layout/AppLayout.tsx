@@ -5,6 +5,7 @@ import { FocusModeProvider, useFocusMode } from '../../features/focus/FocusMode'
 import ShareMode from '../../features/share/ShareMode'
 import PageDropZones from '../../features/workspace/PageDropZones'
 import CreateFab from '../../features/create/CreateFab'
+import { ItemModalProvider } from '../../features/items/ItemModal'
 import RecordRecent from '../../features/recent/RecordRecent'
 import { useWorkspace } from '../../features/workspace/useWorkspace'
 import WorkspaceProvider from '../../features/workspace/WorkspaceProvider'
@@ -28,11 +29,13 @@ export default function AppLayout() {
                 <RecordRecent />
                 {/* The navbar's Share: the screen dims except what can be shared */}
                 <ShareMode />
-                <FocusModeProvider>
-                    <SidebarProvider>
-                        <Frame />
-                    </SidebarProvider>
-                </FocusModeProvider>
+                <ItemModalProvider>
+                    <FocusModeProvider>
+                        <SidebarProvider>
+                            <Frame />
+                        </SidebarProvider>
+                    </FocusModeProvider>
+                </ItemModalProvider>
             </WorkspaceProvider>
         </ResourcesProvider>
     )

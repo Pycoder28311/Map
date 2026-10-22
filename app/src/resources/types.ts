@@ -38,6 +38,8 @@ export type Surfaces = {
   quickCreate?: boolean
   /** A tab of the floating Create button's modal */
   create?: boolean
+  /** Opens in a centred modal (with a button to its page) from the sidebar, instead of going to its page */
+  modal?: boolean
 }
 
 /** A field with its name forgotten to a plain string (what the generic form components take) */

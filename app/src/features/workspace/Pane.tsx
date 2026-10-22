@@ -12,8 +12,8 @@ import { useWorkspaceDrag } from './workspaceDrag'
 
 // Wide screens: placed by its box (stacked below lg)
 const PLACED = 'lg:absolute lg:[left:var(--pane-l)] lg:[top:var(--pane-t)] lg:[right:var(--pane-r)] lg:[bottom:var(--pane-b)]'
-// The hovered pane's border colour (paneStyles' PANE_BORDER reads --pane-border)
-const HOVER = 'hover:[--pane-border:var(--highlight)]'
+// The hovered pane's thin outer line turns blue (paneStyles' outline reads --pane-hairline); the thick border stays
+const HOVER = 'hover:[--pane-hairline:var(--highlight)]'
 
 type Props = {
   /** Position in the grid: a, b, c, d (also its CSS grid-area) */
@@ -55,8 +55,8 @@ export default function Pane({ slot, panel, box }: Props) {
       aria-label={title}
       {...(count > 1 ? listeners : {})}
       style={{ ...paneStyle, '--pane-l': box.left, '--pane-t': box.top, '--pane-r': box.right, '--pane-b': box.bottom } as CSSProperties}
-      // Hovered: a blue border (not while something is dragged: the drop previews show then)
-      className={`@container relative flex min-h-[50vh] ${PLACED} min-w-0 flex-col overflow-hidden bg-surface shadow-lg transition-[opacity,border-color] duration-150 lg:min-h-0 ${isDragging ? 'opacity-50' : ''} ${dragging ? '' : HOVER}`}
+      // Hovered: a blue thin line (not while something is dragged: the drop previews show then)
+      className={`@container relative flex min-h-[50vh] ${PLACED} min-w-0 flex-col overflow-hidden bg-surface shadow-lg transition-[opacity,outline-color] duration-150 lg:min-h-0 ${isDragging ? 'opacity-50' : ''} ${dragging ? '' : HOVER}`}
     >
       <div className={`min-h-0 flex-1 ${def.fill ? 'overflow-hidden' : 'overflow-auto'}`}>
         {def.fill ? (

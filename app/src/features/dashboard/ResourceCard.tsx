@@ -10,8 +10,9 @@ import { useState } from 'react'
 import { LuMaximize2 } from 'react-icons/lu'
 import IconButton from '../../components/ui/buttons/IconButton'
 import Modal from '../../components/ui/overlays/Modal'
+import PixelSquare from '../../components/ui/pixel/PixelSquare'
 import { placeholderArt } from '../objects/placeholderArt'
-import { CARD_SIZE, COMMENT_SIZE, cardOf } from './cards/cardStyles'
+import { CARD_SIZE, cardOf } from './cards/cardStyles'
 import MapPreview from './cards/MapPreview'
 
 const DATE = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' })
@@ -29,9 +30,9 @@ type Props = {
 }
 
 /**
- * An item of a resource as a Dashboard card, in its resource's look (ui.card): `plain`, like a comment: a wide paper card, its title and date on top, its preview quoted below
+ * An item of a resource as a Dashboard card, in its resource's look (ui.card): `plain`, like a comment: a square paper card, its title and date on top, its preview quoted below
  * behind a thin bar, fading out where it's cut; `image`, a picture on top (a placeholder made from its id: the list has no images), its
- * title, date and two lines; `map`, its preview filling the card, its title at the bottom and a zoom button. Drags like every card (onto
+ * title, date and two lines; `map`, its preview filling the card, its title in a narrower box hanging below it, centred on its bottom edge, and a zoom button. Drags like every card (onto
  * pane edges, the Trash…), opens on a click, ⋯ menu on hover.
  */
 export default function ResourceCard({ resource, item, menu, onOpen, place }: Props) {
@@ -88,12 +89,19 @@ export default function ResourceCard({ resource, item, menu, onOpen, place }: Pr
   if (look === 'map') {
     return (
       <>
-        <div {...card} className={`${cardOf(CARD_SIZE, false)} bg-surface ${box}`}>
-          <MapPreview id={id} className="min-h-0 flex-1" />
-          <span className="flex min-w-0 items-center gap-1.5 p-2 text-body font-medium">
+        {/* The card itself does not clip: the name hangs below the picture (which clips its own corners), centred on its bottom edge */}
+        <div {...card} className={`group/card relative shrink-0 snap-start ${CARD_SIZE} ${box}`}>
+          <div className="absolute inset-0 overflow-hidden rounded-(--card-radius) bg-surface shadow-sm ring-1 ring-line">
+            <MapPreview id={id} className="size-full" />
+          </div>
+          <PixelSquare
+            as="span"
+            bevel
+            className="absolute bottom-0 left-1/2 flex h-6 w-3/4 min-w-0 -translate-x-1/2 translate-y-1/2 items-center gap-1.5 border border-line px-2 text-body font-medium [--pixel-face:var(--surface)]"
+          >
             <Icon className="size-3.5 shrink-0 text-fg-subtle" />
             <span className="min-w-0 truncate">{title}</span>
-          </span>
+          </PixelSquare>
           {marks}
         </div>
         <Modal open={zoomed} onClose={() => setZoomed(false)} title={title} size="lg">
@@ -121,7 +129,7 @@ export default function ResourceCard({ resource, item, menu, onOpen, place }: Pr
   }
 
   return (
-    <div {...card} className={`${cardOf(COMMENT_SIZE)} bg-note ${box}`}>
+    <div {...card} className={`${cardOf(CARD_SIZE)} bg-note ${box}`}>
       <div className="flex items-center gap-2 px-0.5 pe-8 pt-0.5">
         <span className="flex min-w-0 items-center gap-1.5 text-body font-medium">
           <Icon className="size-3.5 shrink-0 text-fg-subtle" />

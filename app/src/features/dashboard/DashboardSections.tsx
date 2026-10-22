@@ -13,7 +13,7 @@ import { RESOURCES } from '../../resources/registry'
 import { useOpenLayout } from '../objects/ListRows'
 import { single } from '../workspace/layout'
 import { useBlockFlip } from './blockFlip'
-import { cardOf, COMMENT_SIZE } from './cards/cardStyles'
+import { CARD_SIZE, cardOf } from './cards/cardStyles'
 import ItemCard from './ItemCard'
 import RowHeader from './RowHeader'
 import { SectionCardLook } from './SectionCard'
@@ -25,6 +25,8 @@ import { useRowSort } from './useRowSort'
 /** The Orphans row (what is in no project) comes before the project rows; false leaves it out */
 const SHOW_ORPHANS = true
 const ORPHANS = 'orphans'
+/** Notes (like any resource with a sidebar section of its own) are not shown in the Orphans row, nor offered by its Add button */
+const inOrphans = (r: AnyResource) => !r.surfaces.sidebar
 
 type Item = Record<string, unknown> & { id: number | string; createdAt?: string }
 const titleFieldOf = (resource: AnyResource) => resource.ui.fields.find((f) => f.heading)?.name
@@ -66,7 +68,7 @@ export default function DashboardSections() {
       root: { resource, item },
     })),
   )
-  const rows = [...(SHOW_ORPHANS ? [{ id: ORPHANS, title: 'Orphans', entries: [...orphans].sort(compareEntries), root: null }] : []), ...projectRows]
+  const rows = [...(SHOW_ORPHANS ? [{ id: ORPHANS, title: 'Orphans', entries: orphans.filter((e) => inOrphans(e.resource)).sort(compareEntries), root: null }] : []), ...projectRows]
   useBlockFlip(rootRef, 'sections', rows.map((r) => r.id).join(','))
   // Over the rows, a dragged object looks like a card
   useDragSurface('dash-sections', rootRef, (item) => <SectionCardLook label={item.label} icon={item.icon} />)
@@ -76,8 +78,8 @@ export default function DashboardSections() {
   return (
     <div ref={rootRef} data-flip-root="sections" className="flex flex-col gap-8">
       {rows.map((row) => {
-        // What can be added here: in a project, what can have a project as its parent; in the Orphans, anything
-        const kinds = CHILDREN.filter((r) => !row.root || r.parents?.some((p) => p.resource === row.root.resource.name)).map((r) => ({
+        // What can be added here: in a project, what can have a project as its parent; in the Orphans, anything but notes
+        const kinds = CHILDREN.filter((r) => (row.root ? r.parents?.some((p) => p.resource === row.root.resource.name) : inOrphans(r))).map((r) => ({
           value: r.name,
           label: r.ui.label,
           icon: r.ui.icon,
@@ -121,7 +123,7 @@ export default function DashboardSections() {
               onSort={(next) => setSort(row.id, next)}
               create={{ kinds, onCreate: create }}
             />
-            <div data-row-strip={row.id} className="-mx-2 flex min-h-56 snap-x gap-3 overflow-x-auto px-2 pt-1 pb-3">
+            <div data-row-strip={row.id} className="-mx-2 flex min-h-[13.25rem] snap-x gap-3 overflow-x-auto px-2 pt-1 pb-4">
               {!kids.ready ? (
                 <Placeholder>Loading…</Placeholder>
               ) : cards.length === 0 ? (
@@ -181,6 +183,6 @@ function RowSection({ id, title, place, children }: { id: string; title: string;
 
 function Placeholder({ children }: { children: React.ReactNode }) {
   return (
-    <p className={`${cardOf(COMMENT_SIZE)} items-center justify-center border border-dashed border-line-strong text-body text-fg-subtle shadow-none ring-0`}>{children}</p>
+    <p className={`${cardOf(CARD_SIZE)} items-center justify-center border border-dashed border-line-strong text-body text-fg-subtle shadow-none ring-0`}>{children}</p>
   )
 }

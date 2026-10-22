@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   addPanel,
+  addPanelSplit,
   allowedEdges,
   borders,
   fromSearchParams,
@@ -260,5 +261,43 @@ describe('replacePanel', () => {
   it('does nothing when the panel is missing or the new one is already open', () => {
     expect(replacePanel(single(note), m1, m2)).toBeNull()
     expect(replacePanel({ template: '2-cols', panels: [m1, m2] }, m1, m2)).toBeNull()
+  })
+})
+
+describe('addPanelSplit', () => {
+  const shared = (layout: WorkspaceLayout, panel: PanelRef, split: { x: number; y: number; x2?: number; y2?: number }, target?: Parameters<typeof addPanelSplit>[3]) =>
+    addPanelSplit(layout, panel, split, target)
+
+  it('gives a new panel half of the page it comes beside, whatever the old sizes were', () => {
+    const { layout, split } = shared(single(A), B, { x: 0.7, y: 0.3 })
+    expect(layout.template).toBe('2-cols')
+    expect(split.x).toBeCloseTo(0.5)
+    expect(split.y).toBe(0.3)
+  })
+
+  it('takes half of the height at the top or the bottom', () => {
+    const { layout, split } = shared(single(A), B, { x: 0.7, y: 0.3 }, { slot: 'a', edge: 'bottom' })
+    expect(layout.template).toBe('2-rows')
+    expect(split.y).toBeCloseTo(0.5)
+    expect(split.x).toBe(0.7)
+  })
+
+  it('halves the panel that was pushed, not the whole window', () => {
+    // A | B with the line at 0.6: a panel pushed in under B takes half of B's height, and A and the line at 0.6 stay
+    const two = addPanel(single(A), B)
+    const { layout, split } = shared(two, C, { x: 0.6, y: 0.5 }, { slot: 'b', edge: 'bottom' })
+    expect(layout.panels).toHaveLength(3)
+    const b = paneBox(layout.template, slotOf(layout, B)!, split)!
+    const c = paneBox(layout.template, slotOf(layout, C)!, split)!
+    expect(b.x0).toBeCloseTo(0.6)
+    expect(c.x0).toBeCloseTo(0.6)
+    expect(b.y1 - b.y0).toBeCloseTo(0.5)
+    expect(c.y1 - c.y0).toBeCloseTo(0.5)
+  })
+
+  it('leaves the sizes alone when nothing was added', () => {
+    const full = { template: '4', panels: [A, B, C, D] } as WorkspaceLayout
+    const split = { x: 0.6, y: 0.4 }
+    expect(shared(full, E, split).split).toBe(split)
   })
 })

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { LuEye, LuEyeOff, LuLogOut } from 'react-icons/lu'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/ui/buttons/Button'
+import DashboardGrid from '../../features/dashboard/DashboardGrid'
 import DashboardRelics from '../../features/dashboard/DashboardRelics'
 import EditIconsPreview from '../../features/dashboard/EditIconsPreview'
 import QuillIconsPreview from '../../features/dashboard/QuillIconsPreview'
@@ -30,6 +31,8 @@ export default function DashboardPage() {
 
     return (
         <div className="relative min-h-full">
+            {/* A faint dot grid behind everything (a theme turns it on) */}
+            <DashboardGrid />
             <div className="relative mx-auto flex max-w-[65rem] flex-col gap-12 px-4 pt-8 pb-24">
                 <div className="flex justify-end">
                     <Button

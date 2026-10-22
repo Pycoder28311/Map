@@ -214,3 +214,10 @@
     }
   }
 }
+
+/* A desk object of the navbar's strip (DeskStrip.tsx): turned a little (--desk-angle) */
+.desk-object {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: rotate(var(--desk-angle, 0deg));
+}

@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { matchPath, useLocation, useNavigate } from 'react-router-dom'
 import {
   addPanel,
+  addPanelSplit,
   allowedEdges,
   fromSearchParams,
   hasPanel,
@@ -18,11 +19,13 @@ import {
   WORKSPACE_PATH,
   workspaceHref,
   type DropSpot,
+  type Edge,
   type Slot,
   type WorkspaceLayout,
 } from './layout'
 import { usePanelRegistry } from './registryContext'
 import { snapshotPanes } from './paneFlip'
+import { getSplit, setSplit, type Split } from './split'
 import type { PanelDragData, PanelRef, PanelRegistry } from './types'
 
 /** Where a layout lives: its own page for a single routed panel, else /workspace?… */
@@ -60,9 +63,16 @@ export function useWorkspace() {
   const canAdd = count < MAX_PANELS
   const isDraggable = (panel: PanelRef) => registry[panel.type]?.draggable ?? false
   /** Shows a new layout; `glide`: the panes glide from where they are to their new places (paneFlip.ts) */
-  const go = (next: WorkspaceLayout | null, { glide = true } = {}) => {
+  const go = (next: WorkspaceLayout | null, { glide = true, replace = false, split }: { glide?: boolean; replace?: boolean; split?: Split } = {}) => {
     if (glide) snapshotPanes()
-    navigate(hrefFor(next, registry))
+    // The sizes the layout starts with (a panel that was just added)
+    if (split) setSplit(split)
+    navigate(hrefFor(next, registry), { replace })
+  }
+  /** A panel added to the layout: it takes half of the one it pushes (addPanelSplit) */
+  const goAdding = (from: WorkspaceLayout | null, panel: PanelRef, target?: { slot: Slot; edge: Edge }) => {
+    const added = addPanelSplit(from, panel, getSplit(), target)
+    go(added.layout, { split: added.split })
   }
 
   return {
@@ -98,18 +108,21 @@ export function useWorkspace() {
     open: (panel: PanelRef) => {
       if (layout && hasPanel(layout, panel)) return
       const combine = layout !== null && isDraggable(panel) && layout.panels.every(isDraggable)
-      go(addPanel(combine ? layout : null, panel))
+      goAdding(combine ? layout : null, panel)
     },
-    /** Shows `to` where `from` is (a map opening its branch); beside the others when `from` is not one of the panes */
-    replace: (from: PanelRef, to: PanelRef) => {
+    /**
+     * Shows `to` where `from` is (a map opening its branch); beside the others when `from` is not one of the panes.
+     * `history: 'replace'`: `to` takes `from`'s place in the browser's history too (a new item that was just made: Back skips its empty page)
+     */
+    replace: (from: PanelRef, to: PanelRef, { history = 'push' }: { history?: 'push' | 'replace' } = {}) => {
       const next = layout && replacePanel(layout, from, to)
-      if (next) go(next, { glide: false })
+      if (next) go(next, { glide: false, replace: history === 'replace' })
       else if (!layout || !hasPanel(layout, to)) go(addPanel(null, to))
     },
     /** A new panel (e.g. a sidebar item) dropped on an edge of a slot (one of dropSpots) */
     dropNew: (panel: PanelRef, slot: Slot, spot: DropSpot) => {
       if (!layout || spot === 'center' || hasPanel(layout, panel) || !isDraggable(panel)) return
-      go(addPanel(layout, panel, { slot, edge: spot }))
+      goAdding(layout, panel, { slot, edge: spot })
     },
     /** A pane dropped on a spot of another slot: swapped (centre) or moved (edge). No glide: the
      *  drag's preview already shows the panes there */

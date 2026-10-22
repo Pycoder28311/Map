@@ -310,6 +310,31 @@ export function addPanel(
   return fromCells(cells, [...layout.panels, panel])
 }
 
+/**
+ * addPanel, and the sizes the new panel starts with: it takes half of the panel it pushed, along the line that now lies between them
+ * (half its width when it comes in at the left or right, half its height at the top or bottom). The other lines stay where they are.
+ * `split` unchanged when nothing was added.
+ */
+export function addPanelSplit(
+  layout: WorkspaceLayout | null,
+  panel: PanelRef,
+  split: Split,
+  target?: { slot: Slot; edge: Edge },
+): { layout: WorkspaceLayout; split: Split } {
+  const next = addPanel(layout, panel, target)
+  if (!layout || next === layout) return { layout: next, split }
+  const place = target ?? autoTarget(layout)
+  const pushed = place && panelAt(layout, place.slot)
+  const box = place && paneBox(layout.template, place.slot, split)
+  const newSlot = slotOf(next, panel)
+  const pushedSlot = pushed && slotOf(next, pushed)
+  const border = newSlot && pushedSlot && borders(next.template).find((b) => b.slots.includes(newSlot) && b.slots.includes(pushedSlot))
+  if (!box || !border) return { layout: next, split }
+  const mid = border.axis === 'x' ? (box.x0 + box.x1) / 2 : (box.y0 + box.y1) / 2
+  // The sizes are in fractions: no pixel snapping to the partner of a half
+  return { layout: next, split: moveSplit(split, segmentOf(next.template, split, border), { x: mid, y: mid }, { width: Infinity, height: Infinity }) }
+}
+
 /** Removes a panel (Detach); the others re-tile. null when nothing is left */
 export function removePanel(layout: WorkspaceLayout, slot: Slot): WorkspaceLayout | null {
   const removed = panelAt(layout, slot)

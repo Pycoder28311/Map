@@ -12,8 +12,8 @@
 
   /* Buttons get a hairline outline */
   --btn-border-w: 1px;
-  --btn-border-c: var(--popout-line-color);
-  --field-border-c: var(--popout-line-color);
+  --btn-border-c: var(--line);
+  --field-border-c: var(--line);
   /* Primary buttons: a hard shadow (no blur) falling to the bottom left, the button's own shape */
   --btn-primary-shadow: -4px 4px 0 0 color-mix(in srgb, var(--accent) 55%, black);
   /* Create buttons: the same hard shadow in a dark green; the raised ones lose their soft look for it */
@@ -53,6 +53,8 @@
   --popout-line-color: #6b7280;
   /* No inner line along the navbar's bottom (block: a line, 2px up from the edge, like the popouts' had) */
   --navbar-line-display: none;
+  /* A faint dot grid behind the Dashboard */
+  --dashboard-grid-display: block;
   /* Pixel-art items along the top of the Dashboard */
   --decor-display: flex;
   --decor-opacity: 0.55;
@@ -64,8 +66,8 @@
   --sidebar-chains-display: block;
   /* Along the sidebar's rows the chain is fainter (SidebarChains.tsx: DIM) */
   --sidebar-chain-color: color-mix(in srgb, var(--fg) 9%, transparent);
-  /* The navbar's planets and stars are the chains' colour */
-  --space-color: var(--sidebar-chain-color);
+  /* The navbar's desk objects and stars are the chains' colour */
+  --desk-color: var(--sidebar-chain-color);
   /* Embers: a soft orange glow rises from the bottom of the sidebar, highest at its two sides (where the squares climb
      too). The squares stand in front of it like ash: dark near the bottom, so the glow shows between them as if it
      came from behind, fading to a faint gray higher up (each square mixes the two by its height, SidebarPixels.tsx) */
@@ -86,7 +88,7 @@
   --tree-row-bg: var(--surface-sunken);
   --tree-row-hover-bg: var(--surface-sunken);
   /* ...and outlined with the same light gray as the navbar's line (inside the row, so nothing moves) */
-  --tree-row-outline: 1px solid var(--popout-line-color);
+  --tree-row-outline: 1px solid var(--line);
   /* The lines between the sidebar's sections (Divider) and above the Trash button: stronger than the base ones */
   --divider-line: #6b7280;
   /* A very faint grain over the navbar, the sidebar and the popouts: noise drawn in white at about 7% (160px tile that

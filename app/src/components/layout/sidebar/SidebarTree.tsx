@@ -1,11 +1,12 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { LuLayoutDashboard, LuUnlink } from 'react-icons/lu'
 import LayoutsSection from '../../../features/layouts/LayoutsSection'
+import { useItemModal } from '../../../features/items/ItemModal'
+import { NEW_ID } from '../../../lib/resource/newItem'
 import PanelDragLink from '../../../features/workspace/PanelDragLink'
 import { useWorkspace } from '../../../features/workspace/useWorkspace'
-import ResourceCreateDialog from '../../ui/resource/ResourceCreateDialog'
 import { resourcesWith } from '../../../resources/registry'
-import type { AnyResource } from '../../../resources/types'
 import Divider from '../../ui/Divider'
 import type { TreeNode, TreeRightIcon } from '../../ui/tree/types'
 import TreeView from '../../ui/tree/TreeView'
@@ -30,15 +31,15 @@ const IN_SIDEBAR = resourcesWith('sidebar')
 /**
  * The sidebar's content, in sections (top to bottom): Layouts, Pinned, Dashboard, then one section per resource that has one (Projects,
  * Notes), as the UI config says (resources.config.ts: surfaces.sidebar). The other items (folders, articles, object cards, maps) are
- * on the Dashboard, in their project's row. Items are created (+), renamed in place (menu or double-click on the name), pinned,
+ * on the Dashboard, in their project's row. Items are created (+: a new page, the item is made when something is typed, NewItemEditor), renamed in place (menu or double-click on the name), pinned,
  * duplicated, moved to the Trash and deleted through their ⋯ menu. Rows open on screen stay visible.
  */
 export default function SidebarTree({ compact }: { compact: boolean }) {
   const workspace = useWorkspace()
+  const navigate = useNavigate()
+  const itemModal = useItemModal()
   // The row whose name is being edited in place (one for all sections)
   const [editingId, setEditingId] = useState<string | null>(null)
-  // The resource whose "New …" dialog is open
-  const [creating, setCreating] = useState<AnyResource | null>(null)
 
   // Shown as a pane: "undrag" (take it out of the panes); the sections add their own icons (ResourceRows)
   const rightIcons = (node: TreeNode): TreeRightIcon[] =>
@@ -68,10 +69,8 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
       <TreeView nodes={[DASHBOARD_NODE]} label="Main navigation" {...tree} />
 
       {IN_SIDEBAR.map((resource) => (
-        <ResourceSidebarSection key={resource.name} resource={resource} tree={tree} compact={compact} onCreate={() => setCreating(resource)} />
+        <ResourceSidebarSection key={resource.name} resource={resource} tree={tree} compact={compact} onCreate={() => (resource.surfaces.modal ? itemModal.open(resource, NEW_ID) : navigate(workspace.hrefOf({ type: resource.panelType, id: NEW_ID })))} />
       ))}
-
-      {creating && <ResourceCreateDialog resource={creating} onClose={() => setCreating(null)} />}
     </>
   )
 }

@@ -4,6 +4,8 @@
 import { useState, type ReactNode } from 'react'
 import { LuChevronsDown, LuChevronsUp } from 'react-icons/lu'
 import { Link, useNavigate } from 'react-router-dom'
+import { resourceByPanelType } from '../../resources/registry'
+import { useOptionalItemModal } from '../items/ItemModal'
 import type { PlainIcon } from '../../components/ui/icons/IconSlot'
 import type { WorkspaceLayout } from '../workspace/layout'
 import { usePanelRegistry } from '../workspace/registryContext'
@@ -19,11 +21,20 @@ const MAX_ROWS = 3
 const LIST =
   'flex flex-col [html:not([data-dragging])_&>li:hover]:border-transparent [html:not([data-dragging])_&>li:hover+li]:border-transparent'
 
-/** Navigates to one panel on its own, or a combination (never added beside the current page) */
+/**
+ * Opens one panel on its own, or a combination (never added beside the current page). One item of a resource that opens in a modal
+ * (surfaces.modal: a note) shows in the centred modal instead, wherever it is opened from (Recent, the columns, the search…)
+ */
 export function useOpenLayout() {
   const registry = usePanelRegistry()
   const navigate = useNavigate()
-  return (layout: WorkspaceLayout) => navigate(hrefFor(layout, registry))
+  const itemModal = useOptionalItemModal()
+  return (layout: WorkspaceLayout) => {
+    const only = layout.panels.length === 1 ? layout.panels[0] : undefined
+    const resource = only?.id ? resourceByPanelType(only.type) : undefined
+    if (itemModal && only?.id && resource?.surfaces.modal) itemModal.open(resource, only.id)
+    else navigate(hrefFor(layout, registry))
+  }
 }
 
 /**

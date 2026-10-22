@@ -15,6 +15,11 @@ describe('entryForLayout', () => {
     expect(both).toMatchObject({ kind: 'panels', panels: ['map:m1', 'notes'] })
   })
 
+  it('skips the page of an item that is not made yet', () => {
+    expect(entryForLayout({ template: '1', panels: [{ type: 'note', id: 'new' }] }, 1)).toBeNull()
+    expect(entryForLayout({ template: '2-cols', panels: [{ type: 'project', id: 'new' }, { type: 'notes' }] }, 1)).toBeNull()
+  })
+
   it('skips the Dashboard itself', () => {
     expect(entryForLayout({ template: '1', panels: [{ type: 'dashboard' }] }, 1)).toBeNull()
   })

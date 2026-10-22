@@ -1,0 +1,21 @@
+/* The "pixel square" element type (components/ui/pixel/PixelSquare.tsx): a box whose four corners are cut in steps of one pixel unit
+   (--pixel-square, tokens.css: 2px, finer than the pixel theme's; how many steps: pixelSquare.ts, which makes the clip-path), and, with
+   `pixel-bevel`, a bevel inside it like Minecraft's buttons: a lighter edge along the top and left, a darker one of the same size
+   along the bottom and right, both from the element's own colour; pressed, they turn.
+   The corner steps clip the element, so an outline moves inside it and a shadow outside it is cut: put a drop-shadow on a parent. */
+
+
+/* The bevel is made from the element's own colour: set it as --pixel-face (e.g. [--pixel-face:var(--create)], and hover:[--pixel-face:…]),
+   not as a bg-* class. The light edge is that colour lightened a little and the dark one darkened (--pixel-light-mix and --pixel-dark-mix,
+   tokens.css), so a green button gets a pale green and a deep green edge, not white and black */
+@utility pixel-bevel {
+  background-color: var(--pixel-face, var(--surface));
+  box-shadow:
+    inset var(--pixel-square) var(--pixel-square) 0 color-mix(in oklab, var(--pixel-face, var(--surface)), white var(--pixel-light-mix)),
+    inset calc(-1 * var(--pixel-square)) calc(-1 * var(--pixel-square)) 0 color-mix(in oklab, var(--pixel-face, var(--surface)), black var(--pixel-dark-mix));
+  &:active:not(:disabled) {
+    box-shadow:
+      inset var(--pixel-square) var(--pixel-square) 0 color-mix(in oklab, var(--pixel-face, var(--surface)), black var(--pixel-dark-mix)),
+      inset calc(-1 * var(--pixel-square)) calc(-1 * var(--pixel-square)) 0 color-mix(in oklab, var(--pixel-face, var(--surface)), white var(--pixel-light-mix));
+  }
+}

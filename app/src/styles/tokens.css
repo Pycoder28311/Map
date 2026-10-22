@@ -98,6 +98,15 @@
 
    /* Bar popouts (components/ui/overlays/BarPopout): rounded panel growing out of a bar's edge on hover */
    --popout-radius: 16px;
+   /* the pixel square element (styles/pixelSquare.css, components/ui/pixel): one pixel of its stepped corners and bevel, and how much white
+      and black the bevel's light and dark edges take from the element's own colour (--pixel-face) */
+   --pixel-square: 2.5px;
+   --pixel-light-mix: 20%;
+   --pixel-dark-mix: 28%;
+   /* the frame of a workspace pane (Pane, paneStyles.ts): a thick gray border with a very thin light gray line just outside it */
+   --pane-frame-w: 4px;
+   --pane-frame: color-mix(in srgb, var(--fg) 20%, var(--surface-muted));
+   --pane-hairline: color-mix(in srgb, lightgray 70%, transparent);
    /* the panel's own bottom corners (the base theme rounds them with the popout radius) */
    --popout-panel-radius: var(--popout-radius);
    /* a thin line inside the navbar along its bottom edge (a theme turns it on: themes/arcane.css) */
@@ -106,6 +115,9 @@
    --chrome-texture: none;
    /* pixel-art items along the top of the Dashboard (DashboardRelics.tsx): off in the base theme; how strong they are */
    --decor-display: none;
+   /* a faint dot grid behind the Dashboard (DashboardGrid.tsx): off in the base theme; the dots' colour */
+   --dashboard-grid-display: none;
+   --dashboard-grid-color: color-mix(in srgb, var(--fg) 7%, transparent);
    --decor-opacity: 0.5;
    --decor-filter: none;
    /* square pixels over the bottom of the sidebar, thinning upward (SidebarPixels.tsx): off in the base theme */
@@ -113,8 +125,9 @@
    /* faint pixel chains down the sidebar's inside edges (SidebarChains.tsx): off in the base theme */
    --sidebar-chains-display: none;
    --sidebar-chain-color: transparent;
-   /* the planets and stars behind the app's name in the navbar (SpaceStrip.tsx): as faint as the sidebar's chains are in the themes that show them */
-   --space-color: color-mix(in srgb, var(--fg) 9%, transparent);
+   /* the desk objects and stars behind the app's name in the navbar (DeskStrip.tsx): as faint as the sidebar's chains are in the themes that show them */
+   --desk-color: color-mix(in srgb, var(--fg) 9%, transparent);
+   --desk-soft: color-mix(in srgb, var(--desk-color) 40%, transparent);
    --sidebar-pixel-color: transparent;
    /* the colour the lowest squares take (each square mixes it with --sidebar-pixel-color by its height) */
    --sidebar-pixel-hot: transparent;

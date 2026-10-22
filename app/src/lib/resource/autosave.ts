@@ -5,7 +5,7 @@
 // - every change is also kept as a draft in localStorage; it is removed only after the server answered 2xx,
 // - on opening, a found draft is applied (the server's version did not change since) or the user chooses (it did).
 
-export const IDLE_MS = 5_000
+export const IDLE_MS = 30_000
 export const MAX_WAIT_MS = 30_000
 /** The most a `keepalive` fetch may send is 64 KB; stay under it */
 export const KEEPALIVE_LIMIT = 60_000

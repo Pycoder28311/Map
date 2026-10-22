@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
-import { LuX } from 'react-icons/lu'
+import { LuMaximize2, LuX } from 'react-icons/lu'
+import { useNavigate } from 'react-router-dom'
 import IconButton from '../buttons/IconButton'
 
 // Full class strings so Tailwind can detect them at build time.
@@ -30,6 +31,14 @@ type Props = {
   bare?: boolean
   /** The dialog's background classes (default: the surface) */
   className?: string
+  /** A button left of the header's X that closes the modal and goes to `pageHref` (the same thing, full page). Needs the header (not `bare`) */
+  zoomable?: boolean
+  /** The page the zoom button goes to */
+  pageHref?: string
+  /** What the zoom button does instead of going to `pageHref` (e.g. show it as a pane beside the others); the modal closes first either way */
+  onZoom?: () => void
+  /** No padding around the content (it draws its own), the header stays */
+  flush?: boolean
 }
 
 /**
@@ -41,8 +50,11 @@ type Props = {
  *
  *   const [open, setOpen] = useState(false)
  *   <Modal open={open} onClose={() => setOpen(false)} title="Rename">…</Modal>
+ *
+ * `zoomable` + `pageHref` (or `onZoom`) add a button left of the X that closes it and opens the same thing as a page.
  */
-export default function Modal({ open, onClose, title, children, footer, size = 'md', bare = false, className = '' }: Props) {
+export default function Modal({ open, onClose, title, children, footer, size = 'md', bare = false, className = '', zoomable = false, pageHref, onZoom, flush = false }: Props) {
+  const navigate = useNavigate()
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   // The press started on the backdrop (not e.g. a text selection that ended there)
@@ -95,11 +107,27 @@ export default function Modal({ open, onClose, title, children, footer, size = '
             <h2 id={titleId} className="truncate text-body font-medium">
               {title}
             </h2>
-            <IconButton icon={LuX} label="Close" onClick={onClose} className="ml-auto" />
+            {zoomable && (pageHref || onZoom) ? (
+              <>
+                <IconButton
+                  icon={LuMaximize2}
+                  label="Open as page"
+                  onClick={() => {
+                    onClose()
+                    if (onZoom) onZoom()
+                    else if (pageHref) navigate(pageHref)
+                  }}
+                  className="ml-auto"
+                />
+                <IconButton icon={LuX} label="Close" onClick={onClose} />
+              </>
+            ) : (
+              <IconButton icon={LuX} label="Close" onClick={onClose} className="ml-auto" />
+            )}
           </header>
           )}
 
-          <div className={`min-h-0 flex-1 overflow-auto ${bare ? '' : 'p-4'}`}>{children}</div>
+          <div className={`min-h-0 flex-1 overflow-auto ${bare || flush ? '' : 'p-4'}`}>{children}</div>
 
           {footer && (
             <footer className="flex shrink-0 justify-end gap-(--btn-gap) border-t border-line px-4 py-3">
