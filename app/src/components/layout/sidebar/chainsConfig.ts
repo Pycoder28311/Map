@@ -44,6 +44,12 @@ export const FADE_BESIDE_ROWS = 0.6
 export const FADE_ENDS = 0.4
 
 /**
+ * The top of the chains fades out to nothing: over this share of the sidebar's height from its top (0 to 1), smoothly (an eased
+ * ramp), on top of everything else. 0 leaves the top as it was.
+ */
+export const FADE_TOP = 0.35
+
+/**
  * Whether the chains look turned about 30° to the left, as if seen from an angle (like the chest on the Dashboard): a flat,
  * two-dimensional effect: each link has a darker copy a pixel to its right behind it, like the thickness of a block seen
  * from the side. The chains hang straight down either way. false draws them facing front, with no thickness.

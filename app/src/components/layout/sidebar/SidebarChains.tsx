@@ -10,6 +10,7 @@ import {
   DRAG_STILL_SPEED,
   FADE_BESIDE_ROWS,
   FADE_ENDS,
+  FADE_TOP,
   SIDEBAR_WIDTH,
 } from './chainsConfig'
 
@@ -50,7 +51,7 @@ export type Band = { top: number; bottom: number }
  * Faint pixel-art chains in the sidebar, as chainsConfig.ts has them (where, how big, how faded), behind everything, the pixels
  * at the bottom (SidebarPixels) included. Along `band`, where the sidebar's rows are, they are fainter (FADE_BESIDE_ROWS): what shows of them
  * between and beside the rows. Wide as the open sidebar, so in the rail only the left chain shows (the nav clips it).
- * Only a theme that turns it on shows it (--sidebar-chains-display and --sidebar-chain-color, styles/tokens.css).
+ * The top of them fades out smoothly (FADE_TOP). Only a theme that turns it on shows it (--sidebar-chains-display and --sidebar-chain-color, styles/tokens.css).
  */
 export default function SidebarChains({ band }: { band: Band | null }) {
   const id = useId()
@@ -99,6 +100,9 @@ export default function SidebarChains({ band }: { band: Band | null }) {
     }
   }, [dragging])
   const fade = `${id}-m`
+  const top = `${id}-t`
+  // The top fades in along an eased ramp (smoothstep: slow, quicker, slow), as a mask: black is nothing, white is full strength
+  const ramp = [0, 0.25, 0.5, 0.75, 1].map((t) => ({ at: t * FADE_TOP, level: Math.round(t * t * (3 - 2 * t) * 255) }))
   // One chain: its tile (a pattern) and the strip it fills
   const chains = CHAINS.map(({ side, edge, size, fade, top, length, offset }, n) => {
     const width = WIDTH * size
@@ -152,13 +156,22 @@ export default function SidebarChains({ band }: { band: Band | null }) {
       <defs>
         {chains.map((c) => c.pattern)}
         {chains.map((c) => c.end)}
+        <linearGradient id={`${top}-g`} x1="0" y1="0" x2="0" y2="1">
+          {FADE_TOP > 0 ? ramp.map(({ at, level }) => <stop key={at} offset={at} stopColor={`rgb(${level} ${level} ${level})`} />) : <stop offset="0" stopColor="white" />}
+          <stop offset={FADE_TOP} stopColor="white" />
+        </linearGradient>
+        <mask id={top}>
+          <rect width="100%" height="100%" fill={`url(#${top}-g)`} />
+        </mask>
         {/* White: full strength; the band is a gray: fainter */}
         <mask id={fade}>
           <rect width="100%" height="100%" fill="white" />
           {band && <rect y={band.top} width="100%" height={band.bottom - band.top} fill={`rgb(${rowsGray} ${rowsGray} ${rowsGray})`} />}
         </mask>
       </defs>
-      <g mask={`url(#${fade})`}>{chains.map((c) => c.strip)}</g>
+      <g mask={`url(#${top})`}>
+        <g mask={`url(#${fade})`}>{chains.map((c) => c.strip)}</g>
+      </g>
     </svg>
   )
 }

@@ -113,6 +113,8 @@
    /* faint pixel chains down the sidebar's inside edges (SidebarChains.tsx): off in the base theme */
    --sidebar-chains-display: none;
    --sidebar-chain-color: transparent;
+   /* the planets and stars behind the app's name in the navbar (SpaceStrip.tsx): as faint as the sidebar's chains are in the themes that show them */
+   --space-color: color-mix(in srgb, var(--fg) 9%, transparent);
    --sidebar-pixel-color: transparent;
    /* the colour the lowest squares take (each square mixes it with --sidebar-pixel-color by its height) */
    --sidebar-pixel-hot: transparent;

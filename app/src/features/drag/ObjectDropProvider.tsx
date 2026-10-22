@@ -1,4 +1,5 @@
 import { useDndMonitor, type DragMoveEvent, type DragOverEvent } from '@dnd-kit/core'
+import { swallowClickAfterDrag } from '../../lib/dnd'
 import { useRef, useState, type ReactNode } from 'react'
 import { objectOf } from './objectDrag'
 import { applyDrop, ObjectDropContext, sameDropTarget, zoneTarget, type ObjectDropState, type ObjectDropTarget } from './objectDrop'
@@ -33,9 +34,13 @@ export default function ObjectDropProvider({ children }: { children: ReactNode }
     onDragEnd: ({ active }) => {
       const target = targetRef.current
       if (target) applyDrop(active.data.current, target)
+      swallowClickAfterDrag()
       reset()
     },
-    onDragCancel: reset,
+    onDragCancel: () => {
+      swallowClickAfterDrag()
+      reset()
+    },
   })
 
   return <ObjectDropContext.Provider value={state}>{children}</ObjectDropContext.Provider>

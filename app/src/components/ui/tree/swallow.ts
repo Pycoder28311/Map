@@ -37,6 +37,11 @@ export function useLids() {
 
 /* ─────────────── The swallow ─────────────── */
 
+/** How long the thing waits where it was let go before it starts to fall (ms): none, it sets off at once while the lid opens */
+const FALL_LEAD = 0
+/** From the drop until it is all the way in (ms): when whatever it left behind can go */
+export const FALL_MS = FALL_LEAD + TIMING.swallow
+
 const ease = {
   swallow: bezier(EASING.swallow),
   fade: bezier(EASING.fade),
@@ -53,7 +58,7 @@ type Options = {
   to: Element
   /** Whose lid opens meanwhile (useLidOpen) */
   lidKey: string
-  /** The source is the lifted row (already tilted): the fall starts from its tilt */
+  /** The source is the lifted row (its lift animation is on an inner `[data-lifted-row]`): the copy keeps its tilt and size as they are now */
   lifted?: boolean
 }
 
@@ -83,10 +88,27 @@ export function swallow({ source, to, lidKey, lifted = false }: Options) {
     transformOrigin: 'center',
   })
   clone.setAttribute('aria-hidden', 'true')
+  // A copy put in the page starts every CSS animation of it again: the float's own "grows in" (opacity and scale from 0) would play
+  // on the copy at the moment it takes over, as if it appeared anew. The copy only continues what the float was
+  for (const el of [clone, ...clone.querySelectorAll<HTMLElement>('*')]) el.style.animation = 'none'
+  // An animation is not copied with an element: the copy of a lifted row would show it flat and small for a moment, then snap. So it
+  // starts as the row looks now (the tilt and size the lift animation has reached), and the fall goes on from there
+  let liftedNow = false
+  if (lifted) {
+    const copies = clone.querySelectorAll<HTMLElement>('[data-lifted-row]')
+    source.querySelectorAll<HTMLElement>('[data-lifted-row]').forEach((row, i) => {
+      const transform = getComputedStyle(row).transform
+      if (transform !== 'none' && copies[i]) {
+        copies[i].style.transform = transform
+        copies[i].style.animation = 'none'
+        liftedNow = true
+      }
+    })
+  }
   document.body.appendChild(clone)
 
   setLid(lidKey, true)
-  requestAnimationFrame(() => fall(clone, from, to, lidKey, lifted))
+  requestAnimationFrame(() => fall(clone, from, to, lidKey, liftedNow))
 }
 
 function fall(clone: HTMLElement, from: DOMRect, dropIcon: Element, lidKey: string, lifted: boolean) {
@@ -104,7 +126,8 @@ function fall(clone: HTMLElement, from: DOMRect, dropIcon: Element, lidKey: stri
   const b = center(target)
   const bx = mix(a.x, b.x, 0.5) + (b.y - a.y) * MOTION.swallowArc * 0.35
   const by = mix(a.y, b.y, 0.5) - Math.abs(b.x - a.x) * MOTION.swallowArc * 0.2
-  const startRotate = lifted ? MOTION.liftTilt : 0
+  // A lifted copy carries its own tilt and size: the fall adds to them
+  const startRotate = 0
   // Shrinks towards the icon's size, as a share of where it started
   const endScale = MOTION.swallowScale / (lifted ? MOTION.liftScale : 1)
 
@@ -122,14 +145,14 @@ function fall(clone: HTMLElement, from: DOMRect, dropIcon: Element, lidKey: stri
     }
   })
   clone
-    .animate(frames, { duration: TIMING.swallow, delay: TIMING.openLead, easing: 'linear', fill: 'both' })
+    .animate(frames, { duration: TIMING.swallow, delay: FALL_LEAD, easing: 'linear', fill: 'both' })
     .finished.finally(() => clone.remove())
 
   // The lid comes up with a little pulse
   to.animate([{ scale: '1' }, { scale: `${1 + MOTION.lidLift}` }, { scale: '1' }], { duration: TIMING.openLead * 2, easing: 'ease-out' })
 
   // The gulp: starts before the item is all the way in, so the folder reacts to it arriving
-  const gulpAt = TIMING.openLead + TIMING.swallow - TIMING.gulpOverlap
+  const gulpAt = FALL_MS - TIMING.gulpOverlap
   const gulp = Array.from({ length: 13 }, (_, i) => {
     const g = i / 12
     const squash = MOTION.gulpSquash * Math.sin(Math.PI * g ** MOTION.gulpSkew)

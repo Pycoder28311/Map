@@ -1,7 +1,8 @@
-import { useDndMonitor } from '@dnd-kit/core'
+import { useDndContext, useDndMonitor } from '@dnd-kit/core'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { buttonClass } from '../../components/ui/buttons/buttonStyles'
+import { MOTION } from '../../components/ui/tree/dragEffects'
 import { dragPoint } from '../../lib/dnd'
 import type { PanelDragData } from '../workspace/types'
 import { floatPosition, grabFraction } from './floatPosition'
@@ -25,6 +26,7 @@ export default function DragFloat() {
   const grab = useRef({ fx: 0.5, fy: 0.5 })
   const pointer = useRef<Point | null>(null)
   const dragging = useRef(false)
+  const { draggableNodes } = useDndContext()
 
   const place = () => {
     const el = ref.current
@@ -32,7 +34,7 @@ export default function DragFloat() {
     if (!el || !p) return
     const { left, top } = floatPosition(p, grab.current, { width: el.offsetWidth, height: el.offsetHeight })
     el.style.transform = `translate(${left}px, ${top}px)`
-    el.style.opacity = '1'
+    el.style.opacity = String(MOTION.dragAlpha)
   }
   // After every render: a new look has a new size, the grab point must stay under the pointer
   useLayoutEffect(place)
@@ -57,7 +59,8 @@ export default function DragFloat() {
       const data = active.data.current as PanelDragData | undefined
       const object = objectOf(data)
       if (!data || !object) return
-      const rect = active.rect.current.initial
+      // Where the grabbed element is (dnd-kit has not measured it yet when the drag starts: then its own box, still in its place)
+      const rect = active.rect.current.initial ?? draggableNodes.get(active.id)?.node.current?.getBoundingClientRect() ?? null
       const start =
         activatorEvent instanceof MouseEvent
           ? { x: activatorEvent.clientX, y: activatorEvent.clientY }

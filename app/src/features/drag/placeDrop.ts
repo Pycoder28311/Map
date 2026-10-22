@@ -9,7 +9,8 @@ import { dragPoint } from '../../lib/dnd'
 import { endIndex, moveItem, placement, sameEntry, type Entry, type MovePlan } from '../../lib/resource/reorder'
 import { resourceByName, resourceByPanelType } from '../../resources/registry'
 import type { ObjectDragInfo } from '../workspace/types'
-import { reducedMotion, TIMING } from '../../components/ui/tree/dragEffects'
+import { reducedMotion } from '../../components/ui/tree/dragEffects'
+import { FALL_MS } from '../../components/ui/tree/swallow'
 import { beginGlide, playGlide, playReflow, snapshotReflow } from './glide'
 import { holdFaded, releaseFaded } from './held'
 import { objectOf } from './objectDrag'
@@ -153,6 +154,10 @@ export const placeZone: ZoneHandler = {
     const side = sideOf(target, point, e.over.rect)
     const resolved = resolvePlace(target, side, moved, item?.parent)
     if (!resolved) return null
+    // In the gap beside the row (not over it) it is a place between two rows, never "inside" one
+    const r = e.over.rect
+    const inside = point.x >= r.left && point.x <= r.left + r.width && point.y >= r.top && point.y <= r.top + r.height
+    if (!inside && resolved.side === 'into') return null
     const mark = target.kind === 'row' ? `row:${target.rowId}` : target.entry ? `${target.entry.resource.name}:${target.entry.item.id}` : ''
     const value: PlaceValue = { ...resolved, key: `${target.nodeId ?? mark}:${resolved.edge ?? resolved.side}`, mark, nodeId: target.nodeId }
     return value
@@ -179,7 +184,7 @@ export const placeZone: ZoneHandler = {
         const reflow = snapshotReflow(key)
         void send()
         if (reflow) playReflow(reflow)
-      }, TIMING.openLead + TIMING.swallow)
+      }, FALL_MS)
       return
     }
     const glide = falls ? null : beginGlide(object, float)

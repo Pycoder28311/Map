@@ -43,7 +43,7 @@ export const MOTION = {
   liftTilt: 0.9,
   /** How far right a held row drifts from the column */
   dragNudge: 8,
-  dragAlpha: 0.97,
+  dragAlpha: 0.7,
   // The swallow
   swallowSpin: 10,
   swallowScale: 0.16,

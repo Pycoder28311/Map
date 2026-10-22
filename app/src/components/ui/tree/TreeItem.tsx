@@ -5,6 +5,8 @@ import DropIcon from '../drop/DropIcon'
 import TreeIcon from './TreeIcon'
 import TreeLabel from './TreeLabel'
 import TreeRowIcon from './TreeRowIcon'
+import { css, EASING, reducedMotion, TIMING } from './dragEffects'
+import { useCollapsible } from './useCollapsible'
 import type { TreeDnd, TreeDropPosition, TreeIcons, TreeNode, TreeRowState } from './types'
 
 /**
@@ -49,10 +51,11 @@ const INDENT_AFTER_ICON: CSSProperties = {
 const PLAIN_ROW = `${ROW_CLASS} flex items-center rounded-(--btn-radius) py-(--pill-py) pe-(--btn-px) text-body`
 
 // Children: one indent step right; none in compact (one column), sliding with the width animation
-// They fade in when the folder opens (the Zen reel's expand)
 const GROUP =
-  'mt-1 ms-[var(--tree-indent-now,var(--tree-indent))] flex flex-col gap-1 animate-tree-expand ' +
-  'transition-[margin] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none motion-reduce:animate-none'
+  'mt-1 ms-[var(--tree-indent-now,var(--tree-indent))] flex flex-col gap-1 ' +
+  'transition-[margin] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none'
+// The children that stay visible under a closed folder fade in (the Zen reel's expand)
+const KEPT = 'animate-tree-expand motion-reduce:animate-none'
 
 /** The descendants of a collapsed folder that must stay visible (e.g. open ones), in tree order */
 function keptDescendants(node: TreeNode, keep: (node: TreeNode) => boolean): TreeNode[] {
@@ -60,7 +63,8 @@ function keptDescendants(node: TreeNode, keep: (node: TreeNode) => boolean): Tre
 }
 
 // Where a drop would land: a line with a dot at its start, in the gap above or below the row (the
-// Zen reel's insertion line), starting where the row's content starts
+// Zen reel's insertion line), 4px wider than the row on both sides (the sidebar's scroll box has that much room, so nothing clips it).
+// A child's row is narrower (indented), so its line is too
 const LINE: Record<'before' | 'after', string> = {
   before: '-top-[3px]',
   after: '-bottom-[3px]',
@@ -73,8 +77,8 @@ const INTO = 'bg-drop/16 ring-[1.4px] ring-inset ring-drop/55'
 
 function DropLine({ at }: { at: 'before' | 'after' }) {
   return (
-    <span aria-hidden className={`pointer-events-none absolute start-(--btn-px) end-0 z-20 h-0.5 bg-drop ${LINE[at]}`}>
-      <span className="absolute -start-[3px] -top-[2px] size-1.5 rounded-(--radius-pill) bg-drop" />
+    <span aria-hidden className={`pointer-events-none absolute -start-1 -end-1 z-20 h-0.5 bg-drop ${LINE[at]}`}>
+      <span className="absolute start-0 -top-[2px] size-1.5 rounded-(--radius-pill) bg-drop" />
     </span>
   )
 }
@@ -132,6 +136,9 @@ export default function TreeItem({
   const right = compact || editing || link?.state === 'shown' ? [] : (icons.right?.(node, state) ?? [])
   const alwaysShown = right.filter((i) => (i.show ?? 'always') === 'always').length
   const kept = state.isFolder && !state.isOpen && keepVisible ? keptDescendants(node, keepVisible) : []
+  // Opening slides the children down from behind the row; closing slides them back up behind it (useCollapsible)
+  const slideMs = reducedMotion() ? 0 : TIMING.expand
+  const slide = useCollapsible(state.isFolder && state.isOpen, slideMs)
 
   // [icon] then the label (--tree-label-gap between). One child for the button/link, so the tree's
   // gap applies instead of the button's own --btn-gap.
@@ -168,6 +175,25 @@ export default function TreeItem({
         // A row that takes drops marks its icon too: what is dropped on it falls in (a folder's icon is marked above)
         children: content(icon && (dropData ? <span data-drop-icon={node.id} className="flex shrink-0"><TreeRowIcon icon={icon} /></span> : <TreeRowIcon icon={icon} />)),
       }
+
+  const rows = (list: TreeNode[]) =>
+    list.map((child) => (
+      <TreeItem
+        key={child.id}
+        node={child}
+        expanded={expanded}
+        onToggle={onToggle}
+        renderLink={renderLink}
+        icons={icons}
+        editingId={editingId}
+        onEditingChange={onEditingChange}
+        onRename={onRename}
+        canRename={canRename}
+        keepVisible={keepVisible}
+        dnd={dnd}
+        compact={compact}
+      />
+    ))
 
   return (
     <li role="treeitem" aria-expanded={state.isFolder ? state.isOpen : undefined} className="relative">
@@ -230,27 +256,34 @@ export default function TreeItem({
         )}
       </div>
 
-      {state.isFolder && (state.isOpen ? node.children! : kept).length > 0 && (
-        // Children: narrower rows, moved right by one indent step. Collapsed: only those that must stay visible
-        <ul role="group" aria-label={state.isOpen ? undefined : 'Open items'} className={GROUP}>
-          {(state.isOpen ? node.children! : kept).map((child) => (
-            <TreeItem
-              key={child.id}
-              node={child}
-              expanded={expanded}
-              onToggle={onToggle}
-              renderLink={renderLink}
-              icons={icons}
-              editingId={editingId}
-              onEditingChange={onEditingChange}
-              onRename={onRename}
-              canRename={canRename}
-              keepVisible={keepVisible}
-              dnd={dnd}
-              compact={compact}
-            />
-          ))}
-        </ul>
+      {state.isFolder && slide.mounted && (node.children?.length ?? 0) > 0 ? (
+        // Children: narrower rows, moved right by one indent step. They slide out from behind the row above: the box grows from nothing
+        // while the list moves down into it, clipped by the box until it is still
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateRows: slide.shown ? '1fr' : '0fr',
+            transition: slideMs ? `grid-template-rows ${slideMs}ms ${css(EASING.expand)}` : 'none',
+          }}
+        >
+          <div className="min-h-0" style={{ overflow: slide.settled ? 'visible' : 'hidden' }}>
+            <ul
+              role="group"
+              className={GROUP}
+              style={{ transform: slide.shown ? 'none' : 'translateY(-100%)', transition: slideMs ? `transform ${slideMs}ms ${css(EASING.expand)}, margin var(--tree-compact-duration) ease-out` : undefined }}
+            >
+              {rows(node.children!)}
+            </ul>
+          </div>
+        </div>
+      ) : (
+        state.isFolder &&
+        kept.length > 0 && (
+          // Collapsed: only the children that must stay visible
+          <ul role="group" aria-label="Open items" className={`${GROUP} ${KEPT}`}>
+            {rows(kept)}
+          </ul>
+        )
       )}
     </li>
   )

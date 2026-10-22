@@ -64,6 +64,8 @@
   --sidebar-chains-display: block;
   /* Along the sidebar's rows the chain is fainter (SidebarChains.tsx: DIM) */
   --sidebar-chain-color: color-mix(in srgb, var(--fg) 9%, transparent);
+  /* The navbar's planets and stars are the chains' colour */
+  --space-color: var(--sidebar-chain-color);
   /* Embers: a soft orange glow rises from the bottom of the sidebar, highest at its two sides (where the squares climb
      too). The squares stand in front of it like ash: dark near the bottom, so the glow shows between them as if it
      came from behind, fading to a faint gray higher up (each square mixes the two by its height, SidebarPixels.tsx) */

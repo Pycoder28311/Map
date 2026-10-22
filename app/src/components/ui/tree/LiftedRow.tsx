@@ -35,7 +35,7 @@ export default function LiftedRow({ label, icon: Icon, origin, className = 'w-fu
     <div
       ref={ref}
       data-lifted-row
-      style={{ opacity: MOTION.dragAlpha, transformOrigin: origin ? `${origin.fx * 100}% ${origin.fy * 100}%` : undefined }}
+      style={{ transformOrigin: origin ? `${origin.fx * 100}% ${origin.fy * 100}%` : undefined }}
       className={`${className} flex cursor-grabbing items-center gap-(--tree-label-gap) rounded-(--btn-radius) bg-row-drag py-(--pill-py) ps-(--btn-px) pe-(--pill-px) text-body text-fg shadow-[0_6px_18px_rgba(0,0,0,0.35)]`}
     >
       {Icon && (

@@ -36,6 +36,20 @@ export class BackgroundPointerSensor extends PointerSensor {
   ]
 }
 
+/** How long after a drag ends a click can still be its tail (ms) */
+const TAIL_MS = 100
+
+/**
+ * Call when a drag ends: the click the browser sends after the pointer is let go (on the element the drag started from, when it is let
+ * go over it again) must not follow a link. dnd-kit only stops that click from reaching React; the browser would still open the link's page
+ * itself. So the next click is cancelled before anything sees it (on the window, ahead of dnd-kit's own listener).
+ */
+export function swallowClickAfterDrag() {
+  const cancel = (event: MouseEvent) => event.preventDefault()
+  window.addEventListener('click', cancel, { capture: true, once: true })
+  window.setTimeout(() => window.removeEventListener('click', cancel, { capture: true }), TAIL_MS)
+}
+
 /** How far from the pointer the dragged item's corner sits (px), so it doesn't hide what's under it */
 const POINTER_OFFSET = 12
 
