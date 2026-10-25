@@ -20,7 +20,7 @@ export type UiSurfaces = {
   trash?: boolean
   /** A Dashboard column (⋯ on a column), its items in the project rows below the columns, and a Create there */
   dashboard?: boolean
-  /** The Dashboard's "Take a note…" input makes one */
+  /** The Dashboard's big input can make one (a button chooses which: note, article) */
   quickCreate?: boolean
   /** A tab of the floating Create button's modal */
   create?: boolean
@@ -92,7 +92,7 @@ export const RESOURCE_UI: Record<TableName | MockTableName, ResourceUi> = {
     icon: LuFileText,
     untitled: 'Untitled article',
     fields: { title: { placeholder: 'Title' }, content: { label: 'Text', placeholder: 'Write the article…' } },
-    surfaces: { ...EVERYWHERE },
+    surfaces: { ...EVERYWHERE, quickCreate: true },
   },
   objectCards: {
     panelType: 'object',

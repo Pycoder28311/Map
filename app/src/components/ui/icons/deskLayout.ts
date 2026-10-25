@@ -12,6 +12,14 @@ export const SPRITES: string[][] = [
   ['................kkkkk...', '................kwwwk...', '...............kwwwk....', '..............kwwwk.....', '.............kwwwk......', '............kwwwk.......', '...........kkkkk........', '..........kwwwk.........', '.........kwwwk..........', '........kwwwk...........', '.......kwwwk............', '......kwwwk.............', '.....kwwwk..............', '....kwwwk...............', '....kwk.................', '....kk..................', '...k....................'],
 ]
 
+/** More things to create with, for the right side of the navbar: a book, a map, dividers and a potion */
+export const RIGHT_SPRITES: string[][] = [
+  ['.kkkkkkkkkkkkkkkk.', 'kwwwwwwwwwwwwwwwwk', 'kwkwwwwwwwwwwwwwwk', 'kwkwkkkkkkkkkkkwwk', 'kwkwkkkkkkkkkkkwwk', 'kwkwkkkkkkkkkkkwwk', 'kwkwwwwwwwwwwwwwwk', 'kwkwwwwkkkkwwwwwwk', 'kwkwwwwkkkkwwwwwwk', 'kwkwwwwwwwwwwwwwwk', 'kwkwwwwwwwwwwwwwwk', 'kwwwwwwwwwwwwwwwwk', '.kkkkkkkkkkkkkkkk.', '.kwwwwwwwwwwwwwwk.', '..kkkkkkkkkkkkkk..'],
+  ['kkkkkkkkkkkkkkkkkkkkkkkk', 'kwwwwwwwkwwwwwwwkwwwwwwk', 'kwww.wwwwwwwwwwwwww...wk', 'kww...wwkwwwwwwwkw.....k', 'kw.....wwwwwwwwwww.....k', 'kw.....wkwwwwkwwkk.....k', 'kw.....wwwwkwwwkwww...wk', 'kww...wwkkwwwwwwkwwwkwkk', 'kwww.wwkwww...wwwwwwwkwk', 'kwwkwwwwkw.....wkwwwkwkk', 'kwwwwkwww.......wwkkkwwk', 'kwwwwkwwkw.....wkkkkkkwk', 'kwwwkkkwwww...wwwwkkkwwk', 'kwwwwkwwkwwwwwwwkwwwwwwk', 'kwwwwwwwwwwwwwwwwwwwwwwk', 'kkkkkkkkkkkkkkkkkkkkkkkk'],
+  ['......kkkkk......', '......k...k......', '......k...k......', '......kkkkk......', '........k........', '........k........', '.......kkk.......', '......kk.kk......', '......kk.kk......', '.....kk...kk.....', '.....kk...kk.....', '....kkwwkwwkk....', '...kk.......kk...', '...kk.......kk...', '..kk.........kk..', '..kk.........kk..', '.kk...........kk.', 'kk.............kk', 'kk.............kk', 'kk.............kk'],
+  ['.......kkk.......', '.......kkk.......', '.....kkkkkkk.....', '......k...k......', '......k...k......', '......k...k......', '......kwwwk......', '....kk....kkk....', '...kk.....w.kk...', '...k....w....k...', '..kk.........kk..', '..kwwwwwwwwwwwk..', '..kwww.wwwwwwwk..', '..kww.wwwwwwwwk..', '..kkw.wwwwwwwkk..', '...kwwwwwwwwwk...', '...kkwwwwwwwkk...', '....kkkwwwkkk....', '......kkkkk......'],
+]
+
 /** A pixel of the strip */
 export type Pixel = { x: number; y: number }
 /** The pixels of the desk objects, by tone, and the little stars between them */
@@ -34,21 +42,24 @@ function random(seed: number) {
   }
 }
 
-/** Stars: the chance of one in a column, and of a little cross of five */
-const STAR = 0.12
-const CROSS = 0.012
+/** STARS (1 of 2): how dense the stars are: the chance of a star in each column of the strip (0: none, 0.12: a few, 0.3: many); a little cross of five is a tenth as likely */
+export const STAR_DENSITY = 0.08
+/** STARS (2 of 2): the stars' colour (any CSS colour; a gold, still faint, by default) */
+export const STAR_COLOUR = 'color-mix(in srgb, #f2c230 60%, transparent)'
+const STAR = STAR_DENSITY
+const CROSS = STAR_DENSITY / 10
 
-export function deskLayout(cols: number, rows: number, seed = 11): Desk {
+export function deskLayout(cols: number, rows: number, seed = 11, sprites: string[][] = SPRITES): Desk {
   const desk: Desk = { objects: [], stars: [] }
 
-  // The three objects, spread evenly along the strip, each at a height of its own and some turned around
+  // The objects (the three of the left side, or the right side's), spread evenly along the strip, each at a height of its own and some turned around
   const taken: { x0: number; x1: number; y0: number; y1: number }[] = []
   const next = random(seed)
-  SPRITES.forEach((sprite, n) => {
+  sprites.forEach((sprite, n) => {
     const flip = next() < 0.5
     const height = sprite.length
     const width = sprite[0].length
-    const x = Math.max(0, Math.floor(((n + 0.5) * cols) / SPRITES.length - width / 2))
+    const x = Math.max(0, Math.floor(((n + 0.5) * cols) / sprites.length - width / 2))
     const y = rows > height ? Math.floor(next() * (rows - height)) : 0
     const object: DeskObject = {
       ink: [],
@@ -94,7 +105,7 @@ export function pathOf(pixels: Pixel[]): string {
   let d = ''
   for (const [y, xs] of byRow) {
     xs.sort((a, b) => a - b)
-    for (let i = 0; i < xs.length; ) {
+    for (let i = 0; i < xs.length;) {
       let end = i
       while (end + 1 < xs.length && xs[end + 1] <= xs[end] + 1) end++
       const from = xs[i]

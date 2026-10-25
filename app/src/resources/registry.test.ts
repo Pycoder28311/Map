@@ -60,7 +60,7 @@ describe('the resource registry', () => {
 
   it('lists the resources that turned a screen on, and knows which can have a parent', () => {
     expect(resourcesWith('trash').map((r) => r.name)).toEqual(['projects', 'notes', 'folders', 'articles', 'objectCards', 'layouts', 'maps'])
-    expect(resourcesWith('quickCreate').map((r) => r.name)).toEqual(['notes'])
+    expect(resourcesWith('quickCreate').map((r) => r.name)).toEqual(['notes', 'articles'])
     expect(RESOURCES.filter((r) => r.linked).map((r) => r.name)).toEqual(['notes', 'folders', 'articles', 'objectCards'])
     expect(resourcesWith('sidebar').map((r) => r.name)).toEqual(['projects', 'notes'])
     expect(RESOURCES.filter((r) => r.parents?.length).map((r) => [r.name, r.parents!.map((p) => `${p.type}:${p.resource}`)])).toEqual([

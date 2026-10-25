@@ -4,7 +4,9 @@ import Button from '../../components/ui/buttons/Button'
 import RichTextToolbar from '../../components/ui/editors/RichTextToolbar'
 import RichTextField from '../../components/ui/fields/RichTextField'
 import PixelSprite from '../../components/ui/pixelart/PixelSprite'
-import { useResourceActions } from '../../lib/resource/hooks'
+import { LuChevronDown } from 'react-icons/lu'
+import ExtendMenu, { type ExtendMenuItem } from '../../components/ui/overlays/ExtendMenu'
+import { actionsOf } from '../../lib/resource/hooks'
 import { resourcesWith } from '../../resources/registry'
 import { isFirstLine } from './editorKeys'
 
@@ -14,12 +16,15 @@ const ANIMATE = 'duration-200 ease-out motion-reduce:transition-none'
 const GROW = `grid transition-[grid-template-rows,opacity] ${ANIMATE}`
 // Starts once the bottom part has grown (its duration, in ANIMATE)
 const AFTER_GROW = 'delay-200'
-// What the input makes: the resource with the quickCreate surface (the notes)
-const QUICK = resourcesWith('quickCreate')[0]
+// What the input can make: the resources with the quickCreate surface (the notes and the articles), in the UI config's order
+const QUICK = resourcesWith('quickCreate')
+const KINDS: ExtendMenuItem<string>[] = QUICK.map((r) => ({ value: r.name, label: r.ui.label, icon: r.ui.icon }))
+// The last kind chosen, kept for the session (not across reloads)
+let lastKind = QUICK[0].name
 const FIELD = 'w-full resize-none bg-transparent px-4 text-fg outline-none placeholder:text-fg-subtle'
 
 /**
- * The wide "Take a note…" input (Dashboard). Clicked, it comes in front with a subtle shadow and a
+ * The wide "Take a note…" input (Dashboard), which makes a note or an article: folded, a Note / Article dropdown at the right of the text; open, two buttons beside Create. Clicked, it comes in front with a subtle shadow and a
  * title field grows on top of it, in the same white card, under a thin gray line. The text stays
  * exactly where it was: the card grows upward (title) and downward (Create) over the page, which
  * keeps the folded card's place, so nothing around it moves. ArrowUp on the
@@ -39,15 +44,35 @@ export default function QuickCreate() {
   const [text, setText] = useState('')
   const [drafts, setDrafts] = useState(0)
   const [editor, setEditor] = useState<Editor | null>(null)
-  const { create: createNote } = useResourceActions(QUICK)
+  const [kindName, setKindName] = useState(lastKind)
+  const kind = QUICK.find((r) => r.name === kindName) ?? QUICK[0]
+  const textPlaceholder = kind.ui.fields.find((f) => !f.heading)?.placeholder ?? 'Take a note…'
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [titleFocused, setTitleFocused] = useState(false)
   // The folded card's height (the place it keeps in the page) and the title's (how far the card moves up)
   const [size, setSize] = useState({ folded: 0, title: 0 })
+  // The Note / Article button: its width, and its distance from the row's top and bottom, which it also keeps from the card's right edge
+  const rowRef = useRef<HTMLDivElement>(null)
+  const kindRef = useRef<HTMLDivElement>(null)
+  const [kindBox, setKindBox] = useState({ width: 0, gap: 4 })
 
   const canCreate = title.trim() !== '' || text !== ''
   const bigTitle = titleFocused || title !== ''
+
+  // Measured while folded (open, the button is hidden): the button is centred in the text row, so its top and bottom gaps are equal
+  useLayoutEffect(() => {
+    const row = rowRef.current
+    const slot = kindRef.current
+    if (!row || !slot) return
+    const measure = () => {
+      if (row.offsetHeight > 0 && slot.offsetHeight > 0) setKindBox({ width: slot.offsetWidth, gap: Math.max(0, (row.offsetHeight - slot.offsetHeight) / 2) })
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(slot)
+    return () => observer.disconnect()
+  }, [kindName])
 
   // Open: a press anywhere outside folds it back (the dropdown's menu is inside it in the DOM)
   useEffect(() => {
@@ -78,14 +103,14 @@ export default function QuickCreate() {
     setBusy(true)
     setError(null)
     try {
-      await createNote({ title: title.trim(), content: text })
+      await actionsOf(kind).create({ title: title.trim(), content: text })
       setTitle('')
       setText('')
       setDrafts((n) => n + 1)
       fold()
     } catch (e) {
       // The draft stays, so nothing typed is lost
-      setError(e instanceof Error ? e.message : 'Could not create the note.')
+      setError(e instanceof Error ? e.message : `Could not create the ${kind.ui.label.toLowerCase()}.`)
     } finally {
       setBusy(false)
     }
@@ -99,6 +124,11 @@ export default function QuickCreate() {
       // (Esc in an open menu only closes the menu)
       fold()
     }
+  }
+
+  const chooseKind = (next: string) => {
+    lastKind = next
+    setKindName(next)
   }
 
   const onEditor = useCallback((next: Editor | null) => {
@@ -169,7 +199,7 @@ export default function QuickCreate() {
         <div
           aria-hidden
           style={{ top: open ? 8 + size.title : 8 }}
-          className={`pointer-events-none absolute end-6 h-[78px] w-[54px] opacity-25 transition-[top] ${ANIMATE}`}
+          className={`pointer-events-none absolute end-44 h-[78px] w-[54px] opacity-25 transition-[top] ${ANIMATE}`}
         >
           <div className="size-full motion-reduce:animate-none animate-float">
             {/* The sheet and the bottom roll: out of sight above while rolled, clipped by this box */}
@@ -190,19 +220,35 @@ export default function QuickCreate() {
           </div>
         </div>
 
-        {/* Folded, the text shows its first line only ; open, it grows with its lines */}
-        <div className={`${FIELD} py-3 text-body`}>
-          <div className={`min-h-[1lh] ${open ? 'max-h-[50vh] overflow-y-auto' : 'max-h-[1lh] overflow-hidden'}`}>
+        {/* Folded, the text shows its first line only; open, it grows with its lines. Folded, the Note / Article button is at its right, a dropdown
+            like the rows' Sort by, as far from the right edge as from the top and bottom (out of the way once open: the two buttons are beside Create) */}
+        <div ref={rowRef} className={`${FIELD} relative flex items-start py-3 text-body`}>
+          <div
+            style={{ marginInlineEnd: open ? 0 : kindBox.width + kindBox.gap - 16 + 8 }}
+            className={`min-h-[1lh] min-w-0 flex-1 transition-[margin] ${ANIMATE} ${open ? 'max-h-[50vh] overflow-y-auto' : 'max-h-[1lh] overflow-hidden'}`}
+          >
             <RichTextField
               key={drafts}
               value={text}
               onChange={setText}
               onEditor={onEditor}
               onKeyDown={onTextKeyDown}
-              placeholder="Take a note…"
+              placeholder={textPlaceholder}
               label="Text"
               minHeight="min-h-0"
             />
+          </div>
+          <div
+            ref={kindRef}
+            inert={open}
+            style={{ insetInlineEnd: kindBox.gap }}
+            className={`absolute top-1/2 -translate-y-1/2 transition-opacity ${ANIMATE} ${open ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
+          >
+            <ExtendMenu variant="ghost" label="Kind" items={KINDS} value={kind.name} onSelect={chooseKind}>
+              <kind.ui.icon aria-hidden className="size-4" />
+              {kind.ui.label}
+              <LuChevronDown aria-hidden className="size-4" />
+            </ExtendMenu>
           </div>
         </div>
 
@@ -230,9 +276,17 @@ export default function QuickCreate() {
             open ? `translate-x-0 opacity-100 transition-[translate,opacity] ${ANIMATE} ${AFTER_GROW}` : 'translate-x-[calc(100%+1rem)] opacity-0'
           }`}
         >
-          <Button onClick={() => void create()} disabled={!canCreate || busy} title="Create (Ctrl+Enter)">
-            {busy ? 'Creating…' : 'Create'}
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Open: not a dropdown, one button for each kind; the chosen one is outlined */}
+            {QUICK.map((r) => (
+              <Button key={r.name} variant={r === kind ? 'selected' : 'ghost'} icon={r.ui.icon} onClick={() => chooseKind(r.name)} aria-pressed={r === kind}>
+                {r.ui.label}
+              </Button>
+            ))}
+            <Button onClick={() => void create()} disabled={!canCreate || busy} title="Create (Ctrl+Enter)">
+              {busy ? 'Creating…' : 'Create'}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { deskLayout, pathOf, SPRITES, TONES } from './deskLayout'
+import { deskLayout, pathOf, RIGHT_SPRITES, SPRITES, TONES } from './deskLayout'
 
 const all = (desk: ReturnType<typeof deskLayout>) => [...desk.stars, ...desk.objects.flatMap((o) => [...o.ink, ...o.soft])]
 
@@ -48,6 +48,18 @@ describe('deskLayout', () => {
       expect(sprite.join('')).toMatch(new RegExp(`^[.${Object.keys(TONES).join('')}]+$`))
     }
     expect(SPRITES).toHaveLength(3)
+  })
+
+  it('has a right side of its own: four rectangular sprites, spread over its strip, apart from the left side', () => {
+    for (const sprite of RIGHT_SPRITES) {
+      expect(new Set(sprite.map((line) => line.length)).size).toBe(1)
+      expect(sprite.join('')).toMatch(new RegExp(`^[.${Object.keys(TONES).join('')}]+$`))
+    }
+    const right = deskLayout(400, 37, 23, RIGHT_SPRITES)
+    expect(right.objects).toHaveLength(4)
+    expect(right.objects.every((o) => o.ink.length + o.soft.length > 0)).toBe(true)
+    expect(right.stars.length).toBeGreaterThan(5)
+    expect(deskLayout(400, 37, 23, RIGHT_SPRITES)).toEqual(right)
   })
 
   it('makes one rectangle of each run of pixels', () => {

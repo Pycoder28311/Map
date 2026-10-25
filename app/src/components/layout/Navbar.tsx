@@ -25,7 +25,7 @@ const MENU_BUTTON =
  * - left: ☰ pins/unpins the sidebar (opens/closes it on narrow screens; sidebar/useSidebar.ts) and
  *   turns into an ✕ while it's open; links home
  * - centre: Recent History
- * - right: Search, Share, the profile circle, Zoom (focus mode)
+ * - right: Search, Share, the profile circle, Zoom (focus mode), over a faint pixel desk of its own
  * Their popouts grow out of the bar's bottom edge in one layer (PopoutLayer), so Search's and Share's
  * join into one shape when both are open.
  */
@@ -66,7 +66,11 @@ export default function Navbar() {
                     <RecentHistory />
                 </div>
 
-                <div className="ms-auto flex h-full items-center gap-4">
+                {/* The right side's faint pixel desk (a book, a map, dividers, a potion and stars), from the Recent button's gap to the bar's end,
+                    behind the buttons (they are positioned, so they paint over it); on narrow screens none */}
+                <DeskStrip side="right" className="absolute inset-y-0 right-0 left-[calc(50%+7rem)] max-lg:hidden" />
+
+                <div className="relative ms-auto flex h-full items-center gap-4">
                     <NavSearch />
                     <ShareButton />
                     <ProfileCircle />

@@ -34,7 +34,7 @@ export type Surfaces = {
   trash?: boolean
   /** It has a column and a row on the Dashboard */
   dashboard?: boolean
-  /** The Dashboard's "Take a note…" card creates one */
+  /** The Dashboard's big input can create one (a button chooses which: note, article) */
   quickCreate?: boolean
   /** A tab of the floating Create button's modal */
   create?: boolean
