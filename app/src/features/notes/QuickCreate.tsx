@@ -202,7 +202,7 @@ export default function QuickCreate() {
         <div
           aria-hidden
           style={{ top: open ? 8 + size.title : 8 }}
-          className={`pointer-events-none absolute end-44 h-[78px] w-[54px] opacity-25 transition-[top] ${ANIMATE}`}
+          className={`pointer-events-none absolute end-44 h-[78px] w-[54px] transition-[top,opacity] ${ANIMATE} ${open ? 'opacity-100' : 'opacity-25'}`}
         >
           <div className="size-full motion-reduce:animate-none animate-float">
             {/* The sheet and the bottom roll: out of sight above while rolled, clipped by this box */}
