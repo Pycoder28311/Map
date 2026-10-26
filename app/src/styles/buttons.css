@@ -79,7 +79,7 @@
     --btn-line-height: 1.2;
     --btn-letter-spacing: 0.576px;
     --btn-pad-x: calc(var(--px) * 5);
-    --btn-pad-y: calc(var(--px) * 4);
+    --btn-pad-y: calc(var(--px) * 2);
     --btn-border: none;
     --btn-radius: 0;
     --btn-text: var(--color-bone);
@@ -499,11 +499,6 @@
     height: 1em;
   }
 
-  /* (a lone one is a ▾ after the label: the text before it isn't an element, so it counts as first and last) */
-  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):is(:not(:first-child), :only-child) {
-    margin-inline-start: var(--btn-icon-gap);
-  }
-
   :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):first-child:not(:last-child) {
     margin-inline-end: var(--btn-icon-gap);
   }
@@ -513,8 +508,16 @@
     margin-inline-start: calc(var(--btn-icon-edge) - var(--btn-pad-x));
   }
 
+  /* hovered (Venom, Shade): the icon after the label comes closer to the text, like the one before it does (--_pull); the
+     space it leaves goes to its end margin, so the button keeps its width. (A lone one is a ▾ after the label: the text
+     before it isn't an element, so it counts as first and last) */
+  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):is(:not(:first-child), :only-child) {
+    margin-inline-start: calc(var(--btn-icon-gap) - var(--_pull, 0px));
+    transition: margin 0.18s ease-out;
+  }
+
   :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):last-child {
-    margin-inline-end: calc(var(--btn-icon-edge) - var(--btn-pad-x));
+    margin-inline-end: calc(var(--btn-icon-edge) - var(--btn-pad-x) + var(--_pull, 0px));
   }
 
   /* Map: a link can't be :disabled; aria-disabled gives it the same look */
