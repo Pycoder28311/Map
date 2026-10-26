@@ -499,12 +499,22 @@
     height: 1em;
   }
 
-  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):not(:first-child) {
+  /* (a lone one is a ▾ after the label: the text before it isn't an element, so it counts as first and last) */
+  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):is(:not(:first-child), :only-child) {
     margin-inline-start: var(--btn-icon-gap);
   }
 
   :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):first-child:not(:last-child) {
     margin-inline-end: var(--btn-icon-gap);
+  }
+
+  /* the icon at either end is as far from the button's edge as from the text (a button's padding can be wider than that) */
+  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):first-child:not(:last-child) {
+    margin-inline-start: calc(var(--btn-icon-edge) - var(--btn-pad-x));
+  }
+
+  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):last-child {
+    margin-inline-end: calc(var(--btn-icon-edge) - var(--btn-pad-x));
   }
 
   /* Map: a link can't be :disabled; aria-disabled gives it the same look */
