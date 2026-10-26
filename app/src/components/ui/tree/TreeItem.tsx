@@ -58,6 +58,8 @@ const GROUP =
   'relative mt-sm ms-[var(--tree-indent-now,var(--tree-indent))] flex flex-col gap-sm ' +
   'before:pointer-events-none before:absolute before:inset-y-0 before:-start-(--spacing-sm) before:w-px before:bg-(--tree-line-color,var(--line-strong)) before:transition-colors before:duration-(--tree-compact-duration) ' +
   'transition-[margin] duration-(--tree-indent-duration,var(--tree-compact-duration)) ease-out motion-reduce:transition-none'
+// How far a row's shadow reaches (styles/fields.css: --input-shadow, 14px blur): the room the sliding children's box leaves for it
+const SHADOW_ROOM = '20px'
 // The children that stay visible under a closed folder fade in (the Zen reel's expand)
 const KEPT = 'animate-tree-expand motion-reduce:animate-none'
 
@@ -273,7 +275,12 @@ export default function TreeItem({
             transition: slideMs ? `grid-template-rows ${slideMs}ms ${css(EASING.expand)}` : 'none',
           }}
         >
-          <div className="min-h-0" style={{ overflow: slide.settled ? 'visible' : 'hidden' }}>
+          {/* The box clips the sliding rows at its top (they come out from behind their parent) and keeps SHADOW_ROOM of
+              room at its sides and bottom, so the rows' shadows show while they slide (negative margins: nothing moves) */}
+          <div
+            className="min-h-0"
+            style={{ overflow: slide.settled ? 'visible' : 'hidden', padding: `0 ${SHADOW_ROOM} ${SHADOW_ROOM}`, margin: `0 -${SHADOW_ROOM} -${SHADOW_ROOM}` }}
+          >
             <ul
               role="group"
               className={GROUP}
