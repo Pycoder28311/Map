@@ -88,7 +88,7 @@ export default function RowHeader({ name, reflowId, onRename, onOpen, sort, onSo
           onSelect={(next) => onSort(next === 'manual' ? null : next)}
         >
           {sort && !sortByLabel ? SORT_LABEL[sort] : 'Sort by'}
-          <LuChevronDown aria-hidden className="size-4" />
+          <LuChevronDown aria-hidden className="ui-extend-flip size-4" />
         </ExtendMenu>
         {create.kinds.length === 1 && (
           <SplitButton icon={<LuPlus />} iconPosition="right" onClick={() => create.onCreate(only.value)}>

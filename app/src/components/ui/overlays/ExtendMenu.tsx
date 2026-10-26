@@ -172,7 +172,8 @@ export default function ExtendMenu<T extends string>({
   return (
     // The space in the layout: exactly the button's size (a copy of it, invisible), never the grown size. Flex, not
     // inline: no line box around the copy, so nothing is added below it and the button stays centred in its row
-    <div ref={wrapRef} className={`relative inline-flex ${className}`}>
+    // In front of everything beside it while it is open (and while it folds back)
+    <div ref={wrapRef} className={`relative inline-flex ${open || closing ? 'z-30' : ''} ${className}`}>
       <div ref={sizerRef} aria-hidden className="invisible flex">
         {variant === 'create' ? <div className={splitButtonClass()}>{content(false)}</div> : <ButtonLook variant="ghost">{content(false)}</ButtonLook>}
       </div>

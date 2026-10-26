@@ -750,6 +750,13 @@
   .ui-extend[data-open='true'] .ui-extend-turn > svg {
     rotate: 45deg;
   }
+  /* an arrow (a chevron) in the button's content, marked ui-extend-flip, turns half a round while open, and back */
+  .ui-extend-flip {
+    transition: rotate 0.2s ease-out;
+  }
+  .ui-extend[data-open='true'] .ui-extend-flip {
+    rotate: 180deg;
+  }
   /* Folding back (data-closing, for as long as it shrinks): the box keeps its open look while it shrinks, then takes
      its closed look at once (its colour, brackets, options: a delay, no duration). The label (None → Add) changes at the click. Only the button's own
      colours fade back meanwhile (a Venom split's pieces turn green again) */
@@ -782,7 +789,8 @@
   @media (prefers-reduced-motion: reduce) {
     .ui-btn.ui-extend,
     .ui-extend > .ui-btn-venom-split > span,
-    .ui-extend-turn > svg {
+    .ui-extend-turn > svg,
+    .ui-extend-flip {
       transition: none;
     }
   }
