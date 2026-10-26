@@ -696,8 +696,9 @@
   .ui-extend[data-open='true'] .ui-extend-turn > svg {
     rotate: 45deg;
   }
-  /* Folding back (data-closing, for as long as it shrinks): no fading. Everything keeps its open look while the box
-     shrinks, then takes its closed look at once (colours, brackets, labels, options: a delay, no duration) */
+  /* Folding back (data-closing, for as long as it shrinks): the box keeps its open look while it shrinks, then takes
+     its closed look at once (its colour, brackets, labels, options: a delay, no duration). Only the button's own
+     colours fade back meanwhile (a Venom split's pieces turn green again) */
   .ui-btn.ui-extend[data-closing='true'],
   .ui-btn.ui-extend[data-closing='true']:is(:hover, :active) {
     transition:
@@ -711,14 +712,11 @@
   .ui-extend[data-closing='true'] > .ui-btn,
   .ui-extend[data-closing='true'] > .ui-btn-venom-split > span {
     transition:
-      color 0s 0.2s,
-      background-color 0s 0.2s,
-      box-shadow 0s 0.2s,
+      color 0.2s ease-out,
+      background-color 0.2s ease-out,
+      box-shadow 0.2s ease-out,
       background-position 0s 0.2s,
       background-size 0s 0.2s;
-  }
-  .ui-extend[data-closing='true'] > .ui-btn-venom-split {
-    --btn-inner-shadow: var(--br-none);
   }
   .ui-extend[data-closing='true'] .ui-extend-labels > *,
   .ui-extend[data-closing='true'] > .ui-extend-menu {
