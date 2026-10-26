@@ -4,6 +4,9 @@ import type { ButtonIcon } from '../icons/IconSlot'
 import { ICON_BOX, ICON_BUTTON } from './treeIconStyles'
 
 // Full class strings so Tailwind can detect them at build time.
+// The box is the row's first square (the row's full height and --sidebar-row wide): its hover background fills it, and the
+// icon is centred in it, exactly where it was (the right icons' box, ICON_BOX, is a padded one instead)
+const BOX = 'flex size-full shrink-0 items-center justify-center rounded-(--btn-close-radius) transition-[opacity,background-color] duration-200 ease-out'
 // Folders: the node's icon by default (openIcon while open); the arrow in its place only while the
 // row is hovered, or holds keyboard focus (:focus-visible, so not after a mouse click: a clicked row
 // keeps focus, which would leave the arrow showing).
@@ -17,13 +20,16 @@ type Props = {
   folder?: { isOpen: boolean }
   /** Folder with a page of its own: the icon is a button that opens/closes it (label: its name) */
   toggle?: { onClick: () => void; label: string }
+  /** A folder's icon, which sits at the row's start as its own square (TreeItem) instead of inside the row's content */
+  square?: boolean
 }
 
 /**
  * The one icon on the left of a tree row. Leaves: the node's icon. Folders: the node's icon, which
  * becomes the arrow while the row is hovered (a folder without an icon always shows the arrow).
  */
-export default function TreeRowIcon({ icon: Icon, folder, toggle }: Props) {
+export default function TreeRowIcon({ icon: Icon, folder, toggle, square }: Props) {
+  const box = square ? BOX : ICON_BOX
   // The size follows --tree-row-icon: bigger while the sidebar is closed, growing with its animation. One transition for all of
   // it: size, the icon/arrow swap (150ms) and the arrow's quarter turn when the folder opens (260ms, the Zen reel's chevron curve)
   const SIZE = 'size-(--tree-row-icon)'
@@ -48,7 +54,7 @@ export default function TreeRowIcon({ icon: Icon, folder, toggle }: Props) {
         aria-label={toggle.label}
         title={toggle.label}
         onClick={toggle.onClick}
-        className={`${ICON_EFFECT_GROUP} ${ICON_BOX} ${bg} ${ICON_BUTTON}`}
+        className={`${ICON_EFFECT_GROUP} ${box} ${bg} ${ICON_BUTTON}`}
       >
         {/* Hover/click effects only when it's a button of its own */}
         <span className={`flex ${iconEffectClass()}`}>{inner}</span>
@@ -56,7 +62,7 @@ export default function TreeRowIcon({ icon: Icon, folder, toggle }: Props) {
     )
   }
   return (
-    <span aria-hidden className={`${ICON_BOX} ${bg}`}>
+    <span aria-hidden className={`${box} ${bg}`}>
       {inner}
     </span>
   )
