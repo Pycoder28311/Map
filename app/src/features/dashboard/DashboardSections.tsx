@@ -122,6 +122,7 @@ export default function DashboardSections() {
               onOpen={row.root ? () => openItem(row.root.resource, String(row.root.item.id)) : undefined}
               sort={sort}
               onSort={(next) => setSort(row.id, next)}
+              sortByLabel={!row.root}
               create={{ kinds, onCreate: create }}
             />
             <div data-row-strip={row.id} className="-mx-2 flex min-h-[13.25rem] snap-x gap-3 overflow-x-auto px-2 pt-1 pb-4">

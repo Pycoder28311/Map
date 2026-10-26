@@ -20,6 +20,8 @@ type Props = {
   onOpen?: () => void
   sort: CardSort | null
   onSort: (sort: CardSort | null) => void
+  /** The Sort button always says "Sort by" (the Orphans row), instead of the sort that is on */
+  sortByLabel?: boolean
   /** What the green Add button can make here: one kind is a plain button, several a menu; none, no button */
   create: { kinds: ExtendMenuItem<string>[]; onCreate: (kind: string) => void }
 }
@@ -29,7 +31,7 @@ type Props = {
  * ExtendMenu grows to show its options) and a green "Add +" on the right that makes an item in the row (a menu of kinds), as big as a
  * sidebar row.
  */
-export default function RowHeader({ name, reflowId, onRename, onOpen, sort, onSort, create }: Props) {
+export default function RowHeader({ name, reflowId, onRename, onOpen, sort, onSort, sortByLabel, create }: Props) {
   const [only] = create.kinds
   const [editing, setEditing] = useState(false)
   return (
@@ -85,7 +87,7 @@ export default function RowHeader({ name, reflowId, onRename, onOpen, sort, onSo
           value={sort}
           onSelect={(next) => onSort(next === 'manual' ? null : next)}
         >
-          {sort ? SORT_LABEL[sort] : 'Sort by'}
+          {sort && !sortByLabel ? SORT_LABEL[sort] : 'Sort by'}
           <LuChevronDown aria-hidden className="size-4" />
         </ExtendMenu>
         {create.kinds.length === 1 && (

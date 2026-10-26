@@ -580,57 +580,72 @@
   }
 
   /* Map: ExtendMenu (components/ui/overlays/ExtendMenu.tsx). The box that grows is a button of the same look
-     (.ui-btn .ui-btn-venom / -shade .ui-extend), holding the real button and the options. Closed, it draws nothing:
-     its button shows. Open, it draws the face, with the brackets out at its (growing) corners, and its button draws
-     nothing. It doesn't react to hover or press itself. */
-  .ui-btn.ui-extend {
+     (.ui-btn .ui-btn-venom / -shade .ui-extend), holding the real button and the options. The box draws the face and
+     the white brackets, always with the same layers: the brackets are placed from its edges, so as it grows they just
+     move out with its corners. Its button draws nothing of its own (the Venom split's two pieces do, while closed).
+     Open, every ExtendMenu is dark grey like an open Shade; a Venom one fades from green to it. */
+  .ui-btn.ui-extend,
+  .ui-btn.ui-extend:is(:hover, :active) {
     /* a column: the button, then the options, from its start (a button centres its content) */
     justify-content: flex-start;
     align-items: stretch;
     padding: 0;
     cursor: auto;
+    background: var(--br-layers-left), var(--br-layers-right), var(--_bg);
+    box-shadow: none;
+    transform: none;
     transition:
       width 0.2s ease-out,
       height 0.2s ease-out,
+      color 0.2s ease-out,
+      background-color 0.2s ease-out,
       var(--br-transition);
   }
-  .ui-btn.ui-extend:is(:hover, :active) {
-    --_text: var(--btn-text);
-    --_bg: var(--btn-bg);
-    --_bevel-top: var(--btn-bevel-top);
-    --_bevel-bottom: var(--btn-bevel-bottom);
-    --_shadow-y: var(--btn-shadow-y);
-    transform: none;
-  }
-  .ui-btn.ui-extend:not([data-open='true']) {
+  /* the button inside: its content only (the box behind it is its face) */
+  .ui-extend > .ui-btn {
     background: none;
     box-shadow: none;
   }
+  /* Venom split, closed: the box is see-through, without brackets: the two pieces show (and slide out their own) */
+  .ui-btn-venom.ui-extend:not([data-open='true']) {
+    --_bg: transparent;
+    --br-h: linear-gradient(transparent, transparent);
+  }
+  /* open: dark grey with the brackets out, whatever the pointer does */
   .ui-btn.ui-extend[data-open='true'] {
+    --_text: var(--color-bone);
+    --_bg: var(--color-shade-hover);
     --br-gap: var(--btn-bracket-gap);
     --br-len-x: var(--btn-bracket-len-x);
     --br-len-y: var(--btn-bracket-len-y);
     overflow: hidden;
   }
-  /* Shade has no face of its own until hovered: open, the box takes the hovered one */
-  .ui-btn-shade.ui-extend[data-open='true'],
-  .ui-btn-shade.ui-extend[data-open='true']:is(:hover, :active) {
-    --_text: var(--btn-hover-text);
-    --_bg: var(--btn-hover-bg);
+  /* open, the Venom split's pieces fade out (their brackets hand over to the box's, in the same places) */
+  .ui-extend > .ui-btn-venom-split > span {
+    transition:
+      var(--br-transition),
+      background-color 0.2s ease-out,
+      box-shadow 0.2s ease-out;
+  }
+  .ui-extend[data-open='true'] > .ui-btn-venom-split {
+    --_bg: transparent;
+    --br-h: linear-gradient(transparent, transparent);
+    --btn-inner-shadow: linear-gradient(transparent, transparent);
+  }
+  .ui-extend[data-open='true'] > .ui-btn-venom-split > span {
+    box-shadow: none;
+  }
+  .ui-extend[data-open='true'] > .ui-btn {
+    --_text: var(--color-bone);
+    transform: none;
   }
   /* closed, the options are not shown (the box doesn't clip then, so the button's own shadow shows) */
   .ui-extend:not([data-open='true']) > .ui-extend-menu {
     visibility: hidden;
   }
-  /* open, the button inside draws nothing: the box is its face */
-  .ui-extend[data-open='true'] > .ui-btn,
-  .ui-extend[data-open='true'] > .ui-btn-venom-split > span {
-    background: none;
-    box-shadow: none;
-    transform: none;
-  }
   @media (prefers-reduced-motion: reduce) {
-    .ui-btn.ui-extend {
+    .ui-btn.ui-extend,
+    .ui-extend > .ui-btn-venom-split > span {
       transition: none;
     }
   }
