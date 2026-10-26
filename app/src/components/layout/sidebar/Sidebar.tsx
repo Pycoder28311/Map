@@ -25,8 +25,6 @@ const ROW_W = 'w-[calc(var(--sidebar-w)-var(--sidebar-rail)+2*var(--btn-px)+var(
 // after a compact row (its icon's box + its padding on both sides), split on both sides
 const PX = 'var(--sidebar-pad)'
 const ANIMATE = 'duration-(--sidebar-duration) ease-out motion-reduce:transition-none'
-// A rail row's width (its icon's box + the row padding): the short lines in the rail end there
-const RAIL_LINE_W = 'w-[calc(2*var(--btn-px)+var(--btn-icon-size)+2*var(--btn-close-p))]'
 
 /**
  * Side navigation, in three looks (state: useSidebar.ts):
@@ -115,7 +113,7 @@ export default function Sidebar() {
                 <SidebarPixels />
                 {/* The sections scroll; the trash bin stays at the bottom. Drops on rows and the bin: SidebarDrop */}
                 <SidebarDropProvider>
-                    <div style={{ paddingInline: PX }} className="flex h-full w-(--sidebar-w) flex-col py-(--sidebar-py)">
+                    <div style={{ paddingInline: PX }} className="flex h-full w-(--sidebar-w) flex-col pt-0 pb-(--sidebar-py)">
                         {/* Never scrolls sideways (e.g. while a dragged object is over it): what sticks out is cut, and
                             a sideways scroll from code (the drag's auto-scroll) is undone at once */}
                         <div
@@ -130,11 +128,6 @@ export default function Sidebar() {
                             </div>
                         </div>
                         <div className="shrink-0 pt-(--divider-gap)">
-                            {/* The line above the bin: full width, or in the rail as short as the dividers' (Divider) */}
-                            <div
-                                aria-hidden
-                                className={`mb-(--divider-gap) h-px bg-(--divider-line) transition-[width] ${ANIMATE} ${open ? 'w-full' : RAIL_LINE_W}`}
-                            />
                             <TrashBin compact={!open} />
                         </div>
                     </div>

@@ -99,7 +99,8 @@
    /* Dividers (components/ui/Divider): the line between sections, with or without a label */
    /* the line itself (themes can make it stronger) */
    --divider-line: var(--line);
-   --divider-h: 24px;
+   /* odd, so the 1px line is exactly in the middle of it: as much space above it as below */
+   --divider-h: 25px;
    --divider-gap: var(--spacing-sm);
    /* space above/below a divider in the sidebar */
 

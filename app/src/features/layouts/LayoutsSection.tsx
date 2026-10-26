@@ -109,8 +109,7 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
   const [width, setWidth] = useState(0)
   // The closed sidebar's tiles are as wide as its rows (--sidebar-row); two of a row stack, --spacing-sm apart
   const railWidth = useMemo(() => cssPx('--sidebar-row'), [])
-  // The gap between tiles, and between the two of a row stacked in the rail: --spacing-sm, like the rows' (the last row is that much taller,
-  // open and closed, so the tiles reach down as far as the next section's line looks to need)
+  // The gap between tiles, and between the two of a row stacked in the rail: --spacing-sm, like the rows'
   const gap = useMemo(() => cssPx('--spacing-sm'), [])
 
   // The tiles' area is always the sidebar's full inner width (the rail only clips it)
@@ -214,7 +213,7 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
   ]
   const n = tilesData.length
   const shown = visibleCount(n, expanded)
-  const { tiles, height } = positions(n, shown, { width, gap, railWidth, bottomExtra: gap, mode: compact ? 'rail' : 'grid' })
+  const { tiles, height } = positions(n, shown, { width, gap, railWidth, mode: compact ? 'rail' : 'grid' })
   const hidden = n - visibleCount(n, false)
 
   const actionsOf = (layout: SavedLayout) => {
@@ -237,7 +236,9 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
   }
 
   return (
-    <section ref={setSection} aria-label="Layouts">
+    // -mb-sm: the next section's line is a gap closer to the tiles than to its own rows: the rows have a soft shadow around them, the tiles
+    // have none, so with equal distances the tiles look farther from the line
+    <section ref={setSection} aria-label="Layouts" className="-mb-sm">
       {/* + at the right edge: a new layout, like the first Create button (that one shows while there are no tiles) */}
       <Divider label="Layouts" action={n > 0 ? create : undefined} compact={compact} className="my-(--divider-gap)" />
 

@@ -51,13 +51,4 @@ describe('positions', () => {
     const { tiles } = positions(8, 6, { ...opts, mode: 'grid' })
     expect(tiles).toHaveLength(6)
   })
-
-  it('makes the last row taller by bottomExtra, in the grid and in the rail', () => {
-    for (const mode of ['grid', 'rail'] as const) {
-      const plain = positions(3, 3, { ...opts, mode })
-      const taller = positions(3, 3, { ...opts, bottomExtra: 4, mode })
-      expect(taller.height).toBeCloseTo(plain.height + 4)
-      expect(taller.tiles[0].height).toBeCloseTo(plain.tiles[0].height)
-    }
-  })
 })
