@@ -1,7 +1,6 @@
 import type { Editor } from '@tiptap/react'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import Button from '../../components/ui/buttons/Button'
-import SegmentedButtons, { type SegmentOption } from '../../components/ui/buttons/SegmentedButtons'
 import RichTextToolbar from '../../components/ui/editors/RichTextToolbar'
 import RichTextField from '../../components/ui/fields/RichTextField'
 import { LuChevronDown } from 'react-icons/lu'
@@ -19,7 +18,6 @@ const GROW = `grid transition-[grid-template-rows,opacity] ${ANIMATE}`
 const AFTER_GROW = 'delay-200'
 // What the input can make: the resources with the quickCreate surface (the notes and the articles), in the UI config's order
 const QUICK = resourcesWith('quickCreate')
-const KIND_OPTIONS: SegmentOption<string>[] = QUICK.map((r) => ({ value: r.name, label: r.ui.label, icon: r.ui.icon }))
 const KINDS: ExtendMenuItem<string>[] = QUICK.map((r) => ({ value: r.name, label: r.ui.label, icon: r.ui.icon }))
 // The last kind chosen, kept for the session (not across reloads)
 let lastKind = QUICK[0].name
@@ -254,8 +252,12 @@ export default function QuickCreate() {
           }`}
         >
           <div className="flex items-center gap-2">
-            {/* Open: not a dropdown, connected buttons, one for each kind; a block under the chosen one slides to the one picked */}
-            <SegmentedButtons label="Kind" options={KIND_OPTIONS} value={kind.name} onChange={chooseKind} />
+            {/* Open: not a dropdown, one button for each kind; the chosen one is outlined */}
+            {QUICK.map((r) => (
+              <Button key={r.name} plain variant={r === kind ? 'selected' : 'ghost'} icon={r.ui.icon} onClick={() => chooseKind(r.name)} aria-pressed={r === kind}>
+                {r.ui.label}
+              </Button>
+            ))}
             <Button onClick={() => void create()} disabled={!canCreate || busy} title="Create (Ctrl+Enter)">
               {busy ? 'Creating…' : 'Create'}
             </Button>

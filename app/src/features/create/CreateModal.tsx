@@ -5,7 +5,6 @@ import { actionsOf } from '../../lib/resource/hooks'
 import { resourcesWith } from '../../resources/registry'
 import type { AnyResource } from '../../resources/types'
 import Button from '../../components/ui/buttons/Button'
-import SegmentedButtons from '../../components/ui/buttons/SegmentedButtons'
 import RichTextToolbar from '../../components/ui/editors/RichTextToolbar'
 import RichTextField from '../../components/ui/fields/RichTextField'
 import { isFirstLine } from '../notes/editorKeys'
@@ -112,15 +111,18 @@ export default function CreateModal({ closing, inset, onCreated }: Props) {
 
       <div className="flex min-h-0 flex-1 flex-col">
         {/* The kinds, as tabs above the form */}
-        <div className="flex shrink-0 overflow-x-auto border-b border-line px-3 py-2">
-          <SegmentedButtons
-            label="What to create"
-            size="sm"
-            options={KINDS.map((k) => ({ value: k.name, label: k.ui.label, icon: k.ui.icon }))}
-            value={resource.name}
-            onChange={pick}
-          />
-        </div>
+        <ul aria-label="What to create" className="flex shrink-0 gap-1 overflow-x-auto border-b border-line px-3 py-2">
+          {KINDS.map((k) => {
+            const Icon = k.ui.icon
+            return (
+              <li key={k.name} className="shrink-0">
+                <Button variant="ghost" plain size="sm" icon={Icon} aria-pressed={k === resource} onClick={() => pick(k.name)}>
+                  {k.ui.label}
+                </Button>
+              </li>
+            )
+          })}
+        </ul>
 
         {/* The form of the chosen kind */}
         <form

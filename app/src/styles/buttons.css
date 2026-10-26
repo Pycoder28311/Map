@@ -39,11 +39,6 @@
   --color-venom-face-press: #378a33;
   --color-venom-light-press: #5cb84c;
   --color-venom-dark-press: #2b7330;
-  /* Venom, disabled: a pastel green, not a faded one (face, bevels, label) */
-  --color-venom-pastel: #9cbc98;
-  --color-venom-pastel-light: #b8d3b4;
-  --color-venom-pastel-dark: #84a380;
-  --color-venom-pastel-text: #eef3e9;
   --color-bone-hover: #fffff0;
   /* Stone: face, hover, light/dark bevel, row above strip, strip */
   --color-stone: #464646;
@@ -281,16 +276,6 @@
       var(--br-transition),
       box-shadow 0.12s steps(2),
       padding 0.18s ease-out;
-  }
-
-  /* unclickable: pastel green, at full strength (the other buttons fade) */
-  .ui-btn-venom:disabled {
-    opacity: 1;
-    --_text: var(--color-venom-pastel-text);
-    --_bg: var(--color-venom-pastel);
-    --_bevel-top: var(--color-venom-pastel-light);
-    --_bevel-bottom: var(--color-venom-pastel-dark);
-    --btn-shadow-color: rgba(0, 0, 0, 0.25);
   }
 
   .ui-btn-venom:hover:not(:disabled) {
@@ -547,41 +532,6 @@
 
   :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):last-child {
     margin-inline-end: calc(var(--btn-icon-edge) - var(--btn-pad-x) + var(--_pull, 0px));
-  }
-
-  /* Map: connected buttons (SegmentedButtons): one dark bar, and a lighter block that slides to the chosen one */
-  .ui-seg {
-    position: relative;
-    display: inline-flex;
-    background: var(--color-shade);
-  }
-
-  .ui-seg-thumb {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    pointer-events: none;
-    background: var(--color-shade-hover);
-  }
-
-  .ui-seg[data-ready='true'] .ui-seg-thumb {
-    transition:
-      transform 0.2s ease-out,
-      width 0.2s ease-out;
-  }
-
-  /* the buttons draw nothing of their own while they rest or are chosen: the block under them is the chosen one's background */
-  .ui-seg>.ui-btn[aria-pressed='true'],
-  .ui-seg>.ui-btn[aria-pressed='true']:hover:not(:disabled) {
-    --_bg: transparent;
-    --_text: var(--btn-hover-text, var(--btn-text));
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .ui-seg[data-ready='true'] .ui-seg-thumb {
-      transition: none;
-    }
   }
 
   /* Map: a link can't be :disabled; aria-disabled gives it the same look */
