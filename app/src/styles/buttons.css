@@ -608,10 +608,10 @@
     background: none;
     box-shadow: none;
   }
-  /* Venom split, closed: the box is see-through, without brackets: the two pieces show (and slide out their own) */
+  /* Venom split, closed: the box is see-through: the two pieces show (its brackets, while hovered, are exactly under
+     the pieces' outer ones) */
   .ui-btn-venom.ui-extend:not([data-open='true']) {
     --_bg: transparent;
-    --br-h: linear-gradient(transparent, transparent);
   }
   /* open: dark grey with the brackets out, whatever the pointer does */
   .ui-btn.ui-extend[data-open='true'] {
@@ -620,7 +620,11 @@
     --br-gap: var(--btn-bracket-gap);
     --br-len-x: var(--btn-bracket-len-x);
     --br-len-y: var(--btn-bracket-len-y);
-    overflow: hidden;
+  }
+  /* what is outside the box is cut off (the options while it grows or shrinks), but for a few px all round: the
+     button's own shadow and focus ring */
+  .ui-btn.ui-extend {
+    clip-path: inset(-5px);
   }
   /* open, the Venom split's pieces fade out (their brackets hand over to the box's, in the same places). Both pieces
      always have the same layers (left brackets, right brackets, inner shadow, colour), closed and open, so nothing
@@ -691,6 +695,34 @@
   }
   .ui-extend[data-open='true'] .ui-extend-turn > svg {
     rotate: 45deg;
+  }
+  /* Folding back (data-closing, for as long as it shrinks): no fading. Everything keeps its open look while the box
+     shrinks, then takes its closed look at once (colours, brackets, labels, options: a delay, no duration) */
+  .ui-btn.ui-extend[data-closing='true'],
+  .ui-btn.ui-extend[data-closing='true']:is(:hover, :active) {
+    transition:
+      width 0.2s ease-out,
+      height 0.2s ease-out,
+      color 0s 0.2s,
+      background-color 0s 0.2s,
+      background-position 0s 0.2s,
+      background-size 0s 0.2s;
+  }
+  .ui-extend[data-closing='true'] > .ui-btn,
+  .ui-extend[data-closing='true'] > .ui-btn-venom-split > span {
+    transition:
+      color 0s 0.2s,
+      background-color 0s 0.2s,
+      box-shadow 0s 0.2s,
+      background-position 0s 0.2s,
+      background-size 0s 0.2s;
+  }
+  .ui-extend[data-closing='true'] > .ui-btn-venom-split {
+    --btn-inner-shadow: var(--br-none);
+  }
+  .ui-extend[data-closing='true'] .ui-extend-labels > *,
+  .ui-extend[data-closing='true'] > .ui-extend-menu {
+    transition: visibility 0s 0.2s;
   }
   /* closed, the options are not shown (the box doesn't clip then, so the button's own shadow shows) */
   .ui-extend:not([data-open='true']) > .ui-extend-menu {

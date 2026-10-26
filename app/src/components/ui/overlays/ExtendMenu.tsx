@@ -1,5 +1,6 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { LuPlus } from 'react-icons/lu'
+import { useTimeout } from '../../../lib/useTimeout'
 import Button from '../buttons/Button'
 import ButtonLook from '../buttons/ButtonLook'
 import { splitButtonClass } from '../buttons/buttonStyles'
@@ -43,6 +44,9 @@ const render = (content: Content, open: boolean) => (typeof content === 'functio
 
 type Size = { width: number; height: number }
 
+/** How long it takes to fold back (ms): the box's width / height transition in styles/buttons.css */
+const CLOSE_MS = 200
+
 /**
  * A dropdown button that extends: clicked, the button itself grows downward and its options are part
  * of it (the same colour and corners), so the menu is an extension of the button. An option wider
@@ -74,6 +78,20 @@ export default function ExtendMenu<T extends string>({
   const sizerRef = useRef<HTMLDivElement>(null)
   const optionsRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
+  // While it folds back (CLOSE_MS): it keeps its open look and only shrinks (styles/buttons.css, data-closing)
+  const [closing, setClosing] = useState(false)
+  const { set: setClosingTimer, clear: clearClosingTimer } = useTimeout()
+  const close = useCallback(() => {
+    setOpen(false)
+    setClosing(true)
+    setClosingTimer(() => setClosing(false), CLOSE_MS)
+  }, [setClosingTimer])
+  const show = (next: boolean) => {
+    if (!next) return close()
+    clearClosingTimer()
+    setClosing(false)
+    setOpen(true)
+  }
   const [button, setButton] = useState<Size | null>(null)
   const [options, setOptions] = useState<Size>({ width: 0, height: 0 })
   // Only what the button doesn't already show
@@ -106,10 +124,10 @@ export default function ExtendMenu<T extends string>({
   useEffect(() => {
     if (!open) return
     const onDown = (e: PointerEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false)
+      if (!wrapRef.current?.contains(e.target as Node)) close()
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') close()
     }
     document.addEventListener('pointerdown', onDown)
     document.addEventListener('keydown', onKey)
@@ -117,7 +135,7 @@ export default function ExtendMenu<T extends string>({
       document.removeEventListener('pointerdown', onDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [open])
+  }, [open, close])
 
   // Until measured, it is just the button
   const grown: Size | undefined = button
@@ -146,7 +164,7 @@ export default function ExtendMenu<T extends string>({
     'aria-haspopup': 'menu' as const,
     'aria-expanded': open,
     'aria-controls': id,
-    onClick: () => setOpen(!open),
+    onClick: () => show(!open),
     className: 'w-full shrink-0',
     style: button ? { height: button.height } : undefined,
   }
@@ -173,6 +191,7 @@ export default function ExtendMenu<T extends string>({
       <div
         style={grown}
         data-open={open}
+        data-closing={closing}
         // Anchored at the button's centre: growing wider, it extends the same on both sides, and the
         // button's own content (centred) stays where it is
         className={`${BOX[variant]} absolute ${direction === 'up' ? 'bottom-0 flex-col-reverse' : 'top-0 flex-col'} flex left-1/2 -translate-x-1/2 z-20`}
@@ -194,7 +213,7 @@ export default function ExtendMenu<T extends string>({
                 type="button"
                 role="menuitem"
                 onClick={() => {
-                  setOpen(false)
+                  close()
                   onSelect(item.value)
                 }}
                 className="ui-extend-item"
