@@ -166,10 +166,13 @@ export const placeZone: ZoneHandler = {
     const value = target as unknown as PlaceValue
     const object = objectOf(data)
     if (!object) return
-    // Into a new parent it falls into that parent's icon: the row it was dropped on, or (dropped in a Dashboard row) the parent's row in
-    // the sidebar. Otherwise its faded copy slides to where it landed (glide.ts)
+    // Into a new, closed parent it falls into that parent's icon: the row it was dropped on, or (dropped in a Dashboard row) the parent's
+    // row in the sidebar. Otherwise its faded copy slides to where it landed (glide.ts)
+    // Only into a closed parent: into an open one (its children show) it just goes to its place among them, like any other move
     const iconKey = value.side === 'into' && value.nodeId ? value.nodeId : value.parent ? sidebarIconOf(value.parent) : undefined
-    const falls = iconKey !== undefined && float !== null && dropIconOf(iconKey) !== null
+    const icon = iconKey !== undefined ? dropIconOf(iconKey) : null
+    const open = icon?.closest('[role="treeitem"]')?.getAttribute('aria-expanded') === 'true'
+    const falls = iconKey !== undefined && float !== null && icon !== null && !open
     if (falls) fallInto(float, iconKey, { lifted: true })
     const key = `${object.kind}:${object.objectId}`
     const parent = value.parent === undefined ? undefined : value.parent && { type: value.parent.type, id: Number(value.parent.id) }

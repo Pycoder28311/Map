@@ -8,7 +8,7 @@ type Props = Omit<ComponentProps<'button'>, 'children'> & IconEffects & {
   label: string
   variant?: ButtonVariant
   size?: ButtonSize
-  /** A brighter icon (near white): the navbar's menu button */
+  /** A brighter icon (near white) with no background: the navbar's menu button */
   bright?: boolean
 } & (
     | { icon: PlainIcon; /** Extra classes of the icon (e.g. its own animation) */ iconClassName?: string; children?: never }
