@@ -9,7 +9,6 @@ import { actionsOf } from '../../lib/resource/hooks'
 import { resourcesWith } from '../../resources/registry'
 import InputBox from '../../components/ui/fields/InputBox'
 import { isFirstLine } from './editorKeys'
-import Papyrus from './Papyrus'
 
 // Full class strings so Tailwind can detect them at build time.
 const ANIMATE = 'duration-200 ease-out motion-reduce:transition-none'
@@ -193,18 +192,6 @@ export default function QuickCreate() {
             />
             {/* The gray line between title and text */}
             <div aria-hidden className="mx-4 h-px bg-line" />
-          </div>
-        </div>
-
-        {/* A papyrus floating in the card's background, at its right (Papyrus.tsx): folded, a roll tied with a rope; opening, the rope slips off and
-            the sheet unrolls downward. It keeps the text row's place while the card grows upward (same timing as the card's move) */}
-        <div
-          aria-hidden
-          style={{ top: open ? 8 + size.title : 8 }}
-          className={`pointer-events-none absolute end-44 h-[92px] w-16 transition-[top,opacity] ${ANIMATE} ${open ? 'opacity-60' : 'opacity-30'}`}
-        >
-          <div className="size-full motion-reduce:animate-none animate-float">
-            <Papyrus open={open} className="size-full" />
           </div>
         </div>
 
