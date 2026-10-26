@@ -9,6 +9,8 @@ type Props = ComponentProps<'button'> & {
   size?: ButtonSize
   icon?: ButtonIcon
   iconAnimation?: IconAnimation
+  /** Shade without its white corner brackets (.ui-btn-plain): the navbar's Recent History */
+  plain?: boolean
 }
 
 /** Themed button. type="button" unless set, so only the intended button submits a form. For links: ButtonLink */
@@ -17,13 +19,14 @@ export default function Button({
   size,
   icon,
   iconAnimation,
+  plain,
   type = 'button',
   className,
   children,
   ...button
 }: Props) {
   return (
-    <button type={type} className={buttonClass(variant, className, size)} {...button}>
+    <button type={type} className={buttonClass(variant, `${plain ? 'ui-btn-plain' : ''} ${className ?? ''}`, size)} {...button}>
       <ButtonContent variant={variant} icon={icon} iconAnimation={iconAnimation}>
         {children}
       </ButtonContent>

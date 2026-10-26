@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { LuChevronDown, LuHistory } from 'react-icons/lu'
 import BarPopout from '../../components/ui/overlays/BarPopout'
-import { TREE_ROW_LOOK } from '../../components/ui/rowStyles'
+import Button from '../../components/ui/buttons/Button'
 import RecentList from './RecentList'
 
 /**
@@ -16,17 +16,10 @@ export default function RecentHistory() {
       open={open}
       onOpenChange={setOpen}
       trigger={
-        // A sidebar object's look (ui-field-row), as tall as the search field; not a Button, so it is one of the clicked-but-not-buttons
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-haspopup="dialog"
-          className={`${TREE_ROW_LOOK} inline-flex h-(--field-h) w-56 cursor-pointer items-center gap-base px-base text-body`}
-        >
-          <LuHistory className="size-4 shrink-0" aria-hidden />
+        <Button variant="ghost" plain icon={LuHistory} aria-expanded={open} aria-haspopup="dialog" className="w-56 justify-start">
           <span className="flex-1 text-start">Recent History</span>
           <LuChevronDown className={`size-4 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} aria-hidden />
-        </button>
+        </Button>
       }
     >
       <div className="w-80">

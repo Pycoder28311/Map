@@ -3,13 +3,13 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type Keyboar
 import Button from '../../components/ui/buttons/Button'
 import RichTextToolbar from '../../components/ui/editors/RichTextToolbar'
 import RichTextField from '../../components/ui/fields/RichTextField'
-import PixelSprite from '../../components/ui/pixelart/PixelSprite'
 import { LuChevronDown } from 'react-icons/lu'
 import ExtendMenu, { type ExtendMenuItem } from '../../components/ui/overlays/ExtendMenu'
 import { actionsOf } from '../../lib/resource/hooks'
 import { resourcesWith } from '../../resources/registry'
 import InputBox from '../../components/ui/fields/InputBox'
 import { isFirstLine } from './editorKeys'
+import Papyrus from './Papyrus'
 
 // Full class strings so Tailwind can detect them at build time.
 const ANIMATE = 'duration-200 ease-out motion-reduce:transition-none'
@@ -196,30 +196,15 @@ export default function QuickCreate() {
           </div>
         </div>
 
-        {/* A faint pixel-art papyrus floating in the card's background, at its right. Opening, it
-            unrolls downward: the ribbon comes off, and the sheet with its bottom roll drops out from under the
-            top roll. It keeps the text row's place while the card grows upward (same timing as the card's move) */}
+        {/* A papyrus floating in the card's background, at its right (Papyrus.tsx): folded, a roll tied with a rope; opening, the rope slips off and
+            the sheet unrolls downward. It keeps the text row's place while the card grows upward (same timing as the card's move) */}
         <div
           aria-hidden
           style={{ top: open ? 8 + size.title : 8 }}
-          className={`pointer-events-none absolute end-44 h-[78px] w-[54px] transition-[top,opacity] ${ANIMATE} ${open ? 'opacity-100' : 'opacity-25'}`}
+          className={`pointer-events-none absolute end-44 h-[92px] w-16 transition-[top,opacity] ${ANIMATE} ${open ? 'opacity-100' : 'opacity-40'}`}
         >
           <div className="size-full motion-reduce:animate-none animate-float">
-            {/* The sheet and the bottom roll: out of sight above while rolled, clipped by this box */}
-            <div className="absolute inset-0 overflow-hidden">
-              <div
-                className={`absolute end-0 top-3.5 transition-transform duration-700 ease-out motion-reduce:transition-none ${open ? '' : '-translate-y-full'}`}
-              >
-                <PixelSprite name="scrollDrop" scale={2} />
-              </div>
-            </div>
-            {/* The roll on top: tied while folded, untied once open */}
-            <div className={`absolute end-0 top-0 transition-opacity duration-200 motion-reduce:transition-none ${open ? 'opacity-0' : ''}`}>
-              <PixelSprite name="scroll" scale={2} />
-            </div>
-            <div className={`absolute end-0 top-0 transition-opacity duration-200 motion-reduce:transition-none ${open ? '' : 'opacity-0'}`}>
-              <PixelSprite name="scrollRoll" scale={2} />
-            </div>
+            <Papyrus open={open} className="size-full" />
           </div>
         </div>
 
