@@ -697,7 +697,7 @@
     rotate: 45deg;
   }
   /* Folding back (data-closing, for as long as it shrinks): the box keeps its open look while it shrinks, then takes
-     its closed look at once (its colour, brackets, labels, options: a delay, no duration). Only the button's own
+     its closed look at once (its colour, brackets, options: a delay, no duration). The label (None → Add) changes at the click. Only the button's own
      colours fade back meanwhile (a Venom split's pieces turn green again) */
   .ui-btn.ui-extend[data-closing='true'],
   .ui-btn.ui-extend[data-closing='true']:is(:hover, :active) {
@@ -718,7 +718,6 @@
       background-position 0s 0.2s,
       background-size 0s 0.2s;
   }
-  .ui-extend[data-closing='true'] .ui-extend-labels > *,
   .ui-extend[data-closing='true'] > .ui-extend-menu {
     transition: visibility 0s 0.2s;
   }
