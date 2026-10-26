@@ -91,6 +91,8 @@
    /* the icon of an object's row while the sidebar is closed: bigger than when it is open (TreeView sets --tree-row-icon and
       --tree-row-px to it and to the start padding that centres it in the square row, then; open, they are the button icon's) */
    --sidebar-icon-closed: 20px;
+   /* ...and the start padding of its row that centres that icon in the square row */
+   --sidebar-row-px-closed: calc((var(--sidebar-row) - var(--sidebar-icon-closed) - 2 * var(--btn-close-p)) / 2);
    --tree-row-icon: var(--btn-icon-size);
    --tree-row-px: var(--btn-px);
    /* space above/below the tree (left/right: computed to center the icons in the rail, Sidebar.tsx) */

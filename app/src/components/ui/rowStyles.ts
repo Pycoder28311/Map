@@ -31,5 +31,5 @@ export const FOCUS_RING = 'focus-visible:outline-2 focus-visible:outline-offset-
 
 /** A sidebar row's link or button (a tree row's link, Trash, Show more): layout only; the look is the row's (TREE_ROW_LOOK) */
 export const SIDEBAR_ROW =
-  'group/main inline-flex min-h-(--sidebar-row) items-center gap-(--btn-gap) py-(--pill-py) ps-(--btn-px) pe-(--pill-px) text-body cursor-pointer ' +
+  'group/main inline-flex min-h-(--sidebar-row) items-center gap-(--btn-gap) py-(--pill-py) ps-(--tree-row-px) pe-(--pill-px) text-body cursor-pointer transition-[padding] duration-(--sidebar-duration) ease-out motion-reduce:transition-none ' +
   `disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS_RING}`

@@ -1,5 +1,5 @@
 import { useDroppable } from '@dnd-kit/core'
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { useTrashedItems } from '../../../lib/resource/trash'
 import { resourcesWith } from '../../../resources/registry'
 import { SIDEBAR_ROW, TREE_ROW_LOOK } from '../../ui/rowStyles'
@@ -25,7 +25,7 @@ function TrashIcon({ open }: { open: boolean }) {
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="size-(--btn-icon-size) overflow-visible"
+      className="size-(--tree-row-icon) overflow-visible transition-[width,height] duration-(--sidebar-duration) ease-out motion-reduce:transition-none"
     >
       <g className={`${LID} ${open ? '-rotate-[28deg]' : ''}`}>
         <path d="M3 6h18" />
@@ -63,7 +63,9 @@ export default function TrashBin({ compact }: { compact: boolean }) {
         onClick={() => setOpen(true)}
         aria-label={`Trash, ${count} ${count === 1 ? 'item' : 'items'}`}
         title="Trash"
-        className={`${SIDEBAR_ROW} ${`relative w-full justify-start text-fg-muted transition-[max-width] duration-(--sidebar-duration) ${compact ? RAIL_ROW : 'max-w-full'} ${over ? 'bg-drop/16 ring-[1.4px] ring-inset ring-drop/55' : TREE_ROW_LOOK}`}`}
+        // Closed: its icon is as big as the objects' (bigger than open), centred in the square row, growing with the sidebar
+        style={compact ? ({ '--tree-row-icon': 'var(--sidebar-icon-closed)', '--tree-row-px': 'var(--sidebar-row-px-closed)' } as CSSProperties) : undefined}
+        className={`${SIDEBAR_ROW} ${`relative w-full justify-start text-fg-muted transition-[max-width,padding] duration-(--sidebar-duration) ${compact ? RAIL_ROW : 'max-w-full'} ${over ? 'bg-drop/16 ring-[1.4px] ring-inset ring-drop/55' : TREE_ROW_LOOK}`}`}
       >
         <span data-drop-icon={TRASH_ID} className="ms-(--btn-icon-offset-start) flex shrink-0">
           <TrashIcon open={over || swallowing} />
@@ -80,7 +82,7 @@ export default function TrashBin({ compact }: { compact: boolean }) {
           // Compact: a badge on the icon; open: at the row's end
           <span
             className={`rounded-(--radius-pill) bg-fill-strong px-1.5 text-small leading-4 text-fg transition-[inset] duration-(--sidebar-duration) ${
-              compact ? 'absolute start-[calc(var(--btn-px)+var(--btn-icon-size))] top-0.5' : 'ms-auto'
+              compact ? 'absolute start-[calc(var(--tree-row-px)+var(--tree-row-icon))] top-0.5' : 'ms-auto'
             }`}
           >
             {count}
