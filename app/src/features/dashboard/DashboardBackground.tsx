@@ -1,4 +1,4 @@
-import url from '../../assets/dashboard-background.jpg'
+import url from '../../assets/dashboard-background-gray.jpg'
 
 /** How dark the layer over the picture is: 0 shows the picture as it is, 1 hides it (black) */
 export const DASHBOARD_OVERLAY_OPACITY = 0
