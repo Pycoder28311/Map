@@ -19,6 +19,12 @@
   --input-placeholder: #7a7a7a;
   --input-radius: 2px;
   --input-shadow: 0 0 14px rgba(0, 0, 0, 0.55);
+
+  /* the border of the clickable rows (the sidebar's objects); the colour is the one to change. It is drawn inside the
+     row, so it never changes the row's size. transparent = no border */
+  --row-border-color: transparent;
+  --row-border-color-hover: var(--row-border-color); /* hovered, or the current page */
+  --row-border-width: 1px;
 }
 
 @layer components {
@@ -37,6 +43,20 @@
     border-radius: var(--input-radius);
     box-shadow: var(--input-shadow);
     transition: background-color 0.2s ease-out;
+  }
+
+  .ui-field-row {
+    box-shadow:
+      inset 0 0 0 var(--row-border-width) var(--row-border-color),
+      var(--input-shadow);
+    transition:
+      background-color 0.2s ease-out,
+      box-shadow 0.2s ease-out;
+  }
+  .ui-field-row:is(:hover, :has([aria-current='page'], :focus-visible)) {
+    box-shadow:
+      inset 0 0 0 var(--row-border-width) var(--row-border-color-hover),
+      var(--input-shadow);
   }
 
   .ui-field:focus-within,

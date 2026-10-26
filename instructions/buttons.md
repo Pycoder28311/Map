@@ -99,7 +99,7 @@ a soft shadow, a lighter grey while typed in. Without its faint corner marks on 
 - `.ui-field-row`: the same look for clickable rows that aren't buttons: the sidebar's objects (`TreeItem`'s row), Trash,
   Show more. Hovered, or the current page, it takes the field's focus colour.
 
-To change either, change the `--input-*` values at the top of `fields.css` (one change moves both).
+To change either, change the `--input-*` values at the top of `fields.css` (one change moves both). The rows also have a border (drawn inside, so no size change): `--row-border-color` (and `--row-border-color-hover`, `--row-border-width`) in the same place; transparent until a colour is set.
 
 ## Shade without brackets
 
