@@ -73,6 +73,11 @@ export function endIndex(list: Entry[], moved: Entry): number {
   return list.filter(pinnedOf).length
 }
 
+/** Where `moved` goes at the start of a list: before the first item of its own group (a pinned item first of all, others after the pinned) */
+export function startIndex(list: Entry[], moved: Entry): number {
+  return pinnedOf(moved) ? 0 : list.filter(pinnedOf).length
+}
+
 /** The key for a new item at the end of a list (its unpinned part) */
 export function positionAtEnd(list: Entry[]): string {
   const last = [...list].reverse().find((entry) => !pinnedOf(entry))

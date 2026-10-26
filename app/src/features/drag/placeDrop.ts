@@ -6,7 +6,7 @@
 import type { DragMoveEvent, DragOverEvent } from '@dnd-kit/core'
 import { dropIconOf, fallInto } from '../../components/ui/drop/fallInto'
 import { dragPoint } from '../../lib/dnd'
-import { endIndex, moveItem, placement, sameEntry, type Entry, type MovePlan } from '../../lib/resource/reorder'
+import { endIndex, moveItem, placement, sameEntry, startIndex, type Entry, type MovePlan } from '../../lib/resource/reorder'
 import { resourceByName, resourceByPanelType } from '../../resources/registry'
 import type { ObjectDragInfo } from '../workspace/types'
 import { reducedMotion } from '../../components/ui/tree/dragEffects'
@@ -87,13 +87,15 @@ function movedOf(item: ObjectDragInfo | undefined): Entry | null {
 /**
  * Where a drop on `target` at `side` puts `moved`, or null when it may not land there: another resource in a section, a parent it
  * cannot have, itself, the place it already has, across the pinned boundary. Pure: the rules of every place in one function.
- * `current`: the parent it is in now (from the drag), so taking the same parent again is not a change
+ * `current`: the parent it is in now (from the drag), so taking the same parent again is not a change.
+ * `intoOpen`: the row it is dropped into shows its children: it goes first among them (a closed one takes it at the end)
  */
 export function resolvePlace(
   target: PlaceTarget,
   side: PlaceSide,
   moved: Entry,
   current?: ObjectDragInfo['parent'],
+  intoOpen = false,
 ): Omit<PlaceValue, 'key' | 'mark' | 'nodeId'> | null {
   // A row of a section that takes only its own resource (the Projects) takes any other one inside it: its middle is "into". An item that
   // is inside a parent and is let go by the row's top or bottom edge (between two parents, not between children) leaves its parent
@@ -122,7 +124,8 @@ export function resolvePlace(
   }
 
   let index: number
-  if (side === 'into' || side === 'end') index = endIndex(without, moved)
+  if (side === 'into' && intoOpen) index = startIndex(without, moved)
+  else if (side === 'into' || side === 'end') index = endIndex(without, moved)
   else {
     const entry = target.entry
     if (!entry || sameEntry(entry, moved)) return null
@@ -135,6 +138,11 @@ export function resolvePlace(
 
   const place = placement(without, index, moved)
   return place ? { side, moved, place, parent: newParent } : null
+}
+
+/** Whether the sidebar row with this drop key is an open folder (its children show) */
+function isOpenRow(dropKey: string | undefined): boolean {
+  return dropKey !== undefined && dropIconOf(dropKey)?.closest('[role="treeitem"]')?.getAttribute('aria-expanded') === 'true'
 }
 
 /** The drop key of a parent's icon in the sidebar (its row's id: a top-level row, or inside its parent's rows), when it is on screen */
@@ -152,7 +160,7 @@ export const placeZone: ZoneHandler = {
     const point = dragPoint(e as DragMoveEvent)
     if (!target || !moved || !point || !e.over) return null
     const side = sideOf(target, point, e.over.rect)
-    const resolved = resolvePlace(target, side, moved, item?.parent)
+    const resolved = resolvePlace(target, side, moved, item?.parent, side === 'into' && isOpenRow(target.nodeId))
     if (!resolved) return null
     // In the gap beside the row (not over it) it is a place between two rows, never "inside" one
     const r = e.over.rect
@@ -171,7 +179,7 @@ export const placeZone: ZoneHandler = {
     // Only into a closed parent: into an open one (its children show) it just goes to its place among them, like any other move
     const iconKey = value.side === 'into' && value.nodeId ? value.nodeId : value.parent ? sidebarIconOf(value.parent) : undefined
     const icon = iconKey !== undefined ? dropIconOf(iconKey) : null
-    const open = icon?.closest('[role="treeitem"]')?.getAttribute('aria-expanded') === 'true'
+    const open = iconKey !== undefined && isOpenRow(iconKey)
     const falls = iconKey !== undefined && float !== null && icon !== null && !open
     if (falls) fallInto(float, iconKey, { lifted: true })
     const key = `${object.kind}:${object.objectId}`

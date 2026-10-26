@@ -53,6 +53,15 @@ describe('resolvePlace', () => {
     expect(resolvePlace(row({ kind: 'row' }), 'end', moved(folders, 2))).toBeNull()
   })
 
+  it('puts an item dropped into an open parent first among its children, and into a closed one last', () => {
+    const intoProject: PlaceTarget = { kind: 'node', list: () => [], into: { parent: project5, list: () => [a1, f2] } }
+    const last = resolvePlace(intoProject, 'into', moved(notes, 8))!
+    expect(comparePositions('a1', last.place.position!)).toBeLessThan(0)
+    const first = resolvePlace(intoProject, 'into', moved(notes, 8), undefined, true)!
+    expect(comparePositions(first.place.position!, 'a0')).toBeLessThan(0)
+    expect(first.parent).toEqual(project5)
+  })
+
   it('refuses a parent the item cannot have, and itself', () => {
     expect(resolvePlace(row({ entry: a1 }), 'before', moved(projects, 3))).toBeNull()
     const intoFolder = { kind: 'node' as const, list: () => [], into: { parent: { type: 'folder', resource: 'folders', id: 2 }, list: () => [] } }

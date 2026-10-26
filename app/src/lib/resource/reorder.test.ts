@@ -1,7 +1,7 @@
 import { comparePositions } from '@map/shared'
 import { describe, expect, it } from 'vitest'
 import { resourceByName } from '../../resources/registry'
-import { compareEntries, endIndex, placement, positionAtEnd, type Entry } from './reorder'
+import { compareEntries, endIndex, placement, positionAtEnd, startIndex, type Entry } from './reorder'
 
 const articles = resourceByName('articles')!
 const folders = resourceByName('folders')!
@@ -65,5 +65,8 @@ describe('the end of a list', () => {
     expect(positionAtEnd(list)).toBe('a2')
     expect(endIndex(list, entry(9, 'a0'))).toBe(3)
     expect(endIndex(list, entry(9, 'a0', { pinned: true }))).toBe(1)
+    // the start of its own group: after the pinned for an unpinned item, first of all for a pinned one
+    expect(startIndex(list, entry(9, 'a0'))).toBe(1)
+    expect(startIndex(list, entry(9, 'a0', { pinned: true }))).toBe(0)
   })
 })
