@@ -201,7 +201,7 @@ export default function QuickCreate() {
         <div
           aria-hidden
           style={{ top: open ? 8 + size.title : 8 }}
-          className={`pointer-events-none absolute end-44 h-[92px] w-16 transition-[top,opacity] ${ANIMATE} ${open ? 'opacity-100' : 'opacity-40'}`}
+          className={`pointer-events-none absolute end-44 h-[92px] w-16 transition-[top,opacity] ${ANIMATE} ${open ? 'opacity-60' : 'opacity-30'}`}
         >
           <div className="size-full motion-reduce:animate-none animate-float">
             <Papyrus open={open} className="size-full" />
