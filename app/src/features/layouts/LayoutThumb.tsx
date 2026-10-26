@@ -19,7 +19,7 @@ const LOOK = {
 }
 
 // The action buttons: centred on the tile's top edge, shown while it's hovered or holds focus
-const ACTIONS = 'absolute start-1/2 top-0 z-10 flex -translate-x-1/2 -translate-y-1/2 gap-1 transition-opacity duration-150'
+const ACTIONS = 'absolute start-1/2 top-0 z-10 flex -translate-x-1/2 -translate-y-1/2 gap-sm transition-opacity duration-150'
 const ACTIONS_ON_HOVER = 'opacity-0 group-hover/tile:opacity-100 group-focus-within/tile:opacity-100'
 
 type Props = {
@@ -128,7 +128,7 @@ export default function LayoutThumb({
   )
 }
 
-/** A small round button on a tile's top edge (LayoutThumb's `actions`) */
+/** An icon button on a tile's top edge (LayoutThumb's `actions`): like every other icon button */
 export function TileAction({
   icon: Icon,
   label,
@@ -142,6 +142,6 @@ export function TileAction({
 }) {
   const colour = { default: '', highlight: 'text-highlight', danger: 'text-danger' }[tone]
   return (
-    <IconButton icon={Icon} label={label} onClick={onClick} variant="secondary" size="sm" className={colour} />
+    <IconButton icon={Icon} label={label} onClick={onClick} className={colour} />
   )
 }

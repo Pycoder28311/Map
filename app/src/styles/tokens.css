@@ -71,7 +71,7 @@
    /* Tree view (components/ui/tree): how far right each level's (narrower) rows start */
    --tree-indent: 8px;
    /* between the icon and the name (the icon also has --btn-close-p around it) */
-   --tree-label-gap: 4px;
+   --tree-label-gap: var(--spacing-sm);
    --tree-label-fade: 24px;
    /* how long the fade at the end of a long name is */
    --tree-compact-duration: 0ms;
@@ -96,7 +96,7 @@
    /* the line itself (themes can make it stronger) */
    --divider-line: var(--line);
    --divider-h: 24px;
-   --divider-gap: 4px;
+   --divider-gap: var(--spacing-sm);
    /* space above/below a divider in the sidebar */
 
    /* Bar popouts (components/ui/overlays/BarPopout): rounded panel growing out of a bar's edge on hover */

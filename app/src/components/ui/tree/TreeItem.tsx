@@ -55,7 +55,7 @@ const PLAIN_ROW = `${ROW_CLASS} flex min-h-(--sidebar-row) items-center rounded-
 // are); not shown in compact (--tree-line-color, TreeView). Closing, the indent goes at once (--tree-indent-duration: 0s) so the
 // children are never pushed right of their parents while the rail narrows; opening, it slides with the sidebar
 const GROUP =
-  'relative mt-1 ms-[var(--tree-indent-now,var(--tree-indent))] flex flex-col gap-1 ' +
+  'relative mt-sm ms-[var(--tree-indent-now,var(--tree-indent))] flex flex-col gap-sm ' +
   'before:pointer-events-none before:absolute before:inset-y-0 before:-start-(--spacing-sm) before:w-px before:bg-(--tree-line-color,var(--line-strong)) before:transition-colors before:duration-(--tree-compact-duration) ' +
   'transition-[margin] duration-(--tree-indent-duration,var(--tree-compact-duration)) ease-out motion-reduce:transition-none'
 // The children that stay visible under a closed folder fade in (the Zen reel's expand)

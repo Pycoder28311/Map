@@ -32,8 +32,6 @@ import { useWorkspace } from '../workspace/useWorkspace'
 import LayoutThumb, { TileAction } from './LayoutThumb'
 import { positions, visibleCount } from './tileGrid'
 
-/** Between tiles (px) */
-const GAP = 6
 
 // Full class strings so Tailwind can detect them at build time.
 // Compact: the button narrows to a rail row (its icon's box + the row padding), like the tree's rows
@@ -111,7 +109,8 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
   const [width, setWidth] = useState(0)
   // The closed sidebar's tiles are as wide as its rows (--sidebar-row); two of a row stack, --spacing-sm apart
   const railWidth = useMemo(() => cssPx('--sidebar-row'), [])
-  const railGap = useMemo(() => cssPx('--spacing-sm'), [])
+  // The gap between tiles, and between the two of a row stacked in the rail: --spacing-sm, like the rows'
+  const gap = useMemo(() => cssPx('--spacing-sm'), [])
 
   // The tiles' area is always the sidebar's full inner width (the rail only clips it)
   // Any tile at all (a saved one, or the unsaved panes)
@@ -214,7 +213,7 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
   ]
   const n = tilesData.length
   const shown = visibleCount(n, expanded)
-  const { tiles, height } = positions(n, shown, { width, gap: GAP, railWidth, railGap, mode: compact ? 'rail' : 'grid' })
+  const { tiles, height } = positions(n, shown, { width, gap, railWidth, mode: compact ? 'rail' : 'grid' })
   const hidden = n - visibleCount(n, false)
 
   const actionsOf = (layout: SavedLayout) => {
@@ -295,7 +294,7 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
             )}
           </div>
           {/* The open layout changed: save the panes as a new layout instead (it becomes the selected one) */}
-          {changed && <CreateButton compact={compact} onClick={() => attempt('save the layout', () => saveLayout(workspace.layout!, split))} className="mt-2" />}
+          {changed && <CreateButton compact={compact} onClick={() => attempt('save the layout', () => saveLayout(workspace.layout!, split))} className="mt-sm" />}
           {hidden > 0 && (
             // A sidebar row (not a button)
             <button
@@ -305,7 +304,7 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
               title={expanded ? 'Show less' : `Show ${hidden} more`}
               // Closed sidebar: only its icon (the row narrows to a rail row, and has no text at all)
               aria-label={expanded ? 'Show less' : `Show ${hidden} more`}
-              className={`${SIDEBAR_ROW} ${TREE_ROW_LOOK} mt-1 w-full justify-start overflow-hidden text-fg-muted transition-[max-width] duration-(--sidebar-duration) ease-out motion-reduce:transition-none ${compact ? BUTTON_COMPACT : 'max-w-full'}`}
+              className={`${SIDEBAR_ROW} ${TREE_ROW_LOOK} mt-sm w-full justify-start overflow-hidden text-fg-muted transition-[max-width] duration-(--sidebar-duration) ease-out motion-reduce:transition-none ${compact ? BUTTON_COMPACT : 'max-w-full'}`}
             >
               <IconSlot icon={expanded ? LuChevronsUp : LuChevronsDown} />
               {/* Not drawn while the sidebar is closed (the sidebar clips it while it opens) */}

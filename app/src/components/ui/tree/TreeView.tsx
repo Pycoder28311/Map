@@ -68,7 +68,7 @@ export default function TreeView({
     })
 
   return (
-    <ul role="tree" aria-label={label} style={compact ? COMPACT : undefined} className="flex flex-col gap-1">
+    <ul role="tree" aria-label={label} style={compact ? COMPACT : undefined} className="flex flex-col gap-sm">
       {nodes.map((node) => (
         <TreeItem
           key={node.id}

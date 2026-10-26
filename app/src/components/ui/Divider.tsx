@@ -29,7 +29,7 @@ type Props = {
 export default function Divider({ label, labelTo, action, compact = false, className = '' }: Props) {
   const hidden = compact ? 'pointer-events-none opacity-0' : ''
   return (
-    <div role="separator" aria-label={label} className={`relative flex h-(--divider-h) shrink-0 items-center gap-1 ${className}`}>
+    <div role="separator" aria-label={label} className={`relative flex h-(--divider-h) shrink-0 items-center gap-sm ${className}`}>
       {label &&
         (labelTo ? (
           <Link

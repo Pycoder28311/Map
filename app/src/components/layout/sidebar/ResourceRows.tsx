@@ -248,14 +248,14 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
           aria-expanded={showAll}
           title={showAll ? 'Show less' : `Show ${hidden} more`}
           aria-label={showAll ? 'Show less' : `Show ${hidden} more`}
-          className={`${SIDEBAR_ROW} mt-1 w-full justify-start overflow-hidden text-fg-muted ${TREE_ROW_LOOK}`}
+          className={`${SIDEBAR_ROW} mt-sm w-full justify-start overflow-hidden text-fg-muted ${TREE_ROW_LOOK}`}
         >
           <IconSlot icon={showAll ? LuChevronsUp : LuChevronsDown} />
           {!compact && <span className="whitespace-nowrap">{showAll ? 'Show less' : `Show more (${hidden})`}</span>}
         </button>
       )}
       {showAll && !only && list.hasMore && (
-        <button type="button" onClick={list.loadMore} disabled={list.loadingMore} className={`${SIDEBAR_ROW} mt-1 w-full justify-start overflow-hidden text-fg-muted ${TREE_ROW_LOOK}`}>
+        <button type="button" onClick={list.loadMore} disabled={list.loadingMore} className={`${SIDEBAR_ROW} mt-sm w-full justify-start overflow-hidden text-fg-muted ${TREE_ROW_LOOK}`}>
           {!compact && <span className="whitespace-nowrap">{list.loadingMore ? 'Loading…' : 'Load more'}</span>}
         </button>
       )}
