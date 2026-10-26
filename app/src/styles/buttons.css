@@ -65,6 +65,12 @@
   --px-neg: calc(var(--px) * -1);
   /* gap between an Underline button's icon and text (every other button: its --btn-icon-edge, the icon's distance to the edge) */
   --icon-gap: calc(var(--px) * 4);
+  /* a normal (md) Venom / Shade button: its text size, line height and vertical padding, and so its height. Other things
+     that stand beside such buttons (the navbar's search and Recent History) take --btn-md-h as their height */
+  --btn-md-font: 14.4px;
+  --btn-md-lh: 1.2;
+  --btn-md-pad-y: calc(var(--px) * 4);
+  --btn-md-h: calc(var(--btn-md-font) * var(--btn-md-lh) + var(--btn-md-pad-y) * 2);
 }
 
 @layer components {
@@ -74,9 +80,9 @@
      (a button that has no --btn-hover-bg etc. simply ignores it) */
   .ui-btn {
     --btn-font: var(--font-body);
-    --btn-font-size: 14.4px;
+    --btn-font-size: var(--btn-md-font);
     --btn-font-weight: 600;
-    --btn-line-height: 1.2;
+    --btn-line-height: var(--btn-md-lh);
     --btn-letter-spacing: 0.576px;
     --btn-pad-x: calc(var(--px) * 5);
     --btn-pad-y: calc(var(--px) * 2);
@@ -187,7 +193,7 @@
   .ui-btn-venom,
   .ui-btn-shade {
     --bracket-btn-pad-x: calc(var(--px) * 6);
-    --bracket-btn-pad-y: calc(var(--px) * 4);
+    --bracket-btn-pad-y: var(--btn-md-pad-y);
     --btn-pad-x: var(--bracket-btn-pad-x);
     --btn-pad-y: var(--bracket-btn-pad-y);
     --btn-icon-edge: calc(var(--px) * 5);
@@ -572,6 +578,17 @@
   }
 
   .ui-btn-square>svg {
+    width: var(--btn-icon-size);
+    height: var(--btn-icon-size);
+  }
+
+  /* Map: a square button with a bigger icon (IconButton bigIcon): as tall as a normal button (--btn-md-h), the icon most of it */
+  .ui-btn.ui-btn-square.ui-btn-big-icon {
+    --btn-icon-size: calc(var(--btn-md-h) * 0.72);
+    --btn-pad-y: calc((var(--btn-md-h) - var(--btn-icon-size)) / 2);
+  }
+
+  .ui-btn.ui-btn-square.ui-btn-big-icon>svg {
     width: var(--btn-icon-size);
     height: var(--btn-icon-size);
   }

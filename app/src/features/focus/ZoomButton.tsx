@@ -18,6 +18,7 @@ export default function ZoomButton() {
       <IconButton
         ref={ref}
         icon={LuZoomIn}
+        bigIcon
         label="Focus: hide the navbar and sidebar"
         onClick={() => ref.current && turnOn(ref.current.getBoundingClientRect())}
       />
@@ -26,6 +27,7 @@ export default function ZoomButton() {
         createPortal(
           <IconButton
             icon={LuZoomOut}
+            bigIcon
             label="Leave focus: show the navbar and sidebar (Esc)"
             variant="secondary"
             onClick={turnOff}

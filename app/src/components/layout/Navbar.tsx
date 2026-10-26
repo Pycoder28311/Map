@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import ZoomButton from '../../features/focus/ZoomButton'
 import RecentHistory from '../../features/recent/RecentHistory'
@@ -34,7 +35,8 @@ export default function Navbar() {
 
     return (
         // As tall as the rail is wide: the ☰ (centred over the rail) is as far from the top as from the left
-        <header className="relative flex h-(--sidebar-rail) items-center gap-2 bg-surface [background-image:var(--chrome-texture)] [background-attachment:fixed] px-base">
+        // The search and Recent History are as tall as the buttons beside them (Share): --field-h, here, is a normal button's height
+        <header style={{ '--field-h': 'var(--btn-md-h)' } as CSSProperties} className="relative flex h-(--sidebar-rail) items-center gap-2 bg-surface [background-image:var(--chrome-texture)] [background-attachment:fixed] px-base">
             {/* Its shadow, and its popouts'; the page's top corners are rounded under it while panes show */}
             <PopoutLayer barHeight="var(--sidebar-rail)" corners={panes ? frameRadiusPx() : 0}>
                 {/* As big as a sidebar row in the rail, right above them; no background */}

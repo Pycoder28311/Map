@@ -12,6 +12,7 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
   'components/layout/sidebar/TrashBin.tsx': { count: 1, why: 'a sidebar row (a drop target among the rows)' },
   'components/layout/sidebar/ResourceRows.tsx': { count: 2, why: 'Show more / Load more: sidebar rows' },
   'features/layouts/LayoutsSection.tsx': { count: 1, why: 'Show more: a sidebar row' },
+  'features/recent/RecentHistory.tsx': { count: 1, why: 'the navbar\'s Recent History: a sidebar-object-looking row that opens a popout' },
   'components/ui/Divider.tsx': { count: 1, why: 'an icon in the divider line, like the tree icons' },
   'components/ui/fields/ColourField.tsx': { count: 1, why: 'a colour swatch of a field' },
   'components/ui/fields/ColourPicker.tsx': { count: 1, why: 'colour swatches' },
