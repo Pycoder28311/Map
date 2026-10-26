@@ -35,12 +35,12 @@ export default function Divider({ label, labelTo, action, compact = false, class
           <Link
             to={labelTo}
             tabIndex={compact ? -1 : undefined}
-            className={`shrink-0 rounded-(--corner-sm) text-small font-medium text-fg-muted hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-accent ${FADE} ${hidden}`}
+            className={`shrink-0 rounded-(--corner-sm) text-body font-medium text-fg-muted hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-accent ${FADE} ${hidden}`}
           >
             {label}
           </Link>
         ) : (
-          <span className={`shrink-0 text-small font-medium text-fg-muted ${FADE} ${hidden}`}>{label}</span>
+          <span className={`shrink-0 text-body font-medium text-fg-muted ${FADE} ${hidden}`}>{label}</span>
         ))}
       <span aria-hidden className={`h-px flex-1 bg-(--divider-line) ${FADE} ${hidden}`} />
       {/* At the row's right edge, in line with the rows' own right icons */}

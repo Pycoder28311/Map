@@ -50,7 +50,7 @@ export default function Navbar() {
                 {/* The name, and a faint pixel desk behind it that reaches towards the Recent button (centred, 14rem wide: 8rem from the centre
                     keeps a gap) and fills the bar's height; on narrow screens only the name */}
                 <div className="flex h-full min-w-0 items-center gap-2 lg:w-[calc(50%-8rem-var(--sidebar-rail))]">
-                    <Link to="/" className="inline-flex shrink-0 items-center gap-2 text-heading font-semibold">
+                    <Link to="/dashboard" className="inline-flex shrink-0 items-center gap-2 text-heading font-semibold">
                         <GlobeLogo className="h-11 w-auto shrink-0" />
                         Map
                     </Link>
