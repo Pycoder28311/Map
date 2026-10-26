@@ -70,7 +70,7 @@
 
    /* Tree view (components/ui/tree): how far right each level's (narrower) rows start */
    --tree-indent: 8px;
-   /* the line down the left of a folder's children (its distance from them is --spacing-base) */
+   /* the line down the left of a folder's children (its distance from them is --spacing-sm) */
    --tree-line-w: 2px;
    /* between the icon and the name (the icon also has --btn-close-p around it) */
    --tree-label-gap: var(--spacing-sm);
