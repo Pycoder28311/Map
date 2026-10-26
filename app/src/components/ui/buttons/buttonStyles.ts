@@ -18,12 +18,14 @@ const LOOK = {
 
 export type ButtonVariant = keyof typeof LOOK
 
-/** Tight rows: a smaller button (.ui-btn-sm) */
-export type ButtonSize = 'md' | 'sm'
+/** Tight rows: a smaller button (.ui-btn-sm); lg: as tall as a text field, with a bigger icon and text (.ui-btn-lg) */
+export type ButtonSize = 'md' | 'sm' | 'lg'
+
+const SIZE: Record<ButtonSize, string> = { md: '', sm: 'ui-btn-sm', lg: 'ui-btn-lg' }
 
 /** Class string of a button of this variant (`group/main`: icon animations follow its hover) */
 export function buttonClass(variant: ButtonVariant, extra = '', size: ButtonSize = 'md') {
-  return `group/main ui-btn ${LOOK[variant]} ${variant === 'selected' ? 'ui-btn-selected' : ''} ${size === 'sm' ? 'ui-btn-sm' : ''} ${extra}`
+  return `group/main ui-btn ${LOOK[variant]} ${variant === 'selected' ? 'ui-btn-selected' : ''} ${SIZE[size]} ${extra}`
 }
 
 /** Class string of a square button with only an icon (IconButton): Shade without its white corner brackets (.ui-btn-plain) */

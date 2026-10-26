@@ -111,7 +111,7 @@ describe('buttons', () => {
 
   it('gives buttons no look of their own (colours, padding, corners, shadows: styles/buttons.css)', () => {
     const wrong = sources.flatMap((f) =>
-      ['Button', 'ButtonLink', 'NavButton', 'IconButton', 'SplitButton'].flatMap((name) =>
+      ['Button', 'ButtonLink', 'NavButton', 'IconButton', 'SplitButton', 'LinkButton', 'ButtonLook'].flatMap((name) =>
         openingTags(code(f.text), name)
           .map((tag) => tag.match(/className=(?:"([^"]*)"|\{`([^`]*)`\})/))
           .filter((m): m is RegExpMatchArray => !!m && LOOK_CLASS.test(m[1] ?? m[2]))

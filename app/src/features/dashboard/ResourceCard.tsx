@@ -8,9 +8,9 @@ import { useObjectDrop } from '../drag/objectDrop'
 import { PLACE_ZONE, placeDropData, type PlaceTarget, type PlaceValue } from '../drag/placeDrop'
 import { useState } from 'react'
 import { LuMaximize2 } from 'react-icons/lu'
+import ButtonLook from '../../components/ui/buttons/ButtonLook'
 import IconButton from '../../components/ui/buttons/IconButton'
 import Modal from '../../components/ui/overlays/Modal'
-import PixelSquare from '../../components/ui/pixel/PixelSquare'
 import { placeholderArt } from '../objects/placeholderArt'
 import { CARD_SIZE, cardOf } from './cards/cardStyles'
 import MapPreview from './cards/MapPreview'
@@ -94,14 +94,10 @@ export default function ResourceCard({ resource, item, menu, onOpen, place }: Pr
           <div className="absolute inset-0 overflow-hidden rounded-(--card-radius) bg-surface shadow-sm ring-1 ring-line">
             <MapPreview id={id} className="size-full" />
           </div>
-          <PixelSquare
-            as="span"
-            bevel
-            className="absolute bottom-0 left-1/2 flex h-6 w-3/4 min-w-0 -translate-x-1/2 translate-y-1/2 items-center gap-1.5 border border-line px-2 text-body font-medium [--pixel-face:var(--surface)]"
-          >
-            <Icon className="size-3.5 shrink-0 text-fg-subtle" />
+          {/* The name: a Stone button's look (like the Recent History button) */}
+          <ButtonLook variant="secondary" size="sm" icon={Icon} className="absolute bottom-0 left-1/2 w-3/4 min-w-0 -translate-x-1/2 translate-y-1/2">
             <span className="min-w-0 truncate">{title}</span>
-          </PixelSquare>
+          </ButtonLook>
           {marks}
         </div>
         <Modal open={zoomed} onClose={() => setZoomed(false)} title={title} size="lg">
@@ -116,10 +112,9 @@ export default function ResourceCard({ resource, item, menu, onOpen, place }: Pr
       <div {...card} className={`${cardOf(CARD_SIZE)} bg-surface ${box}`}>
         <div style={placeholderArt(`${resource.panelType}${id}`)} className="h-24 shrink-0 rounded-(--btn-radius)" />
         <div className="flex items-center justify-between gap-2 px-0.5">
-          <span className="flex min-w-0 items-center gap-1.5 text-body font-medium">
-            <Icon className="size-3.5 shrink-0 text-fg-subtle" />
+          <ButtonLook variant="secondary" size="sm" icon={Icon} className="min-w-0">
             <span className="min-w-0 truncate">{title}</span>
-          </span>
+          </ButtonLook>
           {created && <span className="shrink-0 text-small text-fg-subtle">{DATE.format(created)}</span>}
         </div>
         <p className="line-clamp-2 px-0.5 text-small text-fg-muted">{resource.ui.row.subtitle?.(item) || 'Empty'}</p>
@@ -131,10 +126,9 @@ export default function ResourceCard({ resource, item, menu, onOpen, place }: Pr
   return (
     <div {...card} className={`${cardOf(CARD_SIZE)} bg-note ${box}`}>
       <div className="flex items-center gap-2 px-0.5 pe-8 pt-0.5">
-        <span className="flex min-w-0 items-center gap-1.5 text-body font-medium">
-          <Icon className="size-3.5 shrink-0 text-fg-subtle" />
+        <ButtonLook variant="secondary" size="sm" icon={Icon} className="min-w-0">
           <span className="min-w-0 truncate">{title}</span>
-        </span>
+        </ButtonLook>
         {created && <span className="shrink-0 text-small text-fg-subtle">{DATE.format(created)}</span>}
       </div>
       <p className="line-clamp-4 border-s-2 border-fg/20 ps-2 text-body text-fg-muted [mask-image:linear-gradient(to_bottom,black_65%,transparent)]">

@@ -33,7 +33,14 @@ app/src/components/ui/overlays/ExtendMenu.tsx   a button that grows into its own
 | `selected` | Shade, kept in its hover look | the chosen one of a group (or pass `aria-pressed`) |
 | `text` | Underline | a text action in running text (Show more, Try again, Open) |
 
-`size="sm"` is a smaller button for tight rows (board panels, row headers, chips).
+`size="sm"` is a smaller button for tight rows (board panels, row headers, chips). `size="lg"` is as tall as a text field (`--field-h`, 40px)
+with a bigger icon and text: the navbar's Recent History button, level with the search field.
+
+**LinkButton** (`LinkButton.tsx`, `.ui-btn-link` in `buttons.css`) is the simplest one: just small text that lightens when hovered; no
+padding, background, brackets or underline. `to` makes it a link, otherwise it is a button. Used for the columns' "Show all". Its
+look is not a `.ui-btn`, so the button settings don't apply to it.
+
+**ButtonLook** is a button's look on something you can't press: the names on the Dashboard's cards (Stone, like the Recent History button).
 
 **ExtendMenu** (a button that grows into its menu): open, it is dark grey (`--color-shade`). A `create` one (Venom split)
 turns its + into an ✕ and its label into "None" (`openLabel`); its two pieces then become Shade buttons. **The hover of

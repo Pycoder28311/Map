@@ -2,8 +2,7 @@
 // and "Show all", an object's row (draggable, opens on click, takes note links), and a row for
 // anything else (a page, a combination of panes, a saved layout).
 import { useState, type ReactNode } from 'react'
-import { LuChevronsDown, LuChevronsUp } from 'react-icons/lu'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { resourceByPanelType } from '../../resources/registry'
 import { useOptionalItemModal } from '../items/ItemModal'
 import type { PlainIcon } from '../../components/ui/icons/IconSlot'
@@ -11,7 +10,7 @@ import type { WorkspaceLayout } from '../workspace/layout'
 import { usePanelRegistry } from '../workspace/registryContext'
 import { hrefFor } from '../workspace/useWorkspace'
 import { PLAIN_ROW } from './ObjectRow'
-import Button from '../../components/ui/buttons/Button'
+import LinkButton from '../../components/ui/buttons/LinkButton'
 
 /** Rows shown before "Show all" (the Dashboard's columns: three) */
 const MAX_ROWS = 3
@@ -56,13 +55,13 @@ export function Rows({ rows, empty, allHref, limit = MAX_ROWS }: { rows: ReactNo
       </ul>
       {more > 0 &&
         (allHref ? (
-          <Link to={allHref} className="mt-1 inline-block px-2 text-small text-fg-muted hover:text-fg">
+          <LinkButton to={allHref} className="mt-sm ms-base self-start">
             Show all ({rows.length})
-          </Link>
+          </LinkButton>
         ) : (
-          <Button variant="text" icon={expanded ? LuChevronsUp : LuChevronsDown} onClick={() => setExpanded(!expanded)} className="mt-1 ms-2 self-start">
+          <LinkButton onClick={() => setExpanded(!expanded)} className="mt-sm ms-base self-start">
             {expanded ? 'Show less' : `Show all (${rows.length})`}
-          </Button>
+          </LinkButton>
         ))}
     </>
   )

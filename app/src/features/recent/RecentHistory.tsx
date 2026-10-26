@@ -16,7 +16,7 @@ export default function RecentHistory() {
       open={open}
       onOpenChange={setOpen}
       trigger={
-        <Button variant="secondary" icon={LuHistory} aria-expanded={open} aria-haspopup="dialog" className="w-56 justify-start">
+        <Button variant="secondary" size="lg" icon={LuHistory} aria-expanded={open} aria-haspopup="dialog" className="w-56 justify-start">
           <span className="flex-1 text-start">Recent History</span>
           <LuChevronDown className={`size-4 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} aria-hidden />
         </Button>

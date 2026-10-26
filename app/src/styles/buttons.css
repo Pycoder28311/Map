@@ -575,6 +575,43 @@
     --btn-hover-bg: transparent;
   }
 
+  /* Map: the link button (components/ui/buttons/LinkButton.tsx): just small text that lightens when hovered. Nothing else: no padding,
+     no background, no brackets, no underline. It is not a .ui-btn on purpose, so none of the button settings apply to it */
+  .ui-btn-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: 500 11px / 1.2 var(--font-body);
+    letter-spacing: 0.4px;
+    color: var(--color-bone-dim);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.18s ease-out;
+  }
+  .ui-btn-link:hover:not(:disabled) {
+    color: var(--color-bone-hover);
+  }
+  .ui-btn-link:focus-visible {
+    outline: var(--px) solid var(--color-bone);
+    outline-offset: var(--px);
+  }
+  .ui-btn-link:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Map: a button as tall as a text field (--field-h), with a bigger icon and text (the navbar's Recent History) */
+  .ui-btn.ui-btn-lg {
+    --btn-font-size: 16px;
+    --btn-icon-ratio: 1.25;
+    min-height: var(--field-h);
+  }
+  .ui-btn-stone.ui-btn-lg > .ui-btn-stone-face {
+    min-height: calc(var(--field-h) - 2 * var(--btn-shadow-height));
+  }
+
   /* Map: a smaller button, for tight rows (pane islands, board panels, row headers) */
   .ui-btn.ui-btn-sm {
     --btn-font-size: 12.8px;
