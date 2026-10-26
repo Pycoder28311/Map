@@ -8,6 +8,7 @@ import { LuChevronDown } from 'react-icons/lu'
 import ExtendMenu, { type ExtendMenuItem } from '../../components/ui/overlays/ExtendMenu'
 import { actionsOf } from '../../lib/resource/hooks'
 import { resourcesWith } from '../../resources/registry'
+import InputBox from '../../components/ui/fields/InputBox'
 import { isFirstLine } from './editorKeys'
 
 // Full class strings so Tailwind can detect them at build time.
@@ -155,7 +156,9 @@ export default function QuickCreate() {
   return (
     // Keeps the folded card's place in the page; the open card lies over what's around it
     <div ref={rootRef} style={{ height: size.folded || undefined }} className={`relative ${open ? 'z-30' : ''}`}>
-      <div
+      <InputBox
+        as="div"
+        row={false}
         ref={cardRef}
         // Only a field opens it (the text or the title): the Note / Article button, and its menu, don't
         onFocus={(e) => {
@@ -169,7 +172,7 @@ export default function QuickCreate() {
         // Open: moved up by the title's height while the title grows (same timing), so the text stays put
         style={open ? { boxShadow: 'var(--lift-shadow)', transform: `translateY(${-size.title}px)` } : undefined}
         // overflow-hidden: Create slides in from beyond the right edge
-      className={`absolute inset-x-0 top-0 flex flex-col rounded-(--card-radius) border border-line bg-surface transition-[box-shadow,transform] ${ANIMATE} ${
+      className={`absolute inset-x-0 top-0 flex flex-col transition-[box-shadow,transform] ${ANIMATE} ${
         // Open: clips Create sliding in from the right. Folded: nothing
         open ? 'overflow-hidden' : ''
       }`}
@@ -288,7 +291,7 @@ export default function QuickCreate() {
             </Button>
           </div>
         </div>
-      </div>
+      </InputBox>
     </div>
   )
 }

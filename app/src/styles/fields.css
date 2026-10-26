@@ -14,20 +14,26 @@
 :root {
   /* from Dark Fantasy UI's uiConfig.js, minimalInput */
   --input-bg: #262626;
-  --input-bg-focus: #2b2b2b; /* while typing, hovered, the current one */
+  --input-bg-focus: #2b2b2b;
+  /* while typing, hovered, the current one */
   --input-text: #ece2c8;
   --input-placeholder: #7a7a7a;
   --input-radius: 2px;
   --input-shadow: 0 0 14px rgba(0, 0, 0, 0.55);
+  /* the border of the input boxes (Search, text fields, the Dashboard's big input); drawn inside, no size change */
+  --input-border-color: transparent;
+  --input-border-width: 1px;
 
   /* the border of the clickable rows (the sidebar's objects); the colour is the one to change. It is drawn inside the
      row, so it never changes the row's size. transparent = no border */
-  --row-border-color: transparent;
-  --row-border-color-hover: var(--row-border-color); /* hovered, or the current page */
+  --row-border-color: #343434;
+  --row-border-color-hover: var(--row-border-color);
+  /* hovered, or the current page */
   --row-border-width: 1px;
 }
 
 @layer components {
+
   .ui-field,
   .ui-field-row {
     /* the dark mode's text and line roles, whatever the app's mode */
@@ -41,7 +47,9 @@
     color: var(--input-text);
     background-color: var(--input-bg);
     border-radius: var(--input-radius);
-    box-shadow: var(--input-shadow);
+    box-shadow:
+      inset 0 0 0 var(--input-border-width) var(--input-border-color),
+      var(--input-shadow);
     transition: background-color 0.2s ease-out;
   }
 
@@ -53,6 +61,7 @@
       background-color 0.2s ease-out,
       box-shadow 0.2s ease-out;
   }
+
   .ui-field-row:is(:hover, :has([aria-current='page'], :focus-visible)) {
     box-shadow:
       inset 0 0 0 var(--row-border-width) var(--row-border-color-hover),
@@ -71,6 +80,7 @@
   .ui-field input::placeholder {
     color: var(--input-placeholder);
   }
+
   .ui-field input {
     caret-color: var(--input-text);
   }
