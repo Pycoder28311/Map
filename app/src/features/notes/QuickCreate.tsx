@@ -251,7 +251,7 @@ export default function QuickCreate() {
             open ? `translate-x-0 opacity-100 transition-[translate,opacity] ${ANIMATE} ${AFTER_GROW}` : 'translate-x-[calc(100%+1rem)] opacity-0'
           }`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-sm">
             {/* Open: not a dropdown, one button for each kind; the chosen one is outlined */}
             {QUICK.map((r) => (
               <Button key={r.name} plain variant={r === kind ? 'selected' : 'ghost'} icon={r.ui.icon} onClick={() => chooseKind(r.name)} aria-pressed={r === kind}>
