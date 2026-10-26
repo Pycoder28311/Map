@@ -63,7 +63,7 @@
   /* THE pixel unit of the buttons (Dark Fantasy UI's PIXEL in uiConfig.js) */
   --px: 2px;
   --px-neg: calc(var(--px) * -1);
-  /* gap between a button's icon and text, for every button */
+  /* gap between an Underline button's icon and text (every other button: its --btn-pad-x, the icon's distance to the edge) */
   --icon-gap: calc(var(--px) * 4);
 }
 
@@ -83,7 +83,8 @@
     --btn-border: none;
     --btn-radius: 0;
     --btn-text: var(--color-bone);
-    --btn-icon-gap: var(--icon-gap, var(--btn-pad-x));
+    /* the icon's distance to the text is its distance to the edge of the button (--btn-pad-x), always */
+    --btn-icon-gap: var(--btn-pad-x);
     --btn-icon-edge: var(--btn-pad-x);
     --btn-icon-ratio: 1;
     --btn-icon-size: calc(var(--btn-font-size) * var(--btn-icon-ratio));
@@ -498,10 +499,10 @@
     height: 1em;
   }
   :is(.ui-btn, .ui-btn-stone-face) > svg:not(.ui-btn-icon):not(:first-child) {
-    margin-inline-start: calc(var(--px) * 3);
+    margin-inline-start: var(--btn-icon-gap);
   }
   :is(.ui-btn, .ui-btn-stone-face) > svg:not(.ui-btn-icon):first-child:not(:last-child) {
-    margin-inline-end: calc(var(--px) * 3);
+    margin-inline-end: var(--btn-icon-gap);
   }
 
   /* Map: a link can't be :disabled; aria-disabled gives it the same look */
@@ -798,7 +799,7 @@
     display: flex;
     width: 100%;
     align-items: center;
-    gap: var(--icon-gap);
+    gap: var(--btn-pad-x);
     padding: var(--btn-pad-y) var(--btn-pad-x);
     text-align: start;
     white-space: nowrap;
