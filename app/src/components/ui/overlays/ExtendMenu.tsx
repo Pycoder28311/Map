@@ -1,4 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { LuPlus } from 'react-icons/lu'
 import Button from '../buttons/Button'
 import ButtonLook from '../buttons/ButtonLook'
 import { splitButtonClass } from '../buttons/buttonStyles'
@@ -27,8 +28,10 @@ type Props<T extends string> = {
   label: string
   /** The button's content (e.g. "Sort by ▾"; create: its label); a function gets whether the menu is open (e.g. to show an ✕) */
   children: Content
-  /** create: the icon piece's content (e.g. + closed, ✕ open) */
+  /** create: the icon piece's content. Left out: a + that turns into an ✕ while open */
   splitIcon?: Content
+  /** create: the label while open (the button's own label is then not a choice any more) */
+  openLabel?: ReactNode
   /** create: which side the icon piece is on */
   iconPosition?: 'left' | 'right'
   /** Which way it extends: down from the button (default), or up (for a button at the bottom of its container) */
@@ -60,6 +63,7 @@ export default function ExtendMenu<T extends string>({
   label,
   children,
   splitIcon,
+  openLabel = 'None',
   iconPosition = 'left',
   direction = 'down',
   className = '',
@@ -69,9 +73,12 @@ export default function ExtendMenu<T extends string>({
   // The button's own size (a copy of its content, in the layout) and the options' natural size
   const sizerRef = useRef<HTMLDivElement>(null)
   const optionsRef = useRef<HTMLDivElement>(null)
+  // The open button (its "None" can be wider than the closed one's label): the box is never narrower than it
+  const openRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
   const [button, setButton] = useState<Size | null>(null)
   const [options, setOptions] = useState<Size>({ width: 0, height: 0 })
+  const [openWidth, setOpenWidth] = useState(0)
   // Only what the button doesn't already show
   const items = allItems.filter((item) => item.value !== value)
 
@@ -90,11 +97,13 @@ export default function ExtendMenu<T extends string>({
     const measure = () => {
       setButton(size(sizer))
       setOptions(size(list))
+      setOpenWidth(openRef.current ? size(openRef.current).width : 0)
     }
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(sizer)
     observer.observe(list)
+    if (openRef.current) observer.observe(openRef.current)
     return () => observer.disconnect()
   }, [items.length])
 
@@ -118,19 +127,19 @@ export default function ExtendMenu<T extends string>({
   // Until measured, it is just the button
   const grown: Size | undefined = button
     ? open
-      ? { width: Math.max(button.width, options.width), height: button.height + options.height }
+      ? { width: Math.max(button.width, options.width, openWidth), height: button.height + options.height }
       : button
     : undefined
 
-  // The button, closed (the sizer's copy) or as it is now
-  const content = (isOpen: boolean) =>
-    variant === 'create' ? (
-      <SplitContent icon={render(splitIcon, isOpen)} iconPosition={iconPosition}>
-        {render(children, isOpen)}
-      </SplitContent>
-    ) : (
-      render(children, isOpen)
-    )
+  // The button, closed (the sizer's copy) or as it is now. A split button, open: its pieces are Shade buttons (each its
+  // own hover), its label "None", its + turned into an ✕ (styles/buttons.css, ExtendMenu)
+  const split = (isOpen: boolean) => ({
+    icon: splitIcon === undefined ? <span className="ui-extend-turn"><LuPlus /></span> : render(splitIcon, isOpen),
+    iconPosition,
+    pieceClassName: isOpen ? 'ui-btn ui-btn-shade' : '',
+    children: isOpen ? openLabel : render(children, isOpen),
+  })
+  const content = (isOpen: boolean) => (variant === 'create' ? <SplitContent {...split(isOpen)} /> : render(children, isOpen))
   const toggle = {
     'aria-haspopup': 'menu' as const,
     'aria-expanded': open,
@@ -147,6 +156,13 @@ export default function ExtendMenu<T extends string>({
       <div ref={sizerRef} aria-hidden className="invisible flex">
         {variant === 'create' ? <div className={splitButtonClass()}>{content(false)}</div> : <ButtonLook variant="ghost">{content(false)}</ButtonLook>}
       </div>
+      {variant === 'create' && (
+        <div ref={openRef} aria-hidden className={`${BOX[variant]} invisible pointer-events-none absolute top-0 left-0 -z-10 inline-flex`} data-open>
+          <div className={splitButtonClass()}>
+            <SplitContent {...split(true)} />
+          </div>
+        </div>
+      )}
       {/* The options, laid out in full but unseen: their natural size is what the button grows to */}
       <div ref={optionsRef} aria-hidden className={`${BOX[variant]} invisible pointer-events-none absolute top-0 left-0 -z-10 inline-flex flex-col`}>
         {items.map((item) => (
@@ -167,9 +183,7 @@ export default function ExtendMenu<T extends string>({
         className={`${BOX[variant]} absolute ${direction === 'up' ? 'bottom-0 flex-col-reverse' : 'top-0 flex-col'} flex left-1/2 -translate-x-1/2 z-20`}
       >
         {variant === 'create' ? (
-          <SplitButton icon={render(splitIcon, open)} iconPosition={iconPosition} {...toggle}>
-            {render(children, open)}
-          </SplitButton>
+          <SplitButton {...toggle} {...split(open)} />
         ) : (
           <Button variant="ghost" {...toggle}>
             {render(children, open)}

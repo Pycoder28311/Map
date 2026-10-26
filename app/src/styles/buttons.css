@@ -47,8 +47,10 @@
   --color-stone-shade: #2e2e2e;
   --color-stone-soft: #3a3a3a;
   --color-stone-slab: #1a1a1a;
-  /* Shade hover */
-  --color-shade-hover: #2a2a2a;
+  /* Shade: its dark grey (an open dropdown), and its hover: a light veil, so it shows on the page and on that grey
+     alike (on the page it is about that grey). THE hover of Shade, of Sort by and of an open dropdown's button */
+  --color-shade: #2a2a2a;
+  --color-shade-hover: rgb(255 255 255 / 0.08);
   /* Panel hover: label/frame, inner rule, fill, top band */
   --color-gold-hover: #ffdd59;
   --color-gold-dark-hover: #b98529;
@@ -425,7 +427,7 @@
   .ui-btn-shade {
     --btn-text: var(--color-bone-dim);
     --btn-bg: transparent;
-    --btn-bracket-color: color-mix(in srgb, #fff 80%, var(--color-shade-hover));
+    --btn-bracket-color: color-mix(in srgb, #fff 80%, var(--color-shade));
     --btn-hover-text: var(--color-bone);
     --btn-hover-bg: var(--color-shade-hover);
     box-shadow: none;
@@ -614,14 +616,17 @@
   /* open: dark grey with the brackets out, whatever the pointer does */
   .ui-btn.ui-extend[data-open='true'] {
     --_text: var(--color-bone);
-    --_bg: var(--color-shade-hover);
+    --_bg: var(--color-shade);
     --br-gap: var(--btn-bracket-gap);
     --br-len-x: var(--btn-bracket-len-x);
     --br-len-y: var(--btn-bracket-len-y);
     overflow: hidden;
   }
-  /* open, the Venom split's pieces fade out (their brackets hand over to the box's, in the same places) */
+  /* open, the Venom split's pieces fade out (their brackets hand over to the box's, in the same places). Both pieces
+     always have the same layers (left brackets, right brackets, inner shadow, colour), closed and open, so nothing
+     slides in from another layer's place when they turn into Shade buttons; closed, the inner side's are see-through */
   .ui-extend > .ui-btn-venom-split > span {
+    background: var(--br-layers-left), var(--br-layers-right), var(--btn-inner-shadow), var(--_bg);
     transition:
       var(--br-transition),
       background-color 0.2s ease-out,
@@ -632,6 +637,23 @@
     --br-h: linear-gradient(transparent, transparent);
     --btn-inner-shadow: linear-gradient(transparent, transparent);
   }
+  .ui-extend:not([data-open='true']) > .ui-btn-venom-split > span:first-child {
+    --br-layers-right:
+      var(--br-none) right var(--br-gap) top var(--br-gap) / var(--br-len-x) var(--br-w) no-repeat,
+      var(--br-none) right var(--br-gap) top var(--br-gap) / var(--br-w) var(--br-len-y) no-repeat,
+      var(--br-none) right var(--br-gap) bottom var(--br-gap) / var(--br-len-x) var(--br-w) no-repeat,
+      var(--br-none) right var(--br-gap) bottom var(--br-gap) / var(--br-w) var(--br-len-y) no-repeat;
+  }
+  .ui-extend:not([data-open='true']) > .ui-btn-venom-split > span:last-child {
+    --br-layers-left:
+      var(--br-none) left var(--br-gap) top var(--br-gap) / var(--br-len-x) var(--br-w) no-repeat,
+      var(--br-none) left var(--br-gap) top var(--br-gap) / var(--br-w) var(--br-len-y) no-repeat,
+      var(--br-none) left var(--br-gap) bottom var(--br-gap) / var(--br-len-x) var(--br-w) no-repeat,
+      var(--br-none) left var(--br-gap) bottom var(--br-gap) / var(--br-w) var(--br-len-y) no-repeat;
+  }
+  .ui-extend {
+    --br-none: linear-gradient(transparent, transparent);
+  }
   .ui-extend[data-open='true'] > .ui-btn-venom-split > span {
     box-shadow: none;
   }
@@ -639,13 +661,37 @@
     --_text: var(--color-bone);
     transform: none;
   }
+  /* open, a Venom split's two pieces are Shade buttons (ExtendMenu gives them .ui-btn .ui-btn-shade): no face, and
+     Shade's own hover (background + brackets) on the one under the pointer. The label ("None") takes the room left,
+     and hovering it lights the ✕ too */
+  .ui-extend[data-open='true'] > .ui-btn-venom-split > .ui-btn-venom-split-label {
+    flex: 1;
+  }
+  .ui-extend[data-open='true'] > .ui-btn-venom-split:has(> .ui-btn-venom-split-label:hover) > .ui-btn-venom-split-icon {
+    --_text: var(--btn-hover-text);
+    --_bg: var(--btn-hover-bg);
+    --br-gap: var(--btn-bracket-gap);
+    --br-len-x: var(--btn-bracket-len-x);
+    --br-len-y: var(--btn-bracket-len-y);
+  }
+  /* a + turns into an ✕ */
+  .ui-extend-turn {
+    display: flex;
+  }
+  .ui-extend-turn > svg {
+    transition: rotate 0.2s ease-out;
+  }
+  .ui-extend[data-open='true'] .ui-extend-turn > svg {
+    rotate: 45deg;
+  }
   /* closed, the options are not shown (the box doesn't clip then, so the button's own shadow shows) */
   .ui-extend:not([data-open='true']) > .ui-extend-menu {
     visibility: hidden;
   }
   @media (prefers-reduced-motion: reduce) {
     .ui-btn.ui-extend,
-    .ui-extend > .ui-btn-venom-split > span {
+    .ui-extend > .ui-btn-venom-split > span,
+    .ui-extend-turn > svg {
       transition: none;
     }
   }
@@ -663,7 +709,7 @@
   }
   .ui-extend-item:is(:hover, :focus-visible) {
     color: var(--btn-hover-text, var(--btn-text));
-    background-color: color-mix(in srgb, #fff 10%, transparent);
+    background-color: var(--color-shade-hover);
     outline: none;
   }
   .ui-extend-item > svg {

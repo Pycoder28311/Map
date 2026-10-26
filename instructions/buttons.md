@@ -35,6 +35,11 @@ app/src/components/ui/overlays/ExtendMenu.tsx   a button that grows into its own
 
 `size="sm"` is a smaller button for tight rows (board panels, row headers, chips).
 
+**ExtendMenu** (a button that grows into its menu): open, it is dark grey (`--color-shade`). A `create` one (Venom split)
+turns its + into an ✕ and its label into "None" (`openLabel`); its two pieces then become Shade buttons. **The hover of
+Shade, of Sort by and of that open ✕ / None is one thing**: Shade's `--btn-hover-bg` (`--color-shade-hover`, a light
+veil) and its brackets, in `buttons.css`. The menu items' hover uses the same colour.
+
 ```tsx
 <Button variant="secondary" icon={LuShare2} onClick={share}>Share</Button>
 <IconButton icon={LuX} label="Close" onClick={close} />

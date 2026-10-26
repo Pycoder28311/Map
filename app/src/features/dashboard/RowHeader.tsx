@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LuChevronDown, LuPencil, LuPlus, LuX } from 'react-icons/lu'
+import { LuChevronDown, LuPencil, LuPlus } from 'react-icons/lu'
 import ExtendMenu, { type ExtendMenuItem } from '../../components/ui/overlays/ExtendMenu'
 import { SORT_LABEL, type CardSort } from './sortByDate'
 import SplitButton from '../../components/ui/buttons/SplitButton'
@@ -101,7 +101,6 @@ export default function RowHeader({ name, reflowId, onRename, onOpen, sort, onSo
             label={`Add to ${name}`}
             items={create.kinds}
             onSelect={create.onCreate}
-            splitIcon={(open) => (open ? <LuX /> : <LuPlus />)}
             iconPosition="right"
           >
             Add
