@@ -18,8 +18,9 @@ export function usePopoutLayer(): LayerValue {
   return value
 }
 
-// The element whose right edge the bar's shadow starts at (the sidebar's box: Sidebar.tsx)
-const START_EDGE = '[data-popout-edge="start"]'
+// The element whose right edge the bar's shadow starts at: the sidebar itself (Sidebar.tsx), which is wider than its box in the page
+// while it floats open over it (a closed sidebar opened by hovering), so none of the shadow falls on it
+const START_EDGE = '#sidebar'
 
 /**
  * A concave corner in the bar's colour (a quarter circle cut out of its bottom `side` corner): under a
@@ -92,7 +93,7 @@ type Props = {
  */
 export default function PopoutLayer({ children, barHeight, corners = 0 }: Props) {
   const [el, setEl] = useState<HTMLDivElement | null>(null)
-  // Where the sidebar ends: the bar's shadow starts there (none falls on the sidebar)
+  // Where the sidebar ends, as it is now (also while it floats open): the bar's shadow starts there (none falls on the sidebar)
   const [edge, setEdge] = useState(0)
 
   useEffect(() => {

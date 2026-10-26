@@ -100,4 +100,5 @@
 /* The popouts have the bar's texture too, so they stay one with it */
 :root[data-theme='arcane'] .popout-panel {
   background-image: var(--chrome-texture);
+  background-attachment: fixed;
 }

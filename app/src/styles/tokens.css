@@ -122,6 +122,8 @@
    /* a thin line inside the navbar along its bottom edge (a theme turns it on: themes/arcane.css) */
    --navbar-line-display: none;
    /* a background image over the navbar's, the sidebar's and the popouts' colour (a texture; none in the base theme) */
+   /* (the navbar, the sidebar and the popouts draw it with background-attachment: fixed: one texture across all of them, so no seam
+      shows where they meet) */
    --chrome-texture: none;
    /* pixel-art items along the top of the Dashboard (DashboardRelics.tsx): off in the base theme; how strong they are */
    --decor-display: none;

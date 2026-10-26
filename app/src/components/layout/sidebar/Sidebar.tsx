@@ -106,7 +106,7 @@ export default function Sidebar() {
                 inert={hidden || (!open && !isWide)}
                 {...peek.handlers}
                 style={{ width, '--tree-compact-duration': 'var(--sidebar-duration)' } as CSSProperties}
-                className={`absolute isolate inset-y-0 start-0 overflow-hidden bg-surface [background-image:var(--chrome-texture)] transition-[width,box-shadow] ${ANIMATE} ${floating ? 'shadow-xl' : ''}`}
+                className={`absolute isolate inset-y-0 start-0 overflow-hidden bg-surface [background-image:var(--chrome-texture)] [background-attachment:fixed] transition-[width,box-shadow] ${ANIMATE} ${floating ? 'shadow-xl' : ''}`}
             >
                 {/* Chains and pixels behind everything (a theme turns them on); the pixels in front of the chains */}
                 <SidebarChains band={band} compact={!open} />
