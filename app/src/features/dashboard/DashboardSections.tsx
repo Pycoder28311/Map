@@ -77,7 +77,7 @@ export default function DashboardSections() {
   const openItem = (resource: AnyResource, id: string) => (resource.customPanel ? open(single({ type: resource.panelType, id })) : setEditing({ resource, id }))
 
   return (
-    <div ref={rootRef} data-flip-root="sections" className="flex flex-col gap-8">
+    <div ref={rootRef} data-flip-root="sections" className="flex flex-col gap-xxl">
       {rows.map((row) => {
         // What can be added here: in a project, what can have a project as its parent; in the Orphans, anything but notes
         const kinds = CHILDREN.filter((r) => (row.root ? r.parents?.some((p) => p.resource === row.root.resource.name) : inOrphans(r))).map((r) => ({
@@ -125,7 +125,7 @@ export default function DashboardSections() {
               sortByLabel={!row.root}
               create={{ kinds, onCreate: create }}
             />
-            <div data-row-strip={row.id} className="-mx-2 flex min-h-[13.25rem] snap-x gap-3 overflow-x-auto px-2 pt-1 pb-4">
+            <div data-row-strip={row.id} className="-mx-2 flex min-h-[13.25rem] snap-x gap-lg overflow-x-auto px-2 pt-1 pb-4">
               {!kids.ready ? (
                 <Placeholder>Loading…</Placeholder>
               ) : cards.length === 0 ? (
@@ -176,7 +176,7 @@ function RowSection({ id, title, place, children }: { id: string; title: string;
       ref={setNodeRef}
       data-dash-block={id}
       aria-label={title}
-      className={`relative flex flex-col gap-3 rounded-(--btn-radius) outline-2 outline-offset-4 transition-[opacity,outline-color] ${over ? 'bg-drop/10 outline-drop/55' : 'outline-transparent'}`}
+      className={`relative flex flex-col gap-xl rounded-(--btn-radius) outline-2 outline-offset-4 transition-[opacity,outline-color] ${over ? 'bg-drop/10 outline-drop/55' : 'outline-transparent'}`}
     >
       {children}
     </section>

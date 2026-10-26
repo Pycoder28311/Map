@@ -289,7 +289,7 @@
      small gap; each has the Venom face, bevel and shadow, and the brackets
      slide in on its outer side only. Nothing moves on hover. */
   .ui-btn-venom.ui-btn-venom-split {
-    --btn-split-gap: calc(var(--px) * 1.5);
+    --btn-split-gap: var(--spacing-xs);
     display: inline-flex;
     align-items: stretch;
     gap: var(--btn-split-gap);

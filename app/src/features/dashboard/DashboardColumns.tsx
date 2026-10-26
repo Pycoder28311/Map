@@ -41,7 +41,7 @@ export default function DashboardColumns({ columns, pick, move }: Columns) {
       // Their own background: the page's dark layer made smoothly darker around them, fading out towards the edges of this box, which reaches
       // 5rem past the columns on each side (the padding, taken back by the negative margins: nothing moves)
       style={{ backgroundImage: `radial-gradient(ellipse at center, rgb(0 0 0 / ${DASHBOARD_COLUMNS_OVERLAY_OPACITY}) ${DASHBOARD_COLUMNS_FADE_START}%, rgb(0 0 0 / 0) 100%)` }}
-      className="-mx-20 -my-16 grid gap-6 px-20 py-16 md:grid-cols-3"
+      className="-mx-20 -my-16 grid gap-xl px-20 py-16 md:grid-cols-3"
     >
       {shown.map((id, slot) => (
         // Keyed by column, so a dragged one stays the same element while the others make room;

@@ -58,7 +58,7 @@ export default function DashboardPage() {
                     </>
                 )}
                 {/* The input and the columns share one narrower width, centred over the sections */}
-                <div className="mx-auto flex w-full max-w-[54rem] flex-col gap-10">
+                <div className="mx-auto flex w-full max-w-[54rem] flex-col gap-xl">
                     {/* A greeting, then the page's main input, low on the screen with room above them */}
                     <div className="mt-[18vh] flex flex-col items-center gap-12">
                         <h1 className="text-center text-5xl font-semibold tracking-tight">Hello{firstName ? `, ${firstName}` : ''}</h1>
