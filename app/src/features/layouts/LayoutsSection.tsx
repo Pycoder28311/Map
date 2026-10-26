@@ -52,7 +52,15 @@ const HINTS: Record<Hint['kind'], string> = {
   empty: 'Create a map or an object card first: use the + next to Objects.',
 }
 
-const cssPx = (name: string) => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0
+/** A CSS variable's length in px, as laid out: a variable made with calc() reads back as that text, so a probe element measures it */
+const cssPx = (name: string) => {
+  const probe = document.createElement('div')
+  probe.style.cssText = `position:absolute;visibility:hidden;width:var(${name})`
+  document.body.append(probe)
+  const px = probe.getBoundingClientRect().width
+  probe.remove()
+  return px
+}
 
 /** A panel still exists: its type is registered and, if it's an item, its id is a resource's (a number; whether it is still there shows in the panel) */
 function useExists() {
