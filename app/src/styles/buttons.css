@@ -662,13 +662,21 @@
     transform: none;
   }
   /* open, a Venom split's two pieces are Shade buttons (ExtendMenu gives them .ui-btn .ui-btn-shade): no face, and
-     Shade's own hover background on the one under the pointer, without its white brackets (the box has its own). The
-     label ("None") takes the room left, and hovering it lights the ✕ too */
+     Shade's own hover background on the one under the pointer, without its white brackets (the box has its own). They
+     keep their size and place while the box grows around them; hovering the label ("None") lights the ✕ too */
   .ui-extend[data-open='true'] > .ui-btn-venom-split > span {
     --br-h: var(--br-none);
   }
-  .ui-extend[data-open='true'] > .ui-btn-venom-split > .ui-btn-venom-split-label {
-    flex: 1;
+  /* a split button's two labels (its own, and "None" while open) in one cell: as wide as the wider one, one shown */
+  .ui-extend-labels {
+    display: grid;
+  }
+  .ui-extend-labels > * {
+    grid-area: 1 / 1;
+    text-align: center;
+  }
+  .ui-extend-labels > [data-shown='false'] {
+    visibility: hidden;
   }
   .ui-extend[data-open='true'] > .ui-btn-venom-split:has(> .ui-btn-venom-split-label:hover) > .ui-btn-venom-split-icon {
     --_text: var(--btn-hover-text);
