@@ -186,11 +186,11 @@
      length, on the corner) and slide out on hover. */
   .ui-btn-venom,
   .ui-btn-shade {
-    --bracket-btn-pad-x: calc(var(--px) * 7);
-    --bracket-btn-pad-y: calc(var(--px) * 3.5);
+    --bracket-btn-pad-x: calc(var(--px) * 6);
+    --bracket-btn-pad-y: calc(var(--px) * 4);
     --btn-pad-x: var(--bracket-btn-pad-x);
     --btn-pad-y: var(--bracket-btn-pad-y);
-    --btn-icon-edge: 10px;
+    --btn-icon-edge: calc(var(--px) * 5);
     --btn-icon-ratio: 1.2;
     --btn-bracket-color: #fff;
     --btn-bracket-gap: calc(var(--px) * 1.5);
@@ -328,12 +328,13 @@
     padding-right: var(--btn-split-text-edge);
   }
 
-  /* the icon piece: the same padding as every other Venom / Shade button (--btn-pad-y above and below, the icon's
-     --btn-icon-edge at its sides), the icon centred */
+  /* the icon piece is a square: as wide as it is tall (the taller of one text line and the icon, plus the vertical
+     padding on both sides) with the icon centred */
   .ui-btn-venom-split>.ui-btn-venom-split-icon {
     flex: none;
     box-sizing: border-box;
-    padding: var(--btn-pad-y) var(--btn-icon-edge);
+    width: calc(max(var(--btn-font-size) * var(--btn-line-height), var(--btn-icon-size)) + var(--btn-pad-y) * 2);
+    padding: var(--btn-pad-y) 0;
     justify-content: center;
   }
 
@@ -755,6 +756,12 @@
   .ui-extend[data-open='true']>.ui-btn {
     --_text: var(--color-bone);
     transform: none;
+  }
+
+  /* open: the icon and the text don't close up when hovered */
+  .ui-extend[data-open='true']>.ui-btn,
+  .ui-extend[data-open='true']>.ui-btn:hover:not(:disabled) {
+    --_pull: 0px;
   }
 
   /* open, a Venom split's two pieces are Shade buttons (ExtendMenu gives them .ui-btn .ui-btn-shade): no face, and
