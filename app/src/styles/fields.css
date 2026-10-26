@@ -71,7 +71,7 @@
     background-color: var(--input-bg-focus);
   }
 
-  .ui-field:has(:disabled) {
+  .ui-field:has(:is(input, textarea, select):disabled) {
     opacity: 0.6;
   }
 
