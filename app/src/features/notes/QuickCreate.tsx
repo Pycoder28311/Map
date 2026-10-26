@@ -170,7 +170,7 @@ export default function QuickCreate() {
         }}
         onKeyDown={onKeyDown}
         // Open: moved up by the title's height while the title grows (same timing), so the text stays put
-        style={open ? { boxShadow: 'var(--lift-shadow)', transform: `translateY(${-size.title}px)` } : undefined}
+        style={open ? { boxShadow: 'inset 0 0 0 var(--row-border-width) var(--row-border-color), var(--lift-shadow)', transform: `translateY(${-size.title}px)` } : undefined}
         // overflow-hidden: Create slides in from beyond the right edge
       className={`absolute inset-x-0 top-0 flex flex-col transition-[box-shadow,transform] ${ANIMATE} ${
         // Open: clips Create sliding in from the right. Folded: nothing
