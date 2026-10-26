@@ -299,9 +299,15 @@
     box-shadow: none;
   }
 
+  .ui-btn-venom-split {
+    /* the height of a piece: the taller of one text line and the icon, plus the padding above and below, whole pixels */
+    --_split-h: round(up, calc(max(var(--btn-font-size) * var(--btn-line-height), var(--btn-icon-size)) + var(--btn-pad-y) * 2), var(--px));
+  }
+
   .ui-btn-venom-split>span {
     display: flex;
     align-items: center;
+    min-height: var(--_split-h);
     border-radius: var(--btn-radius);
     padding: var(--btn-pad-y) var(--btn-pad-x);
     box-shadow:
@@ -333,14 +339,15 @@
   .ui-btn-venom-split>.ui-btn-venom-split-icon {
     flex: none;
     box-sizing: border-box;
-    width: calc(max(var(--btn-font-size) * var(--btn-line-height), var(--btn-icon-size)) + var(--btn-pad-y) * 2);
+    width: var(--_split-h);
     padding: var(--btn-pad-y) 0;
     justify-content: center;
   }
 
+  /* the icon is a whole number of pixels, in a piece that is one too, so it is centred exactly (no half pixels) */
   .ui-btn-venom-split-icon svg {
-    width: var(--btn-icon-size);
-    height: var(--btn-icon-size);
+    width: round(var(--btn-icon-size), var(--px));
+    height: round(var(--btn-icon-size), var(--px));
   }
 
   .ui-btn-venom-split:active:not(:disabled)>span {

@@ -1,10 +1,10 @@
 import url from '../../assets/dashboard-background.jpg'
 
 /** How dark the layer over the picture is: 0 shows the picture as it is, 1 hides it (black) */
-export const DASHBOARD_OVERLAY_OPACITY = 0.7
+export const DASHBOARD_OVERLAY_OPACITY = 0
 
 /** How much darker the page gets around the three columns, on top of the layer above (0–1): the darkest it is at their middle, fading smoothly out to the sides */
-export const DASHBOARD_COLUMNS_OVERLAY_OPACITY = 0.4
+export const DASHBOARD_COLUMNS_OVERLAY_OPACITY = 0.5
 
 /**
  * How fast that extra darkness fades out: how far from the middle of the columns to their edge (0–100, in %) it stays at full strength before it starts
