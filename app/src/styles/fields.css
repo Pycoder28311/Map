@@ -39,6 +39,11 @@
     transition: background-color 0.2s ease-out;
   }
 
+  /* a folder's children (role=group): no shadow of their own, as they slide out and once they are shown */
+  [role='group'] .ui-field-row {
+    box-shadow: none;
+  }
+
   .ui-field:focus-within,
   .ui-field-row:is(:hover, :has([aria-current='page'], :focus-visible)) {
     background-color: var(--input-bg-focus);

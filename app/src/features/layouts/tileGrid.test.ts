@@ -30,12 +30,21 @@ describe('positions', () => {
     expect(height).toBeCloseTo(196 * RATIO + 6 + w2 * RATIO)
   })
 
-  it('stacks squares as big as the rail rows in the rail, a gap apart', () => {
+  it('keeps the grid height in the rail: a lone tile stays as tall, two in a row stack to the same height', () => {
     for (const n of [1, 2, 3, 4, 5, 6]) {
+      const grid = positions(n, n, { ...opts, railGap: 4, mode: 'grid' })
       const rail = positions(n, n, { ...opts, railGap: 4, mode: 'rail' })
-      expect(rail.height).toBe(n * 36 + (n - 1) * 4)
-      rail.tiles.forEach((t, i) => expect(t).toEqual({ left: 0, top: i * 40, width: 36, height: 36 }))
+      expect(rail.height).toBeCloseTo(grid.height)
+      for (const t of rail.tiles) expect(t).toMatchObject({ left: 0, width: 36 })
     }
+    // one tile: as tall as in the grid; two: each half of it (less the gap), together the same
+    const [one] = positions(1, 1, { ...opts, railGap: 4, mode: 'rail' }).tiles
+    expect(one.height).toBeCloseTo(196 * RATIO)
+    const [a, b] = positions(2, 2, { ...opts, railGap: 4, mode: 'rail' }).tiles
+    const row = ((196 - 6) / 2) * RATIO
+    expect(a.top).toBe(0)
+    expect(a.height).toBeCloseTo((row - 4) / 2)
+    expect(b.top + b.height).toBeCloseTo(row)
   })
 
   it('lays out only the shown tiles (collapsed)', () => {

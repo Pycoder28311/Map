@@ -50,9 +50,12 @@ const INDENT_AFTER_ICON: CSSProperties = {
 // padding keeps the text off the edge
 const PLAIN_ROW = `${ROW_CLASS} flex min-h-(--sidebar-row) items-center rounded-(--btn-radius) py-(--pill-py) pe-(--btn-px) text-base`
 
-// Children: one indent step right; none in compact (one column), sliding with the width animation
+// Children: one indent step right; none in compact (one column), sliding with the width animation. A very thin line down
+// their left, --spacing-sm from them: drawn in the indent (it takes no room, so the children stay where and as wide as they
+// are); not shown in compact (--tree-line-color, TreeView)
 const GROUP =
-  'mt-1 ms-[var(--tree-indent-now,var(--tree-indent))] flex flex-col gap-1 ' +
+  'relative mt-1 ms-[var(--tree-indent-now,var(--tree-indent))] flex flex-col gap-1 ' +
+  'before:pointer-events-none before:absolute before:inset-y-0 before:-start-(--spacing-sm) before:w-px before:bg-(--tree-line-color,var(--line-strong)) before:transition-colors before:duration-(--tree-compact-duration) ' +
   'transition-[margin] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none'
 // The children that stay visible under a closed folder fade in (the Zen reel's expand)
 const KEPT = 'animate-tree-expand motion-reduce:animate-none'

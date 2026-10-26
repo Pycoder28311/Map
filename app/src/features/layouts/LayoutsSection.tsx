@@ -66,8 +66,8 @@ function useExists() {
 
 /**
  * The sidebar's Layouts section: the layouts as 16:9 tiles filling the width (at most 2 per row,
- * bigger rows first), the first rows only until "Show more". In the rail the tiles are squares as big as the
- * sidebar's closed rows, one under the other, centred in it.
+ * bigger rows first), the first rows only until "Show more". In the rail they are as wide as the sidebar's closed
+ * rows and keep the grid's height: a lone tile just narrows, two in a row stack to the height of one.
  * - the newest layouts first; panes on screen with no layout selected: an unsaved (blue) tile before
  *   them, with Save and ✕ (hides it until the panes change)
  * - hover a tile: Delete (asks first); the open layout, once changed, turns blue: Save (updates it),
@@ -101,7 +101,7 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
   const [section, setSection] = useState<HTMLElement | null>(null)
   const boxRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(0)
-  // The closed sidebar's tiles are squares as big as its rows (--sidebar-row), a row gap apart
+  // The closed sidebar's tiles are as wide as its rows (--sidebar-row); two of a row stack, --spacing-sm apart
   const railWidth = useMemo(() => cssPx('--sidebar-row'), [])
   const railGap = useMemo(() => cssPx('--spacing-sm'), [])
 
