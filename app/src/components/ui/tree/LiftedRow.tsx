@@ -36,7 +36,7 @@ export default function LiftedRow({ label, icon: Icon, origin, className = 'w-fu
       ref={ref}
       data-lifted-row
       style={{ transformOrigin: origin ? `${origin.fx * 100}% ${origin.fy * 100}%` : undefined }}
-      className={`${className} flex min-h-(--sidebar-row) cursor-grabbing items-center gap-(--tree-label-gap) rounded-(--btn-radius) bg-row-drag py-(--pill-py) ps-(--btn-px) pe-(--pill-px) text-body text-fg shadow-[0_6px_18px_rgba(0,0,0,0.35)]`}
+      className={`${className} flex min-h-(--sidebar-row) cursor-grabbing items-center gap-(--tree-label-gap) rounded-(--btn-radius) bg-row-drag py-(--pill-py) ps-(--btn-px) pe-(--pill-px) text-base text-fg shadow-[0_6px_18px_rgba(0,0,0,0.35)]`}
     >
       {Icon && (
         <span className={ICON_BOX}>

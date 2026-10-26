@@ -48,7 +48,7 @@ const INDENT_AFTER_ICON: CSSProperties = {
 // A row that isn't a link: a folder without a page, or any row while its name is edited (an input
 // can't sit inside a link). As tall as a link row (rounded, for the editing highlight); the end
 // padding keeps the text off the edge
-const PLAIN_ROW = `${ROW_CLASS} flex min-h-(--sidebar-row) items-center rounded-(--btn-radius) py-(--pill-py) pe-(--btn-px) text-body`
+const PLAIN_ROW = `${ROW_CLASS} flex min-h-(--sidebar-row) items-center rounded-(--btn-radius) py-(--pill-py) pe-(--btn-px) text-base`
 
 // Children: one indent step right; none in compact (one column), sliding with the width animation
 const GROUP =
@@ -145,6 +145,8 @@ export default function TreeItem({
   const content = (rowIcon?: ReactNode) => (
     <span className="flex min-w-0 flex-1 items-center gap-(--tree-label-gap)">
       {rowIcon}
+      {/* Closed (the rail): the name is not shown (it fades out with the sidebar's animation) */}
+      <span className={`flex min-w-0 flex-1 transition-opacity duration-(--sidebar-duration) ease-out motion-reduce:transition-none ${compact ? 'opacity-0' : ''}`}>
       <TreeLabel
         badge={node.badge}
         onStartEdit={renamable ? () => onEditingChange!(node.id) : undefined}
@@ -162,6 +164,7 @@ export default function TreeItem({
       >
         {node.label}
       </TreeLabel>
+      </span>
     </span>
   )
 

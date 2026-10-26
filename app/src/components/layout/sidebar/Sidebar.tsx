@@ -104,6 +104,7 @@ export default function Sidebar() {
             <nav
                 ref={navRef}
                 id="sidebar"
+                data-sidebar
                 aria-label="Main"
                 inert={hidden || (!open && !isWide)}
                 {...peek.handlers}

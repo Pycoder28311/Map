@@ -30,18 +30,11 @@ describe('positions', () => {
     expect(height).toBeCloseTo(196 * RATIO + 6 + w2 * RATIO)
   })
 
-  it('fills the same height in the rail with one column of equal tiles', () => {
+  it('stacks squares as big as the rail rows in the rail, a gap apart', () => {
     for (const n of [1, 2, 3, 4, 5, 6]) {
-      const grid = positions(n, n, { ...opts, mode: 'grid' })
-      const rail = positions(n, n, { ...opts, mode: 'rail' })
-      expect(rail.height).toBe(grid.height)
-      const last = rail.tiles.at(-1)!
-      expect(rail.tiles[0].top).toBe(0)
-      expect(last.top + last.height).toBeCloseTo(grid.height)
-      for (const t of rail.tiles) {
-        expect(t.width).toBe(36)
-        expect(t.height).toBeCloseTo(rail.tiles[0].height)
-      }
+      const rail = positions(n, n, { ...opts, railGap: 4, mode: 'rail' })
+      expect(rail.height).toBe(n * 36 + (n - 1) * 4)
+      rail.tiles.forEach((t, i) => expect(t).toEqual({ left: 0, top: i * 40, width: 36, height: 36 }))
     }
   })
 

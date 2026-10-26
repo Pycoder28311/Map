@@ -66,8 +66,8 @@ function useExists() {
 
 /**
  * The sidebar's Layouts section: the layouts as 16:9 tiles filling the width (at most 2 per row,
- * bigger rows first), the first rows only until "Show more". In the rail the tiles stack in one column
- * of the same total height, so nothing below moves.
+ * bigger rows first), the first rows only until "Show more". In the rail the tiles are squares as big as the
+ * sidebar's closed rows, one under the other, centred in it.
  * - the newest layouts first; panes on screen with no layout selected: an unsaved (blue) tile before
  *   them, with Save and ✕ (hides it until the panes change)
  * - hover a tile: Delete (asks first); the open layout, once changed, turns blue: Save (updates it),
@@ -101,7 +101,9 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
   const [section, setSection] = useState<HTMLElement | null>(null)
   const boxRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(0)
-  const railWidth = useMemo(() => 2 * cssPx('--btn-px') + cssPx('--btn-icon-size') + 2 * cssPx('--btn-close-p'), [])
+  // The closed sidebar's tiles are squares as big as its rows (--sidebar-row), a row gap apart
+  const railWidth = useMemo(() => cssPx('--sidebar-row'), [])
+  const railGap = useMemo(() => cssPx('--spacing-sm'), [])
 
   // The tiles' area is always the sidebar's full inner width (the rail only clips it)
   // Any tile at all (a saved one, or the unsaved panes)
@@ -204,7 +206,7 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
   ]
   const n = tilesData.length
   const shown = visibleCount(n, expanded)
-  const { tiles, height } = positions(n, shown, { width, gap: GAP, railWidth, mode: compact ? 'rail' : 'grid' })
+  const { tiles, height } = positions(n, shown, { width, gap: GAP, railWidth, railGap, mode: compact ? 'rail' : 'grid' })
   const hidden = n - visibleCount(n, false)
 
   const actionsOf = (layout: SavedLayout) => {

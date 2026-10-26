@@ -8,7 +8,7 @@ const FADE =
   '[mask-image:linear-gradient(to_right,black_calc(100%-var(--icons,0px)-var(--tree-label-fade)),transparent_calc(100%-var(--icons,0px)))]'
 
 // The name being edited: same text and line height as the label, so the row keeps its size
-const INPUT = 'min-w-0 flex-1 bg-transparent p-0 text-body text-fg outline-none'
+const INPUT = 'min-w-0 flex-1 bg-transparent p-0 text-base text-fg outline-none'
 
 const MAX_NAME = 100
 
