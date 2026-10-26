@@ -247,7 +247,7 @@ export default function QuickCreate() {
             <ExtendMenu variant="ghost" label="Kind" items={KINDS} value={kind.name} onSelect={chooseKind}>
               <kind.ui.icon aria-hidden className="size-4" />
               {kind.ui.label}
-              <LuChevronDown aria-hidden className="size-4" />
+              <LuChevronDown aria-hidden className="ui-extend-flip size-4" />
             </ExtendMenu>
           </div>
         </div>
