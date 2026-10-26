@@ -128,9 +128,6 @@
    --chrome-texture: none;
    /* pixel-art items along the top of the Dashboard (DashboardRelics.tsx): off in the base theme; how strong they are */
    --decor-display: none;
-   /* a faint dot grid behind the Dashboard (DashboardGrid.tsx): off in the base theme; the dots' colour */
-   --dashboard-grid-display: none;
-   --dashboard-grid-color: color-mix(in srgb, var(--fg) 7%, transparent);
    --decor-opacity: 0.5;
    --decor-filter: none;
    /* square pixels over the bottom of the sidebar, thinning upward (SidebarPixels.tsx): off in the base theme */

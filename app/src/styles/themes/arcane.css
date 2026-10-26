@@ -38,8 +38,6 @@
   --popout-line-color: #6b7280;
   /* No inner line along the navbar's bottom (block: a line, 2px up from the edge, like the popouts' had) */
   --navbar-line-display: none;
-  /* A faint dot grid behind the Dashboard */
-  --dashboard-grid-display: block;
   /* Pixel-art items along the top of the Dashboard */
   --decor-display: flex;
   --decor-opacity: 0.55;
