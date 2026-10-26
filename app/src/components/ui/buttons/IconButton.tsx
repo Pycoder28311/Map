@@ -8,6 +8,8 @@ type Props = Omit<ComponentProps<'button'>, 'children'> & IconEffects & {
   label: string
   variant?: ButtonVariant
   size?: ButtonSize
+  /** A brighter icon (near white): the navbar's menu button */
+  bright?: boolean
 } & (
     | { icon: PlainIcon; /** Extra classes of the icon (e.g. its own animation) */ iconClassName?: string; children?: never }
     /** An icon of its own (e.g. one that changes with a state): sized by the button */
@@ -21,6 +23,7 @@ export default function IconButton({
   label,
   variant = 'ghost',
   size,
+  bright,
   type = 'button',
   className = '',
   hoverEffect,
@@ -34,7 +37,7 @@ export default function IconButton({
       type={type}
       aria-label={label}
       title={label}
-      className={iconButtonClass(variant, `${ICON_EFFECT_GROUP} ${className}`, size)}
+      className={iconButtonClass(variant, `${ICON_EFFECT_GROUP} ${bright ? 'ui-btn-bright' : ''} ${className}`, size)}
       {...button}
     >
       {variant === 'secondary' ? <span className="ui-btn-stone-face">{icon}</span> : icon}

@@ -14,9 +14,9 @@ import { useSidebar } from './sidebar/useSidebar'
 import IconButton from '../ui/buttons/IconButton'
 
 // Full class strings so Tailwind can detect them at build time.
-// The ☰ button: centred over the sidebar's rail, like the closed sidebar's rows (minus the bar's px-2); 31px: the
-// square Shade button's size (styles/buttons.css)
-const MENU_BUTTON = 'shrink-0 ms-[calc((var(--sidebar-rail)-31px)/2-0.5rem)]'
+// The ☰ button: centred over the sidebar's rail, like the closed sidebar's rows (minus the bar's padding); 38px: its 24px icon
+// (size-6 below) plus the square Shade button's padding all round (styles/buttons.css)
+const MENU_BUTTON = 'shrink-0 ms-[calc((var(--sidebar-rail)-38px)/2-var(--spacing-base))]'
 
 /**
  * Top bar:
@@ -43,9 +43,10 @@ export default function Navbar() {
                     aria-expanded={sidebar.expanded}
                     aria-controls="sidebar"
                     label={sidebar.expanded ? 'Close menu' : 'Open menu'}
+                    bright
                     className={MENU_BUTTON}
                 >
-                    <MenuToggleIcon open={sidebar.expanded} />
+                    <MenuToggleIcon open={sidebar.expanded} className="size-6" />
                 </IconButton>
                 {/* The name, and a faint pixel desk behind it that reaches towards the Recent button (centred, 14rem wide: 8rem from the centre
                     keeps a gap) and fills the bar's height; on narrow screens only the name */}

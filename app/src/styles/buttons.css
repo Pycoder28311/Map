@@ -567,6 +567,12 @@
     --btn-hover-pull: 0px;
   }
 
+  /* Map: a brighter label and icon (the navbar's menu button): near white instead of Shade's muted purple */
+  .ui-btn.ui-btn-bright {
+    --btn-text: var(--color-bone-hover);
+    --btn-hover-text: #fff;
+  }
+
   /* Map: a smaller button, for tight rows (pane islands, board panels, row headers) */
   .ui-btn.ui-btn-sm {
     --btn-font-size: 12.8px;
