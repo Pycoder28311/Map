@@ -755,7 +755,7 @@
     transition: rotate 0.2s ease-out;
   }
   .ui-extend[data-open='true'] .ui-extend-flip {
-    rotate: 180deg;
+    rotate: -180deg;
   }
   /* Folding back (data-closing, for as long as it shrinks): the box keeps its open look while it shrinks, then takes
      its closed look at once (its colour, brackets, options: a delay, no duration). The label (None → Add) changes at the click. Only the button's own
