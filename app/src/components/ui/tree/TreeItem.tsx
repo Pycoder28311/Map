@@ -50,13 +50,13 @@ const INDENT_AFTER_ICON: CSSProperties = {
 // padding keeps the text off the edge
 const PLAIN_ROW = `${ROW_CLASS} flex min-h-(--sidebar-row) items-center rounded-(--btn-radius) py-(--pill-py) pe-(--btn-px) text-body`
 
-// Children: one indent step right; none in compact (one column), sliding with the width animation. A very thin line down
-// their left, --spacing-sm from them: drawn in the indent (it takes no room, so the children stay where and as wide as they
+// Children: one indent step right; none in compact (one column), sliding with the width animation. A thin line (--tree-line-w) down
+// their left, --spacing-base from them: drawn in the indent (it takes no room, so the children stay where and as wide as they
 // are); not shown in compact (--tree-line-color, TreeView). Closing, the indent goes at once (--tree-indent-duration: 0s) so the
 // children are never pushed right of their parents while the rail narrows; opening, it slides with the sidebar
 const GROUP =
   'relative mt-sm ms-[var(--tree-indent-now,var(--tree-indent))] flex flex-col gap-sm ' +
-  'before:pointer-events-none before:absolute before:inset-y-0 before:-start-(--spacing-sm) before:w-px before:bg-(--tree-line-color,var(--line-strong)) before:transition-colors before:duration-(--tree-compact-duration) ' +
+  'before:pointer-events-none before:absolute before:inset-y-0 before:-start-[calc(var(--spacing-base)+var(--tree-line-w))] before:w-(--tree-line-w) before:bg-(--tree-line-color,var(--line-strong)) before:transition-colors before:duration-(--tree-compact-duration) ' +
   'transition-[margin] duration-(--tree-indent-duration,var(--tree-compact-duration)) ease-out motion-reduce:transition-none'
 // How far a row's shadow reaches (styles/fields.css: --input-shadow, 14px blur): the room the sliding children's box leaves for it
 const SHADOW_ROOM = '20px'
