@@ -72,8 +72,9 @@
    --tree-indent: 8px;
    /* the line down the left of a folder's children (its distance from them is --spacing-sm) */
    --tree-line-w: 2px;
-   /* between the icon and the name (the icon also has --btn-close-p around it) */
-   --tree-label-gap: var(--spacing-sm);
+   /* between the icon and the name (the icon also has --btn-close-p around it): the icon's visible distance to the name
+      is then the same as to the row's left edge (--btn-px + --btn-close-p) */
+   --tree-label-gap: var(--btn-px);
    --tree-label-fade: 24px;
    /* how long the fade at the end of a long name is */
    --tree-compact-duration: 0ms;
