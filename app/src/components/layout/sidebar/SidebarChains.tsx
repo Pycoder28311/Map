@@ -11,6 +11,7 @@ import {
   FADE_BESIDE_ROWS,
   FADE_ENDS,
   FADE_TOP,
+  SIDEBAR_RAIL,
   SIDEBAR_WIDTH,
 } from './chainsConfig'
 
@@ -51,9 +52,10 @@ export type Band = { top: number; bottom: number }
  * Faint pixel-art chains in the sidebar, as chainsConfig.ts has them (where, how big, how faded), behind everything, the pixels
  * at the bottom (SidebarPixels) included. Along `band`, where the sidebar's rows are, they are fainter (FADE_BESIDE_ROWS): what shows of them
  * between and beside the rows. Wide as the open sidebar, so in the rail only the left chain shows (the nav clips it).
- * The top of them fades out smoothly (FADE_TOP). Only a theme that turns it on shows it (--sidebar-chains-display and --sidebar-chain-color, styles/tokens.css).
+ * A chain with `centredInRail` slides to the centre of the rail while the sidebar is closed (`compact`), and back as it opens, over the
+ * sidebar's own animation. The top of them fades out smoothly (FADE_TOP). Only a theme that turns it on shows it (--sidebar-chains-display and --sidebar-chain-color, styles/tokens.css).
  */
-export default function SidebarChains({ band }: { band: Band | null }) {
+export default function SidebarChains({ band, compact = false }: { band: Band | null; compact?: boolean }) {
   const id = useId()
   const dragging = useObjectDrop().item !== null
   // Each chain's pattern (to slide it), and where the sliding is: how fast overall (0 to 1), how far each has gone, which way
@@ -104,10 +106,12 @@ export default function SidebarChains({ band }: { band: Band | null }) {
   // The top fades in along an eased ramp (smoothstep: slow, quicker, slow), as a mask: black is nothing, white is full strength
   const ramp = [0, 0.25, 0.5, 0.75, 1].map((t) => ({ at: t * FADE_TOP, level: Math.round(t * t * (3 - 2 * t) * 255) }))
   // One chain: its tile (a pattern) and the strip it fills
-  const chains = CHAINS.map(({ side, edge, size, fade, top, length, offset }, n) => {
+  const chains = CHAINS.map(({ side, edge, size, fade, top, length, offset, centredInRail }, n) => {
     const width = WIDTH * size
     const height = CHAIN.length * size
     const x = side === 'left' ? edge : SIDEBAR_WIDTH - edge - width
+    // Closed: how far left it moves to stand in the middle of the rail
+    const shift = centredInRail && compact ? (SIDEBAR_RAIL - width) / 2 - x : 0
     return {
       pattern: (
         <pattern key={n} ref={(el) => { patterns.current[n] = el }} id={`${id}-${n}`} x={x} y={offset} width={width} height={height} patternUnits="userSpaceOnUse">
@@ -140,6 +144,8 @@ export default function SidebarChains({ band }: { band: Band | null }) {
           fill={`url(#${id}-${n})`}
           opacity={1 - fade}
           mask={`url(#${id}-e${n})`}
+          style={centredInRail ? { transform: `translateX(${shift}px)`, transition: 'transform var(--sidebar-duration) ease-out' } : undefined}
+          className="motion-reduce:transition-none"
         />
       ),
     }

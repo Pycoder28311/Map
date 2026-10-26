@@ -111,7 +111,7 @@ export default function Sidebar() {
                 className={`absolute isolate inset-y-0 start-0 overflow-hidden bg-surface [background-image:var(--chrome-texture)] transition-[width,box-shadow] ${ANIMATE} ${floating ? 'shadow-xl' : ''}`}
             >
                 {/* Chains and pixels behind everything (a theme turns them on); the pixels in front of the chains */}
-                <SidebarChains band={band} />
+                <SidebarChains band={band} compact={!open} />
                 <SidebarPixels />
                 {/* The sections scroll; the trash bin stays at the bottom. Drops on rows and the bin: SidebarDrop */}
                 <SidebarDropProvider>

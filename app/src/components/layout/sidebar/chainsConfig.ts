@@ -4,6 +4,9 @@
 /** The sidebar's width when open (px): --sidebar-w in styles/tokens.css. The chains are placed within it. */
 export const SIDEBAR_WIDTH = 224
 
+/** The sidebar's width when closed, the thin rail (px): --sidebar-rail in styles/tokens.css */
+export const SIDEBAR_RAIL = 56
+
 /** One chain */
 export type ChainConfig = {
   /** Which side of the sidebar `edge` counts from */
@@ -19,6 +22,8 @@ export type ChainConfig = {
   length: number
   /** How far down its pattern starts (px): chains with different values don't have their links at the same heights */
   offset: number
+  /** A left chain that, while the sidebar is closed (the rail), slides sideways to be centred in it, and back when it opens */
+  centredInRail?: boolean
 }
 
 /**
@@ -27,7 +32,7 @@ export type ChainConfig = {
  */
 export const CHAINS: ChainConfig[] = [
   { side: 'left', edge: 70, size: 2.5, fade: 0.5, top: 50, length: 50, offset: 9 },
-  { side: 'left', edge: 25, size: 4, fade: 0.1, top: 0, length: 100, offset: 0 },
+  { side: 'left', edge: 25, size: 4, fade: 0.1, top: 0, length: 100, offset: 0, centredInRail: true },
   { side: 'right', edge: 20, size: 3, fade: 0.2, top: 0, length: 100, offset: 14 },
 ]
 
