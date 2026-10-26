@@ -33,6 +33,7 @@ const COMPACT: CSSProperties = {
   '--tree-row-max': 'calc(2 * var(--btn-px) + var(--btn-icon-size) + 2 * var(--btn-close-p))',
   '--tree-indent-now': '0px',
   '--tree-line-color': 'transparent',
+  '--tree-indent-duration': '0s',
 } as CSSProperties
 
 /** Expandable tree; knows nothing about what the nodes mean */
