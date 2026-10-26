@@ -79,7 +79,7 @@ export default function RowHeader({ name, reflowId, onRename, onOpen, sort, onSo
           </>
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-base">
         <ExtendMenu
           variant="ghost"
           label={`Sort ${name}`}

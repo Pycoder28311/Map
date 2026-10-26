@@ -176,7 +176,7 @@ function RowSection({ id, title, place, children }: { id: string; title: string;
       ref={setNodeRef}
       data-dash-block={id}
       aria-label={title}
-      className={`relative flex flex-col gap-xl rounded-(--btn-radius) outline-2 outline-offset-4 transition-[opacity,outline-color] ${over ? 'bg-drop/10 outline-drop/55' : 'outline-transparent'}`}
+      className={`relative flex flex-col gap-lg rounded-(--btn-radius) outline-2 outline-offset-4 transition-[opacity,outline-color] ${over ? 'bg-drop/10 outline-drop/55' : 'outline-transparent'}`}
     >
       {children}
     </section>
