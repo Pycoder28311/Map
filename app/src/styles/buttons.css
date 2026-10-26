@@ -63,7 +63,7 @@
   /* THE pixel unit of the buttons (Dark Fantasy UI's PIXEL in uiConfig.js) */
   --px: 2px;
   --px-neg: calc(var(--px) * -1);
-  /* gap between an Underline button's icon and text (every other button: its --btn-pad-x, the icon's distance to the edge) */
+  /* gap between an Underline button's icon and text (every other button: its --btn-icon-edge, the icon's distance to the edge) */
   --icon-gap: calc(var(--px) * 4);
 }
 
@@ -79,12 +79,12 @@
     --btn-line-height: 1.2;
     --btn-letter-spacing: 0.576px;
     --btn-pad-x: calc(var(--px) * 5);
-    --btn-pad-y: calc(var(--px) * 2);
+    --btn-pad-y: calc(var(--px) * 4);
     --btn-border: none;
     --btn-radius: 0;
     --btn-text: var(--color-bone);
-    /* the icon's distance to the text is its distance to the edge of the button (--btn-pad-x), always */
-    --btn-icon-gap: var(--btn-pad-x);
+    /* the icon's distance to the text is its distance to the edge of the button (--btn-icon-edge), always */
+    --btn-icon-gap: var(--btn-icon-edge);
     --btn-icon-edge: var(--btn-pad-x);
     --btn-icon-ratio: 1;
     --btn-icon-size: calc(var(--btn-font-size) * var(--btn-icon-ratio));
@@ -479,7 +479,7 @@
   }
 
   /* Map: the Stone face holds the icon and the label in one line too, laid out like its button (justify-start...) */
-  .ui-btn-stone > .ui-btn-stone-face {
+  .ui-btn-stone>.ui-btn-stone-face {
     display: flex;
     flex: 1 1 auto;
     min-width: 0;
@@ -493,15 +493,17 @@
   }
 
   /* Map: other icons in a button's content (a ▾ after the label, an ✕ in a chip): text-sized, spaced from the text */
-  :is(.ui-btn, .ui-btn-stone-face) > svg:not(.ui-btn-icon) {
+  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon) {
     flex: none;
     width: 1em;
     height: 1em;
   }
-  :is(.ui-btn, .ui-btn-stone-face) > svg:not(.ui-btn-icon):not(:first-child) {
+
+  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):not(:first-child) {
     margin-inline-start: var(--btn-icon-gap);
   }
-  :is(.ui-btn, .ui-btn-stone-face) > svg:not(.ui-btn-icon):first-child:not(:last-child) {
+
+  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):first-child:not(:last-child) {
     margin-inline-end: var(--btn-icon-gap);
   }
 
@@ -523,15 +525,18 @@
     --_text: var(--btn-hover-text, var(--btn-text));
     --_bg: var(--btn-hover-bg, var(--btn-bg));
   }
+
   .ui-btn-venom:is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
     --_bevel-top: var(--btn-hover-bevel-top);
     --_bevel-bottom: var(--btn-hover-bevel-bottom);
   }
+
   .ui-btn:is(.ui-btn-venom, .ui-btn-shade):is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
     --br-gap: var(--btn-bracket-gap);
     --br-len-x: var(--btn-bracket-len-x);
     --br-len-y: var(--btn-bracket-len-y);
   }
+
   .ui-btn-underline:is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
     --_ul-w: 100%;
   }
@@ -544,14 +549,17 @@
     --btn-hover-pull: 0px;
     aspect-ratio: 1;
   }
-  .ui-btn-square > svg {
+
+  .ui-btn-square>svg {
     width: var(--btn-icon-size);
     height: var(--btn-icon-size);
   }
+
   /* (keeps its width on hover: no icon + text to pull together) */
   .ui-btn-square:is(.ui-btn-venom, .ui-btn-shade):hover:not(:disabled) {
     padding-right: var(--btn-pad-x);
   }
+
   /* Underline as a square: no underline, the icon brightens */
   .ui-btn-square.ui-btn-underline {
     --btn-pad-x: var(--btn-pad-y);
@@ -591,13 +599,16 @@
     cursor: pointer;
     transition: color 0.18s ease-out;
   }
+
   .ui-btn-link:hover:not(:disabled) {
     color: var(--color-bone-hover);
   }
+
   .ui-btn-link:focus-visible {
     outline: var(--px) solid var(--color-bone);
     outline-offset: var(--px);
   }
+
   .ui-btn-link:disabled {
     opacity: 0.4;
     cursor: not-allowed;
@@ -609,7 +620,8 @@
     --btn-icon-ratio: 1.25;
     min-height: var(--field-h);
   }
-  .ui-btn-stone.ui-btn-lg > .ui-btn-stone-face {
+
+  .ui-btn-stone.ui-btn-lg>.ui-btn-stone-face {
     min-height: calc(var(--field-h) - 2 * var(--btn-shadow-height));
   }
 
@@ -658,16 +670,19 @@
       background-color 0.2s ease-out,
       var(--br-transition);
   }
+
   /* the button inside: its content only (the box behind it is its face) */
-  .ui-extend > .ui-btn {
+  .ui-extend>.ui-btn {
     background: none;
     box-shadow: none;
   }
+
   /* Venom split, closed: the box is see-through: the two pieces show (its brackets, while hovered, are exactly under
      the pieces' outer ones) */
   .ui-btn-venom.ui-extend:not([data-open='true']) {
     --_bg: transparent;
   }
+
   /* open: dark grey with the brackets out, whatever the pointer does */
   .ui-btn.ui-extend[data-open='true'] {
     --_text: var(--color-bone);
@@ -676,88 +691,107 @@
     --br-len-x: var(--btn-bracket-len-x);
     --br-len-y: var(--btn-bracket-len-y);
   }
+
   /* what is outside the box is cut off (the options while it grows or shrinks), but for a few px all round: the
      button's own shadow and focus ring */
   .ui-btn.ui-extend {
     clip-path: inset(-5px);
   }
+
   /* open, the Venom split's pieces fade out (their brackets hand over to the box's, in the same places). Both pieces
      always have the same layers (left brackets, right brackets, inner shadow, colour), closed and open, so nothing
      slides in from another layer's place when they turn into Shade buttons; closed, the inner side's are see-through */
-  .ui-extend > .ui-btn-venom-split > span {
+  .ui-extend>.ui-btn-venom-split>span {
     background: var(--br-layers-left), var(--br-layers-right), var(--btn-inner-shadow), var(--_bg);
     transition:
       var(--br-transition),
       background-color 0.2s ease-out,
       box-shadow 0.2s ease-out;
   }
-  .ui-extend[data-open='true'] > .ui-btn-venom-split {
+
+  .ui-extend[data-open='true']>.ui-btn-venom-split {
     --_bg: transparent;
     --br-h: linear-gradient(transparent, transparent);
     --btn-inner-shadow: linear-gradient(transparent, transparent);
   }
-  .ui-extend:not([data-open='true']) > .ui-btn-venom-split > span:first-child {
+
+  .ui-extend:not([data-open='true'])>.ui-btn-venom-split>span:first-child {
     --br-layers-right:
       var(--br-none) right var(--br-gap) top var(--br-gap) / var(--br-len-x) var(--br-w) no-repeat,
       var(--br-none) right var(--br-gap) top var(--br-gap) / var(--br-w) var(--br-len-y) no-repeat,
       var(--br-none) right var(--br-gap) bottom var(--br-gap) / var(--br-len-x) var(--br-w) no-repeat,
       var(--br-none) right var(--br-gap) bottom var(--br-gap) / var(--br-w) var(--br-len-y) no-repeat;
   }
-  .ui-extend:not([data-open='true']) > .ui-btn-venom-split > span:last-child {
+
+  .ui-extend:not([data-open='true'])>.ui-btn-venom-split>span:last-child {
     --br-layers-left:
       var(--br-none) left var(--br-gap) top var(--br-gap) / var(--br-len-x) var(--br-w) no-repeat,
       var(--br-none) left var(--br-gap) top var(--br-gap) / var(--br-w) var(--br-len-y) no-repeat,
       var(--br-none) left var(--br-gap) bottom var(--br-gap) / var(--br-len-x) var(--br-w) no-repeat,
       var(--br-none) left var(--br-gap) bottom var(--br-gap) / var(--br-w) var(--br-len-y) no-repeat;
   }
+
   .ui-extend {
     --br-none: linear-gradient(transparent, transparent);
   }
-  .ui-extend[data-open='true'] > .ui-btn-venom-split > span {
+
+  .ui-extend[data-open='true']>.ui-btn-venom-split>span {
     box-shadow: none;
   }
-  .ui-extend[data-open='true'] > .ui-btn {
+
+  .ui-extend[data-open='true']>.ui-btn {
     --_text: var(--color-bone);
     transform: none;
   }
+
   /* open, a Venom split's two pieces are Shade buttons (ExtendMenu gives them .ui-btn .ui-btn-shade): no face, and
      Shade's own hover background on the one under the pointer, without its white brackets (the box has its own). They
      keep their size and place while the box grows around them; hovering the label ("None") lights the ✕ too */
-  .ui-extend[data-open='true'] > .ui-btn-venom-split > span {
+  .ui-extend[data-open='true']>.ui-btn-venom-split>span {
     --br-h: var(--br-none);
   }
+
   /* a split button's two labels (its own, and "None" while open) in one cell: as wide as the wider one, one shown */
   .ui-extend-labels {
     display: grid;
   }
-  .ui-extend-labels > * {
+
+  .ui-extend-labels>* {
     grid-area: 1 / 1;
     text-align: center;
   }
-  .ui-extend-labels > [data-shown='false'] {
+
+  .ui-extend-labels>[data-shown='false'] {
     visibility: hidden;
   }
-  .ui-extend[data-open='true'] > .ui-btn-venom-split:has(> .ui-btn-venom-split-label:hover) > .ui-btn-venom-split-icon {
+
+  .ui-extend[data-open='true']>.ui-btn-venom-split:has(> .ui-btn-venom-split-label:hover)>.ui-btn-venom-split-icon {
     --_text: var(--btn-hover-text);
     --_bg: var(--btn-hover-bg);
   }
+
   /* a + turns into an ✕ */
   .ui-extend-turn {
     display: flex;
   }
-  .ui-extend-turn > svg {
+
+  .ui-extend-turn>svg {
     transition: rotate 0.2s ease-out;
   }
-  .ui-extend[data-open='true'] .ui-extend-turn > svg {
+
+  .ui-extend[data-open='true'] .ui-extend-turn>svg {
     rotate: 45deg;
   }
+
   /* an arrow (a chevron) in the button's content, marked ui-extend-flip, turns half a round while open, and back */
   .ui-extend-flip {
     transition: rotate 0.2s ease-out;
   }
+
   .ui-extend[data-open='true'] .ui-extend-flip {
     rotate: -180deg;
   }
+
   /* Folding back (data-closing, for as long as it shrinks): the box keeps its open look while it shrinks, then takes
      its closed look at once (its colour, brackets, options: a delay, no duration). The label (None → Add) changes at the click. Only the button's own
      colours fade back meanwhile (a Venom split's pieces turn green again) */
@@ -771,8 +805,9 @@
       background-position 0s 0.2s,
       background-size 0s 0.2s;
   }
-  .ui-extend[data-closing='true'] > .ui-btn,
-  .ui-extend[data-closing='true'] > .ui-btn-venom-split > span {
+
+  .ui-extend[data-closing='true']>.ui-btn,
+  .ui-extend[data-closing='true']>.ui-btn-venom-split>span {
     transition:
       color 0.2s ease-out,
       background-color 0.2s ease-out,
@@ -780,21 +815,26 @@
       background-position 0s 0.2s,
       background-size 0s 0.2s;
   }
-  .ui-extend[data-closing='true'] > .ui-extend-menu {
+
+  .ui-extend[data-closing='true']>.ui-extend-menu {
     transition: visibility 0s 0.2s;
   }
+
   /* closed, the options are not shown (the box doesn't clip then, so the button's own shadow shows) */
-  .ui-extend:not([data-open='true']) > .ui-extend-menu {
+  .ui-extend:not([data-open='true'])>.ui-extend-menu {
     visibility: hidden;
   }
+
   @media (prefers-reduced-motion: reduce) {
+
     .ui-btn.ui-extend,
-    .ui-extend > .ui-btn-venom-split > span,
-    .ui-extend-turn > svg,
+    .ui-extend>.ui-btn-venom-split>span,
+    .ui-extend-turn>svg,
     .ui-extend-flip {
       transition: none;
     }
   }
+
   .ui-extend-item {
     display: flex;
     width: 100%;
@@ -807,12 +847,14 @@
     cursor: pointer;
     transition: background-color 0.12s steps(2), color 0.12s steps(2);
   }
+
   .ui-extend-item:is(:hover, :focus-visible) {
     color: var(--btn-hover-text, var(--btn-text));
     background-color: var(--color-shade-hover);
     outline: none;
   }
-  .ui-extend-item > svg {
+
+  .ui-extend-item>svg {
     flex: none;
     width: var(--btn-icon-size);
     height: var(--btn-icon-size);
