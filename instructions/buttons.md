@@ -95,11 +95,11 @@ The look of the text fields is Dark Fantasy UI's "1. Minimal input" (its `minima
 a soft shadow, a lighter grey while typed in. Without its faint corner marks on the right side. It is in
 `styles/fields.css`, the same in every theme and in light mode too (inside, the text roles are the dark mode's):
 
-- `.ui-field`: the box of every input: `InputBox` (`components/ui/fields/InputBox.tsx`), used by `TextField`, `SearchInput` and the Dashboard's big input (`QuickCreate`). Its border: `--input-border-color` / `--input-border-width` in `fields.css`;
+- `.ui-field`: the box of every input: `InputBox` (`components/ui/fields/InputBox.tsx`), used by `TextField`, `SearchInput` and the Dashboard's big input (`QuickCreate`). Its border is the rows' one (`--row-border-*`, below);
 - `.ui-field-row`: the same look for clickable rows that aren't buttons: the sidebar's objects (`TreeItem`'s row), Trash,
   Show more. Hovered, or the current page, it takes the field's focus colour.
 
-To change either, change the `--input-*` values at the top of `fields.css` (one change moves both). The rows also have a border (drawn inside, so no size change): `--row-border-color` (and `--row-border-color-hover`, `--row-border-width`) in the same place; transparent until a colour is set.
+To change either, change the `--input-*` values at the top of `fields.css` (one change moves both). The rows and the input boxes share one border (drawn inside, so no size change): `--row-border-color` (and `--row-border-color-hover`, `--row-border-width`) in the same place; transparent until a colour is set.
 
 ## Shade without brackets
 

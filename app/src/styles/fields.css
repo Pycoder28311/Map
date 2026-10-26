@@ -20,12 +20,10 @@
   --input-placeholder: #7a7a7a;
   --input-radius: 2px;
   --input-shadow: 0 0 14px rgba(0, 0, 0, 0.55);
-  /* the border of the input boxes (Search, text fields, the Dashboard's big input); drawn inside, no size change */
-  --input-border-color: transparent;
-  --input-border-width: 1px;
 
-  /* the border of the clickable rows (the sidebar's objects); the colour is the one to change. It is drawn inside the
-     row, so it never changes the row's size. transparent = no border */
+  /* the border of the clickable rows (the sidebar's objects) AND of the input boxes (Search, text fields, the big
+     input): one border for all of them. The colour is the one to change. It is drawn inside, so it never changes a
+     size. transparent = no border */
   --row-border-color: #343434;
   --row-border-color-hover: var(--row-border-color);
   /* hovered, or the current page */
@@ -48,7 +46,7 @@
     background-color: var(--input-bg);
     border-radius: var(--input-radius);
     box-shadow:
-      inset 0 0 0 var(--input-border-width) var(--input-border-color),
+      inset 0 0 0 var(--row-border-width) var(--row-border-color),
       var(--input-shadow);
     transition: background-color 0.2s ease-out;
   }
