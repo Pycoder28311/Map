@@ -4,7 +4,7 @@ import type { ButtonIcon } from '../icons/IconSlot'
 import { ICON_BOX, ICON_BUTTON } from './treeIconStyles'
 
 // Full class strings so Tailwind can detect them at build time.
-// The box is the row's first square, --spacing-xs inside it on every side (TreeItem): its hover background fills it, and the
+// The box is the row's first square, --spacing-sm inside it on every side (TreeItem): its hover background fills it, and the
 // icon is centred in it, exactly where it was (the right icons' box, ICON_BOX, is a padded one instead)
 const BOX = 'flex size-full shrink-0 items-center justify-center rounded-(--btn-close-radius) transition-[opacity,background-color] duration-200 ease-out'
 // Folders: the node's icon by default (openIcon while open); the arrow in its place only while the
