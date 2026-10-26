@@ -217,7 +217,7 @@ export default function TreeItem({
         className={`${dropAt === 'into' ? INTO : ''} ${dnd?.draggingId === node.id ? LEFT_BEHIND : ''} group/row ui-field-row relative flex items-center [--icons:var(--icons-rest)] hover:[--icons:var(--icons-hover)] has-[:focus-visible]:[--icons:var(--icons-hover)] max-w-[var(--tree-row-max,100%)] transition-[max-width] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none`}
       >
         {state.isFolder && (
-          <span data-drop-icon={node.id} className="absolute inset-y-0 start-0 z-10 flex w-(--sidebar-row)">
+          <span data-drop-icon={node.id} className="absolute inset-y-xs start-xs z-10 flex w-[calc(var(--sidebar-row)-2*var(--spacing-xs))]">
             {editing ? (
               // Only the node's own icon while its name is edited (no open/close arrow)
               <TreeRowIcon icon={icon} square />
