@@ -23,7 +23,7 @@ const ROW_W = 'w-[calc(var(--sidebar-w)-var(--sidebar-rail)+2*var(--btn-px)+var(
 
 // Sidebar padding left/right that centers a top-level row in the rail: what's left of the rail
 // after a compact row (its icon's box + its padding on both sides), split on both sides
-const PX = 'calc((var(--sidebar-rail) - 2 * var(--btn-px) - var(--btn-icon-size) - 2 * var(--btn-close-p)) / 2)'
+const PX = 'var(--sidebar-pad)'
 const ANIMATE = 'duration-(--sidebar-duration) ease-out motion-reduce:transition-none'
 // A rail row's width (its icon's box + the row padding): the short lines in the rail end there
 const RAIL_LINE_W = 'w-[calc(2*var(--btn-px)+var(--btn-icon-size)+2*var(--btn-close-p))]'

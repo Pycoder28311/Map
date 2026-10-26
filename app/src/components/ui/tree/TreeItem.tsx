@@ -48,7 +48,7 @@ const INDENT_AFTER_ICON: CSSProperties = {
 // A row that isn't a link: a folder without a page, or any row while its name is edited (an input
 // can't sit inside a link). As tall as a link row (rounded, for the editing highlight); the end
 // padding keeps the text off the edge
-const PLAIN_ROW = `${ROW_CLASS} flex items-center rounded-(--btn-radius) py-(--pill-py) pe-(--btn-px) text-body`
+const PLAIN_ROW = `${ROW_CLASS} flex min-h-(--sidebar-row) items-center rounded-(--btn-radius) py-(--pill-py) pe-(--btn-px) text-body`
 
 // Children: one indent step right; none in compact (one column), sliding with the width animation
 const GROUP =

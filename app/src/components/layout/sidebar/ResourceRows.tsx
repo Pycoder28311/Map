@@ -270,7 +270,7 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
 /** One line in the section's place (same height as a row, so the rail keeps its layout) */
 export function SectionNote({ compact, children }: { compact: boolean; children: React.ReactNode }) {
   return (
-    <p className={`h-[calc(var(--pill-py)*2+1.25rem)] px-(--btn-px) text-small leading-[calc(var(--pill-py)*2+1.25rem)] text-fg-subtle ${compact ? 'opacity-0' : ''}`}>
+    <p className={`h-(--sidebar-row) px-(--btn-px) text-small leading-(--sidebar-row) text-fg-subtle ${compact ? 'opacity-0' : ''}`}>
       {children}
     </p>
   )

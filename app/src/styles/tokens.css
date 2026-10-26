@@ -1,6 +1,18 @@
 /* Design tokens: sizes, spacing and radii used by the UI components (components/ui).
    Change the look of every component here (buttons: styles/buttons.css). From the "Map buttons" theme; the last
    two groups are additions for text buttons and form fields in the same style. */
+
+/* THE distances of the app: paddings, gaps, margins. Tailwind makes the classes from them: p-lg, gap-sm, mt-xl, px-base...
+   and CSS reads them as var(--spacing-lg). Change a value here and it changes everywhere it is used. */
+@theme {
+  --spacing-xs: 2px;
+  --spacing-sm: 4px;
+  --spacing-base: 8px;
+  --spacing-lg: 16px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+}
+
 :root {
    /* The two corner sizes everything below is built from: change these to change every rounded corner.
       (The panes' corners, features/workspace/paneStyles.ts, read --corner-lg too.) */
@@ -14,7 +26,9 @@
    --radius-circle: 50%;
    --radius-none: 0px;
 
-   --btn-px: 6px;
+   /* The start padding of a sidebar row: with the icon's box it fills the closed sidebar's inner width (--sidebar-row), so a
+      closed row is a square (--sidebar-row wide and tall) */
+   --btn-px: calc((var(--sidebar-row) - var(--btn-icon-size) - 2 * var(--btn-close-p)) / 2);
    --btn-py: 6px;
    /* marks in the corners of an element (a CSS background value, see cornerMarks.css): none in the base theme */
    --btn-corners: none;
@@ -67,7 +81,11 @@
    /* Sidebar (components/layout/sidebar): full width, the thin icons-only rail, open/close animation */
    --sidebar-w: 224px;
    --sidebar-rail: 56px;
-   --sidebar-py: 8px;
+   /* the padding all round inside the sidebar, and so the distance of its rows and lines from its edges */
+   --sidebar-pad: var(--spacing-base);
+   --sidebar-py: var(--sidebar-pad);
+   /* a sidebar row: as tall as the closed sidebar's inner width, so closed it is a square */
+   --sidebar-row: calc(var(--sidebar-rail) - 2 * var(--sidebar-pad));
    /* space above/below the tree (left/right: computed to center the icons in the rail, Sidebar.tsx) */
    --sidebar-duration: 200ms;
 
