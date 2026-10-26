@@ -5,6 +5,7 @@ import type { SavedLayout } from './layoutsStore'
 import type { PanelDragData } from '../workspace/types'
 import { layoutLines } from './geometry'
 import LayoutHoverLabels from './LayoutHoverLabels'
+import IconButton from '../../components/ui/buttons/IconButton'
 
 /** Rest this long on a tile before its labels show (ms) */
 const LABELS_DELAY = 200
@@ -139,16 +140,8 @@ export function TileAction({
   onClick: () => void
   tone?: 'default' | 'highlight' | 'danger'
 }) {
-  const colour = { default: 'text-fg', highlight: 'text-highlight', danger: 'text-danger' }[tone]
+  const colour = { default: '', highlight: 'text-highlight', danger: 'text-danger' }[tone]
   return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      className={`flex size-6 cursor-pointer items-center justify-center rounded-(--radius-pill) border border-line bg-surface shadow-sm transition-colors hover:bg-fill focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${colour}`}
-    >
-      <Icon className="size-3.5" />
-    </button>
+    <IconButton icon={Icon} label={label} onClick={onClick} variant="secondary" size="sm" className={colour} />
   )
 }

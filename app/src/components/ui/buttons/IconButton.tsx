@@ -1,35 +1,43 @@
-import type { ComponentProps } from 'react'
-import { iconButtonClass, type ButtonVariant } from './buttonStyles'
+import type { ComponentProps, ReactNode } from 'react'
+import { iconButtonClass, type ButtonSize, type ButtonVariant } from './buttonStyles'
 import { ICON_EFFECT_GROUP, iconEffectClass, type IconEffects } from '../icons/iconEffects'
 import type { PlainIcon } from '../icons/IconSlot'
 
 type Props = Omit<ComponentProps<'button'>, 'children'> & IconEffects & {
-  icon: PlainIcon
   /** Required: screen-reader name and tooltip, since there is no visible text */
   label: string
   variant?: ButtonVariant
-}
+  size?: ButtonSize
+} & (
+    | { icon: PlainIcon; /** Extra classes of the icon (e.g. its own animation) */ iconClassName?: string; children?: never }
+    /** An icon of its own (e.g. one that changes with a state): sized by the button */
+    | { icon?: never; iconClassName?: never; children: ReactNode }
+  )
 
 /** Square button with only an icon, e.g. the panel actions. Hover/click effects: on unless turned off */
 export default function IconButton({
   icon: Icon,
+  iconClassName = '',
   label,
   variant = 'ghost',
+  size,
   type = 'button',
   className = '',
   hoverEffect,
   clickEffect,
+  children,
   ...button
 }: Props) {
+  const icon = Icon ? <Icon className={`${iconEffectClass({ hoverEffect, clickEffect })} ${iconClassName}`} /> : children
   return (
     <button
       type={type}
       aria-label={label}
       title={label}
-      className={iconButtonClass(variant, `${ICON_EFFECT_GROUP} ${className}`)}
+      className={iconButtonClass(variant, `${ICON_EFFECT_GROUP} ${className}`, size)}
       {...button}
     >
-      <Icon className={`size-(--btn-icon-size) ${iconEffectClass({ hoverEffect, clickEffect })}`} />
+      {variant === 'secondary' ? <span className="ui-btn-stone-face">{icon}</span> : icon}
     </button>
   )
 }

@@ -4,6 +4,7 @@ import { useResourceList } from '../../lib/resource/hooks'
 import type { AnyResource } from '../../resources/types'
 import { Rows, useOpenLayout } from '../objects/ListRows'
 import { single } from '../workspace/layout'
+import Button from '../../components/ui/buttons/Button'
 
 /** A resource's Dashboard column (the Notes column): its first rows, and "Show all" to its page. Rows drag and open like every object row */
 export default function ResourceColumn({ resource, place }: { resource: AnyResource; place: string }) {
@@ -14,9 +15,9 @@ export default function ResourceColumn({ resource, place }: { resource: AnyResou
   if (list.status === 'loading') return <p className="px-2 py-2 text-body text-fg-subtle">Loading…</p>
   if (list.status === 'error') {
     return (
-      <button type="button" onClick={list.refresh} className="cursor-pointer px-2 py-2 text-start text-body text-danger underline-offset-2 hover:underline">
+      <Button variant="text" onClick={list.refresh} className="m-2 self-start text-danger">
         Could not load. Try again
-      </button>
+      </Button>
     )
   }
   const rows = list.items.map((item) => (

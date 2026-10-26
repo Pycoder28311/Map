@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { resourceByPanelType } from '../../resources/registry'
 import { useItemModal } from '../items/ItemModal'
-import NavButton from '../../components/ui/buttons/NavButton'
+import TreeRowLink from '../../components/ui/tree/TreeRowLink'
 import type { TreeNode } from '../../components/ui/tree/types'
 import { useObjectDrag } from '../drag/objectDrag'
 import type { ObjectDragInfo } from './types'
@@ -44,7 +44,7 @@ export default function PanelDragLink({ node, object, className = '', style, chi
   const { role: _role, ...dragAttributes } = attributes
 
   return (
-    <NavButton
+    <TreeRowLink
       ref={setNodeRef}
       {...(disabled ? {} : { ...listeners, ...dragAttributes })}
       to={node.to ?? (panel ? hrefOf(panel) : '/')}
@@ -62,6 +62,6 @@ export default function PanelDragLink({ node, object, className = '', style, chi
       style={style}
     >
       {children}
-    </NavButton>
+    </TreeRowLink>
   )
 }

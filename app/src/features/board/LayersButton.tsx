@@ -6,7 +6,7 @@ import { useBoard } from './boardStore'
 import { layerLabel, layerList } from './layers'
 import { useSelection } from './selection'
 import { KIND_ICON } from './layerIcons'
-import { LIST_ITEM } from '../../components/ui/buttons/buttonStyles'
+import { LIST_ITEM } from '../../components/ui/rowStyles'
 
 
 /**

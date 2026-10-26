@@ -673,6 +673,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         {!visitor && hasBackground && view && size && (
           // At the top right of the sheet (kept inside the page when the sheet's corner is out of it)
           <IconButton
+            variant="secondary"
             icon={LuX}
             label="Remove the background"
             title="Remove the background picture"
@@ -681,7 +682,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
               left: Math.min(Math.max(8, view.x + BOARD.width * view.scale - 40), size.w - 40),
               top: Math.min(Math.max(8, view.y + 8), size.h - 40),
             }}
-            className="absolute z-10 bg-surface/85 text-fg shadow-md hover:bg-surface"
+            className="absolute z-10"
           />
         )}
         {mouse.marquee && view && <Marquee rect={mouse.marquee} view={view} />}
@@ -742,6 +743,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         {pointMode && pickedObject && pickedPoint && view && (
           // Above the picked point; it follows the point while that is dragged
           <IconButton
+            variant="secondary"
             icon={LuTrash2}
             label="Remove point"
             disabled={!removePoint(pickedObject, draw.picked!.index)}
@@ -750,7 +752,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
               if (patch) changeObjects(mapId, { update: [{ id: pickedObject.id, patch }] })
               draw.setPicked(null)
             }}
-            className="absolute z-10 -translate-x-1/2 -translate-y-full bg-surface/90 text-fg shadow-md hover:bg-surface"
+            className="absolute z-10 -translate-x-1/2 -translate-y-full"
             style={{ left: boardToScreen(view, pickedPoint).x, top: boardToScreen(view, pickedPoint).y - 10 }}
           />
         )}

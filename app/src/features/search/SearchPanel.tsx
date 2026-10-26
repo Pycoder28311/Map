@@ -3,16 +3,12 @@ import { LuHand, LuSlidersHorizontal, LuX } from 'react-icons/lu'
 import { useObjectDrag } from '../drag/objectDrag'
 import { kindEntry, SEARCH_KINDS } from './kinds'
 import { hasFilters, type SearchFilters, type SearchResult } from './search'
-import { PILL_BUTTON } from '../../components/ui/buttons/buttonStyles'
+import Button from '../../components/ui/buttons/Button'
 
 // Full class strings so Tailwind can detect them at build time.
 const HEADING = 'text-small font-medium uppercase tracking-wide text-fg-subtle'
 const CHECK = 'flex cursor-pointer items-center gap-2 rounded-(--btn-close-radius) px-1.5 py-1 text-body hover-fill'
 const SEGMENT = 'flex-1 cursor-pointer rounded-(--corner-sm) px-2 py-0.5 text-small transition-colors'
-// Open Filters: small, as tall as the chips beside it
-const FILTERS_BUTTON =
-  'inline-flex cursor-pointer items-center gap-1 rounded-(--radius-pill) px-2 py-0.5 text-small font-medium transition-colors ' +
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 
 type Props = {
   query: string
@@ -108,27 +104,22 @@ export default function SearchPanel({
       {/* Results */}
       <div ref={resultsRef} className="flex w-96 shrink-0 flex-col gap-2">
         <div className="flex min-h-7 flex-wrap items-center gap-1">
-          <button
-            type="button"
+          <Button
+            variant={filtersOpen ? 'selected' : 'ghost'}
+            size="sm"
+            icon={LuSlidersHorizontal}
             onClick={() => onFiltersOpen(!filtersOpen)}
             aria-expanded={filtersOpen}
-            className={`${FILTERS_BUTTON} me-1 ${filtersOpen ? 'bg-fill-strong text-fg' : 'bg-fill text-fg-muted hover:bg-fill-strong hover:text-fg'}`}
+            className="me-1"
           >
-            <LuSlidersHorizontal className="size-3" aria-hidden />
             {filtersOpen ? 'Close Filters' : 'Open Filters'}
-          </button>
+          </Button>
           {hasFilters(filters) ? (
             chips.map((c) => (
-              <button
-                key={c.key}
-                type="button"
-                onClick={c.remove}
-                aria-label={`Remove filter ${c.label}`}
-                className={`${PILL_BUTTON} gap-1 bg-fill px-2 py-0.5 text-small hover:bg-fill-strong`}
-              >
+              <Button key={c.key} variant="secondary" size="sm" onClick={c.remove} aria-label={`Remove filter ${c.label}`}>
                 {c.label}
-                <LuX className="size-3" />
-              </button>
+                <LuX className="size-3" aria-hidden />
+              </Button>
             ))
           ) : (
             <span className="text-small text-fg-subtle">All objects</span>

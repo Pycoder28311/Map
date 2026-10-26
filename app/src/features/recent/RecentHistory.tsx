@@ -1,11 +1,8 @@
 import { useState } from 'react'
 import { LuChevronDown, LuHistory } from 'react-icons/lu'
 import BarPopout from '../../components/ui/overlays/BarPopout'
+import Button from '../../components/ui/buttons/Button'
 import RecentList from './RecentList'
-import { FOCUS_RING, PILL_BUTTON } from '../../components/ui/buttons/buttonStyles'
-
-// Full class strings so Tailwind can detect them at build time.
-const PILL = `${PILL_BUTTON} w-56 gap-2 bg-surface-muted px-4 py-1.5 text-body text-fg-muted transition-colors hover:bg-fill hover:text-fg ${FOCUS_RING}`
 
 /**
  * The navbar's centre: a "Recent History" pill; a click opens what was opened lately (the last 10,
@@ -19,11 +16,10 @@ export default function RecentHistory() {
       open={open}
       onOpenChange={setOpen}
       trigger={
-        <button type="button" aria-expanded={open} aria-haspopup="dialog" className={PILL}>
-          <LuHistory className="size-(--btn-icon-size) shrink-0" aria-hidden />
+        <Button variant="secondary" icon={LuHistory} aria-expanded={open} aria-haspopup="dialog" className="w-56 justify-start">
           <span className="flex-1 text-start">Recent History</span>
           <LuChevronDown className={`size-4 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} aria-hidden />
-        </button>
+        </Button>
       }
     >
       <div className="w-80">

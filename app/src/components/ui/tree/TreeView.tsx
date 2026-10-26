@@ -6,7 +6,7 @@ import type { TreeDnd, TreeIcons, TreeNode } from './types'
 type Props = {
   nodes: TreeNode[]
   label: string
-  /** Custom link for leaves and folders with a page (e.g. a draggable link); default: NavButton */
+  /** Custom link for leaves and folders with a page (e.g. a draggable link); default: TreeRowLink */
   renderLink?: RenderLink
   /** Left and right icons of every row, with when they show and their background (types.ts) */
   icons?: TreeIcons

@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { LuX } from 'react-icons/lu'
-import { ICON_HOVER } from './buttonStyles'
-import { ICON_EFFECT_GROUP, iconEffectClass } from '../icons/iconEffects'
-import IconSlot, { type ButtonIcon } from '../icons/IconSlot'
+import Button from './Button'
+import IconButton from './IconButton'
+import type { ButtonIcon } from '../icons/IconSlot'
 import type { IconAnimation } from '../icons/iconAnimations'
 
 type Props = {
@@ -15,22 +15,14 @@ type Props = {
   closeLabel?: string
 }
 
-/** Row button with an icon, a label and an X on the right (e.g. a list item or a tab). From the "Map buttons" theme */
+/** A button with an icon and a label, and an X button on its right (e.g. a list item or a tab) */
 export default function ClosableButton({ icon, iconAnimation = 'none', children, onClick, onClose, closeLabel = 'Close' }: Props) {
   return (
-    <div className="flex flex-1 min-w-0 items-center gap-(--btn-gap) text-base rounded-(--btn-radius) cursor-pointer px-(--btn-px) py-(--btn-py) transition-colors duration-200 ease-out hover-fill">
-      <button type="button" onClick={onClick} className="group/main flex min-w-0 items-center gap-(--btn-gap) cursor-pointer">
-        {icon && <IconSlot icon={icon} animation={iconAnimation} />}
+    <div className="flex min-w-0 flex-1 items-center">
+      <Button variant="ghost" icon={icon} iconAnimation={iconAnimation} onClick={onClick} className="min-w-0 flex-1 justify-start">
         {children}
-      </button>
-      <button
-        type="button"
-        aria-label={closeLabel}
-        onClick={onClose}
-        className={`${ICON_EFFECT_GROUP} ml-auto cursor-pointer ${ICON_HOVER}`}
-      >
-        <LuX className={`size-(--btn-icon-size) ${iconEffectClass()}`} />
-      </button>
+      </Button>
+      <IconButton icon={LuX} label={closeLabel} onClick={onClose} />
     </div>
   )
 }

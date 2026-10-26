@@ -84,7 +84,7 @@ export default function SidebarSection({ id, title, first, fixed, leading: own, 
           </button>
         )}
         {actions && <div onClick={(e) => e.stopPropagation()}>{actions}</div>}
-        {!fixed && <IconButton icon={isOpen ? LuChevronUp : LuChevronDown} label={`${isOpen ? 'Hide' : 'Show'} ${title}`} aria-expanded={isOpen} hoverEffect={false} className="text-fg-muted hover:bg-transparent! [&_svg]:transition-[scale] group-hover/sec:[&_svg]:scale-[1.45]" />}
+        {!fixed && <IconButton icon={isOpen ? LuChevronUp : LuChevronDown} label={`${isOpen ? 'Hide' : 'Show'} ${title}`} aria-expanded={isOpen} hoverEffect={false} size="sm" className="[&_svg]:transition-[scale] group-hover/sec:[&_svg]:scale-[1.45]" />}
       </div>
       {isOpen && children}
     </section>

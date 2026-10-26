@@ -21,6 +21,7 @@ import { sortByDate } from './sortByDate'
 import { CHILDREN, ROOTS } from './childResources'
 import { groupByRoot, parentTypeOf, type Entry } from './tree'
 import { useRowSort } from './useRowSort'
+import Button from '../../components/ui/buttons/Button'
 
 /** The Orphans row (what is in no project) comes before the project rows; false leaves it out */
 const SHOW_ORPHANS = true
@@ -154,9 +155,9 @@ export default function DashboardSections() {
         )
       })}
       {kids.hasMore && (
-        <button type="button" onClick={kids.loadMore} className="cursor-pointer self-start text-small text-fg-muted hover:text-fg">
+        <Button variant="text" onClick={kids.loadMore} className="self-start">
           Load more items
-        </button>
+        </Button>
       )}
       {editing && <ResourceModal resource={editing.resource} itemId={editing.id} onClose={() => setEditing(null)} />}
       {creating && <ResourceCreateDialog resource={creating.resource} initial={creating.initial} onClose={() => setCreating(null)} />}

@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { buttonClass, type ButtonVariant } from './buttonStyles'
-import IconSlot, { type ButtonIcon } from '../icons/IconSlot'
+import { buttonClass, type ButtonSize, type ButtonVariant } from './buttonStyles'
+import ButtonContent from './ButtonContent'
+import type { ButtonIcon } from '../icons/IconSlot'
 import type { IconAnimation } from '../icons/iconAnimations'
 
 type Props = {
   variant?: ButtonVariant
+  size?: ButtonSize
   icon?: ButtonIcon
   iconAnimation?: IconAnimation
   className?: string
@@ -13,13 +15,12 @@ type Props = {
 } & ({ to: string; href?: never } | { href: string; to?: never })
 
 /** A link that looks like Button: `to` for pages of this app, `href` for other sites and files */
-export default function ButtonLink({ variant = 'primary', icon, iconAnimation, className, children, to, href }: Props) {
-  const classes = buttonClass(variant, !!icon, className)
+export default function ButtonLink({ variant = 'primary', size, icon, iconAnimation, className, children, to, href }: Props) {
+  const classes = buttonClass(variant, className, size)
   const content = (
-    <>
-      {icon && <IconSlot icon={icon} animation={iconAnimation} />}
+    <ButtonContent variant={variant} icon={icon} iconAnimation={iconAnimation}>
       {children}
-    </>
+    </ButtonContent>
   )
   if (to !== undefined) {
     return (

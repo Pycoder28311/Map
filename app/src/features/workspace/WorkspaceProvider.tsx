@@ -8,7 +8,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core'
 import { useEffect, useState, type ReactNode } from 'react'
-import { buttonClass } from '../../components/ui/buttons/buttonStyles'
+import ButtonLook from '../../components/ui/buttons/ButtonLook'
 import { BackgroundPointerSensor, followPointer } from '../../lib/dnd'
 import { byPriority } from '../drag/collision'
 import DragFloat from '../drag/DragFloat'
@@ -78,7 +78,7 @@ function WorkspaceDnd({ children }: { children: ReactNode }) {
       {/* Anything else (a pane, a layout tile…): a label next to the pointer */}
       <DragOverlay dropAnimation={null} modifiers={[followPointer]}>
         {dragging && !objectOf(dragging) && (
-          <div className={buttonClass('secondary', false, 'shadow-lg')}>{dragging.label}</div>
+          <ButtonLook variant="secondary">{dragging.label}</ButtonLook>
         )}
       </DragOverlay>
     </DndContext>

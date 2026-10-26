@@ -10,18 +10,12 @@
   --corner-xs: 1px;
   --popout-radius: 10px;
 
-  /* Buttons get a hairline outline */
-  --btn-border-w: 1px;
-  --btn-border-c: var(--line);
+  /* Sidebar rows and fields get a hairline outline (buttons have one look in every theme: styles/buttons.css) */
+  --row-border-w: 1px;
+  --row-border-c: var(--line);
   --field-border-c: var(--line);
-  /* Primary buttons: a hard shadow (no blur) falling to the bottom left, the button's own shape */
-  --btn-primary-shadow: -4px 4px 0 0 color-mix(in srgb, var(--accent) 55%, black);
-  /* Create buttons: the same hard shadow in a dark green; the raised ones lose their soft look for it */
-  --btn-create-shadow: -4px 4px 0 0 color-mix(in srgb, var(--create) 55%, black);
-  --btn-raised-shadow: -4px 4px 0 0 color-mix(in srgb, var(--create) 55%, black);
-  --btn-raised-shadow-active: -2px 2px 0 0 color-mix(in srgb, var(--create) 55%, black);
-  /* ...and in each corner inside them, two short lighter strokes (white at some opacity, so it suits the gray Cancel face
-     too): 8px long, 2px thick, 3px in from the edge */
+  /* Corner marks (cornerMarks.css): in each corner, two short lighter strokes (white at some opacity): 8px long, 2px
+     thick, 3px in from the edge */
   --btn-corners:
     linear-gradient(rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.55)) left 3px top 3px / 8px 2px no-repeat,
     linear-gradient(rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.55)) left 3px top 3px / 2px 8px no-repeat,
@@ -32,16 +26,10 @@
     linear-gradient(rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.55)) right 3px bottom 3px / 8px 2px no-repeat,
     linear-gradient(rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.55)) right 3px bottom 3px / 2px 8px no-repeat;
 
-  /* Hover / pressed: the background stays, an inner shadow grows instead (stronger while pressed) */
-  --btn-primary-hover-bg: var(--accent);
-  --btn-secondary-hover-bg: var(--fill);
-  --btn-ghost-hover-bg: transparent;
-  --btn-create-hover-bg: var(--create);
+  /* Hover / pressed rows (hoverEffects.css): the background stays, an inner shadow grows instead (stronger while pressed) */
   --hover-fill-bg: transparent;
   --hover-fill-strong-bg: transparent;
   --hover-faint-bg: transparent;
-  --btn-hover-inset-dark: inset 0 0 16px 4px rgb(0 0 0 / 0.4);
-  --btn-active-inset-dark: inset 0 0 22px 8px rgb(0 0 0 / 0.55);
   --btn-hover-inset-light: inset 0 0 14px 2px rgb(255 255 255 / 0.1);
   --btn-active-inset-light: inset 0 0 20px 6px rgb(255 255 255 / 0.18);
 

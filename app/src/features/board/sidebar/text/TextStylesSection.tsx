@@ -3,7 +3,7 @@ import { hasShadow } from '../../textShadow'
 import { stackOf } from '../../fonts'
 import SidebarSection from '../common/SidebarSection'
 import { distinctStyles, fullStyle, type TextStyle } from '../../textStyles'
-import { LIST_ITEM } from '../../../../components/ui/buttons/buttonStyles'
+import { LIST_ITEM } from '../../../../components/ui/rowStyles'
 
 type Props = {
   mapId: string

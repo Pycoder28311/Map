@@ -1,7 +1,7 @@
 import { KIND_ICON } from '../../layerIcons'
 import { select } from '../../selection'
 import type { BoardObject } from '../../types'
-import { LIST_ITEM } from '../../../../components/ui/buttons/buttonStyles'
+import { LIST_ITEM } from '../../../../components/ui/rowStyles'
 
 const KIND_NAME = { line: 'Line', border: 'Area', shape: 'Shape', text: 'Text', point: 'Point' } as const
 

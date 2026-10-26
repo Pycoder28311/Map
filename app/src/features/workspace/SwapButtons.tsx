@@ -1,6 +1,6 @@
 import { useRef, type CSSProperties, type PointerEvent, type RefObject } from 'react'
 import { LuRefreshCw } from 'react-icons/lu'
-import { iconButtonClass } from '../../components/ui/buttons/buttonStyles'
+import IconButton from '../../components/ui/buttons/IconButton'
 import { borders, SEGMENT_VAR, segmentOf, splitFor, type SplitSegment, type Slot, type Template } from './layout'
 import type { Split } from './split'
 import { useSplitDrag } from './useSplitDrag'
@@ -22,7 +22,7 @@ const DRAG_START = 4
 // Shown while its line is hovered or focused (the line is a `peer` before it, ResizeHandles), or
 // while the pointer / keyboard focus is on the button itself. Wide screens only, like the lines.
 const BUTTON =
-  'group/swap absolute z-30 -translate-x-1/2 -translate-y-1/2 touch-none border border-line bg-surface-sunken shadow-md ' +
+  'group/swap absolute z-30 -translate-x-1/2 -translate-y-1/2 touch-none ' +
   'opacity-0 transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 max-lg:hidden'
 // One per segment (ResizeHandles' SEGMENT_PEER), so a button shows with its own half
 const SHOW: Record<SplitSegment['id'], string> = {
@@ -36,9 +36,7 @@ const SHOW: Record<SplitSegment['id'], string> = {
 // While held, the cursor says it can resize
 const HELD = { x: 'active:cursor-col-resize', y: 'active:cursor-row-resize' }
 // The two arrows turn half a turn on hover: the two panels rotate into each other's place
-const ICON = 'size-(--btn-icon-size) transition-[rotate] duration-300 ease-out group-hover/swap:rotate-180 motion-reduce:transition-none'
-// Round, like the panels' island
-const ROUND = { '--btn-close-radius': 'var(--radius-pill)' } as CSSProperties
+const ICON = 'transition-[rotate] duration-300 ease-out group-hover/swap:rotate-180 motion-reduce:transition-none'
 
 /** Where along the line the middle of a border is */
 const MIDDLE = {
@@ -87,11 +85,14 @@ export default function SwapButtons({ template, onSwap, containerRef, split: raw
     }
 
     return (
-      <button
+      <IconButton
         key={`${axis}-${part}`}
-        type="button"
-        aria-label={label}
-        title={label}
+        icon={LuRefreshCw}
+        iconClassName={ICON}
+        hoverEffect={false}
+        label={label}
+        variant="secondary"
+        size="sm"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -101,11 +102,9 @@ export default function SwapButtons({ template, onSwap, containerRef, split: raw
         }}
         // Keyboard (Enter / Space): swap. Pointer clicks are handled on pointer up
         onClick={(e) => e.detail === 0 && onSwap(...slots)}
-        style={{ ...ROUND, ...position }}
-        className={iconButtonClass('ghost', `${BUTTON} ${SHOW[segment]} ${HELD[axis]}`)}
-      >
-        <LuRefreshCw className={ICON} />
-      </button>
+        style={position}
+        className={`${BUTTON} ${SHOW[segment]} ${HELD[axis]}`}
+      />
     )
   })
 }

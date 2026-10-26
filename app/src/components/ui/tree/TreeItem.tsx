@@ -1,6 +1,6 @@
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import type { CSSProperties, ReactNode } from 'react'
-import NavButton from '../buttons/NavButton'
+import TreeRowLink from './TreeRowLink'
 import DropIcon from '../drop/DropIcon'
 import TreeIcon from './TreeIcon'
 import TreeLabel from './TreeLabel'
@@ -242,7 +242,7 @@ export default function TreeItem({
         ) : renderLink ? (
           renderLink(node, rowProps)
         ) : (
-          <NavButton to={node.to ?? '/'} {...rowProps} />
+          <TreeRowLink to={node.to ?? '/'} {...rowProps} />
         )}
 
         {link && <DropIcon {...link} className="absolute end-0 top-0 z-20" />}

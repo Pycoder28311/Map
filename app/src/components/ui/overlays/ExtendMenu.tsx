@@ -1,47 +1,42 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import Button from '../buttons/Button'
+import ButtonLook from '../buttons/ButtonLook'
+import { splitButtonClass } from '../buttons/buttonStyles'
+import SplitButton, { SplitContent } from '../buttons/SplitButton'
 import type { ButtonIcon } from '../icons/IconSlot'
 
-// Full class strings so Tailwind can detect them at build time.
-// What the whole thing looks like: the button, and the same colour once it has grown. `marks`: the theme's corner
-// marks (styles/cornerMarks.css): always, or only while the pointer is on it or it is open
-const LOOK = {
-  ghost: { marks: 'corner-marks-hover', closed: 'text-fg hover-fill', open: 'bg-fill text-fg shadow-md', item: 'hover-fill-strong focus-visible:bg-fill-strong' },
-  secondary: { marks: 'corner-marks-hover', closed: 'bg-fill text-fg hover:bg-fill-strong', open: 'bg-fill-strong text-fg shadow-md', item: 'hover:bg-fill focus-visible:bg-fill' },
-  // create: a split button (see `padded`): closed, it has no background of its own: each part is its own
-  // green button, with the page showing between them. Open: one gray shape, like the other dropdowns
-  create: { marks: 'corner-marks', closed: 'text-create-fg [box-shadow:var(--btn-create-shadow)]', open: 'bg-fill text-fg shadow-md', item: 'hover-fill-strong focus-visible:bg-fill-strong' },
+// The box that grows is a button of the same look (styles/buttons.css, "ExtendMenu"): closed, its button shows; open,
+// it is the button's face, with the options in it
+const BOX = {
+  ghost: 'ui-btn ui-btn-shade ui-extend',
+  create: 'ui-btn ui-btn-venom ui-extend',
 } as const
-// The padding, corners and text of a sidebar row (as tall as one)
-// whitespace-nowrap: the button's text never breaks into lines, whatever width it is given
-const ROW = 'flex items-center text-body font-medium whitespace-nowrap'
-// With the standard padding, and a gap between its contents (e.g. a label and an icon)
-const ROW_PADDING = 'gap-1.5 px-(--pill-px) py-(--pill-py)'
-const ITEM =
-  'flex w-full cursor-pointer items-center gap-(--menu-icon-gap) rounded-(--menu-item-radius) px-(--pill-px) py-(--pill-py) text-body text-start whitespace-nowrap ' +
-  'transition-colors focus-visible:outline-none'
-const GROW = 'duration-200 ease-out motion-reduce:transition-none'
 
 export type ExtendMenuItem<T extends string> = { value: T; label: string; icon?: ButtonIcon }
 
+type Content = ReactNode | ((open: boolean) => ReactNode)
+
 type Props<T extends string> = {
-  variant?: keyof typeof LOOK
+  /** ghost: a Shade button ("Sort by"); create: a Venom split button (an icon piece and a label piece: "Add +") */
+  variant?: keyof typeof BOX
   items: ExtendMenuItem<T>[]
   /** The option the closed button already shows (e.g. the current kind): left out of the options */
   value?: T | null
   onSelect: (value: T) => void
   /** The menu's name, for screen readers */
   label: string
-  /** The button's content (e.g. "Sort by ▾"); a function gets whether the menu is open (e.g. to show an ✕) */
-  children: ReactNode | ((open: boolean) => ReactNode)
-  /**
-   * The button's padding is the standard one (a sidebar row's). Off: the content brings its own, e.g. a
-   * split button whose parts each fill the button's height and darken on their own
-   */
-  padded?: boolean
+  /** The button's content (e.g. "Sort by ▾"; create: its label); a function gets whether the menu is open (e.g. to show an ✕) */
+  children: Content
+  /** create: the icon piece's content (e.g. + closed, ✕ open) */
+  splitIcon?: Content
+  /** create: which side the icon piece is on */
+  iconPosition?: 'left' | 'right'
   /** Which way it extends: down from the button (default), or up (for a button at the bottom of its container) */
   direction?: 'down' | 'up'
   className?: string
 }
+
+const render = (content: Content, open: boolean) => (typeof content === 'function' ? content(open) : content)
 
 type Size = { width: number; height: number }
 
@@ -64,7 +59,8 @@ export default function ExtendMenu<T extends string>({
   onSelect,
   label,
   children,
-  padded = true,
+  splitIcon,
+  iconPosition = 'left',
   direction = 'down',
   className = '',
 }: Props<T>) {
@@ -76,7 +72,6 @@ export default function ExtendMenu<T extends string>({
   const [open, setOpen] = useState(false)
   const [button, setButton] = useState<Size | null>(null)
   const [options, setOptions] = useState<Size>({ width: 0, height: 0 })
-  const look = LOOK[variant]
   // Only what the button doesn't already show
   const items = allItems.filter((item) => item.value !== value)
 
@@ -127,45 +122,60 @@ export default function ExtendMenu<T extends string>({
       : button
     : undefined
 
+  // The button, closed (the sizer's copy) or as it is now
+  const content = (isOpen: boolean) =>
+    variant === 'create' ? (
+      <SplitContent icon={render(splitIcon, isOpen)} iconPosition={iconPosition}>
+        {render(children, isOpen)}
+      </SplitContent>
+    ) : (
+      render(children, isOpen)
+    )
+  const toggle = {
+    'aria-haspopup': 'menu' as const,
+    'aria-expanded': open,
+    'aria-controls': id,
+    onClick: () => setOpen(!open),
+    className: 'w-full shrink-0',
+    style: button ? { height: button.height } : undefined,
+  }
+
   return (
-    // The space in the layout: the button's size (its content, invisible), never the grown size
-    <div ref={wrapRef} className={`relative inline-block ${className}`}>
-      <div ref={sizerRef} aria-hidden className={`${ROW} ${padded ? ROW_PADDING : ''} invisible`}>
-        {typeof children === 'function' ? children(false) : children}
+    // The space in the layout: exactly the button's size (a copy of it, invisible), never the grown size. Flex, not
+    // inline: no line box around the copy, so nothing is added below it and the button stays centred in its row
+    <div ref={wrapRef} className={`relative inline-flex ${className}`}>
+      <div ref={sizerRef} aria-hidden className="invisible flex">
+        {variant === 'create' ? <div className={splitButtonClass()}>{content(false)}</div> : <ButtonLook variant="ghost">{content(false)}</ButtonLook>}
       </div>
       {/* The options, laid out in full but unseen: their natural size is what the button grows to */}
-      <div ref={optionsRef} aria-hidden className="invisible pointer-events-none absolute top-0 left-0 -z-10 inline-flex flex-col p-(--menu-p)">
+      <div ref={optionsRef} aria-hidden className={`${BOX[variant]} invisible pointer-events-none absolute top-0 left-0 -z-10 inline-flex flex-col`}>
         {items.map((item) => (
-          <span key={item.value} className={ITEM}>
-            {item.icon && <span className="size-4 shrink-0" />}
+          <span key={item.value} className="ui-extend-item">
+            {item.icon && <span className="size-(--btn-icon-size) shrink-0" />}
             {item.label}
           </span>
         ))}
       </div>
 
-      {/* The button itself: it grows (and wider) over what's beside it, down from the button or up. Its corner
-          marks (corner-marks) are drawn on this box, so they move out to the corners of the dropdown as it grows */}
+      {/* The box: it grows (and wider) over what's beside it, down from the button or up. Its brackets are drawn on this
+          box, so they move out to the corners of the dropdown as it grows */}
       <div
         style={grown}
         data-open={open}
         // Anchored at the button's centre: growing wider, it extends the same on both sides, and the
         // button's own content (centred) stays where it is
-        className={`absolute ${direction === 'up' ? 'bottom-0 flex-col-reverse' : 'top-0 flex-col'} flex left-1/2 -translate-x-1/2 z-20 overflow-hidden rounded-(--btn-radius) ${look.marks} transition-[width,height,background-color,box-shadow] ${GROW} ${open ? look.open : look.closed}`}
+        className={`${BOX[variant]} absolute ${direction === 'up' ? 'bottom-0 flex-col-reverse' : 'top-0 flex-col'} flex left-1/2 -translate-x-1/2 z-20`}
       >
-        <button
-          type="button"
-          aria-haspopup="menu"
-          aria-expanded={open}
-          aria-controls={id}
-          onClick={() => setOpen(!open)}
-          className="w-full shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent"
-          style={button ? { height: button.height } : undefined}
-        >
-          <span className={`${ROW} ${padded ? ROW_PADDING : ''} h-full justify-center`}>
-            {typeof children === 'function' ? children(open) : children}
-          </span>
-        </button>
-        <div id={id} role="menu" aria-label={label} inert={!open} className="flex shrink-0 flex-col p-(--menu-p)">
+        {variant === 'create' ? (
+          <SplitButton icon={render(splitIcon, open)} iconPosition={iconPosition} {...toggle}>
+            {render(children, open)}
+          </SplitButton>
+        ) : (
+          <Button variant="ghost" {...toggle}>
+            {render(children, open)}
+          </Button>
+        )}
+        <div id={id} role="menu" aria-label={label} inert={!open} className="ui-extend-menu flex shrink-0 flex-col">
           {items.map((item) => {
             const Icon = item.icon
             return (
@@ -177,9 +187,9 @@ export default function ExtendMenu<T extends string>({
                   setOpen(false)
                   onSelect(item.value)
                 }}
-                className={`${ITEM} ${look.item}`}
+                className="ui-extend-item"
               >
-                {Icon && <Icon className="size-4 shrink-0 text-current opacity-70" />}
+                {Icon && <Icon className="opacity-70" />}
                 <span className="flex-1">{item.label}</span>
               </button>
             )

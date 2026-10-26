@@ -11,14 +11,12 @@ import ProfileCircle from './ProfileCircle'
 import { frameRadiusPx } from '../../features/workspace/paneStyles'
 import { useWorkspace } from '../../features/workspace/useWorkspace'
 import { useSidebar } from './sidebar/useSidebar'
+import IconButton from '../ui/buttons/IconButton'
 
 // Full class strings so Tailwind can detect them at build time.
-// The ☰ button: just the icon, as big as a rail row's square (its icon's box + the row padding, like
-// the sidebar's rows when it's closed), centred over the rail like them (minus the bar's px-2)
-const MENU_BUTTON =
-    'inline-flex size-[calc(2*var(--btn-px)+var(--btn-icon-size)+2*var(--btn-close-p))] shrink-0 items-center justify-center ' +
-    'ms-[calc((var(--sidebar-rail)-2*var(--btn-px)-var(--btn-icon-size)-2*var(--btn-close-p))/2-0.5rem)] ' +
-    'rounded-(--btn-radius) cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+// The ☰ button: centred over the sidebar's rail, like the closed sidebar's rows (minus the bar's px-2); 31px: the
+// square Shade button's size (styles/buttons.css)
+const MENU_BUTTON = 'shrink-0 ms-[calc((var(--sidebar-rail)-31px)/2-0.5rem)]'
 
 /**
  * Top bar:
@@ -40,17 +38,15 @@ export default function Navbar() {
             {/* Its shadow, and its popouts'; the page's top corners are rounded under it while panes show */}
             <PopoutLayer barHeight="var(--sidebar-rail)" corners={panes ? frameRadiusPx() : 0}>
                 {/* As big as a sidebar row in the rail, right above them; no background */}
-                <button
-                    type="button"
+                <IconButton
                     onClick={sidebar.toggle}
                     aria-expanded={sidebar.expanded}
                     aria-controls="sidebar"
-                    aria-label={sidebar.expanded ? 'Close menu' : 'Open menu'}
-                    title={sidebar.expanded ? 'Close menu' : 'Open menu'}
+                    label={sidebar.expanded ? 'Close menu' : 'Open menu'}
                     className={MENU_BUTTON}
                 >
-                    <MenuToggleIcon open={sidebar.expanded} className="size-full" />
-                </button>
+                    <MenuToggleIcon open={sidebar.expanded} />
+                </IconButton>
                 {/* The name, and a faint pixel desk behind it that reaches towards the Recent button (centred, 14rem wide: 8rem from the centre
                     keeps a gap) and fills the bar's height; on narrow screens only the name */}
                 <div className="flex h-full min-w-0 items-center gap-2 lg:w-[calc(50%-8rem-var(--sidebar-rail))]">

@@ -46,7 +46,8 @@ export default function SelectionBox({ bounds, view, buttons, splitting, disable
                   variant={b.action === 'split' && splitting ? 'primary' : 'secondary'}
                   aria-pressed={b.action === 'split' ? splitting : undefined}
                   disabled={disabled.includes(b.action)}
-                  className={`size-full rounded-(--radius-pill) border border-line shadow-sm ${handle ? 'cursor-nwse-resize touch-none' : ''}`}
+                  size="sm"
+                  className={`size-full ${handle ? 'cursor-nwse-resize touch-none' : ''}`}
                   onPointerDown={handle ? (e) => { e.preventDefault(); e.stopPropagation(); onHandle('resize', e) } : undefined}
                   onClick={handle ? undefined : () => onAction(b.action)}
                 />

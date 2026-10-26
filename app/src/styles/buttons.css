@@ -1,0 +1,659 @@
+/* ==========================================================================
+   BUTTONS - the ONE place to restyle every button of the app.
+   The markup is in components/ui/buttons/ (Button, ButtonLink, NavButton,
+   IconButton, ClosableButton, SplitButton, PanelButton); which look each
+   variant has is the LOOK object in components/ui/buttons/buttonStyles.ts.
+   How to use them and how to copy changes over: instructions/buttons.md.
+
+   Only how a button looks: nothing here places it in its parent (no
+   margin, no align-self); that is the call site's (ms-auto, self-start...).
+
+   Section C below is copied from Dark Fantasy UI (src/theme.css, "C.
+   BUTTONS"), with these edits (also in instructions/buttons.md):
+   - ":hover:enabled" -> ":hover:not(:disabled)", ":active:enabled" ->
+     ":active:not(:disabled)", so it works on links too;
+   - no margin and no align-self in .ui-btn, no --btn-margin anywhere;
+   - Underline and Stone keep their text centred (marked "Map:").
+   The Map's own additions are at the end, each marked "Map:". The same
+   look in every theme (base / arcane / pixel).
+   In @layer components: Tailwind utilities (layout: ms-auto, w-full...) win.
+   ========================================================================== */
+
+/* ---- A. TOKENS (from Dark Fantasy UI's @theme; only what the buttons use) ---- */
+:root {
+  --color-void: #0a0710;
+  --color-crypt-900: #140e1f;
+  --color-crypt-800: #1f1630;
+  --color-crypt-700: #2f2347;
+  --color-gold: #e8b84a;
+  --color-gold-dark: #9a6f22;
+  --color-bone: #ece2c8;
+  --color-bone-dim: #9d90b0;
+  /* Venom: face, bevels, hover, pressed, hover label */
+  --color-venom: #3f9a3a;
+  --color-venom-light: #74d45e;
+  --color-venom-dark: #1f5a22;
+  --color-venom-hover: #4cb946;
+  --color-venom-light-hover: #8bfe71;
+  --color-venom-dark-hover: #256c29;
+  --color-venom-face-press: #378a33;
+  --color-venom-light-press: #5cb84c;
+  --color-venom-dark-press: #2b7330;
+  --color-bone-hover: #fffff0;
+  /* Stone: face, hover, light/dark bevel, row above strip, strip */
+  --color-stone: #464646;
+  --color-stone-hover: #505050;
+  --color-stone-light: #6a6a6a;
+  --color-stone-shade: #2e2e2e;
+  --color-stone-soft: #3a3a3a;
+  --color-stone-slab: #1a1a1a;
+  /* Shade hover */
+  --color-shade-hover: #2a2a2a;
+  /* Panel hover: label/frame, inner rule, fill, top band */
+  --color-gold-hover: #ffdd59;
+  --color-gold-dark-hover: #b98529;
+  --color-crypt-800-hover: #251a3a;
+  --color-crypt-700-hover: #382a55;
+  /* Panel's font (bundled: @fontsource/jacquard-24 in main.tsx); the other buttons use the app's font */
+  --font-display: "Jacquard 24", serif;
+  --font-body: var(--font-sans);
+
+  /* THE pixel unit of the buttons (Dark Fantasy UI's PIXEL in uiConfig.js) */
+  --px: 2px;
+  --px-neg: calc(var(--px) * -1);
+  /* gap between a button's icon and text, for every button */
+  --icon-gap: calc(var(--px) * 4);
+}
+
+@layer components {
+  /* ---- C. BUTTONS (copied from Dark Fantasy UI) ---- */
+
+  /* shared by every button: the defaults of all settings, and the hover swap
+     (a button that has no --btn-hover-bg etc. simply ignores it) */
+  .ui-btn {
+    --btn-font: var(--font-body);
+    --btn-font-size: 14.4px;
+    --btn-font-weight: 600;
+    --btn-line-height: 1.2;
+    --btn-letter-spacing: 0.576px;
+    --btn-pad-x: calc(var(--px) * 5);
+    --btn-pad-y: calc(var(--px) * 2);
+    --btn-border: none;
+    --btn-radius: 0;
+    --btn-text: var(--color-bone);
+    --btn-icon-gap: var(--icon-gap, var(--btn-pad-x));
+    --btn-icon-edge: var(--btn-pad-x);
+    --btn-icon-ratio: 1;
+    --btn-icon-size: calc(var(--btn-font-size) * var(--btn-icon-ratio));
+    --_text: var(--btn-text);
+    --_bg: var(--btn-bg);
+    font: var(--btn-font-weight) var(--btn-font-size) / var(--btn-line-height) var(--btn-font);
+    letter-spacing: var(--btn-letter-spacing);
+    color: var(--_text);
+    padding: var(--btn-pad-y) var(--btn-pad-x);
+    border: var(--btn-border);
+    border-radius: var(--btn-radius);
+    cursor: pointer;
+  }
+
+  .ui-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .ui-btn:hover:not(:disabled) {
+    --_text: var(--btn-hover-text);
+    --_bg: var(--btn-hover-bg);
+  }
+
+  /* react-icon before a label: size = text size x ratio, centre kept at
+     --btn-icon-center x text size above the baseline for any ratio.
+     --_pull = how much closer icon and text get on hover (bracket buttons). */
+  .ui-btn-icon {
+    --btn-icon-center: 0.38;
+    display: inline-block;
+    flex: none;
+    width: var(--btn-icon-size);
+    height: var(--btn-icon-size);
+    margin-left: calc(var(--btn-icon-edge) - var(--btn-pad-x) + var(--_pull, 0px) / 2);
+    margin-right: calc(var(--btn-icon-gap) - var(--_pull, 0px));
+    vertical-align: calc(var(--btn-font-size) * var(--btn-icon-center) - var(--btn-icon-size) / 2);
+    transition: margin 0.18s ease-out;
+  }
+
+  /* C1. Panel: big gold double frame, stepped corners, hard drop shadow;
+     pressing slides it into the shadow */
+  .ui-btn-panel {
+    --btn-font: var(--font-display);
+    --btn-font-size: 28.8px;
+    --btn-font-weight: 400;
+    --btn-line-height: 1;
+    --btn-pad-x: calc(var(--px) * 16);
+    --btn-pad-y: calc(var(--px) * 6);
+    --btn-text: var(--color-gold);
+    --btn-text-shadow: var(--px) var(--px) 0 var(--color-void);
+    --btn-bg: var(--color-crypt-800);
+    --btn-bg-top: var(--color-crypt-700);
+    --btn-border-line: var(--color-crypt-900);
+    --btn-border-inner: var(--color-gold-dark);
+    --btn-border-color: var(--color-gold);
+    --btn-border-halo: var(--color-void);
+    --btn-shadow-offset: calc(var(--px) * 3);
+    --btn-shadow-color: rgba(0, 0, 0, 0.6);
+    --btn-hover-text: var(--color-gold-hover);
+    --btn-hover-bg: var(--color-crypt-800-hover);
+    --btn-hover-bg-top: var(--color-crypt-700-hover);
+    --btn-hover-border-color: var(--color-gold-hover);
+    --btn-hover-border-inner: var(--color-gold-dark-hover);
+    --btn-press-shift: calc(var(--px) * 2);
+    --btn-press-shadow-offset: var(--px);
+    --_bg-top: var(--btn-bg-top);
+    --_border-color: var(--btn-border-color);
+    --_border-inner: var(--btn-border-inner);
+    --_shadow-offset: var(--btn-shadow-offset);
+    text-shadow: var(--btn-text-shadow);
+    background: linear-gradient(180deg, var(--_bg-top) 0 calc(var(--px) * 2), transparent 0), var(--_bg);
+    box-shadow:
+      inset 0 0 0 var(--px) var(--btn-border-line),
+      inset 0 0 0 calc(var(--px) * 2) var(--_border-inner),
+      0 var(--px-neg) 0 0 var(--_border-color),
+      0 var(--px) 0 0 var(--_border-color),
+      var(--px-neg) 0 0 0 var(--_border-color),
+      var(--px) 0 0 0 var(--_border-color),
+      0 calc(var(--px) * -2) 0 0 var(--btn-border-halo),
+      0 calc(var(--px) * 2) 0 0 var(--btn-border-halo),
+      calc(var(--px) * -2) 0 0 0 var(--btn-border-halo),
+      calc(var(--px) * 2) 0 0 0 var(--btn-border-halo),
+      var(--_shadow-offset) var(--_shadow-offset) 0 0 var(--btn-shadow-color);
+  }
+
+  .ui-btn-panel:hover:not(:disabled) {
+    --_bg-top: var(--btn-hover-bg-top);
+    --_border-color: var(--btn-hover-border-color);
+    --_border-inner: var(--btn-hover-border-inner);
+  }
+
+  .ui-btn-panel:active:not(:disabled) {
+    --_shadow-offset: var(--btn-press-shadow-offset);
+    transform: translate(var(--btn-press-shift), var(--btn-press-shift));
+  }
+
+  /* ---- bracket buttons: Venom, Shade, Venom split. Padding and the white
+     corner brackets are defined ONCE here. The brackets are hidden (zero
+     length, on the corner) and slide out on hover. */
+  .ui-btn-venom,
+  .ui-btn-shade {
+    --bracket-btn-pad-x: calc(var(--px) * 7);
+    --bracket-btn-pad-y: calc(var(--px) * 3.5);
+    --btn-pad-x: var(--bracket-btn-pad-x);
+    --btn-pad-y: var(--bracket-btn-pad-y);
+    --btn-icon-edge: 10px;
+    --btn-icon-ratio: 1.2;
+    --btn-bracket-color: #fff;
+    --btn-bracket-gap: calc(var(--px) * 1.5);
+    --btn-bracket-len-x: calc(var(--px) * 4);
+    --btn-bracket-len-y: calc(var(--px) * 3);
+    --btn-bracket-width: var(--px);
+    --btn-hover-pull: calc(var(--btn-bracket-len-x) / 4);
+    --btn-inner-shadow: none;
+    --btn-press-depth: calc(var(--px) / 2);
+    --br-gap: 0px;
+    --br-len-x: 0px;
+    --br-len-y: 0px;
+    --br-w: var(--btn-bracket-width);
+    --br-h: linear-gradient(var(--btn-bracket-color), var(--btn-bracket-color));
+    --br-transition: background-position 0.18s ease-out, background-size 0.18s ease-out;
+    --br-layers-left:
+      var(--br-h) left var(--br-gap) top var(--br-gap) / var(--br-len-x) var(--br-w) no-repeat,
+      var(--br-h) left var(--br-gap) top var(--br-gap) / var(--br-w) var(--br-len-y) no-repeat,
+      var(--br-h) left var(--br-gap) bottom var(--br-gap) / var(--br-len-x) var(--br-w) no-repeat,
+      var(--br-h) left var(--br-gap) bottom var(--br-gap) / var(--br-w) var(--br-len-y) no-repeat;
+    --br-layers-right:
+      var(--br-h) right var(--br-gap) top var(--br-gap) / var(--br-len-x) var(--br-w) no-repeat,
+      var(--br-h) right var(--br-gap) top var(--br-gap) / var(--br-w) var(--br-len-y) no-repeat,
+      var(--br-h) right var(--br-gap) bottom var(--br-gap) / var(--br-len-x) var(--br-w) no-repeat,
+      var(--br-h) right var(--br-gap) bottom var(--br-gap) / var(--br-w) var(--br-len-y) no-repeat;
+    background: var(--br-layers-left), var(--br-layers-right), var(--btn-inner-shadow), var(--_bg);
+  }
+
+  .ui-btn-venom:hover:not(:disabled),
+  .ui-btn-shade:hover:not(:disabled) {
+    --br-gap: var(--btn-bracket-gap);
+    --br-len-x: var(--btn-bracket-len-x);
+    --br-len-y: var(--btn-bracket-len-y);
+    --_pull: var(--btn-hover-pull);
+  }
+
+  /* keep the button's width: what the icon and text gain, the right padding takes */
+  .ui-btn-venom:has(>.ui-btn-icon):hover:not(:disabled),
+  .ui-btn-shade:has(>.ui-btn-icon):hover:not(:disabled) {
+    padding-right: calc(var(--btn-pad-x) + var(--btn-hover-pull) / 2);
+  }
+
+  .ui-btn-venom:active:not(:disabled),
+  .ui-btn-shade:active:not(:disabled) {
+    transform: translateY(var(--btn-press-depth));
+  }
+
+  /* C2. Venom: green; the press snaps down and flips the bevel, release
+     springs back in pixel steps */
+  .ui-btn-venom {
+    --btn-bg: var(--color-venom);
+    --btn-bevel-top: var(--color-venom-light);
+    --btn-bevel-bottom: var(--color-venom-dark);
+    --btn-inner-shadow: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent 50%);
+    --btn-shadow-y: var(--px);
+    --btn-shadow-color: rgba(0, 0, 0, 0.6);
+    --btn-split-text-edge: var(--btn-pad-x);
+    --btn-hover-text: var(--color-bone-hover);
+    --btn-hover-bg: var(--color-venom-hover);
+    --btn-hover-bevel-top: var(--color-venom-light-hover);
+    --btn-hover-bevel-bottom: var(--color-venom-dark-hover);
+    --btn-press-text: var(--color-bone);
+    --btn-press-bg: var(--color-venom-face-press);
+    --btn-press-bevel-top: var(--color-venom-dark-press);
+    --btn-press-bevel-bottom: var(--color-venom-light-press);
+    --_bevel-top: var(--btn-bevel-top);
+    --_bevel-bottom: var(--btn-bevel-bottom);
+    --_shadow-y: var(--btn-shadow-y);
+    box-shadow:
+      inset 0 var(--px) 0 0 var(--_bevel-top),
+      inset 0 var(--px-neg) 0 0 var(--_bevel-bottom),
+      0 var(--_shadow-y) 0 0 var(--btn-shadow-color);
+    transition:
+      transform 0.12s steps(3),
+      color 0.15s steps(2),
+      background-color 0.12s steps(2),
+      var(--br-transition),
+      box-shadow 0.12s steps(2),
+      padding 0.18s ease-out;
+  }
+
+  .ui-btn-venom:hover:not(:disabled) {
+    --_bevel-top: var(--btn-hover-bevel-top);
+    --_bevel-bottom: var(--btn-hover-bevel-bottom);
+  }
+
+  .ui-btn-venom:active:not(:disabled) {
+    --_text: var(--btn-press-text);
+    --_bg: var(--btn-press-bg);
+    --_bevel-top: var(--btn-press-bevel-top);
+    --_bevel-bottom: var(--btn-press-bevel-bottom);
+    --_shadow-y: calc(var(--btn-shadow-y) - var(--btn-press-depth));
+    transition: none;
+  }
+
+  /* Venom split: two pieces (icon / label, iconPosition left or right) with a
+     small gap; each has the Venom face, bevel and shadow, and the brackets
+     slide in on its outer side only. Nothing moves on hover. */
+  .ui-btn-venom.ui-btn-venom-split {
+    --btn-split-gap: calc(var(--px) * 1.5);
+    display: inline-flex;
+    align-items: stretch;
+    gap: var(--btn-split-gap);
+    padding: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .ui-btn-venom-split>span {
+    display: flex;
+    align-items: center;
+    padding: var(--btn-pad-y) var(--btn-pad-x);
+    box-shadow:
+      inset 0 var(--px) 0 0 var(--_bevel-top),
+      inset 0 var(--px-neg) 0 0 var(--_bevel-bottom),
+      0 var(--_shadow-y) 0 0 var(--btn-shadow-color);
+    transition: var(--br-transition);
+  }
+
+  .ui-btn-venom-split>span:first-child {
+    background: var(--br-layers-left), var(--btn-inner-shadow), var(--_bg);
+  }
+
+  .ui-btn-venom-split>span:last-child {
+    background: var(--br-layers-right), var(--btn-inner-shadow), var(--_bg);
+  }
+
+  /* distance from the split line to the text (on the side facing the icon) */
+  .ui-btn-venom-split>.ui-btn-venom-split-label:last-child {
+    padding-left: var(--btn-split-text-edge);
+  }
+
+  .ui-btn-venom-split>.ui-btn-venom-split-label:first-child {
+    padding-right: var(--btn-split-text-edge);
+  }
+
+  /* the icon piece is a perfect square (one text line + the vertical padding
+     on both sides) with the icon centred */
+  .ui-btn-venom-split>.ui-btn-venom-split-icon {
+    flex: none;
+    box-sizing: border-box;
+    width: calc(var(--btn-font-size) * var(--btn-line-height) + var(--btn-pad-y) * 2);
+    padding: var(--btn-pad-y) 0;
+    justify-content: center;
+  }
+
+  .ui-btn-venom-split-icon svg {
+    width: var(--btn-icon-size);
+    height: var(--btn-icon-size);
+  }
+
+  .ui-btn-venom-split:active:not(:disabled)>span {
+    transition: none;
+  }
+
+  /* C3. Stone: grey block with stepped pixel corners, bevel, soft inner shadow
+     and a strip underneath. The button is the strip, .ui-btn-stone-face sits on
+     it; pressing pushes the face into the strip. */
+  .ui-btn-stone {
+    --btn-font-size: 12.8px;
+    --btn-letter-spacing: 0.768px;
+    --btn-pad-y: var(--px);
+    --btn-text: #fff;
+    --btn-text-shadow: var(--px) var(--px) 0 var(--btn-bevel-dark);
+    --btn-bg: var(--color-stone);
+    --btn-bevel-light: var(--color-stone-light);
+    --btn-bevel-dark: var(--color-stone-shade);
+    --btn-bevel-bottom: var(--color-stone-soft);
+    --btn-corner-cut: var(--px);
+    --btn-inner-shadow: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent 50%);
+    --btn-shadow-height: var(--px);
+    --btn-shadow-color: var(--color-stone-slab);
+    --btn-hover-text: #fff;
+    --btn-hover-bg: var(--color-stone-hover);
+    --btn-press-depth: var(--px);
+    --cut-lg: var(--btn-corner-cut);
+    --cut-sm: var(--px);
+    --lit: linear-gradient(var(--btn-bevel-light), var(--btn-bevel-light));
+    --dark: linear-gradient(var(--btn-bevel-dark), var(--btn-bevel-dark));
+    /* Map: the strip's height above the face too, so the face is centred */
+    padding: var(--btn-shadow-height) 0;
+    background: linear-gradient(var(--btn-shadow-color), var(--btn-shadow-color)) bottom / 100% calc(var(--btn-shadow-height) * 2) no-repeat;
+    clip-path: polygon(0 0, 100% 0,
+        100% calc(100% - var(--cut-lg)), calc(100% - var(--cut-sm)) calc(100% - var(--cut-lg)),
+        calc(100% - var(--cut-sm)) calc(100% - var(--cut-sm)), calc(100% - var(--cut-lg)) calc(100% - var(--cut-sm)),
+        calc(100% - var(--cut-lg)) 100%, var(--cut-lg) 100%,
+        var(--cut-lg) calc(100% - var(--cut-sm)), var(--cut-sm) calc(100% - var(--cut-sm)),
+        var(--cut-sm) calc(100% - var(--cut-lg)), 0 calc(100% - var(--cut-lg)));
+  }
+
+  .ui-btn-stone-face {
+    position: relative;
+    display: block;
+    text-shadow: var(--btn-text-shadow);
+    padding: var(--btn-pad-y) var(--btn-pad-x);
+    background:
+      var(--lit) var(--cut-sm) var(--cut-sm) / calc(var(--cut-lg) - var(--cut-sm)) var(--cut-sm) no-repeat,
+      var(--lit) var(--cut-sm) var(--cut-sm) / var(--cut-sm) calc(var(--cut-lg) - var(--cut-sm)) no-repeat,
+      var(--lit) calc(100% - var(--cut-sm)) var(--cut-sm) / calc(var(--cut-lg) - var(--cut-sm)) var(--cut-sm) no-repeat,
+      var(--dark) calc(100% - var(--cut-sm)) var(--cut-sm) / var(--cut-sm) calc(var(--cut-lg) - var(--cut-sm)) no-repeat,
+      var(--btn-inner-shadow),
+      var(--_bg);
+    box-shadow:
+      inset 0 var(--px) 0 0 var(--btn-bevel-light),
+      inset var(--px) 0 0 0 var(--btn-bevel-light),
+      inset var(--px-neg) 0 0 0 var(--btn-bevel-dark),
+      inset 0 var(--px-neg) 0 0 var(--btn-bevel-bottom);
+    clip-path: polygon(var(--cut-lg) 0, calc(100% - var(--cut-lg)) 0,
+        calc(100% - var(--cut-lg)) var(--cut-sm), calc(100% - var(--cut-sm)) var(--cut-sm),
+        calc(100% - var(--cut-sm)) var(--cut-lg), 100% var(--cut-lg),
+        100% 100%, 0 100%,
+        0 var(--cut-lg), var(--cut-sm) var(--cut-lg),
+        var(--cut-sm) var(--cut-sm), var(--cut-lg) var(--cut-sm));
+  }
+
+  /* dark pixels on the inner step of the bottom corners (above the inset shadows) */
+  .ui-btn-stone-face::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      var(--dark) left var(--cut-sm) bottom 0 / calc(var(--cut-lg) - var(--cut-sm)) var(--cut-sm) no-repeat,
+      var(--dark) left var(--cut-sm) bottom 0 / var(--cut-sm) calc(var(--cut-lg) - var(--cut-sm)) no-repeat,
+      var(--dark) right var(--cut-sm) bottom 0 / calc(var(--cut-lg) - var(--cut-sm)) var(--cut-sm) no-repeat,
+      var(--dark) right var(--cut-sm) bottom 0 / var(--cut-sm) calc(var(--cut-lg) - var(--cut-sm)) no-repeat;
+  }
+
+  .ui-btn-stone:active:not(:disabled) .ui-btn-stone-face {
+    transform: translateY(var(--btn-press-depth));
+  }
+
+  /* C4. Shade: no background until hover, then dark grey fades in and the
+     white brackets slide out (shared bracket block above) */
+  .ui-btn-shade {
+    --btn-text: var(--color-bone-dim);
+    --btn-bg: transparent;
+    --btn-bracket-color: color-mix(in srgb, #fff 80%, var(--color-shade-hover));
+    --btn-hover-text: var(--color-bone);
+    --btn-hover-bg: var(--color-shade-hover);
+    box-shadow: none;
+    transition: color 0.18s ease-out, background-color 0.18s ease-out, var(--br-transition), padding 0.18s ease-out;
+  }
+
+  /* C5. Underline: no background; on hover a line with a hard pixel shadow
+     slides in from the left under the text and back out on leave */
+  .ui-btn-underline {
+    --btn-pad-x: 0px;
+    --btn-pad-y: calc(var(--px) * 1.5);
+    --btn-icon-gap: var(--icon-gap, 6.48px);
+    --btn-icon-ratio: 1.2;
+    --btn-text: var(--color-bone-dim);
+    --btn-bg: transparent;
+    --btn-hover-text: var(--color-bone);
+    --btn-underline-color: var(--color-bone);
+    --btn-underline-thickness: var(--px);
+    --btn-underline-offset: 3px;
+    --btn-underline-shadow-color: #000;
+    --btn-underline-speed: 0.25s;
+    --_ul-w: 0%;
+    /* Map: the space below the text (for the line) above it too, so the text is centred */
+    padding: calc(var(--btn-pad-y) + var(--btn-underline-offset)) calc(var(--btn-pad-x) + var(--px)) calc(var(--btn-pad-y) + var(--btn-underline-offset)) var(--btn-pad-x);
+    background:
+      linear-gradient(var(--btn-underline-color), var(--btn-underline-color)) left 0 bottom var(--px) / var(--_ul-w) var(--btn-underline-thickness) no-repeat,
+      linear-gradient(var(--btn-underline-shadow-color), var(--btn-underline-shadow-color)) left var(--px) bottom 0 / var(--_ul-w) var(--btn-underline-thickness) no-repeat,
+      var(--btn-bg);
+    transition: color 0.2s ease-out, background-size var(--btn-underline-speed) ease-out;
+  }
+
+  .ui-btn-underline:hover:not(:disabled),
+  .ui-btn-underline:focus-visible {
+    --_ul-w: 100%;
+    --_text: var(--btn-hover-text);
+  }
+
+  /* ---- Map: additions ---- */
+
+  /* Map: icon and text in one line, centred */
+  .ui-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    text-decoration: none;
+    user-select: none;
+  }
+
+  /* Map: the Stone face holds the icon and the label in one line too, laid out like its button (justify-start...) */
+  .ui-btn-stone > .ui-btn-stone-face {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: center;
+    justify-content: inherit;
+  }
+
+  /* Map: the icon is a flex item: no baseline shift */
+  .ui-btn-icon {
+    vertical-align: initial;
+  }
+
+  /* Map: other icons in a button's content (a ▾ after the label, an ✕ in a chip): text-sized, spaced from the text */
+  :is(.ui-btn, .ui-btn-stone-face) > svg:not(.ui-btn-icon) {
+    flex: none;
+    width: 1em;
+    height: 1em;
+  }
+  :is(.ui-btn, .ui-btn-stone-face) > svg:not(.ui-btn-icon):not(:first-child) {
+    margin-inline-start: calc(var(--px) * 3);
+  }
+  :is(.ui-btn, .ui-btn-stone-face) > svg:not(.ui-btn-icon):first-child:not(:last-child) {
+    margin-inline-end: calc(var(--px) * 3);
+  }
+
+  /* Map: a link can't be :disabled; aria-disabled gives it the same look */
+  .ui-btn[aria-disabled='true'] {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* Map: keyboard focus */
+  .ui-btn:focus-visible {
+    outline: var(--px) solid var(--color-bone);
+    outline-offset: var(--px);
+  }
+
+  /* Map: the current page (NavButton) and a selected button (aria-pressed) keep the hover look */
+  .ui-btn:is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
+    --_text: var(--btn-hover-text, var(--btn-text));
+    --_bg: var(--btn-hover-bg, var(--btn-bg));
+  }
+  .ui-btn-venom:is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
+    --_bevel-top: var(--btn-hover-bevel-top);
+    --_bevel-bottom: var(--btn-hover-bevel-bottom);
+  }
+  .ui-btn:is(.ui-btn-venom, .ui-btn-shade):is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
+    --br-gap: var(--btn-bracket-gap);
+    --br-len-x: var(--btn-bracket-len-x);
+    --br-len-y: var(--btn-bracket-len-y);
+  }
+  .ui-btn-underline:is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
+    --_ul-w: 100%;
+  }
+
+  /* Map: a square button with only an icon (IconButton, ClosableButton's X): the vertical padding all round */
+  .ui-btn.ui-btn-square {
+    --btn-pad-x: var(--btn-pad-y);
+    --btn-icon-edge: var(--btn-pad-x);
+    --btn-icon-gap: 0px;
+    --btn-hover-pull: 0px;
+    aspect-ratio: 1;
+  }
+  .ui-btn-square > svg {
+    width: var(--btn-icon-size);
+    height: var(--btn-icon-size);
+  }
+  /* (keeps its width on hover: no icon + text to pull together) */
+  .ui-btn-square:is(.ui-btn-venom, .ui-btn-shade):hover:not(:disabled) {
+    padding-right: var(--btn-pad-x);
+  }
+  /* Underline as a square: no underline, the icon brightens */
+  .ui-btn-square.ui-btn-underline {
+    --btn-pad-x: var(--btn-pad-y);
+    padding: var(--btn-pad-y);
+    background: none;
+  }
+
+  /* Map: a smaller button, for tight rows (pane islands, board panels, row headers) */
+  .ui-btn.ui-btn-sm {
+    --btn-font-size: 12.8px;
+    --bracket-btn-pad-x: calc(var(--px) * 5.5);
+    --bracket-btn-pad-y: calc(var(--px) * 2);
+    --btn-icon-ratio: 1.1;
+  }
+
+  /* Map: the Panel button's grey face (the floating Create button's ✕ Cancel side): the same shape in stone colours */
+  .ui-btn-panel.ui-btn-panel-muted {
+    --btn-text: var(--color-bone);
+    --btn-bg: var(--color-stone);
+    --btn-bg-top: var(--color-stone-light);
+    --btn-border-line: var(--color-stone-slab);
+    --btn-border-inner: var(--color-stone-shade);
+    --btn-border-color: var(--color-bone-dim);
+    --btn-hover-text: var(--color-bone-hover);
+    --btn-hover-bg: var(--color-stone-hover);
+    --btn-hover-bg-top: var(--color-stone-light);
+    --btn-hover-border-color: var(--color-bone);
+    --btn-hover-border-inner: var(--color-stone-soft);
+  }
+
+  /* Map: ExtendMenu (components/ui/overlays/ExtendMenu.tsx). The box that grows is a button of the same look
+     (.ui-btn .ui-btn-venom / -shade .ui-extend), holding the real button and the options. Closed, it draws nothing:
+     its button shows. Open, it draws the face, with the brackets out at its (growing) corners, and its button draws
+     nothing. It doesn't react to hover or press itself. */
+  .ui-btn.ui-extend {
+    /* a column: the button, then the options, from its start (a button centres its content) */
+    justify-content: flex-start;
+    align-items: stretch;
+    padding: 0;
+    cursor: auto;
+    transition:
+      width 0.2s ease-out,
+      height 0.2s ease-out,
+      var(--br-transition);
+  }
+  .ui-btn.ui-extend:is(:hover, :active) {
+    --_text: var(--btn-text);
+    --_bg: var(--btn-bg);
+    --_bevel-top: var(--btn-bevel-top);
+    --_bevel-bottom: var(--btn-bevel-bottom);
+    --_shadow-y: var(--btn-shadow-y);
+    transform: none;
+  }
+  .ui-btn.ui-extend:not([data-open='true']) {
+    background: none;
+    box-shadow: none;
+  }
+  .ui-btn.ui-extend[data-open='true'] {
+    --br-gap: var(--btn-bracket-gap);
+    --br-len-x: var(--btn-bracket-len-x);
+    --br-len-y: var(--btn-bracket-len-y);
+    overflow: hidden;
+  }
+  /* Shade has no face of its own until hovered: open, the box takes the hovered one */
+  .ui-btn-shade.ui-extend[data-open='true'],
+  .ui-btn-shade.ui-extend[data-open='true']:is(:hover, :active) {
+    --_text: var(--btn-hover-text);
+    --_bg: var(--btn-hover-bg);
+  }
+  /* closed, the options are not shown (the box doesn't clip then, so the button's own shadow shows) */
+  .ui-extend:not([data-open='true']) > .ui-extend-menu {
+    visibility: hidden;
+  }
+  /* open, the button inside draws nothing: the box is its face */
+  .ui-extend[data-open='true'] > .ui-btn,
+  .ui-extend[data-open='true'] > .ui-btn-venom-split > span {
+    background: none;
+    box-shadow: none;
+    transform: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ui-btn.ui-extend {
+      transition: none;
+    }
+  }
+  .ui-extend-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: var(--icon-gap);
+    padding: var(--btn-pad-y) var(--btn-pad-x);
+    text-align: start;
+    white-space: nowrap;
+    color: var(--_text);
+    cursor: pointer;
+    transition: background-color 0.12s steps(2), color 0.12s steps(2);
+  }
+  .ui-extend-item:is(:hover, :focus-visible) {
+    color: var(--btn-hover-text, var(--btn-text));
+    background-color: color-mix(in srgb, #fff 10%, transparent);
+    outline: none;
+  }
+  .ui-extend-item > svg {
+    flex: none;
+    width: var(--btn-icon-size);
+    height: var(--btn-icon-size);
+  }
+}

@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { LuZoomIn, LuZoomOut } from 'react-icons/lu'
-import { iconButtonClass } from '../../components/ui/buttons/buttonStyles'
+import IconButton from '../../components/ui/buttons/IconButton'
 import { useFocusMode } from './FocusMode'
 
 /**
@@ -15,29 +15,23 @@ export default function ZoomButton() {
 
   return (
     <>
-      <button
+      <IconButton
         ref={ref}
-        type="button"
+        icon={LuZoomIn}
+        label="Focus: hide the navbar and sidebar"
         onClick={() => ref.current && turnOn(ref.current.getBoundingClientRect())}
-        aria-label="Focus: hide the navbar and sidebar"
-        title="Focus"
-        className={iconButtonClass('ghost', 'size-9 justify-center')}
-      >
-        <LuZoomIn className="size-5" />
-      </button>
+      />
       {on &&
         at &&
         createPortal(
-          <button
-            type="button"
+          <IconButton
+            icon={LuZoomOut}
+            label="Leave focus: show the navbar and sidebar (Esc)"
+            variant="secondary"
             onClick={turnOff}
-            aria-label="Leave focus: show the navbar and sidebar"
-            title="Leave focus (Esc)"
             style={{ left: at.left, top: at.top, width: at.width, height: at.height }}
-            className={iconButtonClass('ghost', 'fixed z-40 justify-center bg-surface shadow-lg ring-1 ring-line')}
-          >
-            <LuZoomOut className="size-5" />
-          </button>,
+            className="fixed z-40"
+          />,
           document.body,
         )}
     </>

@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { LuChevronDown } from 'react-icons/lu'
-import { PICK_ROW_WIDE, pickClass } from '../../../../components/ui/buttons/buttonStyles'
+import { PICK_ROW_WIDE, pickClass } from '../../../../components/ui/rowStyles'
 
 /** `sample` is given the width the example has to fill (it stretches over the row) */
 export type RowOption<T extends string | number> = { value: T; label: string; sample: (width: number) => ReactNode }

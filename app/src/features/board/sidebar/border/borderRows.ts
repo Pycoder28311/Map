@@ -1,4 +1,4 @@
-import { PICK_ROW_WIDE, pickClass } from '../../../../components/ui/buttons/buttonStyles'
+import { PICK_ROW_WIDE, pickClass } from '../../../../components/ui/rowStyles'
 import type { Fill, ShapeType, Style } from '../../types'
 
 export type BorderValues = { style: Style; fill: Fill | null; shape: ShapeType | null; param: number }

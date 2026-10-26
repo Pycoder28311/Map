@@ -1,0 +1,87 @@
+# Buttons
+
+Every button in the app is a Dark Fantasy UI button (`Workspace/Coding/Experiments/Dark Fantasy UI`). The design is in
+`docs/plans/28-dark-fantasy-buttons.md`.
+
+## Where things are
+
+```
+app/src/styles/buttons.css            THE look of every button (the same in every theme). Change a button here.
+app/src/components/ui/buttons/
+├── buttonStyles.ts                   LOOK: which button each variant is (one line each)
+├── Button.tsx                        <button>
+├── ButtonLink.tsx                    a link (`to` / `href`) that looks like Button
+├── NavButton.tsx                     a navigation link; the current page keeps the hover look
+├── IconButton.tsx                    square, only an icon (needs `label`)
+├── SplitButton.tsx                   Venom in two pieces: an icon piece and a label piece (Add, Create)
+├── ClosableButton.tsx                a button with an ✕ button beside it
+├── PanelButton.tsx                   the big gold one: ONLY the floating Create button
+├── ButtonLook.tsx                    looks like Button, isn't one (a dragged label)
+├── ButtonContent.tsx                 (inside Button, ButtonLink, NavButton: icon + label, Stone's face)
+└── buttons.test.ts                   fails when a button is made any other way
+app/src/components/ui/overlays/ExtendMenu.tsx   a button that grows into its own menu (Shade or Venom split)
+```
+
+## Which one
+
+| Variant | Button | For |
+|---|---|---|
+| `primary` | Venom (green) | the main action of a place (Save, Sign in, the modal's Create) |
+| `create` | Venom | making something new; as `SplitButton` for Add / Create with an icon |
+| `secondary` | Stone (grey block) | the other actions; buttons floating over a board or a picture |
+| `ghost` | Shade (no background until hovered) | quiet actions, toolbars, navigation, menu triggers |
+| `selected` | Shade, kept in its hover look | the chosen one of a group (or pass `aria-pressed`) |
+| `text` | Underline | a text action in running text (Show more, Try again, Open) |
+
+`size="sm"` is a smaller button for tight rows (board panels, row headers, chips).
+
+```tsx
+<Button variant="secondary" icon={LuShare2} onClick={share}>Share</Button>
+<IconButton icon={LuX} label="Close" onClick={close} />
+<SplitButton icon={<LuPlus />} iconPosition="right" onClick={add}>Note</SplitButton>
+<ExtendMenu variant="create" label="Add" items={kinds} onSelect={create} splitIcon={(open) => (open ? <LuX /> : <LuPlus />)}>Add</ExtendMenu>
+```
+
+## Rules (buttons.test.ts checks them)
+
+- **No `<button>` outside `components/ui/buttons/`.** The exceptions are things that are clicked but aren't buttons: list
+  rows, options of a picker, swatches, tree icons, tiles, drag handles, menu items. They are listed in `ALLOWED` in the
+  test, with how many each file has and why. A new one goes there too, with its reason.
+- **No `ui-btn…` classes outside the buttons** (and ExtendMenu's box).
+- **`PanelButton` only in `features/create/CreateFab.tsx`.**
+- **No look in `className`** on Button, ButtonLink, NavButton, IconButton, SplitButton: no `bg-`, `text-[`, padding,
+  `rounded`, `shadow`, `border`. Layout classes are fine (`ms-auto`, `w-full`, `justify-start`, `absolute`, `opacity-0`).
+  A look that is needed in several places becomes a modifier in `buttons.css` (like `.ui-btn-sm`).
+
+## Changing the look
+
+- **One button** (e.g. Venom's green): its block in `buttons.css` (`.ui-btn-venom`). Each block starts with its settings
+  (`--btn-bg`, `--btn-pad-x`, `--btn-hover-*` …); the defaults are in `.ui-btn`. Colours are the `--color-*` tokens at the
+  top of the file.
+- **Which button a variant is**: `LOOK` in `buttonStyles.ts` (e.g. `secondary: 'ui-btn-shade'`).
+- **A new kind of button**: a new block in `buttons.css`, a new entry in `LOOK`.
+- The pixel unit is `--px` (2px) at the top of `buttons.css`; every size is a multiple of it.
+
+## Copying changes from Dark Fantasy UI
+
+Section C of `buttons.css` is that project's `src/theme.css` section "C. BUTTONS", indented one level (it sits in
+`@layer components`, so Tailwind's layout classes win over it). `buttons.css` only says how a button looks, never where
+it sits in its parent: that is the call site's (`ms-auto`, `self-start`, `w-full`). After pasting a newer version, redo
+the edits:
+
+- `:hover:enabled` → `:hover:not(:disabled)` and `:active:enabled` → `:active:not(:disabled)` (so links work too);
+- delete `margin` and `align-self` from `.ui-btn`, and every `--btn-margin`;
+- Underline: the same padding above the text as below it; Stone: `padding: var(--btn-shadow-height) 0` (both marked
+  `Map:`), so their text stays centred.
+
+Sidebar rows (tree rows, Trash, Show more) are not buttons: they use `SIDEBAR_ROW` / `TreeRowLink` (theme look,
+`components/ui/rowStyles.ts`).
+
+Copy new colours into the `:root` block at the top. Everything after "Map: additions" is this app's own: keep it.
+
+## Check
+
+```
+npm run test --workspace app
+npm run build --workspace app
+```

@@ -1,4 +1,4 @@
-import { PICK_ROW, pickClass } from '../../../../components/ui/buttons/buttonStyles'
+import { PICK_ROW, pickClass } from '../../../../components/ui/rowStyles'
 import type { Style } from '../../types'
 
 /** The look of a pickable row in the line sections */

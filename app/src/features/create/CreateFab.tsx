@@ -5,7 +5,8 @@ import { useTimeout } from '../../lib/useTimeout'
 import { useOpenLayout } from '../objects/ListRows'
 import { single } from '../workspace/layout'
 import CreateModal from './CreateModal'
-import PixelSquare from '../../components/ui/pixel/PixelSquare'
+import Button from '../../components/ui/buttons/Button'
+import PanelButton from '../../components/ui/buttons/PanelButton'
 
 /** The modal's shrink-back (its animation, in animations.css) before it's removed (ms) */
 const CLOSE_MS = 200
@@ -13,10 +14,9 @@ const CLOSE_MS = 200
 const TOAST_MS = 6000
 
 // Full class strings so Tailwind can detect them at build time.
-// The two faces of the button, back to back: they never show through each other
-const FACE =
-  'absolute inset-0 flex cursor-pointer items-center justify-center gap-2 text-base font-medium [backface-visibility:hidden] ' +
-  'transition-[background-color,translate] active:translate-y-0.5 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-accent'
+// The two faces of the button, back to back: they never show through each other. The face is a wrapper, so the Panel
+// button's own press (a transform) doesn't undo the back face's turn
+const FACE = 'absolute inset-0 flex [backface-visibility:hidden]'
 
 /** What was made: its panel type (to open it), what to call it ("note") and its name */
 type Made = { id: string; panelType: string; label: string; name: string }
@@ -76,7 +76,7 @@ export default function CreateFab() {
       {mounted && <CreateModal key={session} closing={!open} inset={inset} onCreated={onCreated} />}
 
       {/* In the modal's footer corner (24px from the page's edges). A fixed size: both faces say their word without moving */}
-      <div style={{ insetInlineEnd: `calc(1.5rem + ${inset}px)` }} className="absolute bottom-6 z-[21] h-11 w-36 transition-[inset-inline-end] duration-200 ease-out [perspective:600px] motion-reduce:transition-none">
+      <div style={{ insetInlineEnd: `calc(1.5rem + ${inset}px)` }} className="absolute bottom-6 z-[21] h-14 w-48 transition-[inset-inline-end] duration-200 ease-out [perspective:600px] motion-reduce:transition-none">
         {made && !open && (
           <p
             role="status"
@@ -85,16 +85,16 @@ export default function CreateFab() {
             <span className="min-w-0 truncate">
               Created {made.label.toLowerCase()} <strong className="font-medium">{made.name}</strong>
             </span>
-            <button
-              type="button"
+            <Button
+              variant="text"
               onClick={() => {
                 openLayout(single({ type: made.panelType, id: made.id }))
                 setMade(null)
               }}
-              className="shrink-0 cursor-pointer font-medium text-highlight underline-offset-2 hover:underline"
+              className="shrink-0 text-highlight"
             >
               Open
-            </button>
+            </Button>
           </p>
         )}
         <div
@@ -102,35 +102,27 @@ export default function CreateFab() {
             open ? '[transform:rotateY(180deg)]' : ''
           }`}
         >
-          {/* Front: Create (green, like the rows' Create buttons) */}
-          <PixelSquare
-            as="button"
-            bevel
-            ref={buttonRef}
-            type="button"
-            onClick={show}
-            tabIndex={open ? -1 : 0}
-            aria-hidden={open}
-            aria-expanded={open}
-            aria-controls="create-modal"
-            className={`${FACE} text-create-fg [--pixel-face:var(--create)] hover:[--pixel-face:var(--btn-create-hover-bg)]`}
-          >
-            <LuPlus aria-hidden className="size-5" />
-            Create
-          </PixelSquare>
-          {/* Back: ✕ Cancel (gray), turned round so it reads right when the button is flipped */}
-          <PixelSquare
-            as="button"
-            bevel
-            type="button"
-            onClick={hide}
-            tabIndex={open ? 0 : -1}
-            aria-hidden={!open}
-            className={`${FACE} text-fg [--pixel-face:var(--fill-strong)] hover:[--pixel-face:var(--fill)] [transform:rotateY(180deg)]`}
-          >
-            <LuX aria-hidden className="size-5" />
-            Cancel
-          </PixelSquare>
+          {/* Front: Create (the Panel button: the only place it is used) */}
+          <span className={FACE}>
+            <PanelButton
+              ref={buttonRef}
+              icon={LuPlus}
+              onClick={show}
+              tabIndex={open ? -1 : 0}
+              aria-hidden={open}
+              aria-expanded={open}
+              aria-controls="create-modal"
+              className="size-full"
+            >
+              Create
+            </PanelButton>
+          </span>
+          {/* Back: ✕ Cancel (the grey Panel), turned round so it reads right when the button is flipped */}
+          <span className={`${FACE} [transform:rotateY(180deg)]`}>
+            <PanelButton muted icon={LuX} onClick={hide} tabIndex={open ? 0 : -1} aria-hidden={!open} className="size-full">
+              Cancel
+            </PanelButton>
+          </span>
         </div>
       </div>
     </>

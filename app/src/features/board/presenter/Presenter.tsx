@@ -107,10 +107,10 @@ export default function Presenter({ mapId, onClose }: { mapId: string; onClose: 
           })}
         </div>
         {current > 0 && (
-          <IconButton icon={LuChevronLeft} label="Previous map" variant="secondary" onClick={() => go(current - 1)} className="absolute start-2 top-1/2 z-40 -translate-y-1/2 shadow-md" />
+          <IconButton icon={LuChevronLeft} label="Previous map" variant="secondary" onClick={() => go(current - 1)} className="absolute start-2 top-1/2 z-40 -translate-y-1/2" />
         )}
         {current < maps.length - 1 && (
-          <IconButton icon={LuChevronRight} label="Next map" variant="secondary" onClick={() => go(current + 1)} className="absolute end-2 top-1/2 z-40 -translate-y-1/2 shadow-md" />
+          <IconButton icon={LuChevronRight} label="Next map" variant="secondary" onClick={() => go(current + 1)} className="absolute end-2 top-1/2 z-40 -translate-y-1/2" />
         )}
       </div>
 

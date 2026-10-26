@@ -12,7 +12,8 @@ import { useResourceMenu } from '../../../lib/resource/actions'
 import { useResourceList, useResourceLists } from '../../../lib/resource/hooks'
 import type { AnyResource } from '../../../resources/types'
 import Button from '../../ui/buttons/Button'
-import { TREE_ROW_LOOK } from '../../ui/buttons/buttonStyles'
+import IconSlot from '../../ui/icons/IconSlot'
+import { SIDEBAR_ROW, TREE_ROW_LOOK } from '../../ui/rowStyles'
 import { useLids } from '../../ui/tree/swallow'
 import TreeView from '../../ui/tree/TreeView'
 import type { TreeNode, TreeRightIcon } from '../../ui/tree/types'
@@ -225,9 +226,9 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
     list.status === 'loading' ? (
       'Loading…'
     ) : list.status === 'error' ? (
-      <button type="button" onClick={list.refresh} className="cursor-pointer underline-offset-2 hover:underline">
+      <Button variant="text" onClick={list.refresh}>
         Could not load. Try again
-      </button>
+      </Button>
     ) : nodes.length === 0 ? (
       `No ${resource.ui.plural.toLowerCase()} yet`
     ) : null
@@ -240,22 +241,23 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
         <TreeView nodes={shown} label={resource.ui.plural} {...settings} />
       )}
       {hidden > 0 && (
-        <Button
-          variant="ghost"
-          icon={showAll ? LuChevronsUp : LuChevronsDown}
+        // A sidebar row, like the rows above it (not a button)
+        <button
+          type="button"
           onClick={() => setShowAll(!showAll)}
           aria-expanded={showAll}
           title={showAll ? 'Show less' : `Show ${hidden} more`}
           aria-label={showAll ? 'Show less' : `Show ${hidden} more`}
-          className={`mt-1 w-full justify-start overflow-hidden text-fg-muted ${TREE_ROW_LOOK}`}
+          className={`${SIDEBAR_ROW} mt-1 w-full justify-start overflow-hidden text-fg-muted ${TREE_ROW_LOOK}`}
         >
+          <IconSlot icon={showAll ? LuChevronsUp : LuChevronsDown} />
           {!compact && <span className="whitespace-nowrap">{showAll ? 'Show less' : `Show more (${hidden})`}</span>}
-        </Button>
+        </button>
       )}
       {showAll && !only && list.hasMore && (
-        <Button variant="ghost" onClick={list.loadMore} disabled={list.loadingMore} className={`mt-1 w-full justify-start overflow-hidden text-fg-muted ${TREE_ROW_LOOK}`}>
+        <button type="button" onClick={list.loadMore} disabled={list.loadingMore} className={`${SIDEBAR_ROW} mt-1 w-full justify-start overflow-hidden text-fg-muted ${TREE_ROW_LOOK}`}>
           {!compact && <span className="whitespace-nowrap">{list.loadingMore ? 'Loading…' : 'Load more'}</span>}
-        </Button>
+        </button>
       )}
       {dialogs}
       {[...childMenus.values()].map((menu, i) => (

@@ -9,7 +9,6 @@ import { resourceByPanelType } from '../../resources/registry'
 import { parsePanelKey } from '../workspace/layout'
 import { usePanelRegistry } from '../workspace/registryContext'
 import { shareUrl, socialLinks, type SocialSite } from './shareLinks'
-import { TEXT_BUTTON } from '../../components/ui/buttons/buttonStyles'
 
 // An empty resource for when the key names none (the hook then asks nothing)
 const NONE = { name: '', api: { get: async () => ({}) } } as never
@@ -92,9 +91,9 @@ export default function ShareOptions({ id, onChoose }: { id: string; onChoose?: 
       </div>
 
       {onChoose && (
-        <button type="button" onClick={onChoose} className={`${TEXT_BUTTON} self-start`}>
+        <Button variant="text" onClick={onChoose} className="self-start">
           Choose another
-        </button>
+        </Button>
       )}
     </div>
   )

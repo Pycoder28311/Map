@@ -6,7 +6,7 @@ import { createBranch, renameMap, useMaps } from '../maps/maps'
 import { useWorkspace } from '../workspace/useWorkspace'
 import { branchList, nextBranchName } from './branches'
 import BarPopover from './BarPopover'
-import { LIST_ITEM } from '../../components/ui/buttons/buttonStyles'
+import { LIST_ITEM } from '../../components/ui/rowStyles'
 
 const when = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 

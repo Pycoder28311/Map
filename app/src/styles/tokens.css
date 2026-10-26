@@ -1,5 +1,5 @@
 /* Design tokens: sizes, spacing and radii used by the UI components (components/ui).
-   Change the look of every component here. From the "Map buttons" theme; the last
+   Change the look of every component here (buttons: styles/buttons.css). From the "Map buttons" theme; the last
    two groups are additions for text buttons and form fields in the same style. */
 :root {
    /* The two corner sizes everything below is built from: change these to change every rounded corner.
@@ -16,33 +16,20 @@
 
    --btn-px: 6px;
    --btn-py: 6px;
-   /* outline of text and icon buttons: none in the base theme (themes can draw one) */
-   --btn-border-w: 0px;
-   --btn-border-c: transparent;
-   /* a shadow under primary buttons (box-shadow value): none in the base theme */
-   --btn-primary-shadow: 0 0 #0000;
-   /* the same for the green Create buttons (dashboard rows, the floating one's closed split button) */
-   --btn-create-shadow: 0 0 #0000;
-   /* marks in the corners of the green Create buttons (a CSS background value, see cornerMarks.css): none in the base theme */
+   /* outline of a sidebar row you click (rowStyles.ts SIDEBAR_ROW): none in the base theme (themes can draw one) */
+   --row-border-w: 0px;
+   --row-border-c: transparent;
+   /* marks in the corners of an element (a CSS background value, see cornerMarks.css): none in the base theme */
    --btn-corners: none;
 
-   /* Hover / pressed look of the buttons (Button, IconButton, Create buttons). The base theme changes the background
-      (these hover colours) and draws no inner shadow (the 0 0 #0000 ones); a theme can keep the background and draw
-      an inner shadow instead. "dark": on light and green buttons; "light": on gray and see-through ones. */
-   --btn-primary-hover-bg: var(--accent-hover);
-   --btn-secondary-hover-bg: var(--fill-strong);
-   --btn-ghost-hover-bg: var(--fill);
-   --btn-create-hover-bg: var(--create-hover);
+   /* Hover / pressed look of rows and other clickable areas that aren't buttons (hoverEffects.css; the buttons
+      themselves look the same in every theme: styles/buttons.css). The base theme changes the background and draws
+      no inner shadow (the 0 0 #0000 ones); a theme can keep the background and draw an inner shadow instead. */
    --hover-fill-bg: var(--fill);
    --hover-fill-strong-bg: var(--fill-strong);
    --hover-faint-bg: color-mix(in oklab, var(--fg) 10%, transparent);
-   --btn-hover-inset-dark: 0 0 #0000;
-   --btn-active-inset-dark: 0 0 #0000;
    --btn-hover-inset-light: 0 0 #0000;
    --btn-active-inset-light: 0 0 #0000;
-   /* the raised floating / modal Create button (features/create/buttonLook.ts): at rest and while pressed */
-   --btn-raised-shadow: inset 0 2px 0 rgb(255 255 255 / 0.3), inset 0 -4px 0 rgb(0 0 0 / 0.24), 0 6px 16px rgb(0 0 0 / 0.22);
-   --btn-raised-shadow-active: inset 0 2px 0 rgb(255 255 255 / 0.3), inset 0 -2px 0 rgb(0 0 0 / 0.24), 0 3px 8px rgb(0 0 0 / 0.2);
    --btn-radius: var(--corner-lg);
    --btn-icon-size: 16px;
    --btn-icon-offset-start: 4px;

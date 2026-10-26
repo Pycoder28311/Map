@@ -1,6 +1,5 @@
 /* The "pixel" theme: a blocky game-menu look (Minecraft style). No rounding anywhere: instead every rounded element
-   has its corner pixels cut off (a square notch the size of one pixel, --pixel), buttons get a thick dark outline and a
-   light / dark bevel inside, like the game's buttons. Colors come from the base theme.
+   has its corner pixels cut off (a square notch the size of one pixel, --pixel). Colors come from the base theme.
    Active when <html data-theme="pixel"> (lib/theme.ts). To use it: setTheme('pixel') in the browser console. */
 :root[data-theme='pixel'] {
   /* The size of one pixel: the notch of the corners, the thickness of outlines and bevels */
@@ -17,16 +16,9 @@
   --radius-pill: 0px;
   --radius-circle: 0px;
 
-  /* Buttons: a dark outline one pixel thick. Primary and Create buttons are raised like the floating Create button: a light
-     band along the top inside them and a darker one along the bottom (pressed: the bottom band thins, a dark one
-     appears on top, as if pushed in) */
-  --btn-border-w: var(--pixel);
-  --btn-border-c: #000;
-  --btn-primary-shadow: inset 0 var(--pixel) 0 rgb(255 255 255 / 0.3), inset 0 calc(0px - 2 * var(--pixel)) 0 rgb(0 0 0 / 0.24);
-  --btn-create-shadow: var(--btn-primary-shadow);
-  --btn-raised-shadow: var(--btn-primary-shadow);
-  --btn-raised-shadow-active: inset 0 var(--pixel) 0 rgb(255 255 255 / 0.3), inset 0 calc(0px - var(--pixel)) 0 rgb(0 0 0 / 0.24);
-  --btn-active-inset-dark: inset 0 var(--pixel) 0 rgb(0 0 0 / 0.35);
+  /* Sidebar rows: a dark outline one pixel thick */
+  --row-border-w: var(--pixel);
+  --row-border-c: #000;
 
   /* Bar popouts: blocky too (square pixels of --popout-radius): the bottom corners lose one pixel, and where a popout
      meets its bar one square pixel extends it sideways. BarPopout sets --cut-*, --ear-* and --foot-* on each popout. */
@@ -38,10 +30,10 @@
 
 /* Every element with rounded corners (rounded-(--…) in its classes) loses its four corner pixels. Left square, with no
    notch: the ones rounded on one side only (like the split Create button's parts) and the ones whose background shows
-   only while hovered (hover-fill…, the ghost buttons: Sort by, sidebar rows). The outline of a focused element moves
+   only while hovered (hover-fill…, sidebar rows) and the buttons (.ui-btn: one look in every theme, styles/buttons.css). The outline of a focused element moves
    inside it, as the clipping would hide it outside. */
 :root[data-theme='pixel']
-  [class*='rounded-(--']:not([class*='rounded-s-']):not([class*='rounded-e-']):not([class*='rounded-b-']):not([class*='hover-fill']):not([class*='hover-faint']):not([class*='--btn-ghost-hover-bg']) {
+  [class*='rounded-(--']:not([class*='rounded-s-']):not([class*='rounded-e-']):not([class*='rounded-b-']):not([class*='hover-fill']):not([class*='hover-faint']):not(.ui-btn) {
   clip-path: polygon(
     var(--pixel) 0,
     calc(100% - var(--pixel)) 0,

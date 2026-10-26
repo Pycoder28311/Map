@@ -11,7 +11,7 @@ import type { WorkspaceLayout } from '../workspace/layout'
 import { usePanelRegistry } from '../workspace/registryContext'
 import { hrefFor } from '../workspace/useWorkspace'
 import { PLAIN_ROW } from './ObjectRow'
-import { TEXT_BUTTON } from '../../components/ui/buttons/buttonStyles'
+import Button from '../../components/ui/buttons/Button'
 
 /** Rows shown before "Show all" (the Dashboard's columns: three) */
 const MAX_ROWS = 3
@@ -60,14 +60,9 @@ export function Rows({ rows, empty, allHref, limit = MAX_ROWS }: { rows: ReactNo
             Show all ({rows.length})
           </Link>
         ) : (
-          <button
-            type="button"
-            onClick={() => setExpanded(!expanded)}
-            className={`${TEXT_BUTTON} mt-1 inline-flex items-center gap-1 px-2`}
-          >
-            {expanded ? <LuChevronsUp className="size-3.5" /> : <LuChevronsDown className="size-3.5" />}
+          <Button variant="text" icon={expanded ? LuChevronsUp : LuChevronsDown} onClick={() => setExpanded(!expanded)} className="mt-1 ms-2 self-start">
             {expanded ? 'Show less' : `Show all (${rows.length})`}
-          </button>
+          </Button>
         ))}
     </>
   )

@@ -1,22 +1,15 @@
 import { useId, useRef, type ToggleEvent } from 'react'
 import { LuChevronDown } from 'react-icons/lu'
 import type { PlainIcon } from '../icons/IconSlot'
+import Button from '../buttons/Button'
+import IconButton from '../buttons/IconButton'
 
-// Full class strings so Tailwind can detect them at build time.
-const TRIGGER =
-  'inline-flex shrink-0 items-center gap-1 rounded-(--btn-radius) px-2 py-1 text-body text-fg-muted cursor-pointer ' +
-  'transition-colors duration-200 ease-out hover-fill hover:text-fg ' +
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+// Full class strings so Tailwind can detect them at build time. The trigger is a Shade button (buttonStyles.ts).
 // A native popover (top layer; closes on a click outside or Esc), UA defaults reset; top/right set on
 // open. It pops out of the trigger's corner (it's aligned to the trigger's right edge, below it)
 const MENU =
   'inset-auto m-0 min-w-32 rounded-(--menu-radius) border border-line bg-surface p-(--menu-p) text-fg shadow-lg ' +
   'origin-top-right animate-dropdown-in motion-reduce:animate-none'
-// An icon-only trigger (e.g. ⋯ on a column's label)
-const ICON_TRIGGER =
-  'inline-flex shrink-0 items-center justify-center rounded-(--btn-close-radius) p-(--btn-close-p) text-fg-muted cursor-pointer ' +
-  'transition-colors duration-200 ease-out hover-fill hover:text-fg ' +
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 const ITEM =
   'flex h-(--menu-item-h) w-full items-center gap-(--menu-icon-gap) rounded-(--menu-item-radius) px-(--menu-item-px) ' +
   'text-body cursor-pointer hover-fill focus-visible:bg-fill focus-visible:outline-none aria-checked:font-medium ' +
@@ -78,25 +71,17 @@ export default function Dropdown<T extends string>({ value, options, onChange, l
   return (
     <>
       {TriggerIcon ? (
-        <button
-          ref={triggerRef}
-          type="button"
-          popoverTarget={id}
-          aria-haspopup="menu"
-          aria-label={label}
-          title={label}
-          className={`${ICON_TRIGGER} ${className}`}
-        >
-          <TriggerIcon className="size-(--btn-icon-size)" />
-        </button>
+        <IconButton ref={triggerRef} icon={TriggerIcon} label={label} size="sm" popoverTarget={id} aria-haspopup="menu" className={`shrink-0 ${className}`} />
       ) : (
-        <button
+        <Button
           ref={triggerRef}
-          type="button"
+          variant="ghost"
+          size="sm"
+          icon={Icon}
           popoverTarget={id}
           aria-haspopup="menu"
           aria-label={`${label}: ${current?.label}`}
-          className={`${TRIGGER} ${hoverChevron ? 'group/dropdown relative' : ''} ${className}`}
+          className={`shrink-0 ${hoverChevron ? 'group/dropdown relative' : ''} ${className}`}
         >
           {hoverChevron && (
             // Floats over the end of the name (in front of it, taking no room of its own), on a veil so the letters under it stay out of the way
@@ -104,10 +89,9 @@ export default function Dropdown<T extends string>({ value, options, onChange, l
               <LuChevronDown className="size-4" />
             </span>
           )}
-          {Icon && <Icon className="size-4" />}
           {current?.label}
-          {!hoverChevron && <LuChevronDown className="size-4" aria-hidden />}
-        </button>
+          {!hoverChevron && <LuChevronDown aria-hidden />}
+        </Button>
       )}
 
       <div ref={menuRef} id={id} popover="auto" role="menu" aria-label={label} onBeforeToggle={place} onToggle={focusCurrent} className={MENU}>

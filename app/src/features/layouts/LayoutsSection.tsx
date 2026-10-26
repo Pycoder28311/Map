@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { LuChevronsDown, LuChevronsUp, LuLayoutTemplate, LuPlus, LuSave, LuTrash2, LuX } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
+import IconSlot from '../../components/ui/icons/IconSlot'
+import { SIDEBAR_ROW } from '../../components/ui/rowStyles'
 import Divider from '../../components/ui/Divider'
 import Callout from '../../components/ui/overlays/Callout'
 import Modal from '../../components/ui/overlays/Modal'
@@ -232,9 +234,9 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
       {n === 0 && status !== 'ready' ? (
         // The layouts are on their way (or could not be read)
         status === 'error' ? (
-          <button type="button" onClick={refresh} className="cursor-pointer text-start underline-offset-2 hover:underline">
+          <Button variant="text" onClick={refresh} className="self-start">
             <SectionNote compact={compact}>Could not load. Try again</SectionNote>
-          </button>
+          </Button>
         ) : (
           <SectionNote compact={compact}>Loading…</SectionNote>
         )
@@ -285,19 +287,20 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
           {/* The open layout changed: save the panes as a new layout instead (it becomes the selected one) */}
           {changed && <CreateButton compact={compact} onClick={() => attempt('save the layout', () => saveLayout(workspace.layout!, split))} className="mt-2" />}
           {hidden > 0 && (
-            <Button
-              variant="ghost"
-              icon={expanded ? LuChevronsUp : LuChevronsDown}
+            // A sidebar row (not a button)
+            <button
+              type="button"
               onClick={() => setExpanded(!expanded)}
               aria-expanded={expanded}
               title={expanded ? 'Show less' : `Show ${hidden} more`}
-              // Closed sidebar: only its icon (the button narrows to a rail row, and has no text at all)
+              // Closed sidebar: only its icon (the row narrows to a rail row, and has no text at all)
               aria-label={expanded ? 'Show less' : `Show ${hidden} more`}
-              className={`mt-1 w-full justify-start overflow-hidden text-fg-muted transition-[max-width] duration-(--sidebar-duration) ease-out motion-reduce:transition-none ${compact ? BUTTON_COMPACT : 'max-w-full'}`}
+              className={`${SIDEBAR_ROW} mt-1 w-full justify-start overflow-hidden text-fg-muted transition-[max-width] duration-(--sidebar-duration) ease-out motion-reduce:transition-none ${compact ? BUTTON_COMPACT : 'max-w-full'}`}
             >
+              <IconSlot icon={expanded ? LuChevronsUp : LuChevronsDown} />
               {/* Not drawn while the sidebar is closed (the sidebar clips it while it opens) */}
               {!compact && <span className="whitespace-nowrap">{expanded ? 'Show less' : `Show more (${hidden})`}</span>}
-            </Button>
+            </button>
           )}
         </>
       )}

@@ -2,7 +2,7 @@ import { useDroppable } from '@dnd-kit/core'
 import { useState } from 'react'
 import { useTrashedItems } from '../../../lib/resource/trash'
 import { resourcesWith } from '../../../resources/registry'
-import { TREE_ROW_LOOK, buttonClass } from '../../ui/buttons/buttonStyles'
+import { SIDEBAR_ROW, TREE_ROW_LOOK } from '../../ui/rowStyles'
 import { useLidOpen } from '../../ui/tree/swallow'
 import { TRASH_ID, useSidebarDrop } from './sidebarDropState'
 import TrashModal from './TrashModal'
@@ -63,11 +63,7 @@ export default function TrashBin({ compact }: { compact: boolean }) {
         onClick={() => setOpen(true)}
         aria-label={`Trash, ${count} ${count === 1 ? 'item' : 'items'}`}
         title="Trash"
-        className={buttonClass(
-          'ghost',
-          true,
-          `relative w-full justify-start text-fg-muted transition-[max-width] duration-(--sidebar-duration) ${compact ? RAIL_ROW : 'max-w-full'} ${over ? 'bg-drop/16 ring-[1.4px] ring-inset ring-drop/55' : TREE_ROW_LOOK}`,
-        )}
+        className={`${SIDEBAR_ROW} ${`relative w-full justify-start text-fg-muted transition-[max-width] duration-(--sidebar-duration) ${compact ? RAIL_ROW : 'max-w-full'} ${over ? 'bg-drop/16 ring-[1.4px] ring-inset ring-drop/55' : TREE_ROW_LOOK}`}`}
       >
         <span data-drop-icon={TRASH_ID} className="ms-(--btn-icon-offset-start) flex shrink-0">
           <TrashIcon open={over || swallowing} />

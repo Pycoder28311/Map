@@ -4,7 +4,8 @@ import { SHAPE_LABEL, shapeParamDefault } from './shapes'
 import { shapeSample } from './samples'
 import StyleSample from './StyleSample'
 import { SHAPE_TYPES, type ShapeType } from './types'
-import { TEXT_BUTTON, pickClass } from '../../components/ui/buttons/buttonStyles'
+import { pickClass } from '../../components/ui/rowStyles'
+import Button from '../../components/ui/buttons/Button'
 
 type Props = {
   value: ShapeType | null
@@ -58,9 +59,9 @@ export default function ShapeGrid({ value, onPick, onClear }: Props) {
         ))}
       </ul>
       {SHAPE_TYPES.length > fit && (
-        <button type="button" aria-expanded={more} onClick={() => setMore(!more)} className={`${TEXT_BUTTON} self-center`}>
+        <Button variant="text" aria-expanded={more} onClick={() => setMore(!more)} className="self-center">
           {more ? 'Show less' : 'Show more'}
-        </button>
+        </Button>
       )}
     </div>
   )

@@ -1,12 +1,14 @@
 import type { AnchorHTMLAttributes, CSSProperties, ReactNode, Ref } from 'react'
 import { NavLink } from 'react-router-dom'
-import { buttonClass, type ButtonVariant } from './buttonStyles'
-import IconSlot, { type ButtonIcon } from '../icons/IconSlot'
+import { buttonClass, type ButtonSize, type ButtonVariant } from './buttonStyles'
+import ButtonContent from './ButtonContent'
+import type { ButtonIcon } from '../icons/IconSlot'
 import type { IconAnimation } from '../icons/iconAnimations'
 
 type Props = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'className' | 'style' | 'children'> & {
   to: string
   variant?: ButtonVariant
+  size?: ButtonSize
   icon?: ButtonIcon
   iconAnimation?: IconAnimation
   className?: string
@@ -19,10 +21,11 @@ type Props = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'className' 
   children: ReactNode
 }
 
-/** Navigation link that looks like Button and marks the current page (aria-current="page" + active style) */
+/** Navigation link that looks like Button and marks the current page (aria-current="page": styles/buttons.css gives it the hover look) */
 export default function NavButton({
   to,
   variant = 'ghost',
+  size,
   icon,
   iconAnimation,
   className,
@@ -39,10 +42,11 @@ export default function NavButton({
       end={end}
       style={style}
       aria-current={active === undefined ? undefined : active ? 'page' : false}
-      className={({ isActive }) => buttonClass(variant, !!icon, className, active ?? isActive)}
+      className={buttonClass(variant, className, size)}
     >
-      {icon && <IconSlot icon={icon} animation={iconAnimation} />}
-      {children}
+      <ButtonContent variant={variant} icon={icon} iconAnimation={iconAnimation}>
+        {children}
+      </ButtonContent>
     </NavLink>
   )
 }

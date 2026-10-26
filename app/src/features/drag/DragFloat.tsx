@@ -1,7 +1,7 @@
 import { useDndContext, useDndMonitor } from '@dnd-kit/core'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { buttonClass } from '../../components/ui/buttons/buttonStyles'
+import ButtonLook from '../../components/ui/buttons/ButtonLook'
 import { MOTION } from '../../components/ui/tree/dragEffects'
 import { dragPoint } from '../../lib/dnd'
 import type { PanelDragData } from '../workspace/types'
@@ -91,10 +91,9 @@ export default function DragFloat() {
         {surface ? (
           surface.look(item)
         ) : (
-          <div className={buttonClass('secondary', !!Icon, 'whitespace-nowrap shadow-lg')}>
-            {Icon && <Icon className="ms-(--btn-icon-offset-start) size-(--btn-icon-size)" />}
+          <ButtonLook variant="secondary" icon={Icon}>
             {item.label}
-          </div>
+          </ButtonLook>
         )}
       </div>
     </div>,

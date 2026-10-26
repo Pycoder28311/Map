@@ -11,9 +11,9 @@ export type ButtonIcon = PlainIcon | LayeredIcon
 
 const ICON_CLASS = 'size-(--btn-icon-size) shrink-0 ms-(--btn-icon-offset-start)'
 
-/** The icon of a button, sized by the theme tokens, with its hover animation */
-export default function IconSlot({ icon: Icon, animation = 'none' }: { icon: ButtonIcon; animation?: IconAnimation }) {
+/** The icon of a button, sized by the theme tokens (or `className`: a button's ui-btn-icon), with its hover animation */
+export default function IconSlot({ icon: Icon, animation = 'none', className = ICON_CLASS }: { icon: ButtonIcon; animation?: IconAnimation; className?: string }) {
   const moving = iconAnimations[animation]
-  if (Icon.layered) return <Icon className={ICON_CLASS} movingClassName={moving} />
-  return <Icon className={`${ICON_CLASS} ${moving}`} />
+  if (Icon.layered) return <Icon className={className} movingClassName={moving} />
+  return <Icon className={`${className} ${moving}`} />
 }
