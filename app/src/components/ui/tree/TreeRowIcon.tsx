@@ -8,13 +8,8 @@ import { ICON_BOX, ICON_BUTTON } from './treeIconStyles'
 // row is hovered, or holds keyboard focus (:focus-visible, so not after a mouse click: a clicked row
 // keeps focus, which would leave the arrow showing).
 // Both are stacked in one grid cell, so swapping them never moves anything.
-const ICON_SWAP = 'transition-opacity duration-150 ease-out group-hover/row:opacity-0 group-has-[:focus-visible]/row:opacity-0'
+const ICON_SWAP = 'group-hover/row:opacity-0 group-has-[:focus-visible]/row:opacity-0'
 const ARROW_SWAP = 'opacity-0 group-hover/row:opacity-100 group-has-[:focus-visible]/row:opacity-100'
-// The arrow fades like the icon, and turns a quarter when the folder opens (the Zen reel's chevron:
-// 260ms, its curve); one transition for both
-const ARROW_TURN =
-  '[transition:opacity_150ms_ease-out,rotate_260ms_cubic-bezier(0.65,0,0.35,1)] motion-reduce:transition-none'
-
 type Props = {
   /** The node's icon (an open folder's openIcon) */
   icon?: ButtonIcon
@@ -29,15 +24,18 @@ type Props = {
  * becomes the arrow while the row is hovered (a folder without an icon always shows the arrow).
  */
 export default function TreeRowIcon({ icon: Icon, folder, toggle }: Props) {
-  const glyph = 'size-(--btn-icon-size) col-start-1 row-start-1'
+  // The size follows --tree-row-icon: bigger while the sidebar is closed, growing with its animation. One transition for all of
+  // it: size, the icon/arrow swap (150ms) and the arrow's quarter turn when the folder opens (260ms, the Zen reel's chevron curve)
+  const SIZE = 'size-(--tree-row-icon)'
+  const glyph = `${SIZE} col-start-1 row-start-1 [transition:width_var(--tree-compact-duration)_ease-out,height_var(--tree-compact-duration)_ease-out,opacity_150ms_ease-out,rotate_260ms_cubic-bezier(0.65,0,0.35,1)] motion-reduce:transition-none`
 
   const inner = folder ? (
     <span className="grid">
       {Icon && <Icon className={`${glyph} ${ICON_SWAP}`} />}
-      <LuChevronRight className={`${glyph} ${Icon ? ARROW_SWAP : ''} ${ARROW_TURN} ${folder.isOpen ? 'rotate-90' : ''}`} />
+      <LuChevronRight className={`${glyph} ${Icon ? ARROW_SWAP : ''} ${folder.isOpen ? 'rotate-90' : ''}`} />
     </span>
   ) : (
-    Icon && <Icon className="size-(--btn-icon-size)" />
+    Icon && <Icon className={`${SIZE} transition-[width,height] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none`} />
   )
 
   // The arrow's own hover background, like the other tree icons

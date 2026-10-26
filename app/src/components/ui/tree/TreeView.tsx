@@ -32,6 +32,8 @@ type Props = {
 const COMPACT: CSSProperties = {
   '--tree-row-max': 'calc(2 * var(--btn-px) + var(--btn-icon-size) + 2 * var(--btn-close-p))',
   '--tree-indent-now': '0px',
+  '--tree-row-icon': 'var(--sidebar-icon-closed)',
+  '--tree-row-px': 'calc((var(--sidebar-row) - var(--sidebar-icon-closed) - 2 * var(--btn-close-p)) / 2)',
   '--tree-line-color': 'transparent',
   '--tree-indent-duration': '0s',
 } as CSSProperties

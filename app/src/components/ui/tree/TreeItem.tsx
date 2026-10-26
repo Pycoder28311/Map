@@ -36,19 +36,19 @@ type Props = {
 }
 
 // Fills the row; the right icons sit over its end and the label fades before them
-const ROW_CLASS = 'min-w-0 flex-1 justify-start'
+const ROW_CLASS = 'min-w-0 flex-1 justify-start transition-[padding] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none'
 // Same start padding for every row; deeper levels are indented by their group's margin (below)
-const INDENT: CSSProperties = { paddingInlineStart: 'var(--btn-px)', paddingInlineEnd: 0 }
+const INDENT: CSSProperties = { paddingInlineStart: 'var(--tree-row-px)', paddingInlineEnd: 0 }
 // A folder that is also a link: its icon is a separate button laid over the link's start, so the
 // link's label starts after it (padding + the icon's box + the gap before the label)
 const INDENT_AFTER_ICON: CSSProperties = {
-  paddingInlineStart: 'calc(var(--btn-px) + var(--btn-icon-size) + 2 * var(--btn-close-p) + var(--tree-label-gap))',
+  paddingInlineStart: 'calc(var(--tree-row-px) + var(--tree-row-icon) + 2 * var(--btn-close-p) + var(--tree-label-gap))',
   paddingInlineEnd: 0,
 }
 // A row that isn't a link: a folder without a page, or any row while its name is edited (an input
 // can't sit inside a link). As tall as a link row (rounded, for the editing highlight); the end
 // padding keeps the text off the edge
-const PLAIN_ROW = `${ROW_CLASS} flex min-h-(--sidebar-row) items-center rounded-(--btn-radius) py-(--pill-py) pe-(--btn-px) text-base`
+const PLAIN_ROW = `${ROW_CLASS} flex min-h-(--sidebar-row) items-center rounded-(--btn-radius) py-(--pill-py) pe-(--btn-px) text-body`
 
 // Children: one indent step right; none in compact (one column), sliding with the width animation. A very thin line down
 // their left, --spacing-sm from them: drawn in the indent (it takes no room, so the children stay where and as wide as they
@@ -217,7 +217,7 @@ export default function TreeItem({
         className={`${dropAt === 'into' ? INTO : ''} ${dnd?.draggingId === node.id ? LEFT_BEHIND : ''} group/row ui-field-row relative flex items-center [--icons:var(--icons-rest)] hover:[--icons:var(--icons-hover)] has-[:focus-visible]:[--icons:var(--icons-hover)] max-w-[var(--tree-row-max,100%)] transition-[max-width] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none`}
       >
         {state.isFolder && (
-          <span data-drop-icon={node.id} className="absolute start-(--btn-px) top-1/2 z-10 flex -translate-y-1/2">
+          <span data-drop-icon={node.id} className="absolute start-(--tree-row-px) top-1/2 z-10 flex -translate-y-1/2 transition-[inset-inline-start] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none">
             {editing ? (
               // Only the node's own icon while its name is edited (no open/close arrow)
               <TreeRowIcon icon={icon} />

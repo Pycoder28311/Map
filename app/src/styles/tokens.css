@@ -86,9 +86,11 @@
    --sidebar-py: var(--sidebar-pad);
    /* a sidebar row: as tall as the closed sidebar's inner width, so closed it is a square */
    --sidebar-row: calc(var(--sidebar-rail) - 2 * var(--sidebar-pad));
-   /* the icons of its rows, a little bigger than the others (the names are text-base): inside the sidebar (data-sidebar)
-      --btn-icon-size is this, and the row's start padding is what is left of --sidebar-row around the icon's box */
-   --sidebar-icon: 20px;
+   /* the icon of an object's row while the sidebar is closed: bigger than when it is open (TreeView sets --tree-row-icon and
+      --tree-row-px to it and to the start padding that centres it in the square row, then; open, they are the button icon's) */
+   --sidebar-icon-closed: 20px;
+   --tree-row-icon: var(--btn-icon-size);
+   --tree-row-px: var(--btn-px);
    /* space above/below the tree (left/right: computed to center the icons in the rail, Sidebar.tsx) */
    --sidebar-duration: 200ms;
 
@@ -189,10 +191,4 @@
    /* padding around its buttons */
    --island-gap: 2px;
    /* between its buttons */
-}
-
-/* The sidebar's bigger icons: everything inside it that reads the button icon size (rows, lines, Trash) gets this one */
-[data-sidebar] {
-   --btn-icon-size: var(--sidebar-icon);
-   --btn-px: calc((var(--sidebar-row) - var(--sidebar-icon) - 2 * var(--btn-close-p)) / 2);
 }
