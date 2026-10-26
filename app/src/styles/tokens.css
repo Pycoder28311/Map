@@ -16,9 +16,6 @@
 
    --btn-px: 6px;
    --btn-py: 6px;
-   /* outline of a sidebar row you click (rowStyles.ts SIDEBAR_ROW): none in the base theme (themes can draw one) */
-   --row-border-w: 0px;
-   --row-border-c: transparent;
    /* marks in the corners of an element (a CSS background value, see cornerMarks.css): none in the base theme */
    --btn-corners: none;
 
@@ -56,8 +53,6 @@
    --field-px: 12px;
    --field-gap: 8px;
    --field-radius: var(--corner-lg);
-   /* the outline of a bordered field */
-   --field-border-c: var(--line-strong);
 
    /* Tree view (components/ui/tree): how far right each level's (narrower) rows start */
    --tree-indent: 8px;
@@ -124,11 +119,6 @@
    --sidebar-fire: transparent;
    --sidebar-fire-hot: transparent;
    --sidebar-fire-glow: none;
-   /* a sidebar row's own background (none in the base theme: the sidebar shows through) and its background while hovered */
-   --tree-row-bg: transparent;
-   /* a sidebar row's outline, drawn inside it (a CSS outline value: none in the base theme) */
-   --tree-row-outline: none;
-   --tree-row-hover-bg: var(--fill);
    /* The concave corners joining a popout to its bar (the bar's colour with a quarter circle cut out; fillet-l has its
       cut-out at the bottom left, fillet-r at the bottom right). A theme can draw them another way, see themes/arcane.css */
    --popout-fillet-l: radial-gradient(circle at 0 100%, transparent calc(var(--popout-radius) - 0.5px), var(--surface) var(--popout-radius));

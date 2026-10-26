@@ -10,10 +10,7 @@
   --corner-xs: 1px;
   --popout-radius: 10px;
 
-  /* Sidebar rows and fields get a hairline outline (buttons have one look in every theme: styles/buttons.css) */
-  --row-border-w: 1px;
-  --row-border-c: var(--line);
-  --field-border-c: var(--line);
+  /* (Buttons, text fields and sidebar rows have one look in every theme: styles/buttons.css, styles/fields.css) */
   /* Corner marks (cornerMarks.css): in each corner, two short lighter strokes (white at some opacity): 8px long, 2px
      thick, 3px in from the edge */
   --btn-corners:
@@ -72,11 +69,6 @@
     radial-gradient(90% 62% at 0% 100%, rgb(255 110 30 / 0.4), rgb(255 110 30 / 0.16) 35%, transparent 75%),
     radial-gradient(90% 62% at 100% 100%, rgb(255 110 30 / 0.4), rgb(255 110 30 / 0.16) 35%, transparent 75%),
     radial-gradient(70% 30% at 50% 100%, rgb(255 170 60 / 0.35), transparent 85%);
-  /* Sidebar rows are a solid color, not see-through (the current page's row is lighter: --fill) */
-  --tree-row-bg: var(--surface-sunken);
-  --tree-row-hover-bg: var(--surface-sunken);
-  /* ...and outlined with the same light gray as the navbar's line (inside the row, so nothing moves) */
-  --tree-row-outline: 1px solid var(--line);
   /* The lines between the sidebar's sections (Divider) and above the Trash button: stronger than the base ones */
   --divider-line: #6b7280;
   /* A very faint grain over the navbar, the sidebar and the popouts: noise drawn in white at about 7% (160px tile that

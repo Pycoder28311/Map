@@ -2,8 +2,8 @@
 // (tokens.css, themes/). The buttons are components/ui/buttons/ (styles/buttons.css). Full class strings so Tailwind can
 // detect them at build time.
 
-/** The background of a sidebar row (the theme's --tree-row-bg: none in the base theme, a solid colour in others) */
-export const TREE_ROW_LOOK = '[background-color:var(--tree-row-bg)] [outline:var(--tree-row-outline)] [outline-offset:-1px] [--hover-fill-bg:var(--tree-row-hover-bg)]'
+/** The look of a sidebar row (an object, Trash, Show more): the text field's (styles/fields.css) */
+export const TREE_ROW_LOOK = 'ui-field-row'
 
 // ---- Pickable rows / options (a list of choices where one is "selected") ----
 
@@ -29,8 +29,7 @@ export const LIST_ITEM =
 /** Keyboard focus ring of a row or option */
 export const FOCUS_RING = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 
-/** A sidebar row you click (a tree row's link, Trash, Show more): the row look of the theme, the current one filled */
+/** A sidebar row's link or button (a tree row's link, Trash, Show more): layout only; the look is the row's (TREE_ROW_LOOK) */
 export const SIDEBAR_ROW =
-  'group/main inline-flex items-center gap-(--btn-gap) rounded-(--btn-radius) py-(--pill-py) ps-(--btn-px) pe-(--pill-px) text-body cursor-pointer ' +
-  'border-(length:--row-border-w) border-(--row-border-c) ' +
-  `transition-colors duration-200 ease-out hover-fill aria-[current=page]:bg-fill disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS_RING}`
+  'group/main inline-flex items-center gap-(--btn-gap) py-(--pill-py) ps-(--btn-px) pe-(--pill-px) text-body cursor-pointer ' +
+  `disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS_RING}`

@@ -26,9 +26,10 @@ export function buttonClass(variant: ButtonVariant, extra = '', size: ButtonSize
   return `group/main ui-btn ${LOOK[variant]} ${variant === 'selected' ? 'ui-btn-selected' : ''} ${size === 'sm' ? 'ui-btn-sm' : ''} ${extra}`
 }
 
-/** Class string of a square button with only an icon (IconButton) */
+/** Class string of a square button with only an icon (IconButton): Shade without its white corner brackets (.ui-btn-plain) */
 export function iconButtonClass(variant: ButtonVariant, extra = '', size: ButtonSize = 'md') {
-  return buttonClass(variant, `ui-btn-square ${extra}`, size)
+  const plain = LOOK[variant] === 'ui-btn-shade' ? 'ui-btn-plain' : ''
+  return buttonClass(variant, `ui-btn-square ${plain} ${extra}`, size)
 }
 
 /** Class string of a split button (SplitButton): a Venom button in two pieces */

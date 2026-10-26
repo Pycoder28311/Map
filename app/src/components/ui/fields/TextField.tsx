@@ -1,14 +1,14 @@
 import type { InputHTMLAttributes } from 'react'
-import { FIELD_INPUT, FIELD_VARIANTS, type FieldVariant } from './fieldStyles'
+import { FIELD_BOX, FIELD_INPUT } from './fieldStyles'
 
-type Props = InputHTMLAttributes<HTMLInputElement> & { label: string; variant?: FieldVariant }
+type Props = InputHTMLAttributes<HTMLInputElement> & { label: string }
 
-/** Labelled text input in the theme's field style */
-export default function TextField({ label, variant = 'border', className = '', ...input }: Props) {
+/** Labelled text input in the field style (styles/fields.css) */
+export default function TextField({ label, className = '', ...input }: Props) {
   return (
     <label className={`flex flex-col gap-1 ${className}`}>
       <span className="text-small text-fg-muted">{label}</span>
-      <span className={FIELD_VARIANTS[variant]}>
+      <span className={FIELD_BOX}>
         <input className={FIELD_INPUT} {...input} />
       </span>
     </label>

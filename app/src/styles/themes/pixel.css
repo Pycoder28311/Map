@@ -16,10 +16,6 @@
   --radius-pill: 0px;
   --radius-circle: 0px;
 
-  /* Sidebar rows: a dark outline one pixel thick */
-  --row-border-w: var(--pixel);
-  --row-border-c: #000;
-
   /* Bar popouts: blocky too (square pixels of --popout-radius): the bottom corners lose one pixel, and where a popout
      meets its bar one square pixel extends it sideways. BarPopout sets --cut-*, --ear-* and --foot-* on each popout. */
   --popout-radius: 6px;

@@ -99,7 +99,6 @@ export default function NavSearch() {
       trigger={
         <SearchInput
           ref={inputRef}
-          variant="border"
           label="Search"
           placeholder="Search  /"
           value={query}

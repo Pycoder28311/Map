@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { LuChevronsDown, LuChevronsUp, LuLayoutTemplate, LuPlus, LuSave, LuTrash2, LuX } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import IconSlot from '../../components/ui/icons/IconSlot'
-import { SIDEBAR_ROW } from '../../components/ui/rowStyles'
+import { SIDEBAR_ROW, TREE_ROW_LOOK } from '../../components/ui/rowStyles'
 import Divider from '../../components/ui/Divider'
 import Callout from '../../components/ui/overlays/Callout'
 import Modal from '../../components/ui/overlays/Modal'
@@ -295,7 +295,7 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
               title={expanded ? 'Show less' : `Show ${hidden} more`}
               // Closed sidebar: only its icon (the row narrows to a rail row, and has no text at all)
               aria-label={expanded ? 'Show less' : `Show ${hidden} more`}
-              className={`${SIDEBAR_ROW} mt-1 w-full justify-start overflow-hidden text-fg-muted transition-[max-width] duration-(--sidebar-duration) ease-out motion-reduce:transition-none ${compact ? BUTTON_COMPACT : 'max-w-full'}`}
+              className={`${SIDEBAR_ROW} ${TREE_ROW_LOOK} mt-1 w-full justify-start overflow-hidden text-fg-muted transition-[max-width] duration-(--sidebar-duration) ease-out motion-reduce:transition-none ${compact ? BUTTON_COMPACT : 'max-w-full'}`}
             >
               <IconSlot icon={expanded ? LuChevronsUp : LuChevronsDown} />
               {/* Not drawn while the sidebar is closed (the sidebar clips it while it opens) */}

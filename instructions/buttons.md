@@ -79,8 +79,25 @@ the edits:
 - Underline: the same padding above the text as below it; Stone: `padding: var(--btn-shadow-height) 0` (both marked
   `Map:`), so their text stays centred.
 
-Sidebar rows (tree rows, Trash, Show more) are not buttons: they use `SIDEBAR_ROW` / `TreeRowLink` (theme look,
-`components/ui/rowStyles.ts`).
+Sidebar rows (tree rows, Trash, Show more) are not buttons: they are `TreeRowLink` / `SIDEBAR_ROW` (layout) with the look
+`ui-field-row` (`TREE_ROW_LOOK`), see below.
+
+## Fields and sidebar rows (styles/fields.css)
+
+The look of the text fields is Dark Fantasy UI's "1. Minimal input" (its `minimalInput` in `uiConfig.js`): a flat grey box,
+a soft shadow, a lighter grey while typed in. Without its faint corner marks on the right side. It is in
+`styles/fields.css`, the same in every theme and in light mode too (inside, the text roles are the dark mode's):
+
+- `.ui-field`: the box of `TextField` and `SearchInput` (`components/ui/fields/fieldStyles.ts`, `FIELD_BOX`);
+- `.ui-field-row`: the same look for clickable rows that aren't buttons: the sidebar's objects (`TreeItem`'s row), Trash,
+  Show more. Hovered, or the current page, it takes the field's focus colour.
+
+To change either, change the `--input-*` values at the top of `fields.css` (one change moves both).
+
+## Shade without brackets
+
+`.ui-btn-plain` (`buttons.css`): Shade (or Venom) whose white corner brackets never slide out, hovered, current or chosen.
+`IconButton` adds it to its Shade variants (`iconButtonClass`), so the icon-only buttons have the hover background only.
 
 Copy new colours into the `:root` block at the top. Everything after "Map: additions" is this app's own: keep it.
 

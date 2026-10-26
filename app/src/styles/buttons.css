@@ -558,6 +558,15 @@
     background: none;
   }
 
+  /* Map: Shade (or Venom) without its white corner brackets: they stay hidden and never slide out, hovered, current or
+     chosen (the icon-only buttons). The hover background is the same; no icon-and-text pull either */
+  .ui-btn.ui-btn-plain {
+    --btn-bracket-gap: 0px;
+    --btn-bracket-len-x: 0px;
+    --btn-bracket-len-y: 0px;
+    --btn-hover-pull: 0px;
+  }
+
   /* Map: a smaller button, for tight rows (pane islands, board panels, row headers) */
   .ui-btn.ui-btn-sm {
     --btn-font-size: 12.8px;

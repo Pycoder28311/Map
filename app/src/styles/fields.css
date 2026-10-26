@@ -1,0 +1,57 @@
+/* ==========================================================================
+   FIELDS - the ONE place to restyle the text fields and the clickable rows that look like them (the sidebar's
+   objects). Copied from Dark Fantasy UI's "1. Minimal input" (src/theme.css) and its uiConfig.js (minimalInput):
+   a flat grey field with a soft shadow and a slightly lighter grey while it is typed in. Not copied: the faint
+   corner marks on its right side. Appearance only: nothing here places an element in its parent.
+
+   .ui-field      the box of a text field (TextField, SearchInput: components/ui/fields/fieldStyles.ts)
+   .ui-field-row  a clickable row that is not a button (a sidebar object, Trash, Show more): the same look; hovered
+                  or the current page, it takes the field's focus colour
+   The same look in every theme (base / arcane / pixel), and dark in light mode too: inside them the text roles
+   are the dark mode's, so nothing in them turns unreadable.
+   ========================================================================== */
+
+:root {
+  /* from Dark Fantasy UI's uiConfig.js, minimalInput */
+  --input-bg: #262626;
+  --input-bg-focus: #2b2b2b; /* while typing, hovered, the current one */
+  --input-text: #ece2c8;
+  --input-placeholder: #7a7a7a;
+  --input-radius: 2px;
+  --input-shadow: 0 0 14px rgba(0, 0, 0, 0.55);
+}
+
+@layer components {
+  .ui-field,
+  .ui-field-row {
+    /* the dark mode's text and line roles, whatever the app's mode */
+    --fg: #f4f4f5;
+    --fg-muted: #a1a1aa;
+    --fg-subtle: #71717a;
+    --fill: #2e2e33;
+    --fill-strong: #3f3f46;
+    --line: #2e2e33;
+    --line-strong: #3f3f46;
+    color: var(--input-text);
+    background-color: var(--input-bg);
+    border-radius: var(--input-radius);
+    box-shadow: var(--input-shadow);
+    transition: background-color 0.2s ease-out;
+  }
+
+  .ui-field:focus-within,
+  .ui-field-row:is(:hover, :has([aria-current='page'], :focus-visible)) {
+    background-color: var(--input-bg-focus);
+  }
+
+  .ui-field:has(:disabled) {
+    opacity: 0.6;
+  }
+
+  .ui-field input::placeholder {
+    color: var(--input-placeholder);
+  }
+  .ui-field input {
+    caret-color: var(--input-text);
+  }
+}
