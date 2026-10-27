@@ -1,5 +1,5 @@
 import type { Infobox, InfoRow } from '@map/shared'
-import { useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react'
+import { Fragment, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react'
 import {
   LuAlignJustify,
   LuAlignLeft,
@@ -8,7 +8,6 @@ import {
   LuCalendar,
   LuCalendarRange,
   LuEllipsis,
-  LuHeading,
   LuImage,
   LuImagePlus,
   LuLink,
@@ -32,7 +31,6 @@ import { changeKind, emptyRow, insertRow, moveRow, normalizeAddress, normalizeDe
 
 /** Every kind of row the box can hold, in the order Add info offers them */
 const TYPES: { value: RowType; label: string; icon: PlainIcon }[] = [
-  { value: 'header', label: 'Section header', icon: LuHeading },
   { value: 'value', label: 'Info and value', icon: LuAlignLeft },
   { value: 'date', label: 'Date', icon: LuCalendar },
   { value: 'period', label: 'Period', icon: LuCalendarRange },
@@ -46,7 +44,8 @@ const TYPES: { value: RowType; label: string; icon: PlainIcon }[] = [
 
 // Full class strings so Tailwind can detect them at build time. The inputs are plain text on the box, a line under each row
 const INPUT = 'min-w-0 bg-transparent text-fg outline-none placeholder:text-fg-subtle'
-const ROW = 'group/row relative flex flex-col gap-1 border-b border-line pb-1.5'
+// Each row is a block of its own on the box's background, a gap (with the + in it) between two blocks
+const ROW = 'group/row relative flex flex-col gap-1 rounded-(--corner-sm) bg-fill-strong px-2 py-1.5'
 
 type Props = {
   value: Infobox
@@ -57,9 +56,9 @@ type Props = {
 }
 
 /**
- * An article's Info box (its `infobox` field): a picture, a name and rows of facts, as an encyclopedia's: section headers (the line of
- * the sidebar's sections), an info and its value, a date, a period, a link, numbered or bulleted lists, a description, more pictures
- * and coordinates. A + between two rows puts a new one there; a row's ⋯ changes its type, moves or deletes it; Add info adds one at the
+ * An article's Info box (its `infobox` field): a picture, a name and rows of facts, as an encyclopedia's, each row a block on the box's
+ * background with a gap between two blocks: an info and its value, a date, a period, a link, numbered or bulleted lists, a description, more pictures
+ * and coordinates. A + in the gap between two blocks opens a menu of what to put there; a row's ⋯ changes its type, moves or deletes it; Add info adds one at the
  * end. Every change is sent to `onChange`.
  */
 export default function InfoBox({ value, onChange, onUploadImage, onUploadError }: Props) {
@@ -67,7 +66,7 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError 
   const setRows = (next: InfoRow[]) => onChange({ ...value, rows: next })
 
   return (
-    <Card variant="muted" className="flex flex-col gap-2 p-2">
+    <Card variant="muted" className="flex flex-col p-2">
       <Picture image={value.image} onChange={(image) => onChange({ ...value, image })} onUploadImage={onUploadImage} onUploadError={onUploadError} />
       <input
         value={value.name}
@@ -75,12 +74,11 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError 
         placeholder="Name"
         aria-label="Name"
         maxLength={200}
-        className={`${INPUT} border-b border-line pb-1 text-heading`}
+        className={`${INPUT} px-1 py-2 text-heading`}
       />
       {rows.map((row, i) => (
-        // A section starts after a blank line (a <br>): the gap above a header, besides the card's own spacing
-        <div key={row.id} className={`flex flex-col ${row.kind === 'header' && i > 0 ? 'mt-4' : ''}`}>
-          {i > 0 && <InsertHere onInsert={() => setRows(insertRow(rows, i, emptyRow('value')))} />}
+        <Fragment key={row.id}>
+          <Gap onInsert={(type) => setRows(insertRow(rows, i, emptyRow(type)))} />
           <Row
             row={row}
             first={i === 0}
@@ -91,11 +89,13 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError 
             onUploadImage={onUploadImage}
             onUploadError={onUploadError}
           />
-        </div>
+        </Fragment>
       ))}
-      <ExtendMenu variant="ghost" label="Add info" items={TYPES} onSelect={(type) => setRows([...rows, emptyRow(type)])} direction="up" className="w-full">
-        <LuPlus aria-hidden /> Add info
-      </ExtendMenu>
+      <div className="mt-2">
+        <ExtendMenu variant="ghost" label="Add info" items={TYPES} onSelect={(type) => setRows([...rows, emptyRow(type)])} direction="up" className="w-full">
+          <LuPlus aria-hidden /> Add info
+        </ExtendMenu>
+      </div>
     </Card>
   )
 }
@@ -150,11 +150,15 @@ function Picture({ image, onChange, onUploadImage, onUploadError }: { image: str
   )
 }
 
-/** The small + on the line between two rows */
-function InsertHere({ onInsert }: { onInsert: () => void }) {
+/**
+ * The gap between two blocks (or between the name and the first one): a small + exactly in its middle, shown while the pointer is on the
+ * gap, that opens a menu of what to add there
+ */
+function Gap({ onInsert }: { onInsert: (type: RowType) => void }) {
+  const types = [TYPES.map((t) => ({ label: t.label, icon: t.icon, onClick: () => onInsert(t.value) }))]
   return (
-    <div className="group/insert relative -my-1 flex h-3 items-center justify-center">
-      <IconButton icon={LuPlus} label="Add info here" size="xs" onClick={onInsert} className="opacity-0 transition-opacity group-hover/insert:opacity-100 focus-visible:opacity-100" />
+    <div className="group/row relative z-10 flex h-3 items-center justify-center">
+      <IconMenu label="Add info here" icon={LuPlus} groups={types} show="hover" small />
     </div>
   )
 }
@@ -207,23 +211,6 @@ function Row({ row, first, last, onChange, onMove, onRemove, onUploadImage, onUp
     </div>
   )
 
-  if (row.kind === 'header') {
-    // The line of the sidebar's sections (Divider): the name, then a line to the end of the row
-    return (
-      <div className="group/row relative flex h-(--divider-h) items-center gap-sm">
-        <input
-          value={row.label}
-          onChange={(e) => onChange({ ...row, label: e.target.value })}
-          placeholder="Section"
-          aria-label="Section header"
-          maxLength={100}
-          className={`${INPUT} field-sizing-content min-w-16 max-w-[75%] shrink-0 text-small font-medium text-fg-muted`}
-        />
-        <span aria-hidden className="h-px flex-1 bg-(--divider-line)" />
-        {more}
-      </div>
-    )
-  }
   if (row.kind === 'value' || row.kind === 'date') {
     return (
       <div className={ROW}>

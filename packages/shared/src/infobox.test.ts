@@ -13,7 +13,6 @@ describe('infobox', () => {
         { id: 'a', label: 'Born', kind: 'value', value: '1815' },
         { id: 'b', label: 'Works', kind: 'list', items: ['Notes', 'Letters'], ordered: true },
         { id: 'c', label: 'About', kind: 'text', text: 'One\nTwo', bullets: true },
-        { id: 'd', label: 'Personal life', kind: 'header' },
         { id: 'e', label: 'Died', kind: 'date', value: '1852-11-27' },
         { id: 'f', label: 'Active', kind: 'period', from: '1833-01-01', to: '' },
         { id: 'g', label: 'Website', kind: 'link', text: 'Papers', url: 'https://example.org/ada' },

@@ -13,8 +13,6 @@ export const typeOf = (row: InfoRow): RowType => (row.kind === 'list' && row.ord
 /** An empty row of a type */
 export function emptyRow(type: RowType, id: string = newId()): InfoRow {
   switch (type) {
-    case 'header':
-      return { id, label: '', kind: 'header' }
     case 'value':
       return { id, label: '', kind: 'value', value: '' }
     case 'date':
@@ -56,7 +54,6 @@ export function moveRow(rows: InfoRow[], id: string, by: -1 | 1): InfoRow[] {
 function linesOf(row: InfoRow): string[] {
   const lines = (() => {
     switch (row.kind) {
-      case 'header':
       case 'image':
         return []
       case 'value':
@@ -91,8 +88,6 @@ export function changeKind(row: InfoRow, type: RowType): InfoRow {
   const { id, label } = row
   const days = lines.filter((l) => DAY.test(l))
   switch (type) {
-    case 'header':
-      return { id, label, kind: 'header' }
     case 'value':
       return { id, label, kind: 'value', value: lines[0] ?? '' }
     case 'date':

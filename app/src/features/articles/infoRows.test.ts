@@ -7,7 +7,6 @@ const ids = (rows: InfoRow[]) => rows.map((r) => r.id)
 
 describe('info rows', () => {
   it('makes an empty row of each type', () => {
-    expect(emptyRow('header', 'a')).toEqual({ id: 'a', label: '', kind: 'header' })
     expect(emptyRow('value', 'a')).toEqual({ id: 'a', label: '', kind: 'value', value: '' })
     expect(emptyRow('list', 'a')).toEqual({ id: 'a', label: '', kind: 'list', items: [''], ordered: true })
     expect(emptyRow('bullets', 'a')).toEqual({ id: 'a', label: '', kind: 'list', items: [''], ordered: false })

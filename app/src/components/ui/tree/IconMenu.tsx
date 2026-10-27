@@ -16,8 +16,10 @@ type Props = {
   square?: boolean
   /** Its icon turns 45° while the menu is open (default: a + becomes a ✕); false for an icon that stays as it is (a ⋯) */
   turn?: boolean
-  /** hover: the trigger shows only while the pointer (or the keyboard) is on its row (the row has the `group/row` class) */
+  /** hover: the trigger shows only while the pointer (or the keyboard) is on its row (the row has the `group/row` class); it stays while the menu is open */
   show?: TreeIconShow
+  /** A small round button with a light background (a + in the gap between two blocks), instead of the row icons' box */
+  small?: boolean
 }
 
 /**
@@ -26,7 +28,7 @@ type Props = {
  * Its icon turns 45° while the menu is open (a + becomes a ✕; `turn={false}` keeps it). A line separates the groups, and an item with
  * `checked` is an option with a ✓. Closes on a pick, a click outside, Esc, scrolling or resizing.
  */
-export default function IconMenu({ label, icon: Icon, groups, square = false, turn = true, show = 'always' }: Props) {
+export default function IconMenu({ label, icon: Icon, groups, square = false, turn = true, show = 'always', small = false }: Props) {
   const id = useId()
   const menuRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -62,9 +64,13 @@ export default function IconMenu({ label, icon: Icon, groups, square = false, tu
         aria-label={label}
         title={label}
         aria-expanded={open}
-        className={`${ICON_EFFECT_GROUP} ${square ? 'flex size-full items-center justify-center rounded-(--btn-close-radius)' : ICON_BOX} ${ICON_SHOW[show]} ${ICON_BG.hover} ${ICON_BUTTON}`}
+        className={`${ICON_EFFECT_GROUP} ${
+          small
+            ? `flex size-4 shrink-0 items-center justify-center rounded-full transition-[opacity,background-color] duration-200 ease-out ${ICON_BG.always} hover:bg-fg/20`
+            : `${square ? 'flex size-full items-center justify-center rounded-(--btn-close-radius)' : ICON_BOX} ${ICON_BG.hover}`
+        } ${open ? '' : ICON_SHOW[show]} ${ICON_BUTTON}`}
       >
-        <Icon className={`${square ? 'size-(--tree-row-icon)' : 'size-(--btn-icon-size)'} transition-transform duration-200 ease-out motion-reduce:transition-none ${turn && open ? 'rotate-45' : ''}`} />
+        <Icon className={`${small ? 'size-3' : square ? 'size-(--tree-row-icon)' : 'size-(--btn-icon-size)'} transition-transform duration-200 ease-out motion-reduce:transition-none ${turn && open ? 'rotate-45' : ''}`} />
       </button>
       <div ref={menuRef} id={id} popover="auto" role="menu" aria-label={label} onBeforeToggle={place} onToggle={watch} className={DROPDOWN_MENU}>
         {groups.map((group, g) => (
