@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { InfoRow } from '@map/shared'
-import { changeKind, emptyRow, insertRow, moveRow, normalizeAddress, normalizeDegree, removeRow, typeOf } from './infoRows'
+import { changeKind, emptyRow, exampleRow, insertRow, moveRow, normalizeAddress, normalizeDegree, removeRow, typeOf } from './infoRows'
 
 const value = (id: string, v = ''): InfoRow => ({ id, label: id, kind: 'value', value: v })
 const ids = (rows: InfoRow[]) => rows.map((r) => r.id)
@@ -74,5 +74,15 @@ describe('what is typed in a link or a degree', () => {
     expect(normalizeDegree('-')).toBeNull()
     expect(normalizeDegree('north')).toBeNull()
     expect(normalizeDegree('1234')).toBeNull()
+  })
+})
+
+describe('exampleRow', () => {
+  it('is a row of the type asked, with words in it', () => {
+    for (const type of ['value', 'date', 'period', 'link', 'list', 'bullets', 'text', 'image', 'coordinates'] as const) {
+      const row = exampleRow(type)
+      expect(typeOf(row)).toBe(type)
+      expect(row.label).not.toBe('')
+    }
   })
 })

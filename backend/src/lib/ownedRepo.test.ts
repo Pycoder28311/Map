@@ -14,6 +14,7 @@ describe('articles: the Info box', () => {
     const row = await repo.create(ctx, DATA.articles.input.parse({ title: 'Ada' }) as never)
     const box = {
       image: null,
+      banner: null,
       name: 'Ada Lovelace',
       rows: [
         { id: 'a', label: 'Born', kind: 'value', value: '1815' },

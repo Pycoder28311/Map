@@ -5,7 +5,7 @@ const SIZES = {
   sm: { box: 'h-8 px-3', big: 'text-base' },
   md: { box: 'h-10 px-3', big: 'text-base' },
   lg: { box: 'h-12 px-4', big: 'text-heading' },
-  xl: { box: 'h-14 px-0', big: 'text-title' },
+  xl: { box: 'h-14 px-0', big: 'text-4xl' },
 } as const
 
 export type TitleSize = keyof typeof SIZES

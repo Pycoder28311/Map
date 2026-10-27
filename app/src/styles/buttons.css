@@ -453,19 +453,26 @@
   /* Map: Stone is a flat grey block: no coloured bevel and shadow strip, no stepped corners, no text shadow; just a darker band of its own colour along its bottom edge. A press darkens it a little */
   .ui-btn-stone {
     --btn-shadow-height: 0px;
+    /* Its inner shadows, soft, from every edge and more from the bottom (the colour is the fields': --input-inner-rgb, fields.css): how strong
+       they are along the sides and at the bottom (0 to 1) and how far they spread in */
+    --stone-shade-sides: 0.2;
+    --stone-shade-bottom: 0.45;
+    --stone-shade-spread: 3px;
     background: none;
     clip-path: none;
   }
   .ui-btn-stone-face {
     background: var(--_bg);
-    /* a darker band of its own colour along the bottom edge, inside (the button grows by it, the label stays centred above it), and a faint
-       light line on top */
+    /* Inner shadows instead of a light line on top and a dark band under it. The button keeps the height the band gave it (--btn-edge), shared
+       above and below the label, so the label is centred */
     --btn-edge: calc(var(--px) * 1.25);
-    padding-bottom: calc(var(--btn-pad-y) + var(--btn-edge));
+    padding-top: calc(var(--btn-pad-y) + var(--btn-edge) / 2);
+    padding-bottom: calc(var(--btn-pad-y) + var(--btn-edge) / 2);
     box-shadow:
-      inset 0 var(--px) 0 0 rgba(255, 255, 255, 0.07),
-      inset 0 calc(var(--btn-edge) * -1) 0 0 color-mix(in srgb, var(--_bg) 62%, #000);
-    clip-path: none;
+      inset 0 0 var(--stone-shade-spread) rgb(var(--input-inner-rgb) / var(--stone-shade-sides)),
+      inset 0 calc(var(--stone-shade-spread) * -1) var(--stone-shade-spread) rgb(var(--input-inner-rgb) / var(--stone-shade-bottom));
+    /* a rocky border, not a straight one: the face is cut to a polygon (--btn-rock, set by components/ui/buttons/rockEdge.ts, where its two numbers are) */
+    clip-path: var(--btn-rock, none);
     text-shadow: none;
   }
   .ui-btn-stone-face::after {

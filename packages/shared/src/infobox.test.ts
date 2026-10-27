@@ -8,6 +8,7 @@ describe('infobox', () => {
   it('takes every kind of row', () => {
     const box = {
       image: null,
+      banner: null,
       name: 'Ada',
       rows: [
         { id: 'a', label: 'Born', kind: 'value', value: '1815' },
@@ -33,6 +34,15 @@ describe('infobox', () => {
   it('reads a list saved before bulleted lists existed (no `ordered`) as numbered', () => {
     const old = { ...EMPTY_INFOBOX, rows: [{ id: 'a', label: 'Works', kind: 'list', items: ['One'] }] }
     expect(infobox.parse(old).rows[0]).toMatchObject({ kind: 'list', ordered: true })
+  })
+
+  it('reads an article saved before banners existed (no `banner`) as having none, and keeps only a banner the app stored', () => {
+    const base = 'https://img.test/map/img/'
+    setRichTextImageBase(base)
+    const stored = `${base}0b8a1f2e-1234-4abc-8def-0123456789ab.jpg`
+    expect(infobox.parse({ image: null, name: '', rows: [] }).banner).toBeNull()
+    expect(infobox.parse({ ...EMPTY_INFOBOX, banner: stored }).banner).toBe(stored)
+    expect(infobox.parse({ ...EMPTY_INFOBOX, banner: 'https://evil.test/x.jpg' }).banner).toBeNull()
   })
 
   it('refuses a malformed day or degree, and a link that is not http, https or mailto', () => {

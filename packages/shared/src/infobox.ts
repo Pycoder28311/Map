@@ -7,6 +7,8 @@ import { isSafeImageSrc, isSafeLink } from './rich-text-policy'
  *   value: "Born ……… 1820"   date: a label and a day   period: a label and from – to
  *   link: a label, its words and an address   list: a numbered or bulleted list   text: a label and a description (as bullets, ticked)
  *   image: a picture with its caption (the label)   coordinates: a label and a latitude and longitude
+ * It also holds the article's banner, the picture across the top of its page (`banner`): the article's extras live in this one field, so the
+ * banner needed no column of its own. An article saved before it has none.
  */
 const id = z.string().min(1).max(40)
 const label = z.string().max(100)
@@ -44,8 +46,17 @@ export const infoRow = z.discriminatedUnion('kind', [
   z.object({ id, label, kind: z.literal('coordinates'), lat: degree, lng: degree }),
 ])
 
+/** The same, and an article saved before banners existed has none (undefined is read as none) */
+const optionalPicture = z
+  .string()
+  .max(500)
+  .nullable()
+  .optional()
+  .transform((src) => (src && isSafeImageSrc(src) ? src : null))
+
 export const infobox = z.object({
   image: picture,
+  banner: optionalPicture,
   name: z.string().max(200),
   rows: z.array(infoRow).max(50),
 })
@@ -54,4 +65,4 @@ export type InfoRow = z.output<typeof infoRow>
 export type InfoRowKind = InfoRow['kind']
 export type Infobox = z.output<typeof infobox>
 
-export const EMPTY_INFOBOX: Infobox = { image: null, name: '', rows: [] }
+export const EMPTY_INFOBOX: Infobox = { image: null, banner: null, name: '', rows: [] }

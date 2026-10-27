@@ -130,3 +130,26 @@ export function normalizeDegree(text: string): string | null {
   if (DEGREE.test(t)) return t
   return /^-?\d{1,3}\.$/.test(t) ? t.slice(0, -1) : null
 }
+
+/** A row of a type with sample words in it, to show what adding one looks like (the Add info menu's preview) */
+export function exampleRow(type: RowType, id = 'example'): InfoRow {
+  switch (type) {
+    case 'value':
+      return { id, label: 'Founded', kind: 'value', value: '1204' }
+    case 'date':
+      return { id, label: 'Date', kind: 'date', value: '2024-05-01' }
+    case 'period':
+      return { id, label: 'Period', kind: 'period', from: '1204-01-01', to: '1250-12-31' }
+    case 'link':
+      return { id, label: 'Website', kind: 'link', text: 'Example page', url: 'https://example.com' }
+    case 'list':
+    case 'bullets':
+      return { id, label: 'Rulers', kind: 'list', items: ['First', 'Second', 'Third'], ordered: type === 'list' }
+    case 'text':
+      return { id, label: 'About', kind: 'text', text: 'A short description of it.', bullets: false }
+    case 'image':
+      return { id, label: 'A caption', kind: 'image', image: null }
+    case 'coordinates':
+      return { id, label: 'Location', kind: 'coordinates', lat: '48.8566', lng: '2.3522' }
+  }
+}

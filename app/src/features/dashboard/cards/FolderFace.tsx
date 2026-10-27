@@ -98,6 +98,7 @@ export default function FolderFace({ contents, dropping = false, pending = false
     <>
       {(n === 0 || dropping) && (
         <div
+          data-card-body
           className={`flex min-h-0 flex-1 flex-col items-center justify-center gap-1 rounded-(--btn-radius) border-2 border-dashed text-center text-small transition-colors ${
             dropping ? 'border-drop bg-drop/10 text-fg' : 'border-line-strong text-fg-subtle'
           }`}
@@ -107,7 +108,7 @@ export default function FolderFace({ contents, dropping = false, pending = false
         </div>
       )}
       {!dropping && n > 0 && (
-        <div ref={grid} className={`grid min-h-0 flex-1 gap-2 ${GRID[n]}`}>
+        <div ref={grid} data-card-body className={`grid min-h-0 flex-1 gap-2 ${GRID[n]}`}>
           {shown.map((entry, i) =>
             entry === 'draft' ? (
               <DraftTile key="draft" className={spans(i)} />

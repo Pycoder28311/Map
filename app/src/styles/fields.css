@@ -7,9 +7,19 @@
    .ui-field      the box of a text field (TextField, SearchInput: components/ui/fields/fieldStyles.ts)
    .ui-field-row  a clickable row that is not a button (a sidebar object, Trash, Show more): the same look; hovered
                   or the current page, it takes the field's focus colour
+   .ui-inset      the same box and inner shadow, without the shadow around it (the text part of the Dashboard's image cards)
+   The rows and .ui-inset have the faint black-leather look (--input-grain, --input-grain-size, --input-sheen, --input-edge-light) and the
+   inner shadow (--input-inner-*); .ui-field is the same box without them
    The same look in every theme (base / arcane / pixel), and dark in light mode too: inside them the text roles
    are the dark mode's, so nothing in them turns unreadable.
    ========================================================================== */
+
+/* The box's colour, in a property that can be animated: the grain is drawn under a layer of this colour, so it must change with it */
+@property --input-bg-now {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #262626;
+}
 
 :root {
   /* from Dark Fantasy UI's uiConfig.js, minimalInput */
@@ -19,12 +29,42 @@
   --input-text: #ece2c8;
   --input-placeholder: #7a7a7a;
   --input-radius: 2px;
-  --input-shadow: 0 0 14px rgba(0, 0, 0, 0.55);
+  /* The inner shadow, from every edge, stronger at the bottom (it looks a little raised). These four are the ones to change: */
+  /* its colour, as red green blue (0 0 0 is black; a dark grey is less black) */
+  --input-inner-rgb: 24 24 28;
+  /* how strong it is at the bottom edge, 0 (none) to 1 */
+  --input-inner-bottom: 0.45;
+  /* how strong it is along the other edges (top, left, right), 0 to 1 */
+  --input-inner-sides: 0.2;
+  /* how far it spreads in from the edges (its blur); the extra at the bottom reaches all of it in */
+  --input-inner-spread: 6px;
+  /* A very faint dark-stone look: sharp rocky grain, a soft sheen, and a thin light along the top edge. The three to change: */
+  /* how visible the grain is, 0 (none) to 1: only its contrast, the box's colour stays the same (the grain's average is the colour of the box).
+     0.15 is faint, 0.25 subtle but there, 0.5 clear */
+  --input-grain: 0.02;
+  /* how big the grain is: 192px is its own size and the sharpest; bigger stretches it and it goes soft */
+  --input-grain-size: 500px;
+  /* the soft diagonal sheen, 0 to 1 */
+  --input-sheen: 0.04;
+  /* the thin light on the top edge, 0 to 1 */
+  --input-edge-light: 0.07;
+  /* the grain: a tile of sharply lit rocky noise whose average is #262626, the box's colour, so it only lightens and darkens it; it is drawn under a layer of the box's colour, which fades it to the strength above */
+  --input-grain-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='192' height='192'><filter id='g' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='0.16' numOctaves='5' seed='7' stitchTiles='stitch' result='n'/><feDiffuseLighting in='n' lighting-color='%23fff' surfaceScale='6'><feDistantLight azimuth='225' elevation='35'/></feDiffuseLighting><feColorMatrix type='matrix' values='0.25 0 0 0 0.0325 0.25 0 0 0 0.0325 0.25 0 0 0 0.0325 0 0 0 0 1'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+
+  /* the inner shadow in its two layers: all the edges, and the extra at the bottom */
+  --input-inner-shadow:
+    inset 0 1px 0 rgb(255 255 255 / var(--input-edge-light)),
+    inset 0 0 var(--input-inner-spread) rgb(var(--input-inner-rgb) / var(--input-inner-sides)),
+    inset 0 calc(var(--input-inner-spread) * -1) var(--input-inner-spread) rgb(var(--input-inner-rgb) / var(--input-inner-bottom));
+  /* the soft shadow around the box */
+  --input-outer-shadow: 0 0 18px rgba(0, 0, 0, 0.8);
+  /* the shadow around the box, then the inner shadow */
+  --input-shadow: var(--input-outer-shadow), var(--input-inner-shadow);
 
   /* the border of the clickable rows (the sidebar's objects) AND of the input boxes (Search, text fields, the big
      input): one border for all of them. The colour is the one to change. It is drawn inside, so it never changes a
      size. transparent = no border */
-  --row-border-color: #343434;
+  --row-border-color: #3d3d3d;
   --row-border-color-hover: var(--row-border-color);
   /* hovered, or the current page */
   --row-border-width: 1px;
@@ -33,7 +73,8 @@
 @layer components {
 
   .ui-field,
-  .ui-field-row {
+  .ui-field-row,
+  .ui-inset {
     /* the dark mode's text and line roles, whatever the app's mode */
     --fg: #f4f4f5;
     --fg-muted: #a1a1aa;
@@ -43,12 +84,22 @@
     --line: #2e2e33;
     --line-strong: #3f3f46;
     color: var(--input-text);
-    background-color: var(--input-bg);
+    --input-bg-now: var(--input-bg);
+    background-color: var(--input-bg-now);
+    /* From the top: the sheen; a layer of the box's colour that lets only --input-grain of the grain show through; the grain */
+    background-image:
+      linear-gradient(135deg, rgb(255 255 255 / var(--input-sheen)), transparent 45%, rgb(255 255 255 / calc(var(--input-sheen) * 0.5))),
+      linear-gradient(color-mix(in srgb, var(--input-bg-now) calc((1 - var(--input-grain)) * 100%), transparent),
+        color-mix(in srgb, var(--input-bg-now) calc((1 - var(--input-grain)) * 100%), transparent)),
+      var(--input-grain-image);
+    background-size: 100% 100%, 100% 100%, var(--input-grain-size) var(--input-grain-size);
     border-radius: var(--input-radius);
     box-shadow:
       inset 0 0 0 var(--row-border-width) var(--row-border-color),
       var(--input-shadow);
-    transition: background-color 0.2s ease-out;
+    transition:
+      background-color 0.2s ease-out,
+      --input-bg-now 0.2s ease-out;
   }
 
   .ui-field-row {
@@ -57,7 +108,23 @@
       var(--input-shadow);
     transition:
       background-color 0.2s ease-out,
+      --input-bg-now 0.2s ease-out,
       box-shadow 0.2s ease-out;
+  }
+
+  /* The same box and inner shadow without the shadow around it: a part of something else (the text part of an image card) */
+  .ui-inset {
+    box-shadow:
+      inset 0 0 0 var(--row-border-width) var(--row-border-color),
+      var(--input-inner-shadow);
+  }
+
+  /* A text field is the same box without the leather: no grain, sheen, light on its edge or inner shadow, only the border and the shadow around it */
+  .ui-field {
+    background-image: none;
+    box-shadow:
+      inset 0 0 0 var(--row-border-width) var(--row-border-color),
+      var(--input-outer-shadow);
   }
 
   .ui-field-row:is(:hover, :has([aria-current='page'], :focus-visible)) {
@@ -68,7 +135,7 @@
 
   .ui-field:focus-within,
   .ui-field-row:is(:hover, :has([aria-current='page'], :focus-visible)) {
-    background-color: var(--input-bg-focus);
+    --input-bg-now: var(--input-bg-focus);
   }
 
   .ui-field:has(:is(input, textarea, select):disabled) {

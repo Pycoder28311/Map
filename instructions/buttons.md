@@ -96,10 +96,18 @@ a soft shadow, a lighter grey while typed in. Without its faint corner marks on 
 `styles/fields.css`, the same in every theme and in light mode too (inside, the text roles are the dark mode's):
 
 - `.ui-field`: the box of every input: `InputBox` (`components/ui/fields/InputBox.tsx`), used by `TextField`, `SearchInput` and the Dashboard's big input (`QuickCreate`). Its border is the rows' one (`--row-border-*`, below);
+- `.ui-inset`: the same box and inner shadow without the shadow around it: the text part of the Dashboard's image cards (`cards/cardFaces.tsx`).
 - `.ui-field-row`: the same look for clickable rows that aren't buttons: the sidebar's objects (`TreeItem`'s row), Trash,
   Show more. Hovered, or the current page, it takes the field's focus colour.
 
-To change either, change the `--input-*` values at the top of `fields.css` (one change moves both). The rows and the input boxes share one border (drawn inside, so no size change): `--row-border-color` (and `--row-border-color-hover`, `--row-border-width`) in the same place; transparent until a colour is set.
+To change either, change the `--input-*` values at the top of `fields.css` (one change moves both). The faint black-leather look has four (the sidebar rows and the cards' text part have it and the inner shadow; the text fields are the same box without them): `--input-grain` (strength of the pebbled grain, 0 to 1), `--input-grain-size`, `--input-sheen` (soft diagonal light) and `--input-edge-light` (thin light on the top edge). The inner shadow (from every edge, more at the bottom) has its own four: `--input-inner-rgb` (colour), `--input-inner-bottom` and `--input-inner-sides` (strength, 0 to 1), `--input-inner-spread` (how far it spreads in). The rows and the input boxes share one border (drawn inside, so no size change): `--row-border-color` (and `--row-border-color-hover`, `--row-border-width`) in the same place; transparent until a colour is set.
+
+## Stone's rocky border
+
+Stone's face (`.ui-btn-stone-face`) is cut to a polygon with points a little in from a straight edge, so its border is rough, not straight
+(`clip-path: var(--btn-rock)` in `buttons.css`). The polygon is made by `components/ui/buttons/rockEdge.ts` and set once in `main.tsx`; its
+two numbers are there: `ROCK_POINTS` (how many points along the long sides) and `ROCK_INTENSITY` (how far in a point can be, px; 0 is straight).
+Every Stone button has the same border. Its face has soft inner shadows (no light line on top, no dark band under it): `--stone-shade-sides`, `--stone-shade-bottom` (strength, 0 to 1) and `--stone-shade-spread` (px) at the top of the Map block of `.ui-btn-stone` in `buttons.css`, in the colour of the fields' inner shadow (`--input-inner-rgb`).
 
 ## Shade without brackets
 

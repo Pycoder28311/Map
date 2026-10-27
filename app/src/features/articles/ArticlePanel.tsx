@@ -1,8 +1,9 @@
 import { EMPTY_INFOBOX, type Infobox } from '@map/shared'
-import type { Editor } from '@tiptap/react'
+import { useEditorState, type Editor } from '@tiptap/react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { LuInfo, LuPlus, LuShare2 } from 'react-icons/lu'
+import { LuEllipsis, LuInfo, LuPlus, LuShare2 } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
+import Sign from '../../components/ui/Sign'
 import { addSection, articleExtensions } from '../../components/ui/editors/articleExtensions'
 import RichTextField from '../../components/ui/fields/RichTextField'
 import TitleInput from '../../components/ui/fields/TitleInput'
@@ -12,7 +13,7 @@ import NewItemEditor from '../../components/ui/resource/NewItemEditor'
 import ResourceItemGate from '../../components/ui/resource/ResourceItemGate'
 import SaveStatus from '../../components/ui/resource/SaveStatus'
 import { useItemAutosave, type EditedItem } from '../../components/ui/resource/useItemAutosave'
-import TreeMenu from '../../components/ui/tree/TreeMenu'
+import IconMenu from '../../components/ui/tree/IconMenu'
 import { uploadImage } from '../../lib/api/images'
 import { useResourceMenu } from '../../lib/resource/actions'
 import { valuesOf, type FormValues } from '../../lib/resource/changed'
@@ -21,11 +22,16 @@ import { resourceByName } from '../../resources/registry'
 import type { AnyResource } from '../../resources/types'
 import ShareOptions from '../share/ShareOptions'
 import type { PanelProps } from '../workspace/types'
-import ArticleBreadcrumbs from './ArticleBreadcrumbs'
+import ArticleBanner from './ArticleBanner'
 import ArticleToolbar from './ArticleToolbar'
 import InfoBox from './InfoBox'
+import ProjectFolders from './ProjectFolders'
 
-const DATE = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+const DATE = new Intl.DateTimeFormat(undefined, {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+})
 /** Whether the Info box shows, remembered on this device */
 const INFO_SHOWN_KEY = 'map:article-info-shown'
 
@@ -45,16 +51,18 @@ const writeInfoShown = (shown: boolean) => {
 }
 
 /** The article's values for autosave: its form fields, and the Info box as JSON text */
-const articleValues = (resource: AnyResource) => (item: Record<string, unknown>): FormValues => ({
-  ...valuesOf(resource, item),
-  infobox: JSON.stringify(item.infobox ?? EMPTY_INFOBOX),
-})
+const articleValues =
+  (resource: AnyResource) =>
+  (item: Record<string, unknown>): FormValues => ({
+    ...valuesOf(resource, item),
+    infobox: JSON.stringify(item.infobox ?? EMPTY_INFOBOX),
+  })
 const articlePatch = (changed: FormValues): Record<string, unknown> =>
   changed.infobox === undefined ? changed : { ...changed, infobox: JSON.parse(changed.infobox) as Infobox }
 
 /**
- * An article's page (the articles' panel, resources.config.ts): breadcrumbs of its parents, then two columns: the toolbar, title, text and
- * an Add section bar in the middle, and Info / Share / ⋯ with the Info box on the right. Saved as it is edited, like every item (useItemAutosave).
+ * An article's page (the articles' panel, resources.config.ts): one bordered box: the banner, the folders of its project, the title with Info / Share / ⋯, the toolbar, and the text with the Info box
+ * floating at its top right (the text flows around it). Saved as it is edited, like every item (useItemAutosave).
  * With the id `new` (the sidebar's "+") it is the generic page of an item that is made when something is typed (NewItemEditor).
  */
 export default function ArticlePanel({ id }: PanelProps) {
@@ -73,7 +81,10 @@ export default function ArticlePanel({ id }: PanelProps) {
 }
 
 function ArticlePage({ resource, item, focusField }: { resource: AnyResource; item: EditedItem; focusField?: string }) {
-  const autosave = useItemAutosave(resource, item, { values: articleValues(resource), toPatch: articlePatch })
+  const autosave = useItemAutosave(resource, item, {
+    values: articleValues(resource),
+    toPatch: articlePatch,
+  })
   const { menuOf, dialogs } = useResourceMenu(resource)
   const [editor, setEditor] = useState<Editor | null>(null)
   const [infoShown, setInfoShown] = useState(readInfoShown)
@@ -92,6 +103,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
       <Button
         variant={infoShown ? 'selected' : 'ghost'}
         size="sm"
+        plain
         icon={LuInfo}
         aria-pressed={infoShown}
         onClick={() => {
@@ -107,20 +119,28 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         onOpenChange={setSharing}
         align="end"
         trigger={
-          <Button variant="secondary" size="sm" icon={LuShare2} aria-expanded={sharing} onClick={() => setSharing(!sharing)}>
+          <Button variant={sharing ? 'selected' : 'ghost'} size="sm" plain icon={LuShare2} aria-expanded={sharing} onClick={() => setSharing(!sharing)}>
             Share
           </Button>
         }
       >
         <ShareOptions id={`${resource.panelType}:${item.id}`} />
       </BarPopover>
-      <TreeMenu label={`More: ${name}`} groups={menuOf({ id: item.id, title: name, pinned: resource.ui.row.pinned?.(item) })} />
+      <IconMenu
+        label={`More: ${name}`}
+        icon={LuEllipsis}
+        turn={false}
+        groups={menuOf({
+          id: item.id,
+          title: name,
+          pinned: resource.ui.row.pinned?.(item),
+        })}
+      />
     </div>
   )
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 pt-3 pb-24">
-      <ArticleBreadcrumbs resource={resource} item={item} />
+    <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-3 px-4 pb-4">
       {/* A kept draft (keepMine) is a new start: the fields open again on it */}
       <ArticleBody
         key={autosave.start.version}
@@ -134,8 +154,9 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         onUploadError={onUploadError}
         actions={actions}
         infoShown={infoShown}
+        folders={<ProjectFolders resource={resource} item={item} />}
         toolbar={
-          <div className="sticky top-0 z-10 flex flex-col gap-1 pt-1">
+          <div className="sticky top-0 z-20 flex flex-col gap-1 bg-surface py-1">
             <ArticleToolbar editor={editor} onUploadImage={upload} onUploadError={onUploadError} />
             {uploadError && (
               <p role="alert" className="text-small text-danger">
@@ -168,20 +189,37 @@ type BodyProps = {
   onEditor: (editor: Editor | null) => void
   onUploadImage: (file: File) => Promise<string>
   onUploadError: (error: unknown) => void
-  /** Info / Share / ⋯, above the Info box */
+  /** Info / Share / ⋯, at the right end of the title's line */
   actions: ReactNode
   infoShown: boolean
-  /** The icon toolbar, above the title */
+  /** Where the article is (its parents), under the banner */
+  folders: ReactNode
+  /** The icon toolbar, under the title */
   toolbar: ReactNode
   /** Under the text (the save status) */
   footer: ReactNode
 }
 
 /**
- * Two columns, always side by side: in the middle the toolbar, the title, the text and Add section; on the right (a third of the width,
- * between 10 and 16rem, as an encyclopedia's) the actions and the Info box, which is its own thing: saved in `infobox`, never in the text
+ * The text's parent box (full height, with a border: the banner across its top, reaching the top of the page, then where the article is,
+ * the title with Info / Share / ⋯ at its right end, the text, and under its last row, while the cursor is in it, Add section). The Info box floats at the top right of the text, as an encyclopedia's
+ * (width 10 to 16rem); it is its own thing: saved in `infobox`, never in the text
  */
-function ArticleBody({ resource, start, onChange, focusField, editor, onEditor, onUploadImage, onUploadError, actions, infoShown, toolbar, footer }: BodyProps) {
+function ArticleBody({
+  resource,
+  start,
+  onChange,
+  focusField,
+  editor,
+  onEditor,
+  onUploadImage,
+  onUploadError,
+  actions,
+  infoShown,
+  folders,
+  toolbar,
+  footer,
+}: BodyProps) {
   // The latest values, so quick changes of different fields all stay
   const latest = useRef(start)
   const [title, setTitle] = useState(start.title ?? '')
@@ -191,54 +229,110 @@ function ArticleBody({ resource, start, onChange, focusField, editor, onEditor, 
     onChange(latest.current)
   }
   const fields = Object.fromEntries(resource.ui.fields.map((f) => [f.name, f]))
+  // The cursor is in the text's last row (its last top-level block)
+  const inLastRow =
+    useEditorState({
+      editor,
+      selector: ({ editor: e }) => !!e && e.isFocused && e.state.selection.$from.index(0) === e.state.doc.childCount - 1,
+    }) ?? false
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_clamp(10rem,30%,16rem)] items-start gap-4">
-      <div className="flex min-w-0 flex-col gap-3">
-        {toolbar}
-        <TitleInput
-          size="xl"
-          value={title}
-          onChange={(e) => {
-            setTitle(e.target.value)
-            change('title', e.target.value)
-          }}
-          placeholder={fields.title?.placeholder ?? 'Title'}
-          aria-label="Title"
-          maxLength={200}
-          autoFocus={focusField === 'title' || (focusField === undefined && !start.title)}
-        />
-        <RichTextField
-          value={start.content}
-          onChange={(html) => change('content', html)}
-          label={fields.content?.label ?? 'Text'}
-          placeholder={fields.content?.placeholder}
-          extensions={articleExtensions}
-          onEditor={onEditor}
-          onUploadImage={onUploadImage}
-          onUploadError={onUploadError}
-          autoFocus={focusField === 'content'}
-          minHeight="min-h-[40vh]"
-        />
-        <Button variant="secondary" icon={LuPlus} disabled={!editor} onClick={() => editor && addSection(editor)} className="w-full justify-center">
-          Add section
-        </Button>
-        {footer}
-      </div>
-      <aside className="flex min-w-0 flex-col gap-2" aria-label="About this article">
-        {actions}
-        {infoShown && (
-          <InfoBox
-            value={infobox}
-            onChange={(next) => {
+    <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* The text's parent box: it takes all the height there is and has a border (none on top: the banner reaches the top of the page). Inside it,
+            from the top: the banner across it, where the article is, then the title (with the actions at its right end), the toolbar and the text */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-(--card-radius) border border-t-0 border-line bg-surface">
+          <ArticleBanner
+            image={infobox.banner ?? null}
+            onChange={(banner) => {
+              const next = { ...infobox, banner }
               setInfobox(next)
               change('infobox', JSON.stringify(next))
             }}
             onUploadImage={onUploadImage}
             onUploadError={onUploadError}
           />
-        )}
-      </aside>
+          {/* The folder buttons sit on the border between the banner and the body, half over each */}
+          <div className="relative z-10 -mt-3.5 px-4 pb-1 empty:hidden">{folders}</div>
+          <div className="relative flex flex-1 flex-col gap-2 p-4 pt-1">
+            <div className="flex items-center gap-3">
+              {/* The title is on a plain sign, as wide as the title: the invisible copy of the text under the input gives the width */}
+              <div className="min-w-0 flex-1">
+                <Sign seed="article-title">
+                  <div className="grid min-w-16 max-w-full">
+                    <span
+                      aria-hidden
+                      className="invisible col-start-1 row-start-1 overflow-hidden whitespace-pre text-4xl font-semibold"
+                    >
+                      {title || fields.title?.placeholder || 'Title'}
+                    </span>
+                    <TitleInput
+                      size="xl"
+                      value={title}
+                      onChange={(e) => {
+                        setTitle(e.target.value)
+                        change('title', e.target.value)
+                      }}
+                      placeholder={fields.title?.placeholder ?? 'Title'}
+                      aria-label="Title"
+                      maxLength={200}
+                      autoFocus={focusField === 'title' || (focusField === undefined && !start.title)}
+                      className="col-start-1 row-start-1"
+                    />
+                  </div>
+                </Sign>
+              </div>
+              <div className="shrink-0">{actions}</div>
+            </div>
+            {toolbar}
+            {/* The Info box floats at the text's top right so the text flows around it, like an encyclopedia's; it is not part of the text (saved in `infobox`) */}
+            <div className="flow-root">
+              {infoShown && (
+                <aside className="relative z-10 float-right mb-3 ms-4 w-[clamp(10rem,30%,16rem)]" aria-label="About this article">
+                  <InfoBox
+                    value={infobox}
+                    onChange={(next) => {
+                      setInfobox(next)
+                      change('infobox', JSON.stringify(next))
+                    }}
+                    onUploadImage={onUploadImage}
+                    onUploadError={onUploadError}
+                  />
+                </aside>
+              )}
+              <RichTextField
+                value={start.content}
+                onChange={(html) => change('content', html)}
+                label={fields.content?.label ?? 'Text'}
+                placeholder={fields.content?.placeholder}
+                extensions={articleExtensions}
+                onEditor={onEditor}
+                onUploadImage={onUploadImage}
+                onUploadError={onUploadError}
+                autoFocus={focusField === 'content'}
+                minHeight="min-h-[40vh]"
+              />
+            </div>
+            {/* Under the last row, only while the cursor is in it */}
+            {editor && inLastRow && (
+              <div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  plain
+                  filled
+                  icon={LuPlus}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => addSection(editor)}
+                >
+                  Add section
+                </Button>
+              </div>
+            )}
+            <div className="mt-auto">{footer}</div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

@@ -115,10 +115,28 @@ function ToolButton(props: { icon: PlainIcon; label: string; onClick?: () => voi
   )
 }
 
+/** A button with its name beside the icon, that keeps the caret in the text while it is pressed */
+function TextButton(props: { icon: PlainIcon; label: string; onClick?: () => void; active?: boolean; disabled?: boolean; title?: string }) {
+  return (
+    <Button
+      icon={props.icon}
+      size="sm"
+      variant={props.active ? 'selected' : 'ghost'}
+      aria-pressed={props.active}
+      disabled={props.disabled}
+      title={props.title}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={props.onClick}
+    >
+      {props.label}
+    </Button>
+  )
+}
+
 /**
- * The article's toolbar, two rows of icon buttons that drive its editor (`editor`, from the text field's onEditor). Row one: undo / redo,
- * the text (font, size, bold, underline, italic, the colours), lists and alignment, More (MoreFormats), and at the end Symbols and Equation.
- * Row two: Add text from a note, Add section, Link and Insert. Symbols, Equation and Add text from a note are not made yet (disabled).
+ * The article's toolbar, a row of buttons that drive its editor (`editor`, from the text field's onEditor): undo / redo,
+ * the text (font, size, bold, underline, italic, the colours), lists and alignment, More ( MoreFormats),
+ * then Add text from a note, Add section, Link and Insert, with their names. Symbols, Equation and Add text from a note are not made yet (disabled).
  */
 export default function ArticleToolbar({ editor, onUploadImage, onUploadError }: Props) {
   const state = useEditorState({
@@ -144,6 +162,7 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError }:
   })
   const [more, setMore] = useState(false)
   const [linking, setLinking] = useState(false)
+  const [inserting, setInserting] = useState(false)
   const [href, setHref] = useState('')
   const picker = useRef<HTMLInputElement>(null)
 
@@ -172,7 +191,7 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError }:
   }
 
   return (
-    <div role="toolbar" aria-label="Article formatting" className="relative flex flex-col gap-1 rounded-(--card-radius) border border-line bg-surface p-1.5 shadow-sm">
+    <div role="toolbar" aria-label="Article formatting" className="relative rounded-(--card-radius) border border-line bg-surface p-1.5 shadow-sm">
       <div className="flex flex-wrap items-center">
         <Group>
           <ToolButton icon={LuUndo2} label="Undo" disabled={!state.canUndo} onClick={() => editor.chain().focus().undo().run()} />
@@ -248,73 +267,94 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError }:
         >
           <MoreFormats editor={editor} />
         </BarPopover>
+        <Separator />
+        <Group>
+          <TextButton icon={LuStickyNote} label="Note text" title="Add text from a note (soon)" disabled />
+          <TextButton icon={LuHeading} label="Section" onClick={() => addSection(editor)} />
+          <BarPopover
+            label="Link"
+            open={linking}
+            onOpenChange={setLinking}
+            trigger={
+              <TextButton
+                icon={LuLink}
+                label="Link"
+                active={state.link}
+                onClick={() => {
+                  setHref(state.href)
+                  setLinking((open) => !open)
+                }}
+              />
+            }
+          >
+            <form
+              className="flex flex-col gap-2"
+              onSubmit={(e) => {
+                e.preventDefault()
+                applyLink()
+              }}
+            >
+              <TextField label="Link address" placeholder="https://…" value={href} onChange={(e) => setHref(e.target.value)} autoFocus />
+              <div className="flex justify-end gap-2">
+                {state.link && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      editor.chain().focus().extendMarkRange('link').unsetLink().run()
+                      setLinking(false)
+                    }}
+                  >
+                    Remove
+                  </Button>
+                )}
+                <Button type="submit" size="sm">
+                  Apply
+                </Button>
+              </div>
+            </form>
+          </BarPopover>
+          <BarPopover
+            label="Insert"
+            open={inserting}
+            onOpenChange={setInserting}
+            trigger={<TextButton icon={LuPlus} label="Insert" active={inserting} onClick={() => setInserting((open) => !open)} />}
+          >
+            <div className="flex flex-col gap-0.5">
+              {INSERTS.map((i) => (
+                <Button
+                  key={i.value}
+                  variant="ghost"
+                  size="sm"
+                  icon={i.icon}
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setInserting(false)
+                    insert(i.value)
+                  }}
+                >
+                  {i.label}
+                </Button>
+              ))}
+            </div>
+          </BarPopover>
+          <input
+            ref={picker}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            hidden
+            onChange={(e) => {
+              void insertImages([...(e.target.files ?? [])])
+              e.target.value = ''
+            }}
+          />
+        </Group>
         <Group className="ms-auto">
           <Separator />
           <ToolButton icon={LuOmega} label="Symbols (soon)" disabled />
           <ToolButton icon={LuSigma} label="Equation (soon)" disabled />
         </Group>
-      </div>
-      <div className="flex flex-wrap items-center border-t border-line pt-1">
-        <ToolButton icon={LuStickyNote} label="Add text from a note (soon)" disabled />
-        <Separator />
-        <ToolButton icon={LuHeading} label="Add section" onClick={() => addSection(editor)} />
-        <Separator />
-        <BarPopover
-          label="Link"
-          open={linking}
-          onOpenChange={setLinking}
-          trigger={
-            <ToolButton
-              icon={LuLink}
-              label="Link"
-              active={state.link}
-              onClick={() => {
-                setHref(state.href)
-                setLinking((open) => !open)
-              }}
-            />
-          }
-        >
-          <form
-            className="flex flex-col gap-2"
-            onSubmit={(e) => {
-              e.preventDefault()
-              applyLink()
-            }}
-          >
-            <TextField label="Link address" placeholder="https://…" value={href} onChange={(e) => setHref(e.target.value)} autoFocus />
-            <div className="flex justify-end gap-2">
-              {state.link && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    editor.chain().focus().extendMarkRange('link').unsetLink().run()
-                    setLinking(false)
-                  }}
-                >
-                  Remove
-                </Button>
-              )}
-              <Button type="submit" size="sm">
-                Apply
-              </Button>
-            </div>
-          </form>
-        </BarPopover>
-        <Separator />
-        <Dropdown label="Insert" triggerIcon={LuPlus} value={'' as Insert} options={INSERTS} onChange={insert} />
-        <input
-          ref={picker}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          multiple
-          hidden
-          onChange={(e) => {
-            void insertImages([...(e.target.files ?? [])])
-            e.target.value = ''
-          }}
-        />
       </div>
     </div>
   )

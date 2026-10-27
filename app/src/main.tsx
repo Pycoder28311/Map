@@ -6,10 +6,13 @@ import '@fontsource/jacquard-24'
 import { AppProvider } from './context/AppContext'
 import './index.css'
 import AppRoutes from './routes'
+import { applyRockEdge } from './components/ui/buttons/rockEdge'
 import { installNumberScrub } from './components/ui/fields/numberScrub'
 import { applyTheme } from './lib/theme'
 
 applyTheme()
+// The Stone buttons' rocky border (components/ui/buttons/rockEdge.ts)
+applyRockEdge()
 installNumberScrub()
 
 createRoot(document.getElementById('root')!).render(

@@ -18,6 +18,7 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
   'components/ui/fields/ValueBar.tsx': { count: 2, why: 'the reset icon inside a field, and the options of its list' },
   'components/ui/overlays/Dropdown.tsx': { count: 1, why: 'the menu items' },
   'components/ui/overlays/ExtendMenu.tsx': { count: 1, why: 'the menu items' },
+  'components/ui/overlays/SideMenu.tsx': { count: 1, why: 'the menu items' },
   'components/ui/tree/IconMenu.tsx': { count: 2, why: 'a tree row icon (+) and the menu items' },
   'components/ui/tree/TreeIcon.tsx': { count: 1, why: 'a tree row icon' },
   'components/ui/tree/TreeMenu.tsx': { count: 4, why: 'a tree row icon (⋯), the menu items, an item that opens a submenu and the submenu items' },

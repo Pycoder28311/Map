@@ -24,10 +24,10 @@ import IconButton from '../../components/ui/buttons/IconButton'
 import Card from '../../components/ui/Card'
 import TextAreaField from '../../components/ui/fields/TextAreaField'
 import type { PlainIcon } from '../../components/ui/icons/IconSlot'
-import ExtendMenu from '../../components/ui/overlays/ExtendMenu'
+import SideMenu from '../../components/ui/overlays/SideMenu'
 import IconMenu from '../../components/ui/tree/IconMenu'
 import { ICON_SHOW } from '../../components/ui/tree/treeIconStyles'
-import { changeKind, emptyRow, insertRow, moveRow, normalizeAddress, normalizeDegree, removeRow, typeOf, updateRow, type RowType } from './infoRows'
+import { changeKind, emptyRow, exampleRow, insertRow, moveRow, normalizeAddress, normalizeDegree, removeRow, typeOf, updateRow, type RowType } from './infoRows'
 
 /** Every kind of row the box can hold, in the order Add info offers them */
 const TYPES: { value: RowType; label: string; icon: PlainIcon }[] = [
@@ -45,6 +45,7 @@ const TYPES: { value: RowType; label: string; icon: PlainIcon }[] = [
 // Full class strings so Tailwind can detect them at build time. The inputs are plain text on the box, a line under each row
 const INPUT = 'min-w-0 bg-transparent text-fg outline-none placeholder:text-fg-subtle'
 // Each row is a block of its own on the box's background, a gap (with the + in it) between two blocks
+const noop = () => {}
 const ROW = 'group/row relative flex flex-col gap-1 rounded-(--corner-sm) bg-fill-strong px-2 py-1.5'
 
 type Props = {
@@ -56,26 +57,19 @@ type Props = {
 }
 
 /**
- * An article's Info box (its `infobox` field): a picture, a name and rows of facts, as an encyclopedia's, each row a block on the box's
+ * An article's Info box (its `infobox` field): a picture and rows of facts, as an encyclopedia's, each row a block on the box's
  * background with a gap between two blocks: an info and its value, a date, a period, a link, numbered or bulleted lists, a description, more pictures
- * and coordinates. A + in the gap between two blocks opens a menu of what to put there; a row's ⋯ changes its type, moves or deletes it; Add info adds one at the
- * end. Every change is sent to `onChange`.
+ * and coordinates. A square + in the gap between two blocks (and under the picture) opens a menu of what to put there; a row's ⋯ changes its type, moves or deletes it;
+ * Add info (full width, its menu opens on its left) adds one at the end, and shows a faint example of the option under the pointer. Every change is sent to `onChange`.
  */
 export default function InfoBox({ value, onChange, onUploadImage, onUploadError }: Props) {
   const rows = value.rows
   const setRows = (next: InfoRow[]) => onChange({ ...value, rows: next })
+  const [preview, setPreview] = useState<RowType | null>(null)
 
   return (
-    <Card variant="muted" className="flex flex-col p-2">
+    <Card variant="muted" className="flex flex-col p-sm">
       <Picture image={value.image} onChange={(image) => onChange({ ...value, image })} onUploadImage={onUploadImage} onUploadError={onUploadError} />
-      <input
-        value={value.name}
-        onChange={(e) => onChange({ ...value, name: e.target.value })}
-        placeholder="Name"
-        aria-label="Name"
-        maxLength={200}
-        className={`${INPUT} px-1 py-2 text-heading`}
-      />
       {rows.map((row, i) => (
         <Fragment key={row.id}>
           <Gap onInsert={(type) => setRows(insertRow(rows, i, emptyRow(type)))} />
@@ -91,10 +85,19 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError 
           />
         </Fragment>
       ))}
+      {/* What the option under the pointer in the Add info menu would look like, faint, as the next block */}
+      {preview && (
+        <>
+          <div className="h-sm" />
+          <div inert aria-hidden className="pointer-events-none opacity-40">
+            <Row row={exampleRow(preview)} first last onChange={noop} onMove={noop} onRemove={noop} onUploadImage={onUploadImage} onUploadError={onUploadError} />
+          </div>
+        </>
+      )}
       <div className="mt-2">
-        <ExtendMenu variant="ghost" label="Add info" items={TYPES} onSelect={(type) => setRows([...rows, emptyRow(type)])} direction="up" className="w-full">
-          <LuPlus aria-hidden /> Add info
-        </ExtendMenu>
+        <SideMenu variant="primary" label="Add info" items={TYPES} onSelect={(type) => setRows([...rows, emptyRow(type)])} onHover={setPreview} className="w-full">
+          Add info
+        </SideMenu>
       </div>
     </Card>
   )
@@ -151,13 +154,13 @@ function Picture({ image, onChange, onUploadImage, onUploadError }: { image: str
 }
 
 /**
- * The gap between two blocks (or between the name and the first one): a small + exactly in its middle, shown while the pointer is on the
+ * The gap between two blocks (or between the picture and the first one): a small + exactly in its middle, shown while the pointer is on the
  * gap, that opens a menu of what to add there
  */
 function Gap({ onInsert }: { onInsert: (type: RowType) => void }) {
   const types = [TYPES.map((t) => ({ label: t.label, icon: t.icon, onClick: () => onInsert(t.value) }))]
   return (
-    <div className="group/row relative z-10 flex h-3 items-center justify-center">
+    <div className="group/row relative z-10 flex h-sm items-center justify-center">
       <IconMenu label="Add info here" icon={LuPlus} groups={types} show="hover" small />
     </div>
   )

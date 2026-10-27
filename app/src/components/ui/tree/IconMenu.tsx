@@ -18,7 +18,7 @@ type Props = {
   turn?: boolean
   /** hover: the trigger shows only while the pointer (or the keyboard) is on its row (the row has the `group/row` class); it stays while the menu is open */
   show?: TreeIconShow
-  /** A small round button with a light background (a + in the gap between two blocks), instead of the row icons' box */
+  /** A small square button with a light background (a + in the gap between two blocks), instead of the row icons' box */
   small?: boolean
 }
 
@@ -66,7 +66,7 @@ export default function IconMenu({ label, icon: Icon, groups, square = false, tu
         aria-expanded={open}
         className={`${ICON_EFFECT_GROUP} ${
           small
-            ? `flex size-4 shrink-0 items-center justify-center rounded-full transition-[opacity,background-color] duration-200 ease-out ${ICON_BG.always} hover:bg-fg/20`
+            ? `flex size-4 shrink-0 items-center justify-center transition-[opacity,background-color] duration-200 ease-out ${ICON_BG.always} hover:bg-fg/20`
             : `${square ? 'flex size-full items-center justify-center rounded-(--btn-close-radius)' : ICON_BOX} ${ICON_BG.hover}`
         } ${open ? '' : ICON_SHOW[show]} ${ICON_BUTTON}`}
       >

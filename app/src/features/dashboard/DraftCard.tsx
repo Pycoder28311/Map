@@ -11,12 +11,13 @@ const MAX_TITLE = 200
 /** How long the card takes to settle (ms): the blur going, the title landing, the buttons sliding away */
 const SETTLE_MS = 450
 
-// What is blurred while it is a draft: the card's content, not its box (its edges, ring and background stay sharp). A map card's box
-// is its picture's own, so its picture's content and its title are the content. Full class strings so Tailwind can detect them.
-const BODY_TRANSITION = '[&>div>*]:transition-[filter] [&>div>*]:duration-300 [&>div>*]:ease-out [&_[data-card-title]]:transition-opacity [&_[data-card-title]]:duration-150 motion-reduce:[&>div>*]:transition-none'
-const BODY_BLURRED = (map: boolean) =>
-  `${map ? '[&>div>div:first-child>*]:[filter:blur(4px)] [&>div>:not(:first-child)]:[filter:blur(4px)]' : '[&>div>*]:[filter:blur(4px)]'} [&_[data-card-title]]:opacity-0`
-const BODY_SHARP = '[&>div>*]:[filter:blur(0px)] [&>div>div:first-child>*]:[filter:blur(0px)] [&_[data-card-title]]:opacity-100 [&_[data-card-title]]:delay-300'
+// What is blurred while it is a draft: the card's body (whatever is marked data-card-body in its face, cardFaces.tsx), never its box: its edges,
+// outline and background stay sharp. A body that fills its box to the edge (data-card-bleed: a picture) is scaled up a little meanwhile, so the
+// soft edge the blur gives it is out of sight. Full class strings so Tailwind can detect them.
+const BODY_TRANSITION =
+  '[&_[data-card-body]]:transition-[filter,scale] [&_[data-card-body]]:duration-300 [&_[data-card-body]]:ease-out [&_[data-card-title]]:transition-opacity [&_[data-card-title]]:duration-150 motion-reduce:[&_[data-card-body]]:transition-none'
+const BODY_BLURRED = '[&_[data-card-body]]:[filter:blur(4px)] [&_[data-card-bleed]]:scale-110 [&_[data-card-title]]:opacity-0'
+const BODY_SHARP = '[&_[data-card-body]]:[filter:blur(0px)] [&_[data-card-bleed]]:scale-100 [&_[data-card-title]]:opacity-100 [&_[data-card-title]]:delay-300'
 
 type Props = {
   resource: AnyResource
@@ -30,7 +31,7 @@ type Props = {
 
 /**
  * A draft of a folder or an object card, at the start of a Dashboard row, whatever the card looks like: the resource's own face
- * (CardFace) blurred, with its title input and its Cancel / Create buttons floating over it. It is not in the database until Create. Then the blur
+ * (CardFace) with its body blurred (its box and outline stay sharp), with its title input and its Cancel / Create buttons floating over it. It is not in the database until Create. Then the blur
  * goes, the input moves onto the face's own title and the buttons slide away (all smoothly). A click outside decides (draftOutcome):
  * nothing typed discards it, a title creates it. Esc and Cancel discard.
  */
@@ -117,7 +118,7 @@ export default function DraftCard({ resource, initial, onCreated, onDone }: Prop
       className={`relative shrink-0 ${CARD_SIZE}`}
     >
       {/* The card as it will be: blurred while it is a draft; its own title is hidden until the input has landed on it */}
-      <div aria-hidden className={`pointer-events-none ${BODY_TRANSITION} ${settling ? BODY_SHARP : BODY_BLURRED(onMap)}`}>
+      <div aria-hidden className={`pointer-events-none ${BODY_TRANSITION} ${settling ? BODY_SHARP : BODY_BLURRED}`}>
         <CardFace resource={resource} item={{ id: 'draft' }} title={title.trim()} />
       </div>
 
