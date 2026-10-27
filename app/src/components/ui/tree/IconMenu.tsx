@@ -1,9 +1,10 @@
-import { useId, useRef, useState, type ToggleEvent } from 'react'
+import { Fragment, useId, useRef, useState, type ToggleEvent } from 'react'
+import { LuCheck } from 'react-icons/lu'
 import { ICON_EFFECT_GROUP } from '../icons/iconEffects'
 import type { PlainIcon } from '../icons/IconSlot'
-import { ICON_BG, ICON_BOX, ICON_BUTTON } from './treeIconStyles'
+import { ICON_BG, ICON_BOX, ICON_BUTTON, ICON_SHOW } from './treeIconStyles'
 import { DROPDOWN_ITEM, DROPDOWN_MENU } from '../overlays/Dropdown'
-import type { TreeMenuGroup } from './types'
+import type { TreeIconShow, TreeMenuGroup } from './types'
 
 type Props = {
   /** The trigger's name, e.g. "Add to Characters" */
@@ -13,14 +14,19 @@ type Props = {
   groups: TreeMenuGroup[]
   /** The trigger is the whole box around it, its icon as big as the tree rows' (the left icon of a row), not a padded icon button */
   square?: boolean
+  /** Its icon turns 45° while the menu is open (default: a + becomes a ✕); false for an icon that stays as it is (a ⋯) */
+  turn?: boolean
+  /** hover: the trigger shows only while the pointer (or the keyboard) is on its row (the row has the `group/row` class) */
+  show?: TreeIconShow
 }
 
 /**
  * A small icon button that opens a menu of actions below it, aligned to its right edge, popping out of its corner like the columns' ⋯ menu
  * (Dropdown's look and animation; not the row ⋯ menu's dots, see TreeMenu).
- * Its icon turns 45° while the menu is open (a + becomes a ✕). Closes on a pick, a click outside, Esc, scrolling or resizing.
+ * Its icon turns 45° while the menu is open (a + becomes a ✕; `turn={false}` keeps it). A line separates the groups, and an item with
+ * `checked` is an option with a ✓. Closes on a pick, a click outside, Esc, scrolling or resizing.
  */
-export default function IconMenu({ label, icon: Icon, groups, square = false }: Props) {
+export default function IconMenu({ label, icon: Icon, groups, square = false, turn = true, show = 'always' }: Props) {
   const id = useId()
   const menuRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -56,25 +62,32 @@ export default function IconMenu({ label, icon: Icon, groups, square = false }: 
         aria-label={label}
         title={label}
         aria-expanded={open}
-        className={`${ICON_EFFECT_GROUP} ${square ? 'flex size-full items-center justify-center rounded-(--btn-close-radius)' : ICON_BOX} ${ICON_BG.hover} ${ICON_BUTTON}`}
+        className={`${ICON_EFFECT_GROUP} ${square ? 'flex size-full items-center justify-center rounded-(--btn-close-radius)' : ICON_BOX} ${ICON_SHOW[show]} ${ICON_BG.hover} ${ICON_BUTTON}`}
       >
-        <Icon className={`${square ? 'size-(--tree-row-icon)' : 'size-(--btn-icon-size)'} transition-transform duration-200 ease-out motion-reduce:transition-none ${open ? 'rotate-45' : ''}`} />
+        <Icon className={`${square ? 'size-(--tree-row-icon)' : 'size-(--btn-icon-size)'} transition-transform duration-200 ease-out motion-reduce:transition-none ${turn && open ? 'rotate-45' : ''}`} />
       </button>
       <div ref={menuRef} id={id} popover="auto" role="menu" aria-label={label} onBeforeToggle={place} onToggle={watch} className={DROPDOWN_MENU}>
-        {groups.flat().map((item) => (
-          <button
-            key={item.label}
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              close()
-              item.onClick()
-            }}
-            className={`${DROPDOWN_ITEM} ${item.danger ? 'text-danger' : ''}`}
-          >
-            {item.icon && <item.icon className="size-(--btn-icon-size) shrink-0" />}
-            {item.label}
-          </button>
+        {groups.map((group, g) => (
+          <Fragment key={g}>
+            {g > 0 && <hr className="my-(--menu-p) border-line" />}
+            {group.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+                aria-checked={item.checked}
+                onClick={() => {
+                  close()
+                  item.onClick()
+                }}
+                className={`${DROPDOWN_ITEM} ${item.danger ? 'text-danger' : ''}`}
+              >
+                {item.icon && <item.icon className="size-(--btn-icon-size) shrink-0" />}
+                <span className="min-w-0 flex-1 text-start">{item.label}</span>
+                {item.checked && <LuCheck aria-hidden className="size-(--btn-icon-size) shrink-0" />}
+              </button>
+            ))}
+          </Fragment>
         ))}
       </div>
     </>

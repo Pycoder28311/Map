@@ -1,20 +1,47 @@
-import type { Infobox, InfoRow, InfoRowKind } from '@map/shared'
+import type { Infobox, InfoRow } from '@map/shared'
 import { useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react'
-import { LuAlignLeft, LuArrowDown, LuArrowUp, LuImagePlus, LuList, LuListOrdered, LuPlus, LuTrash2, LuX } from 'react-icons/lu'
+import {
+  LuAlignJustify,
+  LuAlignLeft,
+  LuArrowDown,
+  LuArrowUp,
+  LuCalendar,
+  LuCalendarRange,
+  LuEllipsis,
+  LuHeading,
+  LuImage,
+  LuImagePlus,
+  LuLink,
+  LuList,
+  LuListOrdered,
+  LuMapPin,
+  LuMinus,
+  LuPlus,
+  LuTrash2,
+  LuX,
+} from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
 import Card from '../../components/ui/Card'
-import CheckField from '../../components/ui/fields/CheckField'
 import TextAreaField from '../../components/ui/fields/TextAreaField'
 import type { PlainIcon } from '../../components/ui/icons/IconSlot'
 import ExtendMenu from '../../components/ui/overlays/ExtendMenu'
-import TreeMenu from '../../components/ui/tree/TreeMenu'
-import { changeKind, emptyRow, insertRow, moveRow, removeRow, updateRow } from './infoRows'
+import IconMenu from '../../components/ui/tree/IconMenu'
+import { ICON_SHOW } from '../../components/ui/tree/treeIconStyles'
+import { changeKind, emptyRow, insertRow, moveRow, normalizeAddress, normalizeDegree, removeRow, typeOf, updateRow, type RowType } from './infoRows'
 
-const KINDS: { value: InfoRowKind; label: string; icon: PlainIcon }[] = [
+/** Every kind of row the box can hold, in the order Add info offers them */
+const TYPES: { value: RowType; label: string; icon: PlainIcon }[] = [
+  { value: 'header', label: 'Section header', icon: LuHeading },
   { value: 'value', label: 'Info and value', icon: LuAlignLeft },
+  { value: 'date', label: 'Date', icon: LuCalendar },
+  { value: 'period', label: 'Period', icon: LuCalendarRange },
+  { value: 'link', label: 'Link', icon: LuLink },
   { value: 'list', label: 'Numbered list', icon: LuListOrdered },
-  { value: 'text', label: 'Description', icon: LuList },
+  { value: 'bullets', label: 'Bulleted list', icon: LuList },
+  { value: 'text', label: 'Description', icon: LuAlignJustify },
+  { value: 'image', label: 'Picture', icon: LuImage },
+  { value: 'coordinates', label: 'Coordinates', icon: LuMapPin },
 ]
 
 // Full class strings so Tailwind can detect them at build time. The inputs are plain text on the box, a line under each row
@@ -30,9 +57,10 @@ type Props = {
 }
 
 /**
- * An article's Info box (its `infobox` field): a picture, a name and rows of facts, each kind its own look: a label and a value on one
- * line, a label and a numbered list, or a label and a description (shown as bullets when ticked). A + between two rows puts a new one
- * there; a row's ⋯ changes its kind, moves or deletes it; Add info adds one at the end. Every change is sent to `onChange`.
+ * An article's Info box (its `infobox` field): a picture, a name and rows of facts, as an encyclopedia's: section headers (the line of
+ * the sidebar's sections), an info and its value, a date, a period, a link, numbered or bulleted lists, a description, more pictures
+ * and coordinates. A + between two rows puts a new one there; a row's ⋯ changes its type, moves or deletes it; Add info adds one at the
+ * end. Every change is sent to `onChange`.
  */
 export default function InfoBox({ value, onChange, onUploadImage, onUploadError }: Props) {
   const rows = value.rows
@@ -50,7 +78,8 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError 
         className={`${INPUT} border-b border-line pb-1 text-heading`}
       />
       {rows.map((row, i) => (
-        <div key={row.id} className="flex flex-col">
+        // A section starts after a blank line (a <br>): the gap above a header, besides the card's own spacing
+        <div key={row.id} className={`flex flex-col ${row.kind === 'header' && i > 0 ? 'mt-4' : ''}`}>
           {i > 0 && <InsertHere onInsert={() => setRows(insertRow(rows, i, emptyRow('value')))} />}
           <Row
             row={row}
@@ -59,18 +88,20 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError 
             onChange={(next) => setRows(updateRow(rows, next))}
             onMove={(by) => setRows(moveRow(rows, row.id, by))}
             onRemove={() => setRows(removeRow(rows, row.id))}
+            onUploadImage={onUploadImage}
+            onUploadError={onUploadError}
           />
         </div>
       ))}
-      <ExtendMenu variant="ghost" label="Add info" items={KINDS} onSelect={(kind) => setRows([...rows, emptyRow(kind)])} direction="up" className="w-full">
+      <ExtendMenu variant="ghost" label="Add info" items={TYPES} onSelect={(type) => setRows([...rows, emptyRow(type)])} direction="up" className="w-full">
         <LuPlus aria-hidden /> Add info
       </ExtendMenu>
     </Card>
   )
 }
 
-/** The picture at the top: click or drop one to add it; over it, Replace and Remove */
-function Picture({ image, onChange, onUploadImage, onUploadError }: { image: string | null } & Pick<Props, 'onUploadImage' | 'onUploadError'> & { onChange: (image: string | null) => void }) {
+/** A picture: click or drop one to add it; over it, Replace and Remove. A square */
+function Picture({ image, onChange, onUploadImage, onUploadError }: { image: string | null; onChange: (image: string | null) => void } & Pick<Props, 'onUploadImage' | 'onUploadError'>) {
   const picker = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const upload = async (file: File | undefined) => {
@@ -128,11 +159,21 @@ function InsertHere({ onInsert }: { onInsert: () => void }) {
   )
 }
 
-type RowProps = { row: InfoRow; first: boolean; last: boolean; onChange: (row: InfoRow) => void; onMove: (by: -1 | 1) => void; onRemove: () => void }
+type RowProps = {
+  row: InfoRow
+  first: boolean
+  last: boolean
+  onChange: (row: InfoRow) => void
+  onMove: (by: -1 | 1) => void
+  onRemove: () => void
+} & Pick<Props, 'onUploadImage' | 'onUploadError'>
 
-function Row({ row, first, last, onChange, onMove, onRemove }: RowProps) {
+function Row({ row, first, last, onChange, onMove, onRemove, onUploadImage, onUploadError }: RowProps) {
+  const type = typeOf(row)
   const menu = [
-    KINDS.filter((k) => k.value !== row.kind).map((k) => ({ label: `As ${k.label.toLowerCase()}`, icon: k.icon, onClick: () => onChange(changeKind(row, k.value)) })),
+    // A description's Bullets option (its lines show as bullets while it is not edited)
+    ...(row.kind === 'text' ? [[{ label: 'Bullets', icon: LuList, checked: row.bullets, onClick: () => onChange({ ...row, bullets: !row.bullets }) }]] : []),
+    TYPES.filter((t) => t.value !== type).map((t) => ({ label: `As ${t.label.toLowerCase()}`, icon: t.icon, onClick: () => onChange(changeKind(row, t.value)) })),
     [
       ...(first ? [] : [{ label: 'Move up', icon: LuArrowUp, onClick: () => onMove(-1) }]),
       ...(last ? [] : [{ label: 'Move down', icon: LuArrowDown, onClick: () => onMove(1) }]),
@@ -140,6 +181,7 @@ function Row({ row, first, last, onChange, onMove, onRemove }: RowProps) {
     [{ label: 'Delete', icon: LuTrash2, danger: true, onClick: onRemove }],
   ].filter((group) => group.length > 0)
 
+  const name = row.label || 'info'
   const label = (
     <input
       value={row.label}
@@ -150,18 +192,49 @@ function Row({ row, first, last, onChange, onMove, onRemove }: RowProps) {
       className={`${INPUT} flex-1 text-small font-medium`}
     />
   )
-  const more = <TreeMenu label={`More: ${row.label || 'info'}`} groups={menu} show="hover" />
+  // The popup menu (Dropdown's look and pop-in), not the dots of the sidebar rows
+  const more = (
+    <div className="flex shrink-0 items-center">
+      {/* A − left of the ⋯ removes the row at once (the menu's Delete does the same); both show while the pointer is on the row */}
+      <IconButton icon={LuMinus} label={`Remove ${name}`} size="sm" onClick={onRemove} className={ICON_SHOW.hover} />
+      <IconMenu label={`More: ${name}`} icon={LuEllipsis} groups={menu} turn={false} show="hover" />
+    </div>
+  )
+  const head = (
+    <div className="flex items-center gap-2">
+      {label}
+      {more}
+    </div>
+  )
 
-  if (row.kind === 'value') {
+  if (row.kind === 'header') {
+    // The line of the sidebar's sections (Divider): the name, then a line to the end of the row
+    return (
+      <div className="group/row relative flex h-(--divider-h) items-center gap-sm">
+        <input
+          value={row.label}
+          onChange={(e) => onChange({ ...row, label: e.target.value })}
+          placeholder="Section"
+          aria-label="Section header"
+          maxLength={100}
+          className={`${INPUT} field-sizing-content min-w-16 max-w-[75%] shrink-0 text-small font-medium text-fg-muted`}
+        />
+        <span aria-hidden className="h-px flex-1 bg-(--divider-line)" />
+        {more}
+      </div>
+    )
+  }
+  if (row.kind === 'value' || row.kind === 'date') {
     return (
       <div className={ROW}>
         <div className="flex items-center gap-2">
           {label}
           <input
+            type={row.kind === 'date' ? 'date' : 'text'}
             value={row.value}
             onChange={(e) => onChange({ ...row, value: e.target.value })}
             placeholder="Value"
-            aria-label={`${row.label || 'Info'}: value`}
+            aria-label={`${name}: ${row.kind === 'date' ? 'date' : 'value'}`}
             maxLength={200}
             className={`${INPUT} flex-1 text-end text-body`}
           />
@@ -170,22 +243,127 @@ function Row({ row, first, last, onChange, onMove, onRemove }: RowProps) {
       </div>
     )
   }
-  if (row.kind === 'list') return <ListRow row={row} label={label} more={more} onChange={onChange} />
+  if (row.kind === 'period') {
+    return (
+      <div className={ROW}>
+        {head}
+        <div className="flex items-center gap-1.5">
+          <input type="date" value={row.from} onChange={(e) => onChange({ ...row, from: e.target.value })} aria-label={`${name}: from`} className={`${INPUT} flex-1 text-small`} />
+          <span aria-hidden className="text-fg-muted">
+            –
+          </span>
+          <input type="date" value={row.to} onChange={(e) => onChange({ ...row, to: e.target.value })} aria-label={`${name}: to`} className={`${INPUT} flex-1 text-small`} />
+        </div>
+      </div>
+    )
+  }
+  if (row.kind === 'link') {
+    return (
+      <div className={ROW}>
+        {head}
+        <input value={row.text} onChange={(e) => onChange({ ...row, text: e.target.value })} placeholder="Link text" aria-label={`${name}: link text`} maxLength={200} className={`${INPUT} text-body`} />
+        <AddressInput label={`${name}: address`} value={row.url} onCommit={(url) => onChange({ ...row, url })} />
+      </div>
+    )
+  }
+  if (row.kind === 'coordinates') {
+    return (
+      <div className={ROW}>
+        {head}
+        <div className="flex items-center gap-2">
+          <DegreeInput label={`${name}: latitude`} placeholder="Latitude" value={row.lat} onCommit={(lat) => onChange({ ...row, lat })} />
+          <DegreeInput label={`${name}: longitude`} placeholder="Longitude" value={row.lng} onCommit={(lng) => onChange({ ...row, lng })} />
+        </div>
+      </div>
+    )
+  }
+  if (row.kind === 'image') {
+    // The row's label is the caption
+    return (
+      <div className={ROW}>
+        <Picture image={row.image} onChange={(image) => onChange({ ...row, image })} onUploadImage={onUploadImage} onUploadError={onUploadError} />
+        <div className="flex items-center gap-2">
+          <input
+            value={row.label}
+            onChange={(e) => onChange({ ...row, label: e.target.value })}
+            placeholder="Caption"
+            aria-label="Caption"
+            maxLength={100}
+            className={`${INPUT} flex-1 text-small text-fg-muted`}
+          />
+          {more}
+        </div>
+      </div>
+    )
+  }
+  if (row.kind === 'list') return <ListRow row={row} head={head} onChange={onChange} />
   return (
     <div className={ROW}>
-      <div className="flex items-center gap-2">
-        {label}
-        <CheckField label="Bullets" checked={row.bullets} onChange={(bullets) => onChange({ ...row, bullets })} className="text-small" />
-        {more}
-      </div>
+      {head}
       <Description row={row} onChange={onChange} />
     </div>
   )
 }
 
-/** A label and a numbered list: Enter adds an item below, Backspace in an empty one removes it */
-function ListRow({ row, label, more, onChange }: { row: Extract<InfoRow, { kind: 'list' }>; label: ReactNode; more: ReactNode; onChange: (row: InfoRow) => void }) {
-  const list = useRef<HTMLOListElement>(null)
+/**
+ * A link's address: it is kept as typed, but only sent on once it is one the server takes (an address with http, https or mailto; a bare
+ * domain gets https://), so a half-typed one is never a failed save. Red while it is not one.
+ */
+function AddressInput({ label, value, onCommit }: { label: string; value: string; onCommit: (url: string) => void }) {
+  const [text, setText] = useState(value)
+  const valid = normalizeAddress(text) !== null
+  return (
+    <input
+      value={text}
+      onChange={(e) => {
+        setText(e.target.value)
+        const url = normalizeAddress(e.target.value)
+        if (url !== null) onCommit(url)
+      }}
+      onBlur={() => {
+        const url = normalizeAddress(text)
+        if (url !== null) setText(url)
+      }}
+      placeholder="https://…"
+      inputMode="url"
+      aria-label={label}
+      aria-invalid={!valid}
+      title={valid ? undefined : 'An address starting with http://, https:// or mailto:'}
+      maxLength={500}
+      className={`${INPUT} text-small ${valid ? 'text-fg-muted' : 'text-danger'}`}
+    />
+  )
+}
+
+/** A latitude or longitude: kept as typed, sent on only once it is a number the server takes (like AddressInput) */
+function DegreeInput({ label, placeholder, value, onCommit }: { label: string; placeholder: string; value: string; onCommit: (degrees: string) => void }) {
+  const [text, setText] = useState(value)
+  const valid = normalizeDegree(text) !== null
+  return (
+    <input
+      value={text}
+      onChange={(e) => {
+        setText(e.target.value)
+        const degrees = normalizeDegree(e.target.value)
+        if (degrees !== null) onCommit(degrees)
+      }}
+      onBlur={() => {
+        const degrees = normalizeDegree(text)
+        if (degrees !== null) setText(degrees)
+      }}
+      placeholder={placeholder}
+      inputMode="decimal"
+      aria-label={label}
+      aria-invalid={!valid}
+      maxLength={13}
+      className={`${INPUT} w-0 flex-1 text-small ${valid ? '' : 'text-danger'}`}
+    />
+  )
+}
+
+/** A label and a numbered or bulleted list: Enter adds an item below, Backspace in an empty one removes it */
+function ListRow({ row, head, onChange }: { row: Extract<InfoRow, { kind: 'list' }>; head: ReactNode; onChange: (row: InfoRow) => void }) {
+  const list = useRef<HTMLOListElement & HTMLUListElement>(null)
   const focusItem = (i: number) => requestAnimationFrame(() => list.current?.querySelectorAll('input')[i]?.focus())
   const setItems = (items: string[]) => onChange({ ...row, items })
   const keyDown = (e: KeyboardEvent<HTMLInputElement>, i: number) => {
@@ -199,13 +377,12 @@ function ListRow({ row, label, more, onChange }: { row: Extract<InfoRow, { kind:
       focusItem(Math.max(0, i - 1))
     }
   }
+  const ordered = row.ordered !== false
+  const List = ordered ? 'ol' : 'ul'
   return (
     <div className={ROW}>
-      <div className="flex items-center gap-2">
-        {label}
-        {more}
-      </div>
-      <ol ref={list} className="flex list-decimal flex-col ps-5 text-body marker:text-fg-muted">
+      {head}
+      <List ref={list} className={`flex ${ordered ? 'list-decimal' : 'list-disc'} flex-col ps-5 text-body marker:text-fg-muted`}>
         {row.items.map((item, i) => (
           <li key={i}>
             <input
@@ -219,7 +396,7 @@ function ListRow({ row, label, more, onChange }: { row: Extract<InfoRow, { kind:
             />
           </li>
         ))}
-      </ol>
+      </List>
     </div>
   )
 }

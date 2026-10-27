@@ -17,7 +17,7 @@ describe('articles: the Info box', () => {
       name: 'Ada Lovelace',
       rows: [
         { id: 'a', label: 'Born', kind: 'value', value: '1815' },
-        { id: 'b', label: 'Works', kind: 'list', items: ['Notes'] },
+        { id: 'b', label: 'Works', kind: 'list', items: ['Notes'], ordered: false },
         { id: 'c', label: 'About', kind: 'text', text: 'x', bullets: false },
       ],
     }

@@ -53,8 +53,8 @@ const articlePatch = (changed: FormValues): Record<string, unknown> =>
   changed.infobox === undefined ? changed : { ...changed, infobox: JSON.parse(changed.infobox) as Infobox }
 
 /**
- * An article's page (the articles' panel, resources.config.ts): breadcrumbs of its parents, the toolbar, its title and text, an
- * Add section bar, and beside them Info / Share / ⋯ and its Info box. Saved as it is edited, like every item (useItemAutosave).
+ * An article's page (the articles' panel, resources.config.ts): breadcrumbs of its parents, then two columns: the toolbar, title, text and
+ * an Add section bar in the middle, and Info / Share / ⋯ with the Info box on the right. Saved as it is edited, like every item (useItemAutosave).
  * With the id `new` (the sidebar's "+") it is the generic page of an item that is made when something is typed (NewItemEditor).
  */
 export default function ArticlePanel({ id }: PanelProps) {
@@ -121,14 +121,6 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 pt-3 pb-24">
       <ArticleBreadcrumbs resource={resource} item={item} />
-      <div className="sticky top-0 z-10 pt-1">
-        <ArticleToolbar editor={editor} onUploadImage={upload} onUploadError={onUploadError} />
-      </div>
-      {uploadError && (
-        <p role="alert" className="text-small text-danger">
-          {uploadError}
-        </p>
-      )}
       {/* A kept draft (keepMine) is a new start: the fields open again on it */}
       <ArticleBody
         key={autosave.start.version}
@@ -142,6 +134,16 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         onUploadError={onUploadError}
         actions={actions}
         infoShown={infoShown}
+        toolbar={
+          <div className="sticky top-0 z-10 flex flex-col gap-1 pt-1">
+            <ArticleToolbar editor={editor} onUploadImage={upload} onUploadError={onUploadError} />
+            {uploadError && (
+              <p role="alert" className="text-small text-danger">
+                {uploadError}
+              </p>
+            )}
+          </div>
+        }
         footer={
           <div className="flex items-center gap-2">
             <SaveStatus status={autosave.status} />
@@ -169,12 +171,17 @@ type BodyProps = {
   /** Info / Share / ⋯, above the Info box */
   actions: ReactNode
   infoShown: boolean
+  /** The icon toolbar, above the title */
+  toolbar: ReactNode
   /** Under the text (the save status) */
   footer: ReactNode
 }
 
-/** The title, the text and Add section; beside them the actions and the Info box (above the text in a narrow pane) */
-function ArticleBody({ resource, start, onChange, focusField, editor, onEditor, onUploadImage, onUploadError, actions, infoShown, footer }: BodyProps) {
+/**
+ * Two columns, always side by side: in the middle the toolbar, the title, the text and Add section; on the right (a third of the width,
+ * between 10 and 16rem, as an encyclopedia's) the actions and the Info box, which is its own thing: saved in `infobox`, never in the text
+ */
+function ArticleBody({ resource, start, onChange, focusField, editor, onEditor, onUploadImage, onUploadError, actions, infoShown, toolbar, footer }: BodyProps) {
   // The latest values, so quick changes of different fields all stay
   const latest = useRef(start)
   const [title, setTitle] = useState(start.title ?? '')
@@ -186,8 +193,9 @@ function ArticleBody({ resource, start, onChange, focusField, editor, onEditor, 
   const fields = Object.fromEntries(resource.ui.fields.map((f) => [f.name, f]))
 
   return (
-    <div className="grid gap-6 @3xl:grid-cols-[minmax(0,1fr)_16rem]">
+    <div className="grid grid-cols-[minmax(0,1fr)_clamp(10rem,30%,16rem)] items-start gap-4">
       <div className="flex min-w-0 flex-col gap-3">
+        {toolbar}
         <TitleInput
           size="xl"
           value={title}
@@ -217,7 +225,7 @@ function ArticleBody({ resource, start, onChange, focusField, editor, onEditor, 
         </Button>
         {footer}
       </div>
-      <aside className="order-first flex flex-col gap-2 @3xl:order-none" aria-label="About this article">
+      <aside className="flex min-w-0 flex-col gap-2" aria-label="About this article">
         {actions}
         {infoShown && (
           <InfoBox

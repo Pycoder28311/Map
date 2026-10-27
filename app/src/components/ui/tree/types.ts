@@ -100,6 +100,8 @@ export type TreeMenuItem = {
   onClick: () => void
   /** Destructive (e.g. Delete): shown in the danger colour */
   danger?: boolean
+  /** A ticked / unticked option (IconMenu only): shown with a ✓ while ticked; picking it calls `onClick` to toggle it */
+  checked?: boolean
   /** Instead of acting, it opens a small menu beside it with these (e.g. Create ▸ the kinds that can be made); `onClick` is ignored */
   submenu?: Omit<TreeMenuItem, 'submenu'>[]
 }

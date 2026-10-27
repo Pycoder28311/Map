@@ -83,6 +83,7 @@ export default function RichTextField({
     [onEditor],
   )
   const picker = useRef<HTMLInputElement>(null)
+  const showsToolbar = toolbar && editable && !plain
   const upload = async (files: File[]) => {
     if (!onUploadImage || !editor) return
     for (const file of files) {
@@ -95,8 +96,9 @@ export default function RichTextField({
     }
   }
   return (
-    <div onKeyDown={onKeyDown} className={`flex flex-col gap-1 ${className}`}>
-      {toolbar && editable && !plain && <RichTextToolbar editor={editor} onImage={onUploadImage ? () => picker.current?.click() : undefined} />}
+    // A column only with the toolbar: without it the text is plain blocks, so it can flow around a float beside the field (the article's Info box)
+    <div onKeyDown={onKeyDown} className={`${showsToolbar ? 'flex flex-col gap-1' : ''} ${className}`}>
+      {showsToolbar && <RichTextToolbar editor={editor} onImage={onUploadImage ? () => picker.current?.click() : undefined} />}
       {onUploadImage && (
         <input
           ref={picker}
