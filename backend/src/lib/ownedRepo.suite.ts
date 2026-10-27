@@ -47,6 +47,8 @@ function sample(table: Table, n = 1): Record<string, unknown> {
           return [name, f.default]
         case 'bool':
           return [name, false]
+        case 'json':
+          return [name, f.default]
         default: {
           // A field with a pattern (a layout's panes and template) does not take just any text: a word and number, else its default
           const text = [`${name} ${n}`, `${name}${n}`].find((candidate) => f.zod.safeParse(candidate).success)
@@ -99,6 +101,16 @@ export function describeOwnedRepo(name: TableName, repo: AnyRepo) {
       expect(await update(ctx, row.id as number, {})).toEqual(row)
     })
 
+    for (const [field, f] of Object.entries(table.fields).filter(([, f]) => f.kind === 'json')) {
+      it(`keeps ${field} as a value (JSON in its column) and refuses another shape`, async () => {
+        const ctx = newUser()
+        const row = await create(ctx, sample(table))
+        expect(row[field]).toEqual(f.default)
+        expect((await repo.get(ctx, row.id as number))?.[field]).toEqual(f.default)
+        expect(() => table.update.parse({ [field]: 'not an object' })).toThrow()
+      })
+    }
+
     it('lists the live rows by default and the archived ones on request', async () => {
       const ctx = newUser()
       const live = await create(ctx, sample(table, 1))
@@ -124,22 +136,23 @@ export function describeOwnedRepo(name: TableName, repo: AnyRepo) {
     }
 
     if (table.order.position) {
-      it('puts a new row without a position last in its group, and keeps a position it is given', async () => {
+      it('puts a new row without a position first, and keeps a position it is given', async () => {
         const ctx = newUser()
         const a = await create(ctx, sample(table, 1))
         const b = await create(ctx, sample(table, 2))
-        const given = await create(ctx, { ...sample(table, 3), position: positionBetween(a.position as string, b.position as string) })
-        expect(comparePositions(a.position as string, b.position as string)).toBeLessThan(0)
-        expect(ids((await list(ctx)).items)).toEqual([a.id, given.id, b.id])
-        // Each group has its own end: a pinned row (and a child of another parent) starts its own
+        const given = await create(ctx, { ...sample(table, 3), position: positionBetween(b.position as string, a.position as string) })
+        expect(comparePositions(b.position as string, a.position as string)).toBeLessThan(0)
+        expect(ids((await list(ctx)).items)).toEqual([b.id, given.id, a.id])
+        // Pinned rows are a group of their own: the first pinned row starts it
         if (table.order.pinned) expect((await create(ctx, { ...sample(table, 4), pinned: true })).position).toBe('a0')
       })
 
       it('moves a row by writing its position only, and refuses a bad one', async () => {
         const ctx = newUser()
         const [a, b, c] = [await create(ctx, sample(table, 1)), await create(ctx, sample(table, 2)), await create(ctx, sample(table, 3))]
-        await update(ctx, c.id as number, { position: positionBetween(a.position as string, b.position as string) })
-        expect(ids((await list(ctx)).items)).toEqual([a.id, c.id, b.id])
+        // (a new row comes first: the list is c, b, a)
+        await update(ctx, c.id as number, { position: positionBetween(b.position as string, a.position as string) })
+        expect(ids((await list(ctx)).items)).toEqual([b.id, c.id, a.id])
         expect(await repo.get(ctx, a.id as number)).toEqual(a)
         expect(() => table.update.parse({ position: 'a-' })).toThrow()
         expect(() => table.update.parse({ position: 3 })).toThrow()

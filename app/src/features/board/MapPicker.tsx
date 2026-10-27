@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { mapName, useMaps, type MapItem } from '../maps/maps'
 import { useWorkspace } from '../workspace/useWorkspace'
-import BarPopover from './BarPopover'
+import BarPopover from '../../components/ui/overlays/BarPopover'
 import { mapTree, siblingMaps } from './branches'
 
 // Tree lines: each branch has a line down its left side (to its middle for the last one) and a short one across

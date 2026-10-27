@@ -73,3 +73,26 @@ export function parentTypeOf(resource: AnyResource, resources: AnyResource[]): s
   }
   return undefined
 }
+
+/**
+ * The parents of an item, from the top one (its project) down to its direct parent, each with its own key: what the article page's
+ * breadcrumbs show. `entries`: every loaded item (the roots too). Stops at a parent that is not loaded, at a loop and at MAX_DEPTH
+ */
+export function parentChain(entries: Entry[], start: Entry): Entry[] {
+  const index = new Map(entries.map((entry) => [keyOf(entry.resource.name, entry.item.id), entry]))
+  const seen = new Set([keyOf(start.resource.name, start.item.id)])
+  const chain: Entry[] = []
+  let current = start
+  for (let depth = 0; depth < MAX_DEPTH; depth++) {
+    const { objectType, objectId } = current.item
+    const parent = current.resource.parents?.find((p) => p.type === objectType)
+    if (!parent || objectId === null || objectId === undefined) break
+    const key = keyOf(parent.resource, objectId as number)
+    const next = index.get(key)
+    if (!next || seen.has(key)) break
+    seen.add(key)
+    chain.unshift(next)
+    current = next
+  }
+  return chain
+}

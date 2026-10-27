@@ -5,9 +5,10 @@ import IconButton from '../buttons/IconButton'
 
 // Full class strings so Tailwind can detect them at build time.
 const SIZES = {
-  sm: 'max-w-sm',
-  md: 'max-w-lg',
-  lg: 'max-w-3xl',
+  // Rem values, not max-w-sm / -lg: the theme's --spacing-sm (4px) and --spacing-lg (16px) (styles/tokens.css) are what those names pick up
+  sm: 'max-w-[24rem]',
+  md: 'max-w-[32rem]',
+  lg: 'max-w-[48rem]',
 } as const
 
 // Centred over a dimmed, blurred page. Opening: fades in and grows from 95% (@starting-style); closing
@@ -39,6 +40,8 @@ type Props = {
   onZoom?: () => void
   /** No padding around the content (it draws its own), the header stays */
   flush?: boolean
+  /** What a click on the backdrop does instead of `onClose` (a draft decides: create, discard or ask). Esc and the X still call `onClose` */
+  onOutside?: () => void
 }
 
 /**
@@ -53,7 +56,7 @@ type Props = {
  *
  * `zoomable` + `pageHref` (or `onZoom`) add a button left of the X that closes it and opens the same thing as a page.
  */
-export default function Modal({ open, onClose, title, children, footer, size = 'md', bare = false, className = '', zoomable = false, pageHref, onZoom, flush = false }: Props) {
+export default function Modal({ open, onClose, title, children, footer, size = 'md', bare = false, className = '', zoomable = false, pageHref, onZoom, flush = false, onOutside }: Props) {
   const navigate = useNavigate()
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
@@ -79,7 +82,7 @@ export default function Modal({ open, onClose, title, children, footer, size = '
     pressedBackdrop.current = e.target === e.currentTarget
   }
   const onBackdrop = (e: MouseEvent<HTMLDialogElement>) => {
-    if (pressedBackdrop.current && e.target === e.currentTarget) onClose()
+    if (pressedBackdrop.current && e.target === e.currentTarget) (onOutside ?? onClose)()
     pressedBackdrop.current = false
   }
 

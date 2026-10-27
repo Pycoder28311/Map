@@ -3,9 +3,9 @@ import { LuBold, LuImage, LuItalic, LuList, LuListChecks, LuListOrdered, LuStrik
 import IconButton from '../buttons/IconButton'
 import type { PlainIcon } from '../icons/IconSlot'
 
-type Format = { label: string; icon: PlainIcon; mark: string; run: (editor: Editor) => void }
+export type Format = { label: string; icon: PlainIcon; mark: string; run: (editor: Editor) => void }
 
-const FORMATS: Format[] = [
+export const FORMATS: Format[] = [
   { label: 'Bold', icon: LuBold, mark: 'bold', run: (e) => e.chain().focus().toggleBold().run() },
   { label: 'Italic', icon: LuItalic, mark: 'italic', run: (e) => e.chain().focus().toggleItalic().run() },
   { label: 'Underline', icon: LuUnderline, mark: 'underline', run: (e) => e.chain().focus().toggleUnderline().run() },
@@ -16,7 +16,7 @@ const FORMATS: Format[] = [
 ]
 
 /** The sizes offered (px); '' is the editor's own size */
-const SIZES = [
+export const SIZES = [
   { label: 'Small', value: '13px' },
   { label: 'Normal', value: '' },
   { label: 'Large', value: '20px' },

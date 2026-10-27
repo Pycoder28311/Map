@@ -1,4 +1,6 @@
 import { useId, useState } from 'react'
+import IconButton from '../buttons/IconButton'
+import type { PlainIcon } from '../icons/IconSlot'
 import ColourPicker from './ColourPicker'
 
 type Props = {
@@ -11,6 +13,8 @@ type Props = {
   bare?: boolean
   /** A wide swatch instead of a square one, as wide as the width given by `className` (and, like `bare`, without the visible label) */
   wide?: boolean
+  /** An icon button (a toolbar's) instead of the swatch: the icon with a bar of the colour under it; the label is its name */
+  icon?: PlainIcon
 }
 
 // The picker opens by the swatch: a native popover (top layer: never cut by the sidebar's scroll area; closes on a click outside or Esc).
@@ -22,12 +26,12 @@ const EDGE = 8
 const GAP = 6
 
 /** A labelled colour input: live while the picker moves, committed once when it is let go. Its picker opens next to the swatch */
-export default function ColourField({ label, value, onLive, onCommit, className = '', bare, wide }: Props) {
+export default function ColourField({ label, value, onLive, onCommit, className = '', bare, wide, icon: Icon }: Props) {
   const id = useId()
   // The colour while the picker moves; null: the saved one
   const [held, setHeld] = useState<string | null>(null)
   // Only the swatch shows; the label is its accessible name
-  const hidden = bare || wide
+  const hidden = bare || wide || Icon !== undefined
 
   // Placed before it shows: under the swatch, or above it when there is no room, kept inside the window
   const place = (e: React.ToggleEvent<HTMLDivElement>) => {
@@ -47,22 +51,31 @@ export default function ColourField({ label, value, onLive, onCommit, className 
 
   return (
     <div className={`flex items-center ${bare ? 'h-full' : 'gap-3'} ${className}`}>
-      <button
-        type="button"
-        popoverTarget={id}
-        data-colour-anchor={id}
-        aria-label={hidden ? label : undefined}
-        aria-haspopup="dialog"
-        // The text being edited keeps its selection while the picker is used
-        onMouseDown={(e) => e.preventDefault()}
-        className={
-          bare
-            ? 'h-full w-6 cursor-pointer border-0 bg-transparent p-0.5'
-            : `${wide ? 'h-9 w-full' : 'size-9'} cursor-pointer rounded-(--btn-close-radius) border border-line bg-transparent p-0.5`
-        }
-      >
-        <span className="block size-full rounded-(--corner-xs)" style={{ backgroundColor: held ?? value }} />
-      </button>
+      {Icon ? (
+        <IconButton label={label} popoverTarget={id} data-colour-anchor={id} aria-haspopup="dialog" onMouseDown={(e) => e.preventDefault()}>
+          <span className="flex flex-col items-center gap-px">
+            <Icon className="size-(--btn-icon-size)" />
+            <span aria-hidden className="h-[3px] w-4 rounded-full" style={{ backgroundColor: held ?? value }} />
+          </span>
+        </IconButton>
+      ) : (
+        <button
+          type="button"
+          popoverTarget={id}
+          data-colour-anchor={id}
+          aria-label={hidden ? label : undefined}
+          aria-haspopup="dialog"
+          // The text being edited keeps its selection while the picker is used
+          onMouseDown={(e) => e.preventDefault()}
+          className={
+            bare
+              ? 'h-full w-6 cursor-pointer border-0 bg-transparent p-0.5'
+              : `${wide ? 'h-9 w-full' : 'size-9'} cursor-pointer rounded-(--btn-close-radius) border border-line bg-transparent p-0.5`
+          }
+        >
+          <span className="block size-full rounded-(--corner-xs)" style={{ backgroundColor: held ?? value }} />
+        </button>
+      )}
       <div id={id} popover="auto" role="dialog" aria-label={`${label} picker`} onBeforeToggle={place} onToggle={(e) => e.newState === 'closed' && setHeld(null)} className={PANEL}>
         <ColourPicker
           key={value}

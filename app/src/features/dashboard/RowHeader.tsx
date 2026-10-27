@@ -102,6 +102,7 @@ export default function RowHeader({ name, reflowId, onRename, onOpen, sort, onSo
             items={create.kinds}
             onSelect={create.onCreate}
             iconPosition="right"
+            align="end"
           >
             Add
           </ExtendMenu>

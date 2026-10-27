@@ -71,6 +71,13 @@
       "when": 1792602990942,
       "tag": "0009_layouts",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1793103940071,
+      "tag": "0010_article_infobox",
+      "breakpoints": true
     }
   ]
 }

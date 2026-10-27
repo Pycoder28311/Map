@@ -78,7 +78,7 @@ export function startIndex(list: Entry[], moved: Entry): number {
   return pinnedOf(moved) ? 0 : list.filter(pinnedOf).length
 }
 
-/** The key for a new item at the end of a list (its unpinned part) */
+/** The key for an item at the end of a list (its unpinned part): no longer used for new items, which go first */
 export function positionAtEnd(list: Entry[]): string {
   const last = [...list].reverse().find((entry) => !pinnedOf(entry))
   return positionAfter(keyOf(last))

@@ -18,7 +18,8 @@ export class ApiError extends Error {
   }
 }
 
-export type RequestInitJson = Omit<RequestInit, 'body'> & { json?: unknown }
+/** `json`: a body sent as JSON; `body`: files (the browser sets their content type) */
+export type RequestInitJson = Omit<RequestInit, 'body'> & { json?: unknown; body?: FormData }
 
 export type RequestConfig = {
   /** '' : the page's own origin (the website; in dev the Vite proxy forwards /api). The desktop app uses the live site */
@@ -48,7 +49,8 @@ export function createRequest(config: RequestConfig) {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...headers,
         },
-        body: json !== undefined ? JSON.stringify(json) : undefined,
+        // A JSON body, or the one given as it is (a FormData of files)
+        body: json !== undefined ? JSON.stringify(json) : rest.body,
       })
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') throw error // a cancelled call is not a failure

@@ -7,10 +7,10 @@ import IconButton from '../buttons/IconButton'
 // Full class strings so Tailwind can detect them at build time. The trigger is a Shade button (buttonStyles.ts).
 // A native popover (top layer; closes on a click outside or Esc), UA defaults reset; top/right set on
 // open. It pops out of the trigger's corner (it's aligned to the trigger's right edge, below it)
-const MENU =
+export const DROPDOWN_MENU =
   'inset-auto m-0 min-w-32 rounded-(--menu-radius) border border-line bg-surface p-(--menu-p) text-fg shadow-lg ' +
   'origin-top-right animate-dropdown-in motion-reduce:animate-none'
-const ITEM =
+export const DROPDOWN_ITEM =
   'flex h-(--menu-item-h) w-full items-center gap-(--menu-icon-gap) rounded-(--menu-item-radius) px-(--menu-item-px) ' +
   'text-body cursor-pointer hover-fill focus-visible:bg-fill focus-visible:outline-none aria-checked:font-medium ' +
   'disabled:cursor-default disabled:text-fg-muted disabled:hover:bg-transparent'
@@ -94,7 +94,7 @@ export default function Dropdown<T extends string>({ value, options, onChange, l
         </Button>
       )}
 
-      <div ref={menuRef} id={id} popover="auto" role="menu" aria-label={label} onBeforeToggle={place} onToggle={focusCurrent} className={MENU}>
+      <div ref={menuRef} id={id} popover="auto" role="menu" aria-label={label} onBeforeToggle={place} onToggle={focusCurrent} className={DROPDOWN_MENU}>
         {options.map((o) => (
           <button
             key={o.value}
@@ -107,7 +107,7 @@ export default function Dropdown<T extends string>({ value, options, onChange, l
               menuRef.current?.hidePopover()
               triggerRef.current?.focus()
             }}
-            className={ITEM}
+            className={DROPDOWN_ITEM}
           >
             {o.icon && <o.icon className="size-4 text-fg-subtle" />}
             <span className="min-w-0 flex-1 truncate text-start">{o.label}</span>

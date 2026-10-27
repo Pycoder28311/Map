@@ -37,6 +37,8 @@ type Props<T extends string> = {
   iconPosition?: 'left' | 'right'
   /** Which way it extends: down from the button (default), or up (for a button at the bottom of its container) */
   direction?: 'down' | 'up'
+  /** center (default): it grows the same on both sides of the button; end: its right edge stays on the button's, it grows to the left (a button at the right end of a row) */
+  align?: 'center' | 'end'
   className?: string
 }
 
@@ -70,6 +72,7 @@ export default function ExtendMenu<T extends string>({
   openLabel = 'None',
   iconPosition = 'left',
   direction = 'down',
+  align = 'center',
   className = '',
 }: Props<T>) {
   const id = useId()
@@ -195,11 +198,11 @@ export default function ExtendMenu<T extends string>({
         data-closing={closing}
         // Anchored at the button's centre: growing wider, it extends the same on both sides, and the
         // button's own content (centred) stays where it is
-        className={`${BOX[variant]} absolute ${direction === 'up' ? 'bottom-0 flex-col-reverse' : 'top-0 flex-col'} flex left-1/2 -translate-x-1/2 z-20`}
+        className={`${BOX[variant]} absolute ${direction === 'up' ? 'bottom-0 flex-col-reverse' : 'top-0 flex-col'} flex ${align === 'end' ? 'right-0' : 'left-1/2 -translate-x-1/2'} z-20`}
       >
         {variant === 'create' ? (
           // Its own size, centred: the box grows around it, and it stays where it was
-          <SplitButton {...toggle} {...split(open)} className="shrink-0 self-center" />
+          <SplitButton {...toggle} {...split(open)} className={`shrink-0 ${align === 'end' ? 'self-end' : 'self-center'}`} />
         ) : (
           <Button variant="ghost" {...toggle}>
             {render(children, open)}

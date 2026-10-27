@@ -1,0 +1,1 @@
+ALTER TABLE `articles` ADD `infobox` text DEFAULT '{"image":null,"name":"","rows":[]}' NOT NULL;

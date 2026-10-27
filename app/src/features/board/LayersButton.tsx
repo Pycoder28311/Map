@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { LuLayers } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
-import BarPopover from './BarPopover'
+import BarPopover from '../../components/ui/overlays/BarPopover'
 import { useBoard } from './boardStore'
 import { layerLabel, layerList } from './layers'
 import { useSelection } from './selection'

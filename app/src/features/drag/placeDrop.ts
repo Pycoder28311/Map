@@ -23,7 +23,7 @@ export type PlaceParent = { type: string; resource: string; id: number | string 
 
 /** What a place in a list says about itself (its droppable's data, through placeDropData) */
 export type PlaceTarget = {
-  /** card: before or after it (left/right half); row: at the end of the list; node: before or after it (top/bottom), or into it */
+  /** card: before or after it (left/right half; a folder's middle: into it); row: at the end of the list; node: before or after it (top/bottom), or into it */
   kind: 'card' | 'row' | 'node'
   /** The list the item lands in, in its order */
   list: () => Entry[]
@@ -35,7 +35,7 @@ export type PlaceTarget = {
   only?: string
   /** Only these resources sit in the list (the sidebar's projects and orphans); the others go inside a row or out of their parent */
   accepts?: string[]
-  /** A row that can be a parent: dropped in its middle, the item becomes its last child */
+  /** A row or card that can be a parent: dropped in its middle, the item becomes its last child */
   into?: { parent: NonNullable<PlaceParent>; list: () => Entry[] }
   /** The sidebar row (its highlight and the fall-in effect) */
   nodeId?: string
@@ -71,7 +71,12 @@ export function sideOf(
   rect: { left: number; top: number; width: number; height: number },
 ): PlaceSide {
   if (target.kind === 'row') return 'end'
-  if (target.kind === 'card') return point.x < rect.left + rect.width / 2 ? 'before' : 'after'
+  if (target.kind === 'card') {
+    // A card that can be a parent (a folder): its middle takes the item inside, its sides are before and after it
+    const across = (point.x - rect.left) / rect.width
+    if (target.into && across > 0.25 && across < 0.75) return 'into'
+    return across < 0.5 ? 'before' : 'after'
+  }
   const frac = (point.y - rect.top) / rect.height
   if (target.into && frac > 0.25 && frac < 0.78) return 'into'
   return frac < 0.5 ? 'before' : 'after'

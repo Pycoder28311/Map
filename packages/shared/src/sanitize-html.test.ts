@@ -62,6 +62,38 @@ describe('sanitizeRichText', () => {
     })
   })
 
+  describe('article formats', () => {
+    it('keeps a background colour and a font list on a span', () => {
+      const html = '<p><span style="color: red; background-color: #ffee00; font-family: &quot;Trebuchet MS&quot;, sans-serif">x</span></p>'
+      expect(sanitizeRichText(html)).toBe(html)
+    })
+    it('drops a font list that tries to load something', () => {
+      expect(sanitizeRichText('<span style="font-family: url(//evil)">x</span>')).toBe('<span>x</span>')
+    })
+    it('keeps an underline colour, and nothing else on an underline', () => {
+      expect(sanitizeRichText('<p><u style="text-decoration-color: #00f; color: red">x</u></p>')).toBe('<p><u style="text-decoration-color: #00f">x</u></p>')
+    })
+    it('keeps the paragraph look on paragraphs and headings', () => {
+      const html = '<p style="text-align: center; padding: 8px; letter-spacing: 1.5px; line-height: 1.6; border: 2px solid #333333">x</p><h2 style="text-align: right">t</h2>'
+      expect(sanitizeRichText(html)).toBe(html)
+    })
+    it('drops a paragraph look with other values', () => {
+      expect(sanitizeRichText('<p style="text-align: start; border: 2px dashed red; padding: 9999px; position: fixed">x</p>')).toBe('<p>x</p>')
+      expect(sanitizeRichText('<span style="text-align: center">x</span>')).toBe('<span>x</span>')
+    })
+    it('keeps superscript and subscript', () => {
+      expect(sanitizeRichText('<p>x<sup>2</sup>H<sub>2</sub>O</p>')).toBe('<p>x<sup>2</sup>H<sub>2</sub>O</p>')
+    })
+    it('keeps a table with its cell spans only', () => {
+      expect(
+        sanitizeRichText('<table style="min-width: 50px"><colgroup><col style="min-width: 25px"></colgroup><tbody><tr><th colspan="2" rowspan="1" style="x"><p>h</p></th></tr><tr><td colspan="999"><p>c</p></td></tr></tbody></table>'),
+      ).toBe('<table><colgroup><col></colgroup><tbody><tr><th colspan="2" rowspan="1"><p>h</p></th></tr><tr><td><p>c</p></td></tr></tbody></table>')
+    })
+    it('counts an empty table as content', () => {
+      expect(sanitizeRichText('<table><tbody><tr><td><p></p></td></tr></tbody></table>')).not.toBe('')
+    })
+  })
+
   it('closes tags left open', () => {
     expect(sanitizeRichText('<p><strong>a')).toBe('<p><strong>a</strong></p>')
   })

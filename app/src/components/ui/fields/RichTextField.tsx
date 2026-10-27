@@ -1,6 +1,6 @@
 import { RICH_TEXT_MAX } from '@map/shared/rich-text-policy'
 import { useCallback, useRef, useState, type KeyboardEvent } from 'react'
-import type { Editor } from '@tiptap/react'
+import type { Editor, Extensions } from '@tiptap/react'
 import { cleanHtml, toHtml } from '../../../features/notes/noteHtml'
 import RichTextEditor from '../editors/RichTextEditor'
 import RichTextToolbar from '../editors/RichTextToolbar'
@@ -17,6 +17,8 @@ type Props = {
   toolbar?: boolean
   /** Leave out headings, quotes, lists and code */
   plain?: boolean
+  /** More than the editor's base set (e.g. the article's formats: editors/articleExtensions.ts). Read once, when the field opens */
+  extensions?: Extensions
   autoFocus?: boolean
   /** false: shows the text and nothing can be typed */
   editable?: boolean
@@ -44,7 +46,8 @@ type Props = {
 const TEXT =
   'text-body [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[inherit] [&_p]:min-h-[1lh] [&_h1]:text-title [&_h2]:text-heading [&_h3]:text-heading ' +
   '[&_ul]:list-disc [&_ol]:list-decimal [&_ul]:ps-5 [&_ol]:ps-5 [&_blockquote]:border-s-2 [&_blockquote]:border-line [&_blockquote]:ps-3 ' +
-  '[&_a]:underline [&_a]:text-accent'
+  '[&_a]:underline [&_a]:text-accent ' +
+  '[&_table]:w-full [&_table]:border-collapse [&_td]:border [&_th]:border [&_td]:border-line [&_th]:border-line [&_td]:p-1.5 [&_th]:p-1.5 [&_th]:bg-fill [&_th]:text-start'
 
 /**
  * A text field that keeps HTML (the app's text-with-formatting field, e.g. a note's text): the shared RichTextEditor in a
@@ -59,6 +62,7 @@ export default function RichTextField({
   label,
   toolbar = false,
   plain = false,
+  extensions,
   autoFocus = false,
   editable = true,
   maxLength = RICH_TEXT_MAX,
@@ -111,6 +115,7 @@ export default function RichTextField({
         placeholder={placeholder}
         label={label}
         plain={plain}
+        extensions={extensions}
         autoFocus={autoFocus}
         editable={editable}
         onEditor={track}

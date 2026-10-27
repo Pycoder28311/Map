@@ -4,6 +4,7 @@
 //
 // After changing a table here: `npx drizzle-kit generate` in backend/, read the SQL, apply it (--local, then --remote).
 import { field } from './fields'
+import { EMPTY_INFOBOX, infobox } from './infobox'
 import { defineTables, type FilterOf, type InputOf, type ItemOf, type ListItemOf, type UpdateOf } from './table'
 
 /** Pinned first, then by position, then by id */
@@ -48,7 +49,7 @@ export const DATA = defineTables({
   articles: {
     access: 'owner',
     order: ORDERED,
-    fields: { title: field.text(200), content: field.richText() },
+    fields: { title: field.text(200), content: field.richText(), infobox: field.json(infobox, EMPTY_INFOBOX) },
     preview: 'content',
     requireOneOf: ['title', 'content'],
     link: PARENT,

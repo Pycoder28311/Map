@@ -1,4 +1,5 @@
 import type { TreeMenuGroup } from '../../components/ui/tree/types'
+import IconMenu from '../../components/ui/tree/IconMenu'
 import TreeMenu from '../../components/ui/tree/TreeMenu'
 import type { AnyResource } from '../../resources/types'
 import { useDroppable } from '@dnd-kit/core'
@@ -7,15 +8,13 @@ import { useObjectDrag } from '../drag/objectDrag'
 import { useObjectDrop } from '../drag/objectDrop'
 import { PLACE_ZONE, placeDropData, type PlaceTarget, type PlaceValue } from '../drag/placeDrop'
 import { useState } from 'react'
-import { LuMaximize2 } from 'react-icons/lu'
-import ButtonLook from '../../components/ui/buttons/ButtonLook'
+import { LuMaximize2, LuPlus } from 'react-icons/lu'
 import IconButton from '../../components/ui/buttons/IconButton'
 import Modal from '../../components/ui/overlays/Modal'
-import { placeholderArt } from '../objects/placeholderArt'
-import { CARD_SIZE, cardOf } from './cards/cardStyles'
+import type { Entry } from '../../lib/resource/reorder'
+import CardFace from './cards/cardFaces'
 import MapPreview from './cards/MapPreview'
 
-const DATE = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' })
 // Shown on hover or keyboard focus, and while its menu is open
 const ON_HOVER = 'opacity-0 transition-opacity group-hover/card:opacity-100 group-focus-within/card:opacity-100 has-[:popover-open]:opacity-100'
 
@@ -27,6 +26,12 @@ type Props = {
   onOpen: () => void
   /** Its place in its row: a drop on its left half goes before it, on its right half after it (none: no drops) */
   place?: PlaceTarget
+  /** A folder's first items (its tiles) */
+  contents?: Entry[]
+  /** The + menu, next to the ⋯: what can be created inside it (a folder); none: no + */
+  addMenu?: TreeMenuGroup[]
+  /** A draft card is being made from this folder (its dashed tile shows) */
+  pending?: boolean
 }
 
 /**
@@ -35,7 +40,7 @@ type Props = {
  * title, date and two lines; `map`, its preview filling the card, its title in a narrower box hanging below it, centred on its bottom edge, and a zoom button. Drags like every card (onto
  * pane edges, the Trash…), opens on a click, ⋯ menu on hover.
  */
-export default function ResourceCard({ resource, item, menu, onOpen, place }: Props) {
+export default function ResourceCard({ resource, item, menu, onOpen, place, contents, addMenu, pending }: Props) {
   const id = String(item.id)
   const title = resource.ui.row.title(item)
   const Icon = resource.ui.icon
@@ -59,11 +64,12 @@ export default function ResourceCard({ resource, item, menu, onOpen, place }: Pr
   const { target } = useObjectDrop()
   const value = target?.zone === PLACE_ZONE ? (target.value as unknown as PlaceValue) : null
   const side = value?.mark === `${resource.name}:${id}` ? value.side : null
+  // A folder with an item over its middle: it shows where it would go (the dashed square)
+  const dropping = value?.side === 'into' && value.mark === `${resource.name}:${id}`
   const bar = (side === 'before' || side === 'after') && (
     <span aria-hidden className={`pointer-events-none absolute inset-y-1 z-20 w-1 rounded-full bg-drop ${side === 'before' ? 'start-0.5' : 'end-0.5'}`} />
   )
   const { role: _role, ...dragAttributes } = attributes
-  const created = item.createdAt ? new Date(item.createdAt) : null
   const look = resource.ui.card ?? 'plain'
   const [zoomed, setZoomed] = useState(false)
   const box = `cursor-grab active:cursor-grabbing transition-[box-shadow,opacity] ${isDragging || held ? 'opacity-40' : ''}`
@@ -74,8 +80,9 @@ export default function ResourceCard({ resource, item, menu, onOpen, place }: Pr
   const card = { ref, ...listeners, ...dragAttributes, 'data-card-id': id, 'data-card-kind': resource.panelType, onClick: onOpen }
   const more = (
     // Its own button: clicking it doesn't open the card
-    <div onClick={(e) => e.stopPropagation()} className={`absolute end-2 top-2 flex rounded-(--btn-close-radius) bg-surface/80 ${ON_HOVER}`}>
+    <div onClick={(e) => e.stopPropagation()} className={`absolute end-2 top-2 flex ${ON_HOVER}`}>
       {look === 'map' && <IconButton icon={LuMaximize2} label={`Zoom ${title}`} onClick={() => setZoomed(true)} />}
+      {addMenu && addMenu.length > 0 && <IconMenu label={`Add to ${title}`} icon={LuPlus} groups={addMenu} />}
       <TreeMenu label={`More: ${title}`} groups={menu} />
     </div>
   )
@@ -86,55 +93,14 @@ export default function ResourceCard({ resource, item, menu, onOpen, place }: Pr
     </>
   )
 
-  if (look === 'map') {
-    return (
-      <>
-        {/* The card itself does not clip: the name hangs below the picture (which clips its own corners), centred on its bottom edge */}
-        <div {...card} className={`group/card relative shrink-0 snap-start ${CARD_SIZE} ${box}`}>
-          <div className="absolute inset-0 overflow-hidden rounded-(--card-radius) bg-surface shadow-sm ring-1 ring-line">
-            <MapPreview id={id} className="size-full" />
-          </div>
-          {/* The name: a Stone button's look (like the Recent History button) */}
-          <ButtonLook variant="secondary" size="sm" icon={Icon} className="absolute bottom-0 left-1/2 w-3/4 min-w-0 -translate-x-1/2 translate-y-1/2">
-            <span className="min-w-0 truncate">{title}</span>
-          </ButtonLook>
-          {marks}
-        </div>
-        <Modal open={zoomed} onClose={() => setZoomed(false)} title={title} size="lg">
-          <MapPreview id={id} pin="size-16" className="aspect-video w-full rounded-(--btn-radius)" />
-        </Modal>
-      </>
-    )
-  }
-
-  if (look === 'image') {
-    return (
-      <div {...card} className={`${cardOf(CARD_SIZE)} bg-surface ${box}`}>
-        <div style={placeholderArt(`${resource.panelType}${id}`)} className="h-24 shrink-0 rounded-(--btn-radius)" />
-        <div className="flex items-center justify-between gap-2 px-0.5">
-          <ButtonLook variant="secondary" size="sm" icon={Icon} className="min-w-0">
-            <span className="min-w-0 truncate">{title}</span>
-          </ButtonLook>
-          {created && <span className="shrink-0 text-small text-fg-subtle">{DATE.format(created)}</span>}
-        </div>
-        <p className="line-clamp-2 px-0.5 text-small text-fg-muted">{resource.ui.row.subtitle?.(item) || 'Empty'}</p>
-        {marks}
-      </div>
-    )
-  }
-
+  const face = <CardFace resource={resource} item={item} title={title} contents={contents} dropping={dropping} pending={pending} box={card} className={box} marks={marks} />
+  if (look !== 'map') return face
   return (
-    <div {...card} className={`${cardOf(CARD_SIZE)} bg-note ${box}`}>
-      <div className="flex items-center gap-2 px-0.5 pe-8 pt-0.5">
-        <ButtonLook variant="secondary" size="sm" icon={Icon} className="min-w-0">
-          <span className="min-w-0 truncate">{title}</span>
-        </ButtonLook>
-        {created && <span className="shrink-0 text-small text-fg-subtle">{DATE.format(created)}</span>}
-      </div>
-      <p className="line-clamp-4 border-s-2 border-fg/20 ps-2 text-body text-fg-muted [mask-image:linear-gradient(to_bottom,black_65%,transparent)]">
-        {resource.ui.row.subtitle?.(item) || 'Empty'}
-      </p>
-      {marks}
-    </div>
+    <>
+      {face}
+      <Modal open={zoomed} onClose={() => setZoomed(false)} title={title} size="lg">
+        <MapPreview id={id} pin="size-16" className="aspect-video w-full rounded-(--btn-radius)" />
+      </Modal>
+    </>
   )
 }

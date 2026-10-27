@@ -1,4 +1,5 @@
 import { Fragment, useId, useRef, type ToggleEvent } from 'react'
+import { LuChevronRight } from 'react-icons/lu'
 import {
   DOT,
   DOT_SLOT,
@@ -17,7 +18,7 @@ import {
 } from './menuAnimation'
 import { ICON_EFFECT_GROUP, iconEffectClass, type IconEffects } from '../icons/iconEffects'
 import { ICON_BG, ICON_BOX, ICON_BUTTON, ICON_SHOW } from './treeIconStyles'
-import type { TreeIconBg, TreeIconShow, TreeMenuGroup } from './types'
+import type { TreeIconBg, TreeIconShow, TreeMenuGroup, TreeMenuItem } from './types'
 
 // Full class strings so Tailwind can detect them at build time.
 // A native popover (top layer: above everything, never cut by the sidebar's scroll area; closes on
@@ -29,7 +30,7 @@ const MENU =
   'bg-transparent p-(--menu-p) text-fg'
 
 // Fixed height: the dots animation computes where each item is from it
-const ITEM =
+export const ITEM =
   'relative flex h-(--menu-item-h) w-full items-center rounded-(--menu-item-radius) px-(--menu-item-px) text-body text-start ' +
   'cursor-pointer transition-colors duration-150 ease-out hover-fill ' +
   'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent'
@@ -40,6 +41,11 @@ const LIST = 'flex flex-col gap-(--menu-gap)'
 // The line between groups: 1px + --menu-sep-space above and below (the dots animation counts it),
 // inset like the items' text
 const SEPARATOR = 'mx-(--menu-item-px) my-(--menu-sep-space) h-px shrink-0 bg-line'
+
+// A submenu, beside the item that opens it: a native popover too, inside the menu's (so the menu stays open under it), drawn as a
+// plain card (no dots animation)
+export const SUBMENU =
+  'inset-auto m-0 min-w-(--menu-min-w) rounded-(--menu-radius) border-(length:--menu-border) border-line bg-surface p-(--menu-p) text-fg shadow-lg'
 
 /** The menu never starts closer than this to the window's left edge (px) */
 const EDGE = 8
@@ -124,26 +130,7 @@ export default function TreeMenu({ label, show = 'always', bg, effects, groups, 
               <Fragment key={g}>
                 {g > 0 && <div role="separator" style={itemVars(start, g)} className={`${SEPARATOR} ${SEPARATOR_IN}`} />}
                 {group.map((item, j) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    role="menuitem"
-                    style={itemVars(start + j, g)}
-                    onClick={() => {
-                      close()
-                      item.onClick()
-                    }}
-                    className={`${ITEM} ${item.danger ? 'text-danger' : ''}`}
-                  >
-                    <span aria-hidden className={BLOOM} />
-                    <span aria-hidden className={DOT_SLOT}>
-                      <span className={DOT} />
-                    </span>
-                    <span className={ITEM_CONTENT}>
-                      {item.icon && <item.icon className="size-(--btn-icon-size) shrink-0" />}
-                      {item.label}
-                    </span>
-                  </button>
+                  <MenuItem key={item.label} item={item} vars={itemVars(start + j, g)} close={close} />
                 ))}
               </Fragment>
             )
@@ -151,6 +138,77 @@ export default function TreeMenu({ label, show = 'always', bg, effects, groups, 
         </div>
       </div>
     </span>
+  )
+}
+
+/** One item of the menu; with a `submenu`, it opens that beside it (the ▸) instead of acting */
+function MenuItem({ item, vars, close }: { item: TreeMenuItem; vars: React.CSSProperties; close: () => void }) {
+  const subId = useId()
+  const content = (
+    <>
+      <span aria-hidden className={BLOOM} />
+      <span aria-hidden className={DOT_SLOT}>
+        <span className={DOT} />
+      </span>
+      <span className={`${ITEM_CONTENT} ${item.submenu ? 'w-full' : ''}`}>
+        {item.icon && <item.icon className="size-(--btn-icon-size) shrink-0" />}
+        {item.label}
+        {/* The arrow of a submenu: at the item's right edge, with a background of its own on hover */}
+        {item.submenu && <LuChevronRight aria-hidden className={`ms-auto size-(--btn-icon-size) shrink-0 -me-1 box-content p-(--btn-close-p) rounded-(--btn-close-radius) transition-colors hover-faint`} />}
+      </span>
+    </>
+  )
+  if (!item.submenu) {
+    return (
+      <button
+        type="button"
+        role="menuitem"
+        style={vars}
+        onClick={() => {
+          close()
+          item.onClick()
+        }}
+        className={`${ITEM} ${item.danger ? 'text-danger' : ''}`}
+      >
+        {content}
+      </button>
+    )
+  }
+  // Placed beside its item (to its right, level with its top), before it shows
+  const place = (e: ToggleEvent<HTMLDivElement>) => {
+    if (e.newState !== 'open') return
+    const trigger = document.querySelector<HTMLElement>(`[popovertarget="${CSS.escape(subId)}"]`)
+    if (!trigger) return
+    const rect = trigger.getBoundingClientRect()
+    // Level with the menu's own top edge (where the menu starts), to the right of the item
+    const menuTop = trigger.closest('[role="menu"]')?.getBoundingClientRect().top ?? rect.top
+    e.currentTarget.style.left = `${rect.right + 4}px`
+    e.currentTarget.style.top = `${menuTop}px`
+  }
+  return (
+    <>
+      <button type="button" role="menuitem" aria-haspopup="menu" popoverTarget={subId} style={vars} className={ITEM}>
+        {content}
+      </button>
+      <div id={subId} popover="auto" role="menu" aria-label={item.label} onBeforeToggle={place} className={SUBMENU}>
+        {item.submenu.map((sub) => (
+          <button
+            key={sub.label}
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              ;(document.getElementById(subId) as HTMLElement | null)?.hidePopover()
+              close()
+              sub.onClick()
+            }}
+            className={`${ITEM} ${sub.danger ? 'text-danger' : ''}`}
+          >
+            {sub.icon && <sub.icon className="me-(--menu-icon-gap) size-(--btn-icon-size) shrink-0" />}
+            {sub.label}
+          </button>
+        ))}
+      </div>
+    </>
   )
 }
 

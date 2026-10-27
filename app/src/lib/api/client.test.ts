@@ -41,6 +41,15 @@ describe('request', () => {
     expect((other.fetch.mock.calls[0] as unknown as [string, RequestInit])[1].body).toBeUndefined()
   })
 
+  it('sends files as they are, leaving their content type to the browser', async () => {
+    const { request, fetch } = setup(reply(201, []))
+    const body = new FormData()
+    await request('/api/images', { method: 'POST', body })
+    const init = (fetch.mock.calls[0] as unknown as [string, RequestInit])[1]
+    expect(init.body).toBe(body)
+    expect((init.headers as Record<string, string>)['Content-Type']).toBeUndefined()
+  })
+
   it('answers undefined for 204', async () => {
     const { request } = setup(new Response(null, { status: 204 }))
     expect(await request('/api/notes/1', { method: 'DELETE' })).toBeUndefined()

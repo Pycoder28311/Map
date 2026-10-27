@@ -1,9 +1,9 @@
-import type { ReactNode } from 'react'
+import type { ComponentProps, ReactNode } from 'react'
 import { buttonClass, type ButtonSize, type ButtonVariant } from './buttonStyles'
 import ButtonContent from './ButtonContent'
 import type { ButtonIcon } from '../icons/IconSlot'
 
-type Props = {
+type Props = Omit<ComponentProps<'div'>, 'className' | 'children'> & {
   variant?: ButtonVariant
   size?: ButtonSize
   icon?: ButtonIcon
@@ -12,9 +12,9 @@ type Props = {
 }
 
 /** Looks like Button but isn't one (nothing to click): a dragged label, a copy measured for its size */
-export default function ButtonLook({ variant = 'primary', size, icon, className, children }: Props) {
+export default function ButtonLook({ variant = 'primary', size, icon, className, children, ...rest }: Props) {
   return (
-    <div className={buttonClass(variant, className, size)}>
+    <div className={buttonClass(variant, className, size)} {...rest}>
       <ButtonContent variant={variant} icon={icon}>
         {children}
       </ButtonContent>

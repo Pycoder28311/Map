@@ -292,6 +292,19 @@
     transition: none;
   }
 
+  /* Map: Venom in red, for an action that destroys something (Delete): the same face, bevels and press, other colours */
+  .ui-btn-venom.ui-btn-danger {
+    --btn-bg: #a8322d;
+    --btn-bevel-top: #e0625a;
+    --btn-bevel-bottom: #5e1815;
+    --btn-hover-bg: #bf3b35;
+    --btn-hover-bevel-top: #f07a71;
+    --btn-hover-bevel-bottom: #6e1c18;
+    --btn-press-bg: #952b27;
+    --btn-press-bevel-top: #5e1815;
+    --btn-press-bevel-bottom: #c24d46;
+  }
+
   /* Venom split: two pieces (icon / label, iconPosition left or right) with a
      small gap; each has the Venom face, bevel and shadow, and the brackets
      slide in on its outer side only. Nothing moves on hover. */
@@ -437,6 +450,32 @@
     transform: translateY(var(--btn-press-depth));
   }
 
+  /* Map: Stone is a flat grey block: no coloured bevel and shadow strip, no stepped corners, no text shadow; just a darker band of its own colour along its bottom edge. A press darkens it a little */
+  .ui-btn-stone {
+    --btn-shadow-height: 0px;
+    background: none;
+    clip-path: none;
+  }
+  .ui-btn-stone-face {
+    background: var(--_bg);
+    /* a darker band of its own colour along the bottom edge, inside (the button grows by it, the label stays centred above it), and a faint
+       light line on top */
+    --btn-edge: calc(var(--px) * 1.25);
+    padding-bottom: calc(var(--btn-pad-y) + var(--btn-edge));
+    box-shadow:
+      inset 0 var(--px) 0 0 rgba(255, 255, 255, 0.07),
+      inset 0 calc(var(--btn-edge) * -1) 0 0 color-mix(in srgb, var(--_bg) 62%, #000);
+    clip-path: none;
+    text-shadow: none;
+  }
+  .ui-btn-stone-face::after {
+    display: none;
+  }
+  .ui-btn-stone:active:not(:disabled) .ui-btn-stone-face {
+    transform: none;
+    filter: brightness(0.88);
+  }
+
   /* C4. Shade: no background until hover, then dark grey fades in and the
      white brackets slide out (shared bracket block above) */
   .ui-btn-shade {
@@ -447,6 +486,13 @@
     --btn-hover-bg: var(--color-shade-hover);
     box-shadow: none;
     transition: color 0.18s ease-out, background-color 0.18s ease-out, var(--br-transition), padding 0.18s ease-out;
+  }
+
+  /* Map: a Shade button whose background shows all the time (a Cancel beside a Create): the dark grey of an open Shade, lighter on hover */
+  .ui-btn-shade.ui-btn-filled {
+    --btn-bg: var(--color-shade);
+    --btn-text: var(--color-bone);
+    --btn-hover-bg: color-mix(in srgb, #fff 12%, var(--color-shade));
   }
 
   /* C5. Underline: no background; on hover a line with a hard pixel shadow
@@ -671,19 +717,14 @@
     --btn-icon-ratio: 1.1;
   }
 
-  /* Map: the Panel button's grey face (the floating Create button's ✕ Cancel side): the same shape in stone colours */
-  .ui-btn-panel.ui-btn-panel-muted {
-    --btn-text: var(--color-bone);
-    --btn-bg: var(--color-stone);
-    --btn-bg-top: var(--color-stone-light);
-    --btn-border-line: var(--color-stone-slab);
-    --btn-border-inner: var(--color-stone-shade);
-    --btn-border-color: var(--color-bone-dim);
-    --btn-hover-text: var(--color-bone-hover);
-    --btn-hover-bg: var(--color-stone-hover);
-    --btn-hover-bg-top: var(--color-stone-light);
-    --btn-hover-border-color: var(--color-bone);
-    --btn-hover-border-inner: var(--color-stone-soft);
+  /* Map: smaller still (a map card's name): the icon's distance to the edge is its distance to the text, as in every button */
+  .ui-btn.ui-btn-xs {
+    --btn-font-size: 11px;
+    --btn-letter-spacing: 0.4px;
+    --btn-pad-x: calc(var(--px) * 4);
+    --bracket-btn-pad-x: calc(var(--px) * 4);
+    --bracket-btn-pad-y: calc(var(--px) * 1.5);
+    --btn-icon-ratio: 1.1;
   }
 
   /* Map: ExtendMenu (components/ui/overlays/ExtendMenu.tsx). The box that grows is a button of the same look

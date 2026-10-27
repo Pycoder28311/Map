@@ -1,7 +1,9 @@
-import { LuChevronRight } from 'react-icons/lu'
+import { LuChevronRight, LuPlus } from 'react-icons/lu'
 import { ICON_EFFECT_GROUP, iconEffectClass } from '../icons/iconEffects'
 import type { ButtonIcon } from '../icons/IconSlot'
+import IconMenu from './IconMenu'
 import { ICON_BOX, ICON_BUTTON } from './treeIconStyles'
+import type { TreeMenuGroup } from './types'
 
 // Full class strings so Tailwind can detect them at build time.
 // The box is the row's first square, --spacing-sm inside it on every side (TreeItem): its hover background fills it, and the
@@ -20,6 +22,8 @@ type Props = {
   folder?: { isOpen: boolean }
   /** Folder with a page of its own: the icon is a button that opens/closes it (label: its name) */
   toggle?: { onClick: () => void; label: string }
+  /** An empty parent: the node's icon becomes a + on hover, which opens this menu (what to add in it) */
+  add?: { groups: TreeMenuGroup[]; label: string }
   /** A folder's icon, which sits at the row's start as its own square (TreeItem) instead of inside the row's content */
   square?: boolean
 }
@@ -28,12 +32,24 @@ type Props = {
  * The one icon on the left of a tree row. Leaves: the node's icon. Folders: the node's icon, which
  * becomes the arrow while the row is hovered (a folder without an icon always shows the arrow).
  */
-export default function TreeRowIcon({ icon: Icon, folder, toggle, square }: Props) {
+export default function TreeRowIcon({ icon: Icon, folder, toggle, add, square }: Props) {
   const box = square ? BOX : ICON_BOX
   // The size follows --tree-row-icon: bigger while the sidebar is closed, growing with its animation. One transition for all of
   // it: size, the icon/arrow swap (150ms) and the arrow's quarter turn when the folder opens (260ms, the Zen reel's chevron curve)
   const SIZE = 'size-(--tree-row-icon)'
   const glyph = `${SIZE} col-start-1 row-start-1 [transition:width_var(--tree-compact-duration)_ease-out,height_var(--tree-compact-duration)_ease-out,opacity_150ms_ease-out,rotate_260ms_cubic-bezier(0.65,0,0.35,1)] motion-reduce:transition-none`
+
+  if (add) {
+    // The icon and the + in one grid cell, as a folder's icon and arrow: the + (its menu) in place of the icon while the row is hovered or its menu open
+    return (
+      <span className="grid size-full shrink-0 place-items-center rounded-(--btn-close-radius)">
+        {Icon && <Icon className={`${glyph} group-hover/row:opacity-0 group-has-[:focus-visible]/row:opacity-0 group-has-[:popover-open]/row:opacity-0`} />}
+        <span className="col-start-1 row-start-1 flex size-full opacity-0 transition-opacity duration-150 group-hover/row:opacity-100 group-has-[:focus-visible]/row:opacity-100 has-[:popover-open]:opacity-100">
+          <IconMenu label={add.label} icon={LuPlus} groups={add.groups} square />
+        </span>
+      </span>
+    )
+  }
 
   const inner = folder ? (
     <span className="grid">

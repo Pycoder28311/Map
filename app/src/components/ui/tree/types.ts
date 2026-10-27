@@ -23,6 +23,10 @@ export type TreeNode = {
   locked?: boolean
   /** A small count after the name (e.g. how many notes are linked to it) */
   badge?: number
+  /** A row that can be a parent but has nothing in it: on hover its left icon becomes a + that opens this menu (what to add in it) */
+  addMenu?: TreeMenuGroup[]
+  /** Its row does nothing while it is being made (a draft row being saved): no clicks */
+  busy?: boolean
   /** Extra data attributes on its row (e.g. { 'data-share-id': … } for the owner's own features) */
   rowData?: Record<`data-${string}`, string>
 }
@@ -81,6 +85,12 @@ type TreeIconLook = IconEffects & {
   show?: TreeIconShow
   /** Default 'none'; 'hover' when it is clickable */
   bg?: TreeIconBg
+  /** Still shown while the row's name is being edited (the rest hide) */
+  whileEditing?: boolean
+  /** The icon turns round and round (a sign that something is being made) */
+  spin?: boolean
+  /** Clickable icons: pressed down, before the click (and before the name field loses focus, so it can tell it apart) */
+  onPointerDown?: () => void
 }
 
 /** One action in a right icon's menu */
@@ -90,6 +100,8 @@ export type TreeMenuItem = {
   onClick: () => void
   /** Destructive (e.g. Delete): shown in the danger colour */
   danger?: boolean
+  /** Instead of acting, it opens a small menu beside it with these (e.g. Create ▸ the kinds that can be made); `onClick` is ignored */
+  submenu?: Omit<TreeMenuItem, 'submenu'>[]
 }
 
 /** Actions that belong together; the menu draws a line between groups */

@@ -18,10 +18,10 @@ const LOOK = {
 
 export type ButtonVariant = keyof typeof LOOK
 
-/** Tight rows: a smaller button (.ui-btn-sm); lg: as tall as a text field, with a bigger icon and text (.ui-btn-lg) */
-export type ButtonSize = 'md' | 'sm' | 'lg'
+/** Tight rows: a smaller button (.ui-btn-sm), xs smaller still (a map card's name); lg: as tall as a text field, with a bigger icon and text (.ui-btn-lg) */
+export type ButtonSize = 'md' | 'sm' | 'xs' | 'lg'
 
-const SIZE: Record<ButtonSize, string> = { md: '', sm: 'ui-btn-sm', lg: 'ui-btn-lg' }
+const SIZE: Record<ButtonSize, string> = { md: '', sm: 'ui-btn-sm', xs: 'ui-btn-xs', lg: 'ui-btn-lg' }
 
 /** Class string of a button of this variant (`group/main`: icon animations follow its hover) */
 export function buttonClass(variant: ButtonVariant, extra = '', size: ButtonSize = 'md') {

@@ -9,27 +9,44 @@ import { isSafeImageSrc, isSafeLink } from './rich-text-policy'
 /** Tags kept, as the rich-text editor writes them */
 const TAGS = new Set([
   'p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'hr', 'a', 'span', 'img',
+  'sup', 'sub', 'table', 'colgroup', 'col', 'thead', 'tbody', 'tr', 'th', 'td',
 ])
-const VOID = new Set(['br', 'hr', 'img', 'input'])
+const VOID = new Set(['br', 'hr', 'img', 'input', 'col'])
+/** The blocks that can have a paragraph look (alignment, padding, letter and row gap, border) */
+const BLOCKS = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
 /** Tags dropped together with everything inside them (others only lose the tag and keep their words) */
 const DROP_WITH_CONTENT = new Set(['script', 'style', 'iframe', 'object', 'embed', 'template', 'noscript', 'textarea', 'title', 'svg', 'math', 'head'])
 
-/** The only CSS a span keeps: a size, and a colour */
+/** The values the kept CSS may have */
 const SIZE = /^\d{1,3}(?:\.\d{1,2})?(?:px|em|rem|%)$/
 const COLOUR = /^(?:#[0-9a-f]{3,8}|rgba?\(\s*[\d.]+%?(?:\s*,\s*[\d.]+%?){2,3}\s*\)|[a-z]{3,20})$/i
+/** A font list: names (quoted or not) and commas only, so nothing else can be smuggled in */
+const FONT = /^[\w\s"',-]{1,120}$/
+const GAP = /^-?\d{1,2}(?:\.\d{1,2})?(?:px|em)$|^0$/
+const LINE_HEIGHT = /^\d(?:\.\d{1,2})?$|^\d{1,3}(?:px|%)$/
+const BORDER = /^\d{1,2}px solid (?:#[0-9a-f]{3,8}|rgba?\(\s*[\d.]+%?(?:\s*,\s*[\d.]+%?){2,3}\s*\)|[a-z]{3,20})$/i
+const ALIGN = /^(?:left|center|right|justify)$/
+
+type StyleRules = Record<string, RegExp>
+/** The CSS each tag keeps, by property: a span's text look, an underline's colour, a block's paragraph look */
+const SPAN_STYLE: StyleRules = { 'font-size': SIZE, color: COLOUR, 'background-color': COLOUR, 'font-family': FONT }
+const UNDERLINE_STYLE: StyleRules = { 'text-decoration-color': COLOUR }
+const BLOCK_STYLE: StyleRules = { 'text-align': ALIGN, padding: SIZE, 'letter-spacing': GAP, 'line-height': LINE_HEIGHT, border: BORDER }
+/** How many columns or rows a table cell spans */
+const CELL_SPAN = /^[1-9]\d?$/
 
 const escapeText = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const escapeAttr = (s: string) => escapeText(s).replace(/"/g, '&quot;')
 
-/** A span's style, cut down to the allowed font-size and color, or null */
-function safeStyle(raw: string | undefined): string | null {
+/** A style cut down to the allowed properties and values, or null */
+function safeStyle(raw: string | undefined, rules: StyleRules): string | null {
   const kept: string[] = []
   for (const declaration of (raw ?? '').split(';')) {
     const at = declaration.indexOf(':')
     if (at === -1) continue
     const name = declaration.slice(0, at).trim().toLowerCase()
     const value = declaration.slice(at + 1).trim()
-    if ((name === 'font-size' && SIZE.test(value)) || (name === 'color' && COLOUR.test(value))) kept.push(`${name}: ${value}`)
+    if (Object.hasOwn(rules, name) && rules[name].test(value)) kept.push(`${name}: ${value}`)
   }
   return kept.length ? kept.join('; ') : null
 }
@@ -99,9 +116,11 @@ export function sanitizeRichText(text: string): string {
       } else if (tag === 'a') {
         const href = attribs.href?.trim()
         if (isSafeLink(href)) attrs = ` href="${escapeAttr(href!)}" target="_blank" rel="noopener noreferrer nofollow"`
-      } else if (tag === 'span') {
-        const style = safeStyle(attribs.style)
+      } else if (tag === 'span' || tag === 'u' || BLOCKS.has(tag)) {
+        const style = safeStyle(attribs.style, tag === 'span' ? SPAN_STYLE : tag === 'u' ? UNDERLINE_STYLE : BLOCK_STYLE)
         if (style) attrs = ` style="${escapeAttr(style)}"`
+      } else if (tag === 'td' || tag === 'th') {
+        for (const name of ['colspan', 'rowspan']) if (CELL_SPAN.test(attribs[name] ?? '')) attrs += ` ${name}="${attribs[name]}"`
       }
       out += `<${tag}${attrs}>`
     },
@@ -118,5 +137,5 @@ export function sanitizeRichText(text: string): string {
   parser.write(text)
   parser.end()
   // Nothing but empty tags (an empty paragraph): no text at all. A picture or a rule is content too
-  return /[^\s]/.test(out.replace(/<[^>]*>/g, '')) || /<(?:hr|img)\b/.test(out) ? out : ''
+  return /[^\s]/.test(out.replace(/<[^>]*>/g, '')) || /<(?:hr|img|table)\b/.test(out) ? out : ''
 }

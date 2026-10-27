@@ -42,7 +42,7 @@ export type ResourceUi = {
   /** The line under its list page's title */
   pageDescription?: string
   /** Its Dashboard card: a quote of its text (default), a picture on top (the first image of its text), or a map preview */
-  card?: 'plain' | 'image' | 'map'
+  card?: 'plain' | 'image' | 'map' | 'folder'
   fields?: Record<string, UiField>
   surfaces: UiSurfaces
   /** Its own panel instead of the item's editor (a map: its board), and whether it fills the pane */
@@ -82,6 +82,7 @@ export const RESOURCE_UI: Record<TableName | MockTableName, ResourceUi> = {
     plural: 'Folders',
     icon: LuFolderClosed,
     untitled: 'Untitled folder',
+    card: 'folder',
     fields: { title: { placeholder: 'Title' }, description: { placeholder: 'Description' } },
     surfaces: { ...EVERYWHERE },
   },
@@ -91,8 +92,11 @@ export const RESOURCE_UI: Record<TableName | MockTableName, ResourceUi> = {
     plural: 'Articles',
     icon: LuFileText,
     untitled: 'Untitled article',
+    card: 'image',
     fields: { title: { placeholder: 'Title' }, content: { label: 'Text', placeholder: 'Write the article…' } },
     surfaces: { ...EVERYWHERE, quickCreate: true },
+    // Its page: toolbar, text and Info box (features/articles)
+    panel: { load: () => import('../features/articles/ArticlePanel') },
   },
   objectCards: {
     panelType: 'object',

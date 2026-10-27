@@ -32,6 +32,13 @@ describe('sideOf', () => {
     expect(sideOf({ kind: 'node' }, { x: 0, y: 19 }, rect)).toBe('before')
     expect(sideOf({ kind: 'node', into }, { x: 0, y: 35 }, rect)).toBe('after')
   })
+
+  it('a card that can be a parent (a folder): its middle is into it, its sides before and after', () => {
+    const into = { parent: project5, list: () => [] }
+    expect(sideOf({ kind: 'card', into }, { x: 50, y: 0 }, rect)).toBe('into')
+    expect(sideOf({ kind: 'card', into }, { x: 10, y: 0 }, rect)).toBe('before')
+    expect(sideOf({ kind: 'card', into }, { x: 90, y: 0 }, rect)).toBe('after')
+  })
 })
 
 describe('resolvePlace', () => {

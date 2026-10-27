@@ -8,6 +8,7 @@ import ExtendMenu, { type ExtendMenuItem } from '../../components/ui/overlays/Ex
 import { actionsOf } from '../../lib/resource/hooks'
 import { resourcesWith } from '../../resources/registry'
 import InputBox from '../../components/ui/fields/InputBox'
+import TitleInput from '../../components/ui/fields/TitleInput'
 import { isFirstLine } from './editorKeys'
 
 // Full class strings so Tailwind can detect them at build time.
@@ -49,7 +50,6 @@ export default function QuickCreate() {
   const textPlaceholder = kind.ui.fields.find((f) => !f.heading)?.placeholder ?? 'Take a note…'
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [titleFocused, setTitleFocused] = useState(false)
   // The folded card's height (the place it keeps in the page) and the title's (how far the card moves up)
   const [size, setSize] = useState({ folded: 0, title: 0 })
   // The Note / Article button: its width, and its distance from the row's top and bottom, which it also keeps from the card's right edge
@@ -58,7 +58,6 @@ export default function QuickCreate() {
   const [kindBox, setKindBox] = useState({ width: 0, gap: 4 })
 
   const canCreate = title.trim() !== '' || text !== ''
-  const bigTitle = titleFocused || title !== ''
 
   // Measured while folded (open, the button is hidden): the button is centred in the text row, so its top and bottom gaps are equal
   useLayoutEffect(() => {
@@ -179,16 +178,14 @@ export default function QuickCreate() {
         {/* The title, growing on top; out of the tab order while folded */}
         <div className={`${GROW} ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr] opacity-0'}`} inert={!open}>
           <div ref={titleBoxRef} className="min-h-0 overflow-hidden">
-            <input
+            <TitleInput
               ref={titleRef}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              onFocus={() => setTitleFocused(true)}
-              onBlur={() => setTitleFocused(false)}
               onKeyDown={onTitleKeyDown}
               placeholder="Title"
               aria-label="Title"
-              className={`${FIELD} h-12 transition-[font-size,line-height] ${ANIMATE} ${bigTitle ? 'text-heading font-semibold' : 'text-body'}`}
+              className="px-4"
             />
             {/* The gray line between title and text */}
             <div aria-hidden className="mx-4 h-px bg-line" />

@@ -116,6 +116,8 @@ export default function TreeItem({
   compact,
 }: Props) {
   const state: TreeRowState = { isFolder: !!node.children?.length, isOpen: expanded.has(node.id) }
+  // An empty parent: its left icon is a square of its own like a folder's, which turns into a + (a menu of what to add)
+  const addable = !state.isFolder && !!node.addMenu?.length && !compact
   const isLink = !state.isFolder || !!(node.to || node.panel)
   // Open folders, and folders something is falling into (their lid is up), show their open icon
   const icon = state.isOpen || dnd?.lidOpen?.(node.id) ? (node.openIcon ?? node.icon) : node.icon
@@ -139,7 +141,7 @@ export default function TreeItem({
   const link = compact ? undefined : dnd?.linkNode?.(node)
   // Compact: no right icons (they'd sit over the left one); none either while the name is edited or
   // while the drop node is out
-  const right = compact || editing || link?.state === 'shown' ? [] : (icons.right?.(node, state) ?? [])
+  const right = compact || link?.state === 'shown' ? [] : (icons.right?.(node, state) ?? []).filter((i) => !editing || i.whileEditing)
   const alwaysShown = right.filter((i) => (i.show ?? 'always') === 'always').length
   const kept = state.isFolder && !state.isOpen && keepVisible ? keptDescendants(node, keepVisible) : []
   // Opening slides the children down from behind the row; closing slides them back up behind it (useCollapsible)
@@ -176,7 +178,7 @@ export default function TreeItem({
 
   // Folders: [icon] is a separate button laid over the row's start (opens/closes them), so the label
   // starts after it; leaves: [icon] inside the row
-  const rowProps = state.isFolder
+  const rowProps = state.isFolder || addable
     ? { className: ROW_CLASS, style: INDENT_AFTER_ICON, children: content() }
     : {
         className: ROW_CLASS,
@@ -205,7 +207,7 @@ export default function TreeItem({
     ))
 
   return (
-    <li role="treeitem" aria-expanded={state.isFolder ? state.isOpen : undefined} className="relative">
+    <li role="treeitem" aria-expanded={state.isFolder ? state.isOpen : undefined} className={`relative ${node.busy ? 'pointer-events-none' : ''}`}>
       {(dropAt === 'before' || dropAt === 'after') && <DropLine at={dropAt} />}
       {/* The row: its hover background spans the button/link and the right icons. Compact (TreeView):
           --tree-row-max narrows it to its icon, smoothly over --tree-compact-duration */}
@@ -216,6 +218,11 @@ export default function TreeItem({
         style={{ '--icons-rest': iconsWidth(alwaysShown), '--icons-hover': iconsWidth(right.length) } as CSSProperties}
         className={`${dropAt === 'into' ? INTO : ''} ${dnd?.draggingId === node.id ? LEFT_BEHIND : ''} group/row ui-field-row relative flex items-center [--icons:var(--icons-rest)] hover:[--icons:var(--icons-hover)] has-[:focus-visible]:[--icons:var(--icons-hover)] max-w-[var(--tree-row-max,100%)] transition-[max-width] duration-(--tree-compact-duration) ease-out motion-reduce:transition-none`}
       >
+        {addable && (
+          <span data-drop-icon={node.id} className="absolute inset-y-sm start-sm z-10 flex w-[calc(var(--sidebar-row)-2*var(--spacing-sm))]">
+            {editing ? <TreeRowIcon icon={icon} square /> : <TreeRowIcon square icon={icon} add={{ groups: node.addMenu!, label: `Add to ${node.label}` }} />}
+          </span>
+        )}
         {state.isFolder && (
           <span data-drop-icon={node.id} className="absolute inset-y-sm start-sm z-10 flex w-[calc(var(--sidebar-row)-2*var(--spacing-sm))]">
             {editing ? (

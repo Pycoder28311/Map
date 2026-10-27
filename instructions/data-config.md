@@ -17,7 +17,7 @@ The design is in `docs/plans/26-config-driven-tables.md`. Backend rules that sti
 
 ```
 packages/shared/src/
-├── fields.ts         field kinds: field.text(max), field.plainText(max), field.richText(), field.int({min,max}), field.bool()
+├── fields.ts         field kinds: field.text(max), field.plainText(max), field.richText(), field.int({min,max}), field.bool(), field.json(schema, start)
 ├── table.ts          defineTables(): names, zod rules (input/update/filter) and types (ItemOf, ListItemOf…) per table; matchesFilter()
 └── data.config.ts    ★ DATA: every table. Types: Item<'notes'>, ListItem<'notes'>, Input<'notes'>, Filter<'notes'>
 
@@ -78,6 +78,7 @@ Every table also gets, without listing them: `id`, `user_id` (the owner), `creat
 | `field.richText()` | `text NOT NULL ''` | HTML cleaned (`rich-text.ts`), `RICH_TEXT_MAX` | rich-text editor | `''` |
 | `field.int({ min, max })` | `integer NOT NULL` | whole number in range | none (set `widget` to show one) | `max(0, min)` |
 | `field.bool()` | `integer` 0/1 | boolean | none | `false` |
+| `field.json(schema, start)` | `text NOT NULL` (JSON; Drizzle reads and writes it) | the zod `schema` | none: the table's own page edits it (an article's `infobox`: `shared/src/infobox.ts`) | `start` |
 
 A new kind: add it to `fields.ts` (its zod rule), to `columnOf` in `backend/src/lib/ownedTable.ts` (its column), to `WIDGET_OF` in
 `app/src/resources/createResource.ts` and, if it needs a new widget, to `FIELD_WIDGET_NAMES` (`resources/types.ts`) and
@@ -214,8 +215,8 @@ each type to the table it is: `{ project: 'projects', folder: 'folders' }`.
 - **One repo method:** in `backend/src/index.ts`, give that table `ownedRepo(schema.x, DATA.x, { toJson, beforeCreate, beforeUpdate })`.
 - **A route that is not CRUD:** `crudRoutes(…)` returns a Hono router: add `.get('/:id/export', requireAuth, …)` to it, or mount
   a hand-written router like `images` (see `adding-a-resource.md`, "Routes that are not plain CRUD").
-- **Its own panel:** `panel: { load: () => import('…'), fill: true }` in the UI config (the maps' board). It then opens as a page,
-  not in the modal.
+- **Its own panel:** `panel: { load: () => import('…'), fill: true }` in the UI config (the maps' board; the articles' page,
+  `features/articles/ArticlePanel.tsx`, without `fill`). It then opens as a page, not in the modal.
 - **Side effects of copy / delete:** `effects: { copied(from, to), deleted(id) }` in the UI config (the maps copy and drop their board).
 
 ### Move a mock table to the server

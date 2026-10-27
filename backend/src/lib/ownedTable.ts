@@ -17,7 +17,7 @@ export const owner = () => text('user_id').notNull().references(() => user.id, {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type OwnedTable = SQLiteTableWithColumns<any>
 
-/** One field's column, by its kind (fields.ts): the text kinds are text, int is integer, bool is integer 0/1 */
+/** One field's column, by its kind (fields.ts): the text kinds are text, int is integer, bool is integer 0/1, json is text (Drizzle reads and writes the JSON) */
 function columnOf(name: string, kind: string, fallback: unknown): SQLiteColumnBuilderBase {
   const column = snakeCase(name)
   switch (kind) {
@@ -25,6 +25,8 @@ function columnOf(name: string, kind: string, fallback: unknown): SQLiteColumnBu
       return integer(column).notNull().default(fallback as number)
     case 'bool':
       return integer(column, { mode: 'boolean' }).notNull().default(fallback as boolean)
+    case 'json':
+      return text(column, { mode: 'json' }).notNull().default(fallback)
     default:
       return text(column).notNull().default(fallback as string)
   }

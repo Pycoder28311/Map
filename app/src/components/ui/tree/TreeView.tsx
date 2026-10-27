@@ -18,6 +18,8 @@ type Props = {
   /** The row whose name is being edited (controlled; leave both out to let the tree keep it) */
   editingId?: string | null
   onEditingChange?: (id: string | null) => void
+  /** Opens this row's folder and the ones it is in (a draft row was put in it); a new object each time */
+  reveal?: { id: string } | null
   /** Rows that stay visible under their collapsed folder (e.g. the ones open on screen) */
   keepVisible?: (node: TreeNode) => boolean
   /** Drag & drop within the tree: what takes drops, what drags, and where the current drag would land */
@@ -48,6 +50,7 @@ export default function TreeView({
   canRename,
   editingId,
   onEditingChange,
+  reveal,
   keepVisible,
   dnd,
   compact,
@@ -56,6 +59,12 @@ export default function TreeView({
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   // A folder that lost its last child closes (so it starts closed when something is put in it again)
   useEffect(() => setExpanded((open) => withoutEmptyFolders(open, nodes)), [nodes])
+  // A draft row was put in a folder: it and the folders around it open (ids of nested rows are `<parent id>/<id>`)
+  useEffect(() => {
+    if (!reveal) return
+    const ids = reveal.id.split('/').map((_, i, parts) => parts.slice(0, i + 1).join('/'))
+    setExpanded((open) => new Set([...open, ...ids]))
+  }, [reveal])
   // The row being renamed, when the parent doesn't control it
   const [ownEditingId, setOwnEditingId] = useState<string | null>(null)
   const editing = onEditingChange ? (editingId ?? null) : ownEditingId

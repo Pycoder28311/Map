@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { resourceByName } from '../../resources/registry'
-import { groupByParent, groupByRoot, parentTypeOf, rootResources, type Entry } from './tree'
+import { groupByParent, groupByRoot, parentChain, parentTypeOf, rootResources, type Entry } from './tree'
 import { RESOURCES } from '../../resources/registry'
 
 const projects = resourceByName('projects')!
@@ -66,5 +66,27 @@ describe('parentTypeOf', () => {
     expect(parentTypeOf(projects, RESOURCES)).toBe('project')
     expect(parentTypeOf(folders, RESOURCES)).toBe('folder')
     expect(parentTypeOf(articles, RESOURCES)).toBeUndefined()
+  })
+})
+
+describe('parentChain', () => {
+  const project = entry(projects, 5)
+  const outer = entry(folders, 1, ['project', 5])
+  const inner = entry(folders, 2, ['folder', 1])
+
+  it('goes from the project down to the direct parent', () => {
+    const article = entry(articles, 3, ['folder', 2])
+    expect(ids(parentChain([project, outer, inner, article], article))).toEqual(['projects:5', 'folders:1', 'folders:2'])
+  })
+
+  it('is empty without a parent, and stops at a parent that is not loaded', () => {
+    expect(parentChain([project], entry(articles, 3))).toEqual([])
+    expect(ids(parentChain([inner], entry(articles, 3, ['folder', 2])))).toEqual(['folders:2'])
+  })
+
+  it('does not loop on a circular folder chain', () => {
+    const a = entry(folders, 1, ['folder', 2])
+    const b = entry(folders, 2, ['folder', 1])
+    expect(ids(parentChain([a, b], entry(articles, 3, ['folder', 1])))).toEqual(['folders:2', 'folders:1'])
   })
 })

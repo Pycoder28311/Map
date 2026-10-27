@@ -81,8 +81,8 @@ export type ResourceDefinition<
     untitled: string
     /** The line under the title of its list page */
     pageDescription?: string
-    /** Its look as a Dashboard card: a quote of its text (default), a picture on top, or a map preview */
-    card?: 'plain' | 'image' | 'map'
+    /** Its look as a Dashboard card: a quote of its text (default), a picture on top, a map preview, or a folder's first items */
+    card?: 'plain' | 'image' | 'map' | 'folder'
     fields: FieldDef<TItem>[]
     /** A row of the item in a list (method syntax: see ResourceApi) */
     row: {

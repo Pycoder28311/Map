@@ -5,7 +5,7 @@ import { richText as richTextSchema } from './rich-text'
  * The kinds of field a table can have. Each kind is one column type in the database (backend/src/lib/ownedTable.ts), one zod
  * rule here, and one widget in the app's form (FieldRenderer): change a field's kind in data.config.ts and all three follow.
  */
-export type FieldKind = 'text' | 'plainText' | 'richText' | 'int' | 'bool'
+export type FieldKind = 'text' | 'plainText' | 'richText' | 'int' | 'bool' | 'json'
 
 /** One field of a table: its kind, the zod rule a client's value must pass, and the value a new row gets */
 export type Field<K extends FieldKind = FieldKind, V = unknown> = {
@@ -27,6 +27,7 @@ export type ValueOf<F> = F extends Field<FieldKind, infer V> ? V : never
  *   content: field.richText()            HTML from the editor, cleaned (rich-text.ts); can have a `preview`
  *   rating: field.int({ min: 0, max: 5, default: 3 })
  *   done: field.bool()
+ *   infobox: field.json(infobox, EMPTY_INFOBOX)   a value of this zod shape, kept as JSON text; no form widget (its page edits it)
  */
 export const field = {
   text: (max: number, { pattern, default: start = '' }: { pattern?: RegExp; default?: string } = {}): Field<'text', string> => ({
@@ -43,4 +44,5 @@ export const field = {
     default: start,
   }),
   bool: (): Field<'bool', boolean> => ({ kind: 'bool', zod: z.boolean(), default: false }),
+  json: <T>(schema: z.ZodType<T>, start: T): Field<'json', T> => ({ kind: 'json', zod: schema, default: start }),
 }

@@ -1,4 +1,4 @@
-import { matchesFilter, positionAfter, previewOf, type Page, type Table } from '@map/shared'
+import { integerKey, matchesFilter, positionBefore, previewOf, type Page, type Table } from '@map/shared'
 import { compareFor } from '../resource/order'
 import { ApiError } from './client'
 import type { ResourceApi } from './resource'
@@ -31,8 +31,8 @@ export function createMockApi(table: Table, seed: Record<string, unknown>[] = []
       ...(table.link ? { objectType: null, objectId: null } : {}),
       archived: false,
       ...(table.order.pinned ? { pinned: false } : {}),
-      // Last of the list, as the server places a new row (its group: shared/position.ts)
-      ...(table.order.position ? { position: positionAfter(rows.reduce<string | null>((last, r) => (last === null || String(r.position) > last ? String(r.position) : last), null)) } : {}),
+      // First of the list, as the server places a new row (shared/position.ts)
+      ...(table.order.position ? { position: positionBefore(rows.reduce<string | null>((first, r) => (first === null || String(r.position) < first ? String(r.position) : first), null)) } : {}),
       createdAt: now(),
       updatedAt: now(),
     }
@@ -59,7 +59,8 @@ export function createMockApi(table: Table, seed: Record<string, unknown>[] = []
     nextId = 1
     rows = []
     // One at a time: each goes after the ones before it
-    for (const fields of seed) rows = [...rows, make(fields)]
+    // The seed keeps its order (new rows go first, so its positions are given)
+    seed.forEach((fields, i) => (rows = [...rows, make(table.order.position ? { position: integerKey(i), ...fields } : fields)]))
   }
   reset()
   tables.add({ reset })

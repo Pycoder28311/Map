@@ -44,10 +44,10 @@ export default function ResourceDeleteDialog({ resource, item, onClose, onDelete
       size="sm"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose} disabled={busy}>
+          <Button variant="ghost" filled onClick={onClose} disabled={busy}>
             Cancel
           </Button>
-          <Button variant="secondary" className="text-danger" onClick={confirm} disabled={busy}>
+          <Button danger onClick={confirm} disabled={busy}>
             {busy ? 'Deleting…' : 'Delete'}
           </Button>
         </>

@@ -5,7 +5,7 @@ import IconButton from '../../components/ui/buttons/IconButton'
 import { createBranch, renameMap, useMaps } from '../maps/maps'
 import { useWorkspace } from '../workspace/useWorkspace'
 import { branchList, nextBranchName } from './branches'
-import BarPopover from './BarPopover'
+import BarPopover from '../../components/ui/overlays/BarPopover'
 import { LIST_ITEM } from '../../components/ui/rowStyles'
 
 const when = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })

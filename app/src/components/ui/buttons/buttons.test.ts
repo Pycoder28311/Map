@@ -18,8 +18,9 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
   'components/ui/fields/ValueBar.tsx': { count: 2, why: 'the reset icon inside a field, and the options of its list' },
   'components/ui/overlays/Dropdown.tsx': { count: 1, why: 'the menu items' },
   'components/ui/overlays/ExtendMenu.tsx': { count: 1, why: 'the menu items' },
+  'components/ui/tree/IconMenu.tsx': { count: 2, why: 'a tree row icon (+) and the menu items' },
   'components/ui/tree/TreeIcon.tsx': { count: 1, why: 'a tree row icon' },
-  'components/ui/tree/TreeMenu.tsx': { count: 2, why: 'a tree row icon (⋯) and the menu items' },
+  'components/ui/tree/TreeMenu.tsx': { count: 4, why: 'a tree row icon (⋯), the menu items, an item that opens a submenu and the submenu items' },
   'components/ui/tree/TreeRowIcon.tsx': { count: 1, why: 'a tree row icon' },
   'features/board/BranchesPopout.tsx': { count: 1, why: 'list rows' },
   'features/board/ForwardLink.tsx': { count: 1, why: 'list rows' },
@@ -104,7 +105,7 @@ describe('buttons', () => {
 
   it('uses the Panel button only for the floating Create button', () => {
     const wrong = sources
-      .filter((f) => f.path !== 'features/create/CreateFab.tsx' && !f.path.startsWith(BUTTONS) && /\bPanelButton\b/.test(code(f.text)))
+      .filter((f) => f.path !== 'features/create/CreateFab.tsx' && !f.path.startsWith(BUTTONS) && /\bPanelFrame\b/.test(code(f.text)))
       .map((f) => f.path)
     expect(wrong).toEqual([])
   })
