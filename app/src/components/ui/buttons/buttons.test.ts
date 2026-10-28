@@ -15,6 +15,7 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
   'components/ui/Divider.tsx': { count: 1, why: 'an icon in the divider line, like the tree icons' },
   'components/ui/fields/ColourField.tsx': { count: 1, why: 'a colour swatch of a field' },
   'components/ui/fields/ColourPicker.tsx': { count: 1, why: 'colour swatches' },
+  'components/ui/fields/DropdownField.tsx': { count: 2, why: 'the menu items, and the colour squares' },
   'components/ui/fields/ValueBar.tsx': { count: 2, why: 'the reset icon inside a field, and the options of its list' },
   'components/ui/overlays/Dropdown.tsx': { count: 1, why: 'the menu items' },
   'components/ui/overlays/ExtendMenu.tsx': { count: 1, why: 'the menu items' },

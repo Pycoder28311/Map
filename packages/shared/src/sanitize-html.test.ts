@@ -73,6 +73,16 @@ describe('sanitizeRichText', () => {
     it('keeps an underline colour, and nothing else on an underline', () => {
       expect(sanitizeRichText('<p><u style="text-decoration-color: #00f; color: red">x</u></p>')).toBe('<p><u style="text-decoration-color: #00f">x</u></p>')
     })
+    it('keeps a font weight and a slant, in the known forms only', () => {
+      const html = '<span style="font-weight: 300; font-style: oblique 20deg">x</span>'
+      expect(sanitizeRichText(html)).toBe(html)
+      expect(sanitizeRichText('<span style="font-weight: bolder; font-style: url(//evil)">x</span>')).toBe('<span>x</span>')
+    })
+    it('keeps how an underline is drawn, when it is one of the known kinds', () => {
+      const html = '<p><u style="text-decoration-color: #00f; text-decoration-style: wavy">x</u></p>'
+      expect(sanitizeRichText(html)).toBe(html)
+      expect(sanitizeRichText('<p><u style="text-decoration-style: url(//evil)">x</u></p>')).toBe('<p><u>x</u></p>')
+    })
     it('keeps the paragraph look on paragraphs and headings', () => {
       const html = '<p style="text-align: center; padding: 8px; letter-spacing: 1.5px; line-height: 1.6; border: 2px solid #333333">x</p><h2 style="text-align: right">t</h2>'
       expect(sanitizeRichText(html)).toBe(html)

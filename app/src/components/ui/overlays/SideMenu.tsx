@@ -1,4 +1,5 @@
 import { useId, useRef, type ReactNode, type ToggleEvent } from 'react'
+import { closeOnOutsideScroll } from '../../../lib/popoverScroll'
 import { LuChevronLeft } from 'react-icons/lu'
 import Button from '../buttons/Button'
 import type { ButtonVariant } from '../buttons/buttonStyles'
@@ -32,6 +33,8 @@ export default function SideMenu<T extends string>({ variant = 'ghost', items, o
   const id = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  // What stops the listening for the page scrolling, while the menu is open (a scroll inside the menu does not close it)
+  const stopWatching = useRef<(() => void) | null>(null)
   const close = () => menuRef.current?.hidePopover()
 
   // Placed before it shows: its right edge a little left of the button, its bottom edge on the button's
@@ -45,11 +48,10 @@ export default function SideMenu<T extends string>({ variant = 'ghost', items, o
   }
   const watch = (e: ToggleEvent<HTMLDivElement>) => {
     if (e.newState === 'open') {
-      window.addEventListener('scroll', close, { capture: true, once: true })
-      window.addEventListener('resize', close, { once: true })
+      stopWatching.current = closeOnOutsideScroll(e.currentTarget, close)
     } else {
-      window.removeEventListener('scroll', close, { capture: true })
-      window.removeEventListener('resize', close)
+      stopWatching.current?.()
+      stopWatching.current = null
       onHover?.(null)
     }
   }

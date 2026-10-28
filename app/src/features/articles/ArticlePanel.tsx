@@ -3,7 +3,6 @@ import { useEditorState, type Editor } from '@tiptap/react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { LuEllipsis, LuInfo, LuPlus, LuShare2 } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
-import Sign from '../../components/ui/Sign'
 import { addSection, articleExtensions } from '../../components/ui/editors/articleExtensions'
 import RichTextField from '../../components/ui/fields/RichTextField'
 import TitleInput from '../../components/ui/fields/TitleInput'
@@ -100,6 +99,10 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
 
   const actions = (
     <div className="relative flex items-center justify-end gap-1">
+      {/* Not made yet: it will put the text of a note in the article */}
+      <Button variant="text" size="sm" disabled title="Add text from a note (soon)">
+        Import from Notes
+      </Button>
       <Button
         variant={infoShown ? 'selected' : 'ghost'}
         size="sm"
@@ -119,7 +122,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         onOpenChange={setSharing}
         align="end"
         trigger={
-          <Button variant={sharing ? 'selected' : 'ghost'} size="sm" plain icon={LuShare2} aria-expanded={sharing} onClick={() => setSharing(!sharing)}>
+          <Button variant={sharing ? 'selected' : 'ghost'} size="sm" plain filled icon={LuShare2} aria-expanded={sharing} onClick={() => setSharing(!sharing)}>
             Share
           </Button>
         }
@@ -256,32 +259,19 @@ function ArticleBody({
           <div className="relative z-10 -mt-3.5 px-4 pb-1 empty:hidden">{folders}</div>
           <div className="relative flex flex-1 flex-col gap-2 p-4 pt-1">
             <div className="flex items-center gap-3">
-              {/* The title is on a plain sign, as wide as the title: the invisible copy of the text under the input gives the width */}
-              <div className="min-w-0 flex-1">
-                <Sign seed="article-title">
-                  <div className="grid min-w-16 max-w-full">
-                    <span
-                      aria-hidden
-                      className="invisible col-start-1 row-start-1 overflow-hidden whitespace-pre text-4xl font-semibold"
-                    >
-                      {title || fields.title?.placeholder || 'Title'}
-                    </span>
-                    <TitleInput
-                      size="xl"
-                      value={title}
-                      onChange={(e) => {
-                        setTitle(e.target.value)
-                        change('title', e.target.value)
-                      }}
-                      placeholder={fields.title?.placeholder ?? 'Title'}
-                      aria-label="Title"
-                      maxLength={200}
-                      autoFocus={focusField === 'title' || (focusField === undefined && !start.title)}
-                      className="col-start-1 row-start-1"
-                    />
-                  </div>
-                </Sign>
-              </div>
+              <TitleInput
+                size="xl"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value)
+                  change('title', e.target.value)
+                }}
+                placeholder={fields.title?.placeholder ?? 'Title'}
+                aria-label="Title"
+                maxLength={200}
+                autoFocus={focusField === 'title' || (focusField === undefined && !start.title)}
+                className="min-w-0 flex-1"
+              />
               <div className="shrink-0">{actions}</div>
             </div>
             {toolbar}
@@ -316,15 +306,7 @@ function ArticleBody({
             {/* Under the last row, only while the cursor is in it */}
             {editor && inLastRow && (
               <div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  plain
-                  filled
-                  icon={LuPlus}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => addSection(editor)}
-                >
+                <Button variant="ghost" size="sm" plain filled icon={LuPlus} onMouseDown={(e) => e.preventDefault()} onClick={() => addSection(editor)}>
                   Add section
                 </Button>
               </div>

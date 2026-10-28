@@ -50,6 +50,17 @@ export function moveRow(rows: InfoRow[], id: string, by: -1 | 1): InfoRow[] {
   return next
 }
 
+/** A row dropped on another: it takes that row's place and the rows between move over by one; nothing changes when either is not there */
+export function moveRowOver(rows: InfoRow[], id: string, overId: string): InfoRow[] {
+  const from = rows.findIndex((r) => r.id === id)
+  const to = rows.findIndex((r) => r.id === overId)
+  if (from === -1 || to === -1 || from === to) return rows
+  const next = [...rows]
+  const [row] = next.splice(from, 1)
+  next.splice(to, 0, row)
+  return next
+}
+
 /** The words a row holds, one per line (a list's items, a text's lines, a value, a link's words and address…) */
 function linesOf(row: InfoRow): string[] {
   const lines = (() => {

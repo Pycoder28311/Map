@@ -26,11 +26,16 @@ const GAP = /^-?\d{1,2}(?:\.\d{1,2})?(?:px|em)$|^0$/
 const LINE_HEIGHT = /^\d(?:\.\d{1,2})?$|^\d{1,3}(?:px|%)$/
 const BORDER = /^\d{1,2}px solid (?:#[0-9a-f]{3,8}|rgba?\(\s*[\d.]+%?(?:\s*,\s*[\d.]+%?){2,3}\s*\)|[a-z]{3,20})$/i
 const ALIGN = /^(?:left|center|right|justify)$/
+/** A font weight (100 to 900), and a slant: italic, or oblique with an angle */
+const WEIGHT = /^[1-9]00$/
+const SLANT = /^(?:italic|oblique(?: \d{1,2}deg)?)$/
+/** How an underline is drawn */
+const UNDERLINE_KIND = /^(?:solid|double|dotted|dashed|wavy)$/
 
 type StyleRules = Record<string, RegExp>
-/** The CSS each tag keeps, by property: a span's text look, an underline's colour, a block's paragraph look */
-const SPAN_STYLE: StyleRules = { 'font-size': SIZE, color: COLOUR, 'background-color': COLOUR, 'font-family': FONT }
-const UNDERLINE_STYLE: StyleRules = { 'text-decoration-color': COLOUR }
+/** The CSS each tag keeps, by property: a span's text look, an underline's colour and kind, a block's paragraph look */
+const SPAN_STYLE: StyleRules = { 'font-size': SIZE, color: COLOUR, 'background-color': COLOUR, 'font-family': FONT, 'font-weight': WEIGHT, 'font-style': SLANT }
+const UNDERLINE_STYLE: StyleRules = { 'text-decoration-color': COLOUR, 'text-decoration-style': UNDERLINE_KIND }
 const BLOCK_STYLE: StyleRules = { 'text-align': ALIGN, padding: SIZE, 'letter-spacing': GAP, 'line-height': LINE_HEIGHT, border: BORDER }
 /** How many columns or rows a table cell spans */
 const CELL_SPAN = /^[1-9]\d?$/

@@ -47,6 +47,8 @@ const TEXT =
   'text-body [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[inherit] [&_p]:min-h-[1lh] [&_h1]:text-title [&_h2]:text-heading [&_h3]:text-heading ' +
   '[&_ul]:list-disc [&_ol]:list-decimal [&_ul]:ps-5 [&_ol]:ps-5 [&_blockquote]:border-s-2 [&_blockquote]:border-line [&_blockquote]:ps-3 ' +
   '[&_a]:underline [&_a]:text-accent ' +
+  // An underline 2px thick, a little below the letters: its double and wavy kinds can be told from a plain one (the same look as the article toolbar's list of kinds)
+  '[&_u]:[text-decoration-thickness:2px] [&_u]:[text-underline-offset:4px] ' +
   '[&_table]:w-full [&_table]:border-collapse [&_td]:border [&_th]:border [&_td]:border-line [&_th]:border-line [&_td]:p-1.5 [&_th]:p-1.5 [&_th]:bg-fill [&_th]:text-start'
 
 /**

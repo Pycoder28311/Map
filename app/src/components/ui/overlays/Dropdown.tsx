@@ -9,7 +9,7 @@ import IconButton from '../buttons/IconButton'
 // open. It pops out of the trigger's corner (it's aligned to the trigger's right edge, below it)
 export const DROPDOWN_MENU =
   'inset-auto m-0 min-w-32 rounded-(--menu-radius) border border-line bg-surface p-(--menu-p) text-fg shadow-lg ' +
-  'origin-top-right animate-dropdown-in motion-reduce:animate-none'
+  'origin-top-right animate-dropdown-in motion-reduce:animate-none overscroll-contain'
 export const DROPDOWN_ITEM =
   'flex h-(--menu-item-h) w-full items-center gap-(--menu-icon-gap) rounded-(--menu-item-radius) px-(--menu-item-px) ' +
   'text-body cursor-pointer hover-fill focus-visible:bg-fill focus-visible:outline-none aria-checked:font-medium ' +

@@ -119,6 +119,75 @@
       var(--input-inner-shadow);
   }
 
+  /* The article toolbar's dropdown fields (DropdownField): the picked value, and an arrow in a cell of its own, the whole height, a line before it.
+     They are buttons (the look of a button's own sizes is overridden here, with !important) */
+  .ui-dropfield-display {
+    height: auto !important;
+    min-height: 0 !important;
+    min-width: 0;
+    flex: 1;
+    justify-content: flex-start !important;
+    overflow: hidden;
+    border-radius: 0 !important;
+    padding: var(--spacing-sm) 0.5rem !important;
+    line-height: 1;
+    /* the text of a field, not a button's */
+    color: var(--fg) !important;
+    font-size: 1rem !important;
+    font-weight: 400 !important;
+    letter-spacing: normal !important;
+    text-shadow: none !important;
+  }
+  .ui-dropfield-arrow {
+    height: auto !important;
+    min-height: 0 !important;
+    /* square: as wide as the field is tall (a line of text, 1rem, and the padding above and below it, --spacing-sm) */
+    width: calc(1rem + 2 * var(--spacing-sm)) !important;
+    min-width: 0 !important;
+    aspect-ratio: 1 !important;
+    flex-shrink: 0;
+    align-self: stretch;
+    border-radius: 0 !important;
+    border-inline-start: 1px solid var(--line-strong);
+    padding: 0 !important;
+    color: var(--fg-muted);
+  }
+  /* A button inside such a field (an icon that acts, with the arrow beside it, no border round them) keeps the size of every other icon button: `.ui-dropfield-icon`
+     only marks it for the hover below */
+  /* Without the field's border its shown value sits closer to the edges */
+  .ui-dropfield-plain .ui-dropfield-display {
+    padding-inline: var(--spacing-sm) !important;
+    /* what hangs over the edge of its icon (a small number) shows */
+    overflow: visible;
+    /* the colour of an icon button's icon (gray, lighter on hover), not a text field's */
+    color: var(--_text) !important;
+  }
+
+  /* Without the field's border: the line before the arrow goes too */
+  .ui-dropfield-plain .ui-dropfield-arrow {
+    border-inline-start: 0;
+    /* and it comes closer to the icon: narrower than a square (as wide as a smaller arrow) and a little over the icon's padding */
+    width: 0.75rem !important;
+    aspect-ratio: auto !important;
+    margin-inline-start: -0.125rem;
+  }
+  /* the arrow keeps its height (16px) and thickness and is only narrower */
+  .ui-dropfield-plain .ui-dropfield-arrow > svg {
+    width: 0.6875rem !important;
+    height: 1rem !important;
+  }
+  /* Hovering the field lights both its buttons (the icon or the shown value, and the arrow), half as much; the one the pointer is on gets the full hover colour (the other keeps the half) */
+  .ui-dropfield-plain:hover :is(.ui-dropfield-icon, .ui-dropfield-display, .ui-dropfield-arrow):not([aria-pressed='true']) {
+    --_bg: color-mix(in srgb, var(--btn-hover-bg) 50%, transparent) !important;
+  }
+  .ui-dropfield-plain :is(.ui-dropfield-icon, .ui-dropfield-display, .ui-dropfield-arrow):hover:not(:disabled) {
+    --_bg: var(--btn-hover-bg) !important;
+  }
+  .ui-dropfield-arrow > svg {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+
   /* A text field is the same box without the leather: no grain, sheen, light on its edge or inner shadow, only the border and the shadow around it */
   .ui-field {
     background-image: none;

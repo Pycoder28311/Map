@@ -1,5 +1,17 @@
 import type { Infobox, InfoRow } from '@map/shared'
-import { Fragment, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react'
+import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core'
+import { createPortal } from 'react-dom'
+import { Fragment, useLayoutEffect, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react'
 import {
   LuAlignJustify,
   LuAlignLeft,
@@ -8,6 +20,7 @@ import {
   LuCalendar,
   LuCalendarRange,
   LuEllipsis,
+  LuGripVertical,
   LuImage,
   LuImagePlus,
   LuLink,
@@ -26,8 +39,23 @@ import TextAreaField from '../../components/ui/fields/TextAreaField'
 import type { PlainIcon } from '../../components/ui/icons/IconSlot'
 import SideMenu from '../../components/ui/overlays/SideMenu'
 import IconMenu from '../../components/ui/tree/IconMenu'
+import { BackgroundPointerSensor, followPointer, startsOnBackground, swallowClickAfterDrag } from '../../lib/dnd'
 import { ICON_SHOW } from '../../components/ui/tree/treeIconStyles'
-import { changeKind, emptyRow, exampleRow, insertRow, moveRow, normalizeAddress, normalizeDegree, removeRow, typeOf, updateRow, type RowType } from './infoRows'
+import { paperEdgePolygon } from '../dashboard/cards/paperEdge'
+import {
+  changeKind,
+  emptyRow,
+  exampleRow,
+  insertRow,
+  moveRow,
+  moveRowOver,
+  normalizeAddress,
+  normalizeDegree,
+  removeRow,
+  typeOf,
+  updateRow,
+  type RowType,
+} from './infoRows'
 
 /** Every kind of row the box can hold, in the order Add info offers them */
 const TYPES: { value: RowType; label: string; icon: PlainIcon }[] = [
@@ -46,6 +74,8 @@ const TYPES: { value: RowType; label: string; icon: PlainIcon }[] = [
 const INPUT = 'min-w-0 bg-transparent text-fg outline-none placeholder:text-fg-subtle'
 // Each row is a block of its own on the box's background, a gap (with the + in it) between two blocks
 const noop = () => {}
+/** The box's cracked edge: uneven, with a few small cuts, like the map cards' but gentler (the same every time) */
+const EDGE = paperEdgePolygon('article-info', 3, 5)
 const ROW = 'group/row relative flex flex-col gap-1 rounded-(--corner-sm) bg-fill-strong px-2 py-1.5'
 
 type Props = {
@@ -66,45 +96,97 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError 
   const rows = value.rows
   const setRows = (next: InfoRow[]) => onChange({ ...value, rows: next })
   const [preview, setPreview] = useState<RowType | null>(null)
+  // How much taller the preview makes the box (px), measured before it is painted
+  const previewRef = useRef<HTMLDivElement>(null)
+  const [extra, setExtra] = useState(0)
+  useLayoutEffect(() => setExtra(preview ? (previewRef.current?.offsetHeight ?? 0) : 0), [preview])
+  // A section is dragged from anywhere on it that is not a field or a button (BackgroundPointerSensor), or from its 6-dot grip
+  const sensors = useSensors(useSensor(BackgroundPointerSensor, { activationConstraint: { distance: 6 } }))
+  const [dragged, setDragged] = useState<string | null>(null)
+  const dragEnd = (e: DragEndEvent) => {
+    setDragged(null)
+    swallowClickAfterDrag()
+    if (e.over) setRows(moveRowOver(rows, String(e.active.id), String(e.over.id)))
+  }
 
   return (
-    <Card variant="muted" className="flex flex-col p-sm">
-      <Picture image={value.image} onChange={(image) => onChange({ ...value, image })} onUploadImage={onUploadImage} onUploadError={onUploadError} />
-      {rows.map((row, i) => (
-        <Fragment key={row.id}>
-          <Gap onInsert={(type) => setRows(insertRow(rows, i, emptyRow(type)))} />
-          <Row
-            row={row}
-            first={i === 0}
-            last={i === rows.length - 1}
-            onChange={(next) => setRows(updateRow(rows, next))}
-            onMove={(by) => setRows(moveRow(rows, row.id, by))}
-            onRemove={() => setRows(removeRow(rows, row.id))}
-            onUploadImage={onUploadImage}
-            onUploadError={onUploadError}
-          />
-        </Fragment>
-      ))}
-      {/* What the option under the pointer in the Add info menu would look like, faint, as the next block */}
-      {preview && (
-        <>
-          <div className="h-sm" />
-          <div inert aria-hidden className="pointer-events-none opacity-40">
-            <Row row={exampleRow(preview)} first last onChange={noop} onMove={noop} onRemove={noop} onUploadImage={onUploadImage} onUploadError={onUploadError} />
+    // The box clips itself to the cracked edge; its wrapper draws the outline along that shape. While a preview shows it is that much taller, but its
+    // place in the text is not: a negative margin takes the extra height back, so the text beside it stays where it is
+    <div className="ui-crack" style={{ marginBottom: -extra }}>
+      <Card variant="muted" radius={0} className="flex flex-col p-base" style={{ clipPath: EDGE }}>
+        <Picture image={value.image} onChange={(image) => onChange({ ...value, image })} onUploadImage={onUploadImage} onUploadError={onUploadError} />
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={(e: DragStartEvent) => setDragged(String(e.active.id))}
+          onDragEnd={dragEnd}
+          onDragCancel={() => setDragged(null)}
+        >
+          {rows.map((row, i) => (
+            <Fragment key={row.id}>
+              <Gap onInsert={(type) => setRows(insertRow(rows, i, emptyRow(type)))} />
+              <Draggable id={row.id}>
+                {(grip) => (
+                  <Row
+                    row={row}
+                    grip={grip}
+                    first={i === 0}
+                    last={i === rows.length - 1}
+                    onChange={(next) => setRows(updateRow(rows, next))}
+                    onMove={(by) => setRows(moveRow(rows, row.id, by))}
+                    onRemove={() => setRows(removeRow(rows, row.id))}
+                    onUploadImage={onUploadImage}
+                    onUploadError={onUploadError}
+                  />
+                )}
+              </Draggable>
+            </Fragment>
+          ))}
+          {/* What follows the pointer: the section's name (on the body: the box's cracked clip and outline would cut and move it) */}
+          {createPortal(
+            <DragOverlay dropAnimation={null} modifiers={[followPointer]}>
+              {dragged && (
+                <div className="rounded-(--corner-sm) bg-fill-strong px-2 py-1.5 text-small font-medium shadow-lg">
+                  {rows.find((r) => r.id === dragged)?.label || 'Info'}
+                </div>
+              )}
+            </DragOverlay>,
+            document.body,
+          )}
+        </DndContext>
+        {/* What the option under the pointer in the Add info menu would look like, faint, as one more section above the button: the box stretches
+              to hold it (it is the box's height only, see above) */}
+        {preview && (
+          <div ref={previewRef} inert aria-hidden className="pointer-events-none flex flex-col pt-sm opacity-50">
+            <Row
+              row={exampleRow(preview)}
+              first
+              last
+              onChange={noop}
+              onMove={noop}
+              onRemove={noop}
+              onUploadImage={onUploadImage}
+              onUploadError={onUploadError}
+            />
           </div>
-        </>
-      )}
-      <div className="mt-2">
-        <SideMenu variant="primary" label="Add info" items={TYPES} onSelect={(type) => setRows([...rows, emptyRow(type)])} onHover={setPreview} className="w-full">
-          Add info
-        </SideMenu>
-      </div>
-    </Card>
+        )}
+        <div className="mt-2">
+          <SideMenu label="Add info" items={TYPES} onSelect={(type) => setRows([...rows, emptyRow(type)])} onHover={setPreview} className="w-full">
+            Add info
+          </SideMenu>
+        </div>
+      </Card>
+    </div>
   )
 }
 
 /** A picture: click or drop one to add it; over it, Replace and Remove. A square */
-function Picture({ image, onChange, onUploadImage, onUploadError }: { image: string | null; onChange: (image: string | null) => void } & Pick<Props, 'onUploadImage' | 'onUploadError'>) {
+function Picture({
+  image,
+  onChange,
+  onUploadImage,
+  onUploadError,
+}: { image: string | null; onChange: (image: string | null) => void } & Pick<Props, 'onUploadImage' | 'onUploadError'>) {
   const picker = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const upload = async (file: File | undefined) => {
@@ -125,7 +207,11 @@ function Picture({ image, onChange, onUploadImage, onUploadError }: { image: str
     void upload(file)
   }
   return (
-    <div onDragOver={(e) => e.preventDefault()} onDrop={drop} className="group/picture relative aspect-square overflow-hidden rounded-(--card-radius) bg-fill-strong">
+    <div
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={drop}
+      className="group/picture relative aspect-square overflow-hidden rounded-(--card-radius) bg-fill-strong"
+    >
       {image ? (
         <>
           <img src={image} alt="" className="size-full object-cover" />
@@ -154,6 +240,43 @@ function Picture({ image, onChange, onUploadImage, onUploadError }: { image: str
 }
 
 /**
+ * A section that can be dragged: from anywhere on it that is not a field or a button (a press on one of those is theirs), or from its grip
+ * (`data-drag-handle`). Dropped on another section, it takes that one's place. It is also what a dragged section is dropped on: a line shows where.
+ */
+function Draggable({ id, children }: { id: string; children: (grip: ReactNode) => ReactNode }) {
+  const drag = useDraggable({ id })
+  const drop = useDroppable({ id })
+  const listeners = drag.listeners
+  const grip = (
+    <span
+      data-drag-handle
+      aria-hidden
+      className="flex size-4 shrink-0 cursor-grab items-center justify-center text-fg-subtle opacity-0 transition-opacity duration-150 group-hover/row:opacity-100"
+    >
+      <LuGripVertical className="size-4" />
+    </span>
+  )
+  return (
+    <div
+      ref={(node) => {
+        drag.setNodeRef(node)
+        drop.setNodeRef(node)
+      }}
+      {...listeners}
+      onPointerDown={(e) => {
+        // The page's own drag (the pane's) would start from this background too: this one is the section's
+        if (!startsOnBackground(e.nativeEvent.target, e.currentTarget)) return
+        e.stopPropagation()
+        listeners?.onPointerDown?.(e)
+      }}
+      className={`touch-none ${drag.isDragging ? 'opacity-40' : ''} ${drop.isOver && !drag.isDragging ? 'rounded-(--corner-sm) outline-2 outline-accent' : ''}`}
+    >
+      {children(grip)}
+    </div>
+  )
+}
+
+/**
  * The gap between two blocks (or between the picture and the first one): a small + exactly in its middle, shown while the pointer is on the
  * gap, that opens a menu of what to add there
  */
@@ -168,6 +291,8 @@ function Gap({ onInsert }: { onInsert: (type: RowType) => void }) {
 
 type RowProps = {
   row: InfoRow
+  /** The grip that shows while the pointer is on the section, left of its name */
+  grip?: ReactNode
   first: boolean
   last: boolean
   onChange: (row: InfoRow) => void
@@ -175,12 +300,16 @@ type RowProps = {
   onRemove: () => void
 } & Pick<Props, 'onUploadImage' | 'onUploadError'>
 
-function Row({ row, first, last, onChange, onMove, onRemove, onUploadImage, onUploadError }: RowProps) {
+function Row({ row, grip, first, last, onChange, onMove, onRemove, onUploadImage, onUploadError }: RowProps) {
   const type = typeOf(row)
   const menu = [
     // A description's Bullets option (its lines show as bullets while it is not edited)
     ...(row.kind === 'text' ? [[{ label: 'Bullets', icon: LuList, checked: row.bullets, onClick: () => onChange({ ...row, bullets: !row.bullets }) }]] : []),
-    TYPES.filter((t) => t.value !== type).map((t) => ({ label: `As ${t.label.toLowerCase()}`, icon: t.icon, onClick: () => onChange(changeKind(row, t.value)) })),
+    TYPES.filter((t) => t.value !== type).map((t) => ({
+      label: `As ${t.label.toLowerCase()}`,
+      icon: t.icon,
+      onClick: () => onChange(changeKind(row, t.value)),
+    })),
     [
       ...(first ? [] : [{ label: 'Move up', icon: LuArrowUp, onClick: () => onMove(-1) }]),
       ...(last ? [] : [{ label: 'Move down', icon: LuArrowDown, onClick: () => onMove(1) }]),
@@ -208,7 +337,8 @@ function Row({ row, first, last, onChange, onMove, onRemove, onUploadImage, onUp
     </div>
   )
   const head = (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1">
+      {grip}
       {label}
       {more}
     </div>
@@ -217,7 +347,8 @@ function Row({ row, first, last, onChange, onMove, onRemove, onUploadImage, onUp
   if (row.kind === 'value' || row.kind === 'date') {
     return (
       <div className={ROW}>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          {grip}
           {label}
           <input
             type={row.kind === 'date' ? 'date' : 'text'}
@@ -238,11 +369,23 @@ function Row({ row, first, last, onChange, onMove, onRemove, onUploadImage, onUp
       <div className={ROW}>
         {head}
         <div className="flex items-center gap-1.5">
-          <input type="date" value={row.from} onChange={(e) => onChange({ ...row, from: e.target.value })} aria-label={`${name}: from`} className={`${INPUT} flex-1 text-small`} />
+          <input
+            type="date"
+            value={row.from}
+            onChange={(e) => onChange({ ...row, from: e.target.value })}
+            aria-label={`${name}: from`}
+            className={`${INPUT} flex-1 text-small`}
+          />
           <span aria-hidden className="text-fg-muted">
             –
           </span>
-          <input type="date" value={row.to} onChange={(e) => onChange({ ...row, to: e.target.value })} aria-label={`${name}: to`} className={`${INPUT} flex-1 text-small`} />
+          <input
+            type="date"
+            value={row.to}
+            onChange={(e) => onChange({ ...row, to: e.target.value })}
+            aria-label={`${name}: to`}
+            className={`${INPUT} flex-1 text-small`}
+          />
         </div>
       </div>
     )
@@ -251,7 +394,14 @@ function Row({ row, first, last, onChange, onMove, onRemove, onUploadImage, onUp
     return (
       <div className={ROW}>
         {head}
-        <input value={row.text} onChange={(e) => onChange({ ...row, text: e.target.value })} placeholder="Link text" aria-label={`${name}: link text`} maxLength={200} className={`${INPUT} text-body`} />
+        <input
+          value={row.text}
+          onChange={(e) => onChange({ ...row, text: e.target.value })}
+          placeholder="Link text"
+          aria-label={`${name}: link text`}
+          maxLength={200}
+          className={`${INPUT} text-body`}
+        />
         <AddressInput label={`${name}: address`} value={row.url} onCommit={(url) => onChange({ ...row, url })} />
       </div>
     )
@@ -272,7 +422,8 @@ function Row({ row, first, last, onChange, onMove, onRemove, onUploadImage, onUp
     return (
       <div className={ROW}>
         <Picture image={row.image} onChange={(image) => onChange({ ...row, image })} onUploadImage={onUploadImage} onUploadError={onUploadError} />
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          {grip}
           <input
             value={row.label}
             onChange={(e) => onChange({ ...row, label: e.target.value })}

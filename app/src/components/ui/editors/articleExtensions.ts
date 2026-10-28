@@ -5,7 +5,7 @@ import { TableKit } from '@tiptap/extension-table'
 import TextAlign from '@tiptap/extension-text-align'
 import { BackgroundColor, FontFamily } from '@tiptap/extension-text-style'
 
-// What an article's text can do beyond the editor's base set (RichTextEditor): fonts, a background colour, an underline colour,
+// What an article's text can do beyond the editor's base set (RichTextEditor): fonts, a background colour, an underline colour and kind,
 // alignment, superscript / subscript, tables, a paragraph look and numbered sources. The server keeps exactly this markup
 // (packages/shared/src/sanitize-html.ts): a new format here needs its rule there too.
 
@@ -20,11 +20,19 @@ const styleAttribute = (name: string) => ({
   },
 })
 
-/** The underline's own colour (`<u style="text-decoration-color">`) */
+/** The underline's own colour and kind (`<u style="text-decoration-color; text-decoration-style">`: solid, double, dotted, dashed or wavy) */
 const UnderlineColor = Extension.create({
   name: 'underlineColor',
   addGlobalAttributes() {
-    return [{ types: ['underline'], attributes: { textDecorationColor: styleAttribute('text-decoration-color') } }]
+    return [{ types: ['underline'], attributes: { textDecorationColor: styleAttribute('text-decoration-color'), textDecorationStyle: styleAttribute('text-decoration-style') } }]
+  },
+})
+
+/** A font weight (`font-weight: 300`) and a slant (`font-style: oblique 20deg`) on the text's span, for the toolbar's Bold and Italic dropdowns */
+const FontLook = Extension.create({
+  name: 'fontLook',
+  addGlobalAttributes() {
+    return [{ types: ['textStyle'], attributes: { fontWeight: styleAttribute('font-weight'), fontStyle: styleAttribute('font-style') } }]
   },
 })
 
@@ -53,6 +61,7 @@ export const articleExtensions: Extensions = [
   FontFamily,
   BackgroundColor,
   UnderlineColor,
+  FontLook,
   TextAlign.configure({ types: ['heading', 'paragraph'] }),
   Subscript,
   Superscript,

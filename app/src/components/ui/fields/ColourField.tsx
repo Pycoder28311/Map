@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import { LuPaintbrush } from 'react-icons/lu'
 import IconButton from '../buttons/IconButton'
 import type { PlainIcon } from '../icons/IconSlot'
 import ColourPicker from './ColourPicker'
@@ -13,8 +14,10 @@ type Props = {
   bare?: boolean
   /** A wide swatch instead of a square one, as wide as the width given by `className` (and, like `bare`, without the visible label) */
   wide?: boolean
-  /** An icon button (a toolbar's) instead of the swatch: the icon with a bar of the colour under it; the label is its name */
+  /** A square button of a DropdownField (the arrow beside it) instead of the swatch: the icon with a bar of the colour under it; the label is its name */
   icon?: PlainIcon
+  /** With `icon`'s kind of button: a letter (as a square button of a DropdownField, the arrow beside it) drawn in the colour with a small paintbrush (in the colour too) at its lower right, instead of the icon and its bar (a text colour: a coloured capital A that is being painted) */
+  letter?: string
 }
 
 // The picker opens by the swatch: a native popover (top layer: never cut by the sidebar's scroll area; closes on a click outside or Esc).
@@ -26,12 +29,12 @@ const EDGE = 8
 const GAP = 6
 
 /** A labelled colour input: live while the picker moves, committed once when it is let go. Its picker opens next to the swatch */
-export default function ColourField({ label, value, onLive, onCommit, className = '', bare, wide, icon: Icon }: Props) {
+export default function ColourField({ label, value, onLive, onCommit, className = '', bare, wide, icon: Icon, letter }: Props) {
   const id = useId()
   // The colour while the picker moves; null: the saved one
   const [held, setHeld] = useState<string | null>(null)
   // Only the swatch shows; the label is its accessible name
-  const hidden = bare || wide || Icon !== undefined
+  const hidden = bare || wide || Icon !== undefined || letter !== undefined
 
   // Placed before it shows: under the swatch, or above it when there is no room, kept inside the window
   const place = (e: React.ToggleEvent<HTMLDivElement>) => {
@@ -51,11 +54,22 @@ export default function ColourField({ label, value, onLive, onCommit, className 
 
   return (
     <div className={`flex items-center ${bare ? 'h-full' : 'gap-3'} ${className}`}>
-      {Icon ? (
-        <IconButton label={label} popoverTarget={id} data-colour-anchor={id} aria-haspopup="dialog" onMouseDown={(e) => e.preventDefault()}>
-          <span className="flex flex-col items-center gap-px">
+      {letter !== undefined ? (
+        <IconButton label={label} size="sm" popoverTarget={id} data-colour-anchor={id} aria-haspopup="dialog" onMouseDown={(e) => e.preventDefault()} className="ui-dropfield-icon">
+          {/* One icon of painting a colour: the letter in the colour, a small paintbrush at its lower right, in the colour too */}
+          <span aria-hidden className="relative flex">
+            <span className="text-[1.25rem] leading-none font-bold" style={{ color: held ?? value }}>
+              {letter}
+            </span>
+            <LuPaintbrush className="absolute -end-1.5 -bottom-1 size-3 stroke-[2.5]" style={{ color: held ?? value }} />
+          </span>
+        </IconButton>
+      ) : Icon ? (
+        <IconButton label={label} size="sm" popoverTarget={id} data-colour-anchor={id} aria-haspopup="dialog" onMouseDown={(e) => e.preventDefault()} className="ui-dropfield-icon">
+          {/* The colour's bar is drawn over the icon's lower edge, so the button is as big as an icon button without one */}
+          <span className="relative flex">
             <Icon className="size-(--btn-icon-size)" />
-            <span aria-hidden className="h-[3px] w-4 rounded-full" style={{ backgroundColor: held ?? value }} />
+            <span aria-hidden className="absolute inset-x-0.5 -bottom-px h-[3px] rounded-full" style={{ backgroundColor: held ?? value }} />
           </span>
         </IconButton>
       ) : (

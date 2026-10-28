@@ -1,4 +1,5 @@
 import { Fragment, useId, useRef, useState, type ToggleEvent } from 'react'
+import { closeOnOutsideScroll } from '../../../lib/popoverScroll'
 import { LuCheck } from 'react-icons/lu'
 import { ICON_EFFECT_GROUP } from '../icons/iconEffects'
 import type { PlainIcon } from '../icons/IconSlot'
@@ -31,6 +32,8 @@ type Props = {
 export default function IconMenu({ label, icon: Icon, groups, square = false, turn = true, show = 'always', small = false }: Props) {
   const id = useId()
   const menuRef = useRef<HTMLDivElement>(null)
+  // What stops the listening for the page scrolling, while the menu is open (a scroll inside the menu does not close it)
+  const stopWatching = useRef<(() => void) | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
 
@@ -47,11 +50,10 @@ export default function IconMenu({ label, icon: Icon, groups, square = false, tu
   const watch = (e: ToggleEvent<HTMLDivElement>) => {
     setOpen(e.newState === 'open')
     if (e.newState === 'open') {
-      window.addEventListener('scroll', close, { capture: true, once: true })
-      window.addEventListener('resize', close, { once: true })
+      stopWatching.current = closeOnOutsideScroll(e.currentTarget, close)
     } else {
-      window.removeEventListener('scroll', close, { capture: true })
-      window.removeEventListener('resize', close)
+      stopWatching.current?.()
+      stopWatching.current = null
     }
   }
 

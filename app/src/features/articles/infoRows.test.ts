@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { InfoRow } from '@map/shared'
-import { changeKind, emptyRow, exampleRow, insertRow, moveRow, normalizeAddress, normalizeDegree, removeRow, typeOf } from './infoRows'
+import { changeKind, emptyRow, exampleRow, insertRow, moveRowOver, moveRow, normalizeAddress, normalizeDegree, removeRow, typeOf } from './infoRows'
 
 const value = (id: string, v = ''): InfoRow => ({ id, label: id, kind: 'value', value: v })
 const ids = (rows: InfoRow[]) => rows.map((r) => r.id)
@@ -84,5 +84,20 @@ describe('exampleRow', () => {
       expect(typeOf(row)).toBe(type)
       expect(row.label).not.toBe('')
     }
+  })
+})
+
+describe('moveRowOver', () => {
+  const rows = ['a', 'b', 'c', 'd'].map((id) => emptyRow('value', id))
+  const ids = (list: ReturnType<typeof emptyRow>[]) => list.map((r) => r.id).join('')
+
+  it('puts a row in the place of the one it is dropped on', () => {
+    expect(ids(moveRowOver(rows, 'a', 'c'))).toBe('bcad')
+    expect(ids(moveRowOver(rows, 'd', 'b'))).toBe('adbc')
+  })
+
+  it('changes nothing for the same row or one that is not there', () => {
+    expect(moveRowOver(rows, 'b', 'b')).toBe(rows)
+    expect(moveRowOver(rows, 'b', 'x')).toBe(rows)
   })
 })
