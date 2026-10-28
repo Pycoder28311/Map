@@ -1,4 +1,4 @@
-// The strange characters the article toolbar's Ω button offers, in sections, and the most common ones that show in its row. Pure data (symbols.test.ts).
+// The characters the article toolbar's Ω popout offers, in sections, and the sections in its four groups. Pure data (symbols.test.ts).
 
 /** A section of characters: its name, and the characters (each put in the text where the caret is when it is pressed) */
 export type SymbolSection = { title: string; symbols: string }
@@ -21,5 +21,28 @@ export const SYMBOLS: SymbolSection[] = [
   { title: 'Shapes and signs', symbols: '★ ☆ ♠ ♣ ♥ ♦ ♪ ♫ ✓ ✔ ✗ ✘ ☐ ☑ ☒ ● ○ ■ □ ▲ △ ▼ ▽ ◆ ◇ ☀ ☁ ☂ ☎ ✉ ⚑ ⚐ ☮ ☯ ☠' },
 ]
 
-/** The five most common ones, shown in the toolbar's row before the Ω button is pressed (one character each, separated by spaces) */
-export const COMMON_SYMBOLS = '© ° • → ✓'
+const section = (title: string) => SYMBOLS.find((s) => s.title === title)!
+
+/**
+ * The Ω popout's groups after Basics (the structures, MoreFormats.tsx): SVGs (shapes, signs and arrows, each shown big like a little
+ * picture: characters, so the server keeps them), Mathematical, and Others. Every character of SYMBOLS is in one of them
+ */
+export const SYMBOL_GROUPS: { title: 'SVGs' | 'Mathematical' | 'Others'; big?: boolean; sections: SymbolSection[] }[] = [
+  {
+    title: 'SVGs',
+    big: true,
+    sections: [
+      { title: 'Shapes', symbols: '★ ☆ ● ○ ■ □ ▲ △ ▼ ▽ ◆ ◇' },
+      { title: 'Signs', symbols: '♥ ♦ ♣ ♠ ☀ ☁ ☂ ☎ ✉ ⚑ ⚐ ✓ ✔ ✗ ✘ ☐ ☑ ☒ ☮ ☯ ☠ ♪ ♫' },
+      section('Arrows'),
+    ],
+  },
+  {
+    title: 'Mathematical',
+    sections: ['Operators', 'Relations', 'Sets and logic', 'Number sets', 'Fractions and numbers', 'Powers and indexes', 'Greek letters'].map(section),
+  },
+  {
+    title: 'Others',
+    sections: ['Marks', 'Quotes and dashes', 'Currency', 'Latin letters', 'Brackets and marks'].map(section),
+  },
+]

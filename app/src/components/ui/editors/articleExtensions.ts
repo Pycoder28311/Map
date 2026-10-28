@@ -4,6 +4,7 @@ import Superscript from '@tiptap/extension-superscript'
 import { TableKit } from '@tiptap/extension-table'
 import TextAlign from '@tiptap/extension-text-align'
 import { BackgroundColor, FontFamily } from '@tiptap/extension-text-style'
+import { Structures } from './structures'
 
 // What an article's text can do beyond the editor's base set (RichTextEditor): fonts, a background colour, an underline colour and kind,
 // alignment, superscript / subscript, tables, a paragraph look and numbered sources. The server keeps exactly this markup
@@ -67,6 +68,8 @@ export const articleExtensions: Extensions = [
   Superscript,
   TableKit.configure({ table: { resizable: false } }),
   ParagraphStyle,
+  // Maths structures with places to fill (the Ω box)
+  Structures,
 ]
 
 /** Sets one part of the look of the paragraph or heading the caret is in (null: back to none) */

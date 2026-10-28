@@ -9,6 +9,7 @@ import {
   LuFrame,
   LuAlignVerticalSpaceBetween,
   LuBold,
+  LuChevronDown,
   LuEllipsis,
   LuCode,
   LuHighlighter,
@@ -39,9 +40,10 @@ import BarPopover from '../../components/ui/overlays/BarPopover'
 import Dropdown from '../../components/ui/overlays/Dropdown'
 import DropdownField from '../../components/ui/fields/DropdownField'
 import { FONTS } from '../board/fonts'
+import { insertStructure, STRUCTURE_KINDS, STRUCTURES } from '../../components/ui/editors/structures'
 import MoreFormats from './MoreFormats'
-import { SymbolRow } from './SymbolPanel'
-import { COMMON_SYMBOLS } from './symbols'
+import StructureIcon from './StructureIcon'
+import { useToolbarLevel } from './toolbarLevel'
 
 /** The colours a picker starts on when the text has none of its own */
 const TEXT_COLOUR = '#e5e5e5'
@@ -112,6 +114,9 @@ type Props = {
   /** Stores a picture and answers its address (Insert ▸ Image) */
   onUploadImage: (file: File) => Promise<string>
   onUploadError: (error: unknown) => void
+  /** Whether the second row shows (the ⋯ on the bar's right edge): the page holds it, the link row shows with it too (LinkRow.tsx) */
+  secondRow: boolean
+  onSecondRowChange: (shown: boolean) => void
 }
 
 /** A thin line between two groups of buttons (the gap around it is the row's) */
@@ -120,7 +125,8 @@ function Separator() {
 }
 
 function Group({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`flex items-center gap-base ${className}`}>{children}</div>
+  // Never split: a narrow bar breaks its rows between groups (toolbarLevel.ts, level 3)
+  return <div className={`flex shrink-0 items-center gap-base ${className}`}>{children}</div>
 }
 
 /** A button that keeps the caret in the text while it is pressed */
@@ -151,8 +157,8 @@ function ToolButton(props: {
   )
 }
 
-/** A button with its name beside the icon, that keeps the caret in the text while it is pressed */
-function TextButton(props: {
+/** A button with its name beside the icon, that keeps the caret in the text while it is pressed (`small`: the link row's, LinkRow.tsx) */
+export function TextButton(props: {
   icon?: PlainIcon
   label: string
   onClick?: () => void
@@ -161,11 +167,12 @@ function TextButton(props: {
   title?: string
   filled?: boolean
   big?: boolean
+  small?: boolean
 }) {
   return (
     <Button
       icon={props.icon}
-      size="sm"
+      size={props.small ? 'xs' : 'sm'}
       plain
       filled={props.filled}
       variant={props.active ? 'selected' : 'ghost'}
@@ -174,7 +181,7 @@ function TextButton(props: {
       title={props.title}
       // The icon close to the text, the text of a field for all of them; a plain one has the bar's icon size (1.25rem), the big one (Section) a smaller icon (`!` wins over the bar's)
       className={`[--btn-icon-gap:0.25rem]! font-normal! [--btn-font-size:1rem]! [--btn-text:var(--fg)]! [--btn-hover-text:var(--fg)]! ${
-        props.big ? '[--btn-icon-size:1rem]!' : '[--btn-icon-size:1.25rem]!'
+        props.small ? '[--btn-icon-size:0.875rem]! [--btn-font-size:0.8125rem]!' : props.big ? '[--btn-icon-size:1rem]!' : '[--btn-icon-size:1.25rem]!'
       }`}
       onMouseDown={(e) => e.preventDefault()}
       onClick={props.onClick}
@@ -344,17 +351,8 @@ const PADDINGS = [0, 2, 4, 8, 12, 16, 24, 32, 48]
 const LETTER_GAPS = [-1, 0, 0.5, 1, 2, 3, 5, 10]
 const ROW_GAPS = [1, 1.2, 1.4, 1.5, 1.6, 1.8, 2, 2.5, 3]
 const BORDER_WIDTHS = [0, 1, 2, 3, 4, 6, 8]
-const BORDER_COLOURS = [
-  { label: 'Gray', value: '#9ca3af' },
-  { label: 'White', value: '#ffffff' },
-  { label: 'Black', value: '#000000' },
-  { label: 'Red', value: '#ef4444' },
-  { label: 'Orange', value: '#f97316' },
-  { label: 'Yellow', value: '#eab308' },
-  { label: 'Green', value: '#22c55e' },
-  { label: 'Blue', value: '#3b82f6' },
-  { label: 'Purple', value: '#a855f7' },
-]
+/** A border's colour until one is picked */
+const BORDER_COLOUR = '#9ca3af'
 const BORDER_LOOK = /^(\d+)px solid (.+)$/
 /** What a paragraph has when it says nothing about its row gap */
 const NORMAL_ROW_GAP = 1.5
@@ -364,7 +362,8 @@ function Shown({ icon: Icon, children }: { icon: PlainIcon; children: ReactNode 
   return (
     <span className="relative flex">
       <Icon className="size-5 shrink-0" />
-      <span className="absolute -end-1 -bottom-1 text-[0.625rem] leading-none font-medium tabular-nums">{children}</span>
+      {/* On a small pill, so it reads over the icon's lines */}
+      <span className="absolute -end-1.5 -bottom-1.5 rounded-full bg-fill-strong px-[3px] py-px text-[0.625rem] leading-none font-medium tabular-nums">{children}</span>
     </span>
   )
 }
@@ -379,7 +378,7 @@ function ParagraphLook({ editor, look }: { editor: Editor; look: Partial<Record<
   const rowGap = parseFloat(look.lineHeight ?? '') || NORMAL_ROW_GAP
   const border = BORDER_LOOK.exec(look.border ?? '')
   const borderWidth = border ? Number(border[1]) : 0
-  const borderColour = border?.[2] ?? BORDER_COLOURS[0].value
+  const borderColour = border?.[2] ?? BORDER_COLOUR
   const setBorder = (width: number, colour: string) => setParagraphLook(editor, 'border', width > 0 ? `${width}px solid ${colour}` : null)
   const field = { width: 'w-auto', bordered: false } as const
   return (
@@ -412,11 +411,15 @@ function ParagraphLook({ editor, look }: { editor: Editor; look: Partial<Record<
         options={[
           { value: 'heading:width', label: 'Width', heading: true },
           ...BORDER_WIDTHS.map((n) => ({ value: `width:${n}`, label: n ? `${n}px` : 'None', checked: n === borderWidth })),
-          { value: 'heading:colour', label: 'Colour', heading: true },
-          ...BORDER_COLOURS.map((c) => ({ value: `colour:${c.value}`, label: c.label, swatch: c.value, squares: true, checked: c.value === borderColour })),
         ]}
-        // A colour picked on a paragraph with no border gives it a 1px one, so the pick shows
-        onChange={(v) => (v.startsWith('width:') ? setBorder(Number(v.slice(6)), borderColour) : setBorder(Math.max(borderWidth, 1), v.slice(7)))}
+        onChange={(v) => setBorder(Number(v.slice(6)), borderColour)}
+        // The colour: the picker, its own squares under the palette the only ones. A colour picked on a paragraph with no border gives it a 1px one, so the pick shows
+        extra={
+          <div className="border-t border-line p-2">
+            <p className="pb-1 text-small text-fg-subtle">Colour</p>
+            <ColourPicker key={borderColour} value={borderColour} onLive={(hex) => setBorder(Math.max(borderWidth, 1), hex)} onCommit={(hex) => setBorder(Math.max(borderWidth, 1), hex)} />
+          </div>
+        }
       />
     </>
   )
@@ -424,35 +427,28 @@ function ParagraphLook({ editor, look }: { editor: Editor; look: Partial<Record<
 
 /** How an underline can be drawn, and the colours it can have ('' is the text's own colour) */
 const UNDERLINE_KINDS = ['solid', 'double', 'dotted', 'dashed', 'wavy']
-const UNDERLINE_COLOURS = [
-  { label: 'Same as the text', value: '' },
-  { label: 'Red', value: '#ef4444' },
-  { label: 'Orange', value: '#f97316' },
-  { label: 'Yellow', value: '#eab308' },
-  { label: 'Green', value: '#22c55e' },
-  { label: 'Blue', value: '#3b82f6' },
-  { label: 'Purple', value: '#a855f7' },
-  { label: 'Pink', value: '#ec4899' },
-  { label: 'White', value: '#ffffff' },
-]
 
 /** Underline: the button that underlines, and the arrow of a dropdown of its kind and colour, in one field like the font size's */
 function UnderlineControl({ editor, on, kind, colour }: { editor: Editor; on: boolean; kind: string; colour: string }) {
   const options = [
+    // No underline at all
+    { value: 'none:', label: 'None', checked: !on },
     { value: 'heading:kind', label: 'Kind', heading: true },
     // Each kind's name is underlined that way
     ...UNDERLINE_KINDS.map((k) => ({
       value: `kind:${k}`,
       label: k[0].toUpperCase() + k.slice(1),
-      checked: kind === k,
+      checked: on && kind === k,
       style: { textDecorationLine: 'underline', textDecorationStyle: k as 'solid', textDecorationThickness: '2px', textUnderlineOffset: '4px' },
     })),
     { value: 'heading:colour', label: 'Colour', heading: true },
-    ...UNDERLINE_COLOURS.map((c) => ({ value: `colour:${c.value}`, label: c.label, swatch: c.value, squares: true, checked: colour === c.value })),
+    // Any other colour: the picker under the list (its squares are the only ones)
+    { value: 'colour:', label: 'Same as the text', checked: on && colour === '' },
   ]
   // A pick sets that part of the underline (and underlines the selection if it is not yet), keeping the other: solid and the text's colour are left unwritten
   const pick = (value: string) => {
     const [part, picked] = [value.slice(0, value.indexOf(':')), value.slice(value.indexOf(':') + 1)]
+    if (part === 'none') return void editor.chain().focus().unsetUnderline().run()
     const next = { textDecorationColor: colour || null, textDecorationStyle: kind === 'solid' ? null : kind }
     if (part === 'kind') next.textDecorationStyle = picked === 'solid' ? null : picked
     else next.textDecorationColor = picked || null
@@ -495,7 +491,7 @@ function UnderlineControl({ editor, on, kind, colour }: { editor: Editor; on: bo
  * the text (font and size, as the map's text sidebar has them, bold, italic, underline with a dropdown of its kind and colour, the text colour as a coloured A and the background colour), lists, the alignments one next to the other,
  * next to the alignments with no space: Media (an image icon and its name; it opens the image, table and divider choice) and Link (a link icon and its name) together, with no gap and a line before them.
  */
-export default function ArticleToolbar({ editor, onUploadImage, onUploadError }: Props) {
+export default function ArticleToolbar({ editor, onUploadImage, onUploadError, secondRow, onSecondRowChange }: Props) {
   const state = useEditorState({
     editor,
     selector: ({ editor: e }) => {
@@ -534,12 +530,12 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError }:
     },
   })
   const [more, setMore] = useState(false)
-  // Whether the second row shows
-  const [secondRow, setSecondRow] = useState(true)
   const [linking, setLinking] = useState(false)
   const [inserting, setInserting] = useState(false)
   const [href, setHref] = useState('')
   const picker = useRef<HTMLInputElement>(null)
+  // How narrow the bar is (toolbarLevel.ts): what folds into dropdowns and what moves to the second row
+  const [level, bar] = useToolbarLevel()
 
   if (!editor || !state) return null
 
@@ -569,8 +565,36 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError }:
     setLinking(false)
   }
 
+  const colours = (
+    <Group>
+      <ColourField
+        label="Text colour"
+        letter="A"
+        value={state.colour}
+        onLive={(hex) => editor.chain().setColor(hex).run()}
+        onCommit={(hex) => editor.chain().focus().setColor(hex).run()}
+      />
+      <ColourField
+        label="Background colour"
+        icon={LuHighlighter}
+        value={state.background}
+        onLive={(hex) => editor.chain().setBackgroundColor(hex).run()}
+        onCommit={(hex) => editor.chain().focus().setBackgroundColor(hex).run()}
+      />
+    </Group>
+  )
+  // The Ω popout: Basics (the structures, superscript, subscript), SVGs, Mathematical, Others
+  const omegaPopout = (trigger: ReactNode) => (
+    <BarPopover label="Structures, shapes, maths and other characters" open={more} align="end" wide onOpenChange={setMore} trigger={trigger}>
+      <MoreFormats editor={editor} />
+    </BarPopover>
+  )
+  // Level 3 (a phone): the rows wrap between their groups, into as many rows as they need
+  const rowClass = level >= 3 ? 'flex flex-wrap items-center gap-base' : 'flex flex-nowrap items-center gap-base overflow-x-auto'
+
   return (
     <div
+      ref={bar}
       role="toolbar"
       aria-label="Article formatting"
       // Every icon one size, 1.25rem: the buttons' own (a button sets its size from its text) and the colour fields'
@@ -583,11 +607,11 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError }:
           label={secondRow ? 'Hide the second row' : 'Show the second row'}
           active={secondRow}
           bigIcon
-          onClick={() => setSecondRow((shown) => !shown)}
+          onClick={() => onSecondRowChange(!secondRow)}
         />
       </div>
-      {/* The first row never wraps (Media and Link stay in it): when it is too wide for the bar it scrolls sideways */}
-      <div className="flex flex-nowrap items-center gap-base overflow-x-auto">
+      {/* The first row: it scrolls sideways when it is too wide, until the bar is narrow enough to wrap it (level 3) */}
+      <div className={rowClass}>
         <Group>
           <ToolButton icon={LuUndo2} label="Undo" disabled={!state.canUndo} onClick={() => editor.chain().focus().undo().run()} />
           <ToolButton icon={LuRedo2} label="Redo" disabled={!state.canRedo} onClick={() => editor.chain().focus().redo().run()} />
@@ -599,22 +623,14 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError }:
           <BoldControl editor={editor} bold={state.bold} weight={state.weight} />
           <ItalicControl editor={editor} italic={state.italic} slant={state.slant} />
           <UnderlineControl editor={editor} on={state.underline} kind={state.underlineKind} colour={state.underlineColour} />
-          <Separator />
-          <ColourField
-            label="Text colour"
-            letter="A"
-            value={state.colour}
-            onLive={(hex) => editor.chain().setColor(hex).run()}
-            onCommit={(hex) => editor.chain().focus().setColor(hex).run()}
-          />
-          <ColourField
-            label="Background colour"
-            icon={LuHighlighter}
-            value={state.background}
-            onLive={(hex) => editor.chain().setBackgroundColor(hex).run()}
-            onCommit={(hex) => editor.chain().focus().setBackgroundColor(hex).run()}
-          />
         </Group>
+        {/* The colours, until the bar is narrow (level 2): then they are in the second row */}
+        {level < 2 && (
+          <>
+            <Separator />
+            {colours}
+          </>
+        )}
         <Separator />
         <Group>
           <Dropdown
@@ -628,19 +644,30 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError }:
               else if (state.list !== 'none') TOGGLE_LIST[state.list](editor)
             }}
           />
-          {/* The alignments one next to the other, the current one pressed */}
-          {ALIGNS.map((a) => (
-            <ToolButton
-              key={a.value}
-              icon={a.icon}
-              label={a.label}
-              active={state.align === a.value}
-              onClick={() => editor.chain().focus().setTextAlign(a.value).run()}
+          {/* The alignments one next to the other, the current one pressed; one dropdown on a narrower bar (level 1) */}
+          {level >= 1 ? (
+            <Dropdown
+              label="Align"
+              triggerIcon={ALIGNS.find((a) => a.value === state.align)?.icon ?? LuAlignLeft}
+              className="[&>svg]:size-5!"
+              value={state.align}
+              options={ALIGNS}
+              onChange={(align) => editor.chain().focus().setTextAlign(align).run()}
             />
-          ))}
+          ) : (
+            ALIGNS.map((a) => (
+              <ToolButton
+                key={a.value}
+                icon={a.icon}
+                label={a.label}
+                active={state.align === a.value}
+                onClick={() => editor.chain().focus().setTextAlign(a.value).run()}
+              />
+            ))
+          )}
         </Group>
         {/* Next to the alignments with no space: the row's gap is taken back */}
-        <div className="-ms-base flex items-center">
+        <div className="-ms-base flex shrink-0 items-center">
           <Separator />
           <BarPopover
             label="Insert"
@@ -724,33 +751,62 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError }:
           />
         </div>
       </div>
-      {/* The second row: Code (its name, like Section's) at the left, the paragraph's dropdowns, then at the right Section (a + and the letters of the font field), a box of the most common strange characters with the Ω button at its end (its popout: the power up and the index below, and many more characters, in sections) (the floating ⋯ on the bar's right edge shows and hides it) */}
-      {secondRow && (
+      {/* The second row: the colours when the bar is narrow (shown even with the ⋯ closed), then, while the ⋯ has it open, Code at the left,
+          the paragraph's dropdowns, Section and the Ω box at the right */}
+      {(secondRow || level >= 2) && (
         <div className="flex flex-wrap items-center gap-base">
-          {/* Code, with its name like Section's, at the left */}
-          <TextButton icon={LuCode} label="Code" big active={state.code} onClick={() => editor.chain().focus().toggleCode().run()} />
-          <Separator />
-          <Group>
-            <ParagraphLook editor={editor} look={state.look} />
-          </Group>
-          {/* Section, and the strange characters at the right end of the row: the most common ones in a box with a border, the Ω button at its end opens all of them */}
-          <Group className="ms-auto">
-            <Separator />
-            <TextButton icon={LuPlus} label="Section" big onClick={() => addSection(editor)} />
-            <div role="group" aria-label="Common characters" className="flex flex-wrap items-center rounded-(--field-radius) border border-line-strong">
-              <SymbolRow editor={editor} symbols={COMMON_SYMBOLS} />
-              <BarPopover
-                label="Strange characters, power up and index below"
-                open={more}
-                align="end"
-                wide
-                onOpenChange={setMore}
-                trigger={<ToolButton icon={LuOmega} label="More characters, power up and index below" active={more} onClick={() => setMore((open) => !open)} />}
-              >
-                <MoreFormats editor={editor} />
-              </BarPopover>
-            </div>
-          </Group>
+          {level >= 2 && colours}
+          {level >= 2 && secondRow && <Separator />}
+          {secondRow && (
+            <>
+              {/* Code, with its name like Section's, at the left */}
+              <TextButton icon={LuCode} label="Code" big filled active={state.code} onClick={() => editor.chain().focus().toggleCode().run()} />
+              <Separator />
+              <Group>
+                <ParagraphLook editor={editor} look={state.look} />
+              </Group>
+              {/* Section, and the Ω box at the right end of the row */}
+              <Group className="ms-auto">
+                <Separator />
+                <TextButton icon={LuPlus} label="Section" big onClick={() => addSection(editor)} />
+                {level >= 1 ? (
+                  // A narrow bar: no examples, only the Ω that opens them all
+                  omegaPopout(
+                    <IconButton
+                      icon={LuOmega}
+                      label="Structures, shapes, maths and other characters"
+                      size="sm"
+                      variant={more ? 'selected' : 'ghost'}
+                      aria-expanded={more}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setMore((open) => !open)}
+                      className="[&>svg]:size-5!"
+                    />,
+                  )
+                ) : (
+                  // The examples (Word-like structures with places to fill), a line, and the square arrow that opens the popout
+                  <div role="group" aria-label="Maths structures" className="flex items-center rounded-(--field-radius) border border-line-strong">
+                    {STRUCTURE_KINDS.map((kind) => (
+                      <IconButton key={kind} label={STRUCTURES[kind].label} onMouseDown={(e) => e.preventDefault()} onClick={() => insertStructure(editor, kind)}>
+                        <StructureIcon kind={kind} />
+                      </IconButton>
+                    ))}
+                    <span aria-hidden className="w-px self-stretch bg-line-strong" />
+                    {omegaPopout(
+                      <IconButton
+                        icon={LuChevronDown}
+                        label="More structures, shapes, maths and other characters"
+                        variant={more ? 'selected' : 'ghost'}
+                        aria-expanded={more}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setMore((open) => !open)}
+                      />,
+                    )}
+                  </div>
+                )}
+              </Group>
+            </>
+          )}
         </div>
       )}
     </div>

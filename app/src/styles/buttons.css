@@ -658,6 +658,28 @@
     background: none;
   }
 
+  /* Map: a round icon button floating over a border (the article's tools on its body's left edge, IconButton round): a circle on the
+     surface with a line and a shadow, no brackets, no cut corners; its hover is Shade's */
+  .ui-btn.ui-btn-round {
+    --btn-radius: 9999px;
+    --btn-bracket-gap: 0px;
+    --btn-bracket-len-x: 0px;
+    --btn-bracket-len-y: 0px;
+    --btn-bg: var(--surface);
+    --btn-text: var(--fg-muted);
+    --btn-hover-bg: color-mix(in srgb, var(--surface) 80%, var(--fg) 20%);
+    --btn-hover-text: var(--fg);
+    clip-path: none;
+    border: 1px solid var(--line);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.18);
+  }
+
+  .ui-btn.ui-btn-round:is([aria-pressed='true'], .ui-btn-selected) {
+    --btn-bg: color-mix(in srgb, var(--surface) 70%, var(--fg) 30%);
+    --btn-text: var(--fg);
+    border-color: var(--fg-muted);
+  }
+
   /* Map: Shade (or Venom) without its white corner brackets: they stay hidden and never slide out, hovered, current or
      chosen (the icon-only buttons). The hover background is the same; no icon-and-text pull either */
   .ui-btn.ui-btn-plain {

@@ -33,6 +33,9 @@ app/src/components/ui/overlays/ExtendMenu.tsx   a button that grows into its own
 | `selected` | Shade, kept in its hover look | the chosen one of a group (or pass `aria-pressed`) |
 | `text` | Underline | a text action in running text (Show more, Try again, Open) |
 
+`round` (IconButton only, `.ui-btn-round`) makes a circle with a line and a shadow, for buttons floating over a border: the article's
+Zoom / Messages / Notes on its body's left edge.
+
 `size="sm"` is a smaller button for tight rows (board panels, row headers, chips). `size="lg"` is as tall as a text field (`--field-h`, 40px)
 with a bigger icon and text: the navbar's Recent History button, level with the search field.
 
