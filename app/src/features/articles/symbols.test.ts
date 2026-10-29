@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { SYMBOL_GROUPS, SYMBOLS } from './symbols'
+import { GROUP_EXAMPLES, SYMBOL_GROUPS, SYMBOLS } from './symbols'
 
 describe('the symbols', () => {
   const sections = SYMBOLS
@@ -35,5 +35,12 @@ describe('the groups', () => {
       expect(chars.every((char) => [...char].length === 1)).toBe(true)
       expect(new Set(chars).size, section.title).toBe(chars.length)
     }
+  })
+})
+
+describe('the group examples', () => {
+  it('are the first character of each group', () => {
+    expect(GROUP_EXAMPLES).toHaveLength(SYMBOL_GROUPS.length)
+    GROUP_EXAMPLES.forEach((char, i) => expect(SYMBOL_GROUPS[i].sections[0].symbols.startsWith(char)).toBe(true))
   })
 })

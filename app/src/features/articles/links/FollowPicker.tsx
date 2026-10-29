@@ -16,13 +16,15 @@ type Props = {
   onRemove?: () => void
   /** Its first field takes the focus when it opens (default) */
   autoFocus?: boolean
+  /** The people's search field shows (default); false: the owner opens it with a search button of its own */
+  showSearch?: boolean
 }
 
 /**
  * Follow: the followers to send the reader to (a person: clicking the words shows them, with Follow), or the address of someone else's
  * project. The people are made up for now (mockPeople.ts)
  */
-export default function FollowPicker({ onPick, chosen, onRemove, autoFocus = true }: Props) {
+export default function FollowPicker({ onPick, chosen, onRemove, autoFocus = true, showSearch = true }: Props) {
   const [tab, setTab] = useState<'people' | 'project'>(chosen?.kind === 'project-url' ? 'project' : 'people')
   const [query, setQuery] = useState('')
   const [url, setUrl] = useState(chosen?.kind === 'project-url' ? chosen.url : '')
@@ -41,7 +43,7 @@ export default function FollowPicker({ onPick, chosen, onRemove, autoFocus = tru
       </div>
       {tab === 'people' ? (
         <>
-          <SearchInput label="Search people" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus={autoFocus} />
+          {showSearch && <SearchInput label="Search people" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus={autoFocus} />}
           <div role="listbox" aria-label="People" className="flex max-h-64 flex-col overflow-y-auto">
             {people.map((person) => {
               const picked = chosen?.kind === 'person' && chosen.personId === person.id
@@ -52,6 +54,7 @@ export default function FollowPicker({ onPick, chosen, onRemove, autoFocus = tru
                     aria-selected={picked}
                     variant={picked ? 'selected' : 'ghost'}
                     size="sm"
+                    plain
                     className="min-w-0 flex-1 justify-start"
                     onClick={() => onPick({ kind: 'person', personId: person.id })}
                   >

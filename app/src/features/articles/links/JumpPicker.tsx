@@ -20,10 +20,12 @@ type Props = {
   onRemove?: () => void
   /** Its search takes the focus when it opens (default) */
   autoFocus?: boolean
+  /** Its search field shows (default); false: the owner opens it with a search button of its own */
+  showSearch?: boolean
 }
 
 /** Jump link: the article's sections and marked places, each with its mark at its left, to pick where the words jump to */
-export default function JumpPicker({ editor, onPick, onMarkPlace, chosen, onRemove, autoFocus = true }: Props) {
+export default function JumpPicker({ editor, onPick, onMarkPlace, chosen, onRemove, autoFocus = true, showSearch = true }: Props) {
   const [query, setQuery] = useState('')
   const targets = useEditorState({ editor, selector: ({ editor: e }) => jumpTargets(e.state.doc), equalityFn: (a, b) => JSON.stringify(a) === JSON.stringify(b) })
   const chosenTarget = chosen ? resolveJump(editor.state.doc, chosen) : null
@@ -32,7 +34,7 @@ export default function JumpPicker({ editor, onPick, onMarkPlace, chosen, onRemo
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <SearchInput label="Search sections" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus={autoFocus} />
+      {showSearch && <SearchInput label="Search sections" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus={autoFocus} />}
       <div role="listbox" aria-label="Places" className="flex max-h-64 flex-col overflow-y-auto">
         {shown.map((target) => {
           const picked = chosenTarget?.from === target.from
@@ -44,6 +46,7 @@ export default function JumpPicker({ editor, onPick, onMarkPlace, chosen, onRemo
                 aria-selected={picked}
                 variant={picked ? 'selected' : 'ghost'}
                 size="sm"
+                plain
                 icon={targetIcon(target)}
                 className="w-full justify-start"
                 onClick={() => onPick(target.to)}

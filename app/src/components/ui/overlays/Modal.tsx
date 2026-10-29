@@ -9,6 +9,7 @@ const SIZES = {
   sm: 'max-w-[24rem]',
   md: 'max-w-[32rem]',
   lg: 'max-w-[48rem]',
+  xl: 'max-w-[72rem]',
 } as const
 
 // Centred over a dimmed, blurred page. Opening: fades in and grows from 95% (@starting-style); closing

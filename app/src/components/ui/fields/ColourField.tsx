@@ -10,6 +10,8 @@ type Props = {
   onLive: (value: string) => void
   onCommit: (value: string) => void
   className?: string
+  /** The colour the icon or letter shows when it is not `value` (what the selected text really looks like, e.g. its own colour when `value` is where the picker starts); left out: `value` */
+  shown?: string
   /** Only the swatch, filling the height it is given and without its own corners or border (to sit inside a joined control); the label is its accessible name */
   bare?: boolean
   /** A wide swatch instead of a square one, as wide as the width given by `className` (and, like `bare`, without the visible label) */
@@ -29,12 +31,14 @@ const EDGE = 8
 const GAP = 6
 
 /** A labelled colour input: live while the picker moves, committed once when it is let go. Its picker opens next to the swatch */
-export default function ColourField({ label, value, onLive, onCommit, className = '', bare, wide, icon: Icon, letter }: Props) {
+export default function ColourField({ label, value, onLive, onCommit, className = '', shown, bare, wide, icon: Icon, letter }: Props) {
   const id = useId()
   // The colour while the picker moves; null: the saved one
   const [held, setHeld] = useState<string | null>(null)
   // Only the swatch shows; the label is its accessible name
   const hidden = bare || wide || Icon !== undefined || letter !== undefined
+  // What the icon and the letter are drawn in: the picker's colour while it moves, else what the text shows
+  const drawn = held ?? shown ?? value
 
   // Placed before it shows: under the swatch, or above it when there is no room, kept inside the window
   const place = (e: React.ToggleEvent<HTMLDivElement>) => {
@@ -58,10 +62,10 @@ export default function ColourField({ label, value, onLive, onCommit, className 
         <IconButton label={label} size="sm" popoverTarget={id} data-colour-anchor={id} aria-haspopup="dialog" onMouseDown={(e) => e.preventDefault()} className="ui-dropfield-icon">
           {/* One icon of painting a colour: the letter in the colour, a small paintbrush at its lower right, in the colour too */}
           <span aria-hidden className="relative flex">
-            <span className="text-[1.25rem] leading-none font-bold" style={{ color: held ?? value }}>
+            <span className="text-[1.25rem] leading-none font-bold" style={{ color: drawn }}>
               {letter}
             </span>
-            <LuPaintbrush className="absolute -end-1.5 -bottom-1 size-3 stroke-[2.5]" style={{ color: held ?? value }} />
+            <LuPaintbrush className="absolute -end-1.5 -bottom-1 size-3 stroke-[2.5]" style={{ color: drawn }} />
           </span>
         </IconButton>
       ) : Icon ? (
@@ -69,7 +73,7 @@ export default function ColourField({ label, value, onLive, onCommit, className 
           {/* The colour's bar is drawn over the icon's lower edge, so the button is as big as an icon button without one */}
           <span className="relative flex">
             <Icon className="size-(--btn-icon-size)" />
-            <span aria-hidden className="absolute inset-x-0.5 -bottom-px h-[3px] rounded-full" style={{ backgroundColor: held ?? value }} />
+            <span aria-hidden className="absolute inset-x-0.5 -bottom-px h-[3px] rounded-full" style={{ backgroundColor: drawn }} />
           </span>
         </IconButton>
       ) : (

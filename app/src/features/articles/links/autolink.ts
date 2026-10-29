@@ -1,13 +1,13 @@
-// The autolinker: a text and where it links to (a rule). Every place the text is written in the article becomes that link, now and
-// while it is typed. A rule is not kept anywhere but in the links it made (their href holds its id and text: linkHref.ts), so the list
-// of rules is read back from the document. Pure on ProseMirror documents and transactions (autolink.test.ts).
+// The autolinker: some phrases and where they link to (a rule). Every place a phrase is written in the article becomes that link, now and
+// while it is typed. A rule is not kept anywhere but in the links it made (their href holds its id and the phrase: linkHref.ts; the
+// phrases of one rule share its id), so the list of rules is read back from the document. Pure on ProseMirror documents and transactions (autolink.test.ts).
 import type { Node as PMNode } from '@tiptap/pm/model'
 import type { Transaction } from '@tiptap/pm/state'
 import { linkRanges } from './docLinks'
 import { fromHref, toHref, withoutRule, withRule, type ArticleLink, type Rule } from './linkHref'
 
-/** A rule as the list shows it: its text, where it links, and how many places it linked */
-export type AutoRule = Rule & { link: ArticleLink; count: number }
+/** A rule as the list shows it: its phrases, where they link, and how many places it linked */
+export type AutoRule = { id: string; phrases: string[]; link: ArticleLink; count: number }
 
 /** One character, lower case, without its accent (one character for one, so places in the text stay right) */
 function foldChar(c: string) {
@@ -16,15 +16,18 @@ function foldChar(c: string) {
 }
 const fold = (text: string) => Array.from(text, foldChar).join('')
 const isWordChar = (c: string | undefined) => !!c && /[\p{L}\p{N}_]/u.test(c)
-/** The id of the autolinker that made the link with this href, if one did */
+/** The autolinker (its id and phrase) that made the link with this href, if one did */
 const ruleOf = (href: string | undefined) => {
   const link = fromHref(href)
-  return link && 'rule' in link ? link.rule?.id : undefined
+  return link && 'rule' in link ? link.rule : undefined
 }
+
+/** The phrases of a rule, the longest first: "old town" must be linked before "town" takes its last word */
+export const longestFirst = (phrases: string[]) => [...phrases].sort((a, b) => b.trim().length - a.trim().length)
 
 /**
  * The places the text is written, as whole words (case and accents not counted), not in code and not inside another link (a link of
- * the rule `ruleId` doesn't count as another one). `[from, to]` positions in the document
+ * the same phrase of the rule `ruleId` doesn't count as another one). `[from, to]` positions in the document
  */
 export function occurrences(doc: PMNode, text: string, ruleId?: string): { from: number; to: number }[] {
   const needle = fold(text.trim())
@@ -41,7 +44,11 @@ export function occurrences(doc: PMNode, text: string, ruleId?: string): { from:
       const linkable =
         child.isText &&
         !child.marks.some((m) => m.type.name === 'code') &&
-        !child.marks.some((m) => m.type.name === 'link' && (!ruleId || ruleOf(m.attrs.href as string) !== ruleId))
+        !child.marks.some((m) => {
+          if (m.type.name !== 'link') return false
+          const rule = ruleOf(m.attrs.href as string)
+          return !(ruleId && rule?.id === ruleId && fold(rule.text.trim()) === needle)
+        })
       const content = child.isText ? (child.text ?? '') : '￼'
       for (let i = 0; i < content.length; i++) {
         chars += content[i]
@@ -68,8 +75,10 @@ export function rulesFrom(doc: PMNode): AutoRule[] {
     const rule = 'rule' in range.link ? range.link.rule : undefined
     if (!rule) continue
     const known = rules.get(rule.id)
-    if (known) known.count++
-    else rules.set(rule.id, { ...rule, link: withoutRule(range.link), count: 1 })
+    if (known) {
+      known.count++
+      if (!known.phrases.some((p) => fold(p) === fold(rule.text))) known.phrases.push(rule.text)
+    } else rules.set(rule.id, { id: rule.id, phrases: [rule.text], link: withoutRule(range.link), count: 1 })
   }
   return [...rules.values()]
 }

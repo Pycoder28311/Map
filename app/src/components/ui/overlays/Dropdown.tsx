@@ -35,6 +35,8 @@ type Props<T extends string> = {
   triggerIcon?: PlainIcon
   /** The ▾ floats over the end of the choice, shown only while the pointer (or the keyboard) is on the button; it takes no room, so nothing moves */
   hoverChevron?: boolean
+  /** The menu opens centred under its button (growing from its top middle), not aligned to the button's right edge */
+  center?: boolean
   className?: string
 }
 
@@ -44,7 +46,7 @@ type Props<T extends string> = {
  *
  *   <Dropdown label="Kind" value={kind} onChange={setKind} options={[{ value: 'note', label: 'Note' }]} />
  */
-export default function Dropdown<T extends string>({ value, options, onChange, label, triggerIcon: TriggerIcon, hoverChevron, className = '' }: Props<T>) {
+export default function Dropdown<T extends string>({ value, options, onChange, label, triggerIcon: TriggerIcon, hoverChevron, center = false, className = '' }: Props<T>) {
   const id = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -58,7 +60,16 @@ export default function Dropdown<T extends string>({ value, options, onChange, l
     const menu = e.currentTarget
     const rect = trigger.getBoundingClientRect()
     menu.style.top = `${rect.bottom + 4}px`
-    menu.style.right = `${window.innerWidth - rect.right}px`
+    if (center) {
+      // Centred under the button: shifted back by half its own width, whatever that is
+      menu.style.left = `${rect.left + rect.width / 2}px`
+      menu.style.right = 'auto'
+      menu.style.translate = '-50% 0'
+      menu.style.transformOrigin = 'top center'
+      menu.style.setProperty('--dropdown-x', '-50%')
+    } else {
+      menu.style.right = `${window.innerWidth - rect.right}px`
+    }
   }
 
   // Opened: focus the current choice (or the first one that can be chosen), for the keyboard

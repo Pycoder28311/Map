@@ -1,7 +1,7 @@
 import { EMPTY_INFOBOX, type Infobox } from '@map/shared'
 import { useEditorState, type Editor, type Extensions } from '@tiptap/react'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { LuBookmark, LuEllipsis, LuInfo, LuPlus, LuSearch, LuShare2 } from 'react-icons/lu'
+import { LuBookmark, LuEllipsis, LuPencilLine, LuInfo, LuPlus, LuSearch, LuShare2 } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import { addSection, articleExtensions } from '../../components/ui/editors/articleExtensions'
 import RichTextField from '../../components/ui/fields/RichTextField'
@@ -132,6 +132,8 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   const [linkPopout, setLinkPopout] = useState<LinkPopout | null>(null)
   // The toolbar's ⋯: its second row, and the link row even with nothing selected
   const [rowsOpen, setRowsOpen] = useState(true)
+  // The edit bar's X hides it; a button in its place brings it back
+  const [barShown, setBarShown] = useState(true)
   const [finding, setFinding] = useState(false)
   const [message, setMessage] = useState<{ title: string; content: string; from: number; to: number; top: number } | null>(null)
   const [person, setPerson] = useState<Person | null>(null)
@@ -347,9 +349,15 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         folders={<ProjectFolders resource={resource} item={item} />}
         toolbar={
           <div className="sticky top-0 z-20 flex flex-col gap-1 bg-surface py-1">
-            <ArticleToolbar editor={editor} onUploadImage={upload} onUploadError={onUploadError} secondRow={rowsOpen} onSecondRowChange={setRowsOpen} />
+            {barShown ? (
+              <ArticleToolbar editor={editor} onUploadImage={upload} onUploadError={onUploadError} secondRow={rowsOpen} onSecondRowChange={setRowsOpen} onClose={() => setBarShown(false)} />
+            ) : (
+              <Button variant="ghost" size="sm" plain icon={LuPencilLine} className="self-start" onClick={() => setBarShown(true)}>
+                Edit bar
+              </Button>
+            )}
             {/* The third row, smaller and centred, a little gap under the others: the links (while words are selected, or the ⋯ has the rows open) */}
-            <LinkRow editor={editor} self={`${resource.panelType}:${item.id}`} expanded={rowsOpen} open={linkPopout} onOpenChange={setLinkPopout} />
+            {barShown && <LinkRow editor={editor} self={`${resource.panelType}:${item.id}`} expanded={rowsOpen} open={linkPopout} onOpenChange={setLinkPopout} />}
             {finding && editor && <FindBar editor={editor} onClose={() => setFinding(false)} />}
             {uploadError && (
               <p role="alert" className="text-small text-danger">

@@ -49,6 +49,8 @@ export type DropdownFieldOption = {
   swatch?: string
   /** With `swatch`: shown only as a square of that colour (its label is its tooltip), in a grid of two rows with the other squares next to it ('' is no colour) */
   squares?: boolean
+  /** With `hint`: the hint is big, at the right of the label (a tag), not the faint small text (a field without a border) */
+  hintBig?: boolean
   /** A caption of the options after it, not an option (its value is not used) */
   heading?: boolean
   /** Ticked, whatever the field's `value` is (a menu with more than one choice in it, each with its own) */
@@ -114,6 +116,8 @@ export default function DropdownField({
     e.currentTarget.style.left = `${bordered ? rect.left : rect.left + rect.width / 2}px`
     e.currentTarget.style.translate = bordered ? '' : '-50% 0'
     e.currentTarget.style.transformOrigin = bordered ? '' : 'top center'
+    // (the opening animation keeps the sideways shift: animations.css --dropdown-x)
+    e.currentTarget.style.setProperty('--dropdown-x', bordered ? '0px' : '-50%')
     e.currentTarget.style.top = `${bordered ? rect.bottom : rect.bottom + 4}px`
     // A bordered field's list is exactly as wide as the field
     if (bordered) e.currentTarget.style.width = `${rect.width}px`
@@ -210,7 +214,7 @@ export default function DropdownField({
           >
             {o.label}
           </span>
-          {o.hint && !bordered && <span className="shrink-0 text-small text-fg-subtle">{o.hint}</span>}
+          {o.hint && !bordered && <span className={`shrink-0 ${o.hintBig ? 'text-body text-fg-muted' : 'text-small text-fg-subtle'}`}>{o.hint}</span>}
         </button>
       ),
     )

@@ -21,13 +21,15 @@ type Props = {
   listHeight?: string
   /** Its search takes the focus when it opens (default) */
   autoFocus?: boolean
+  /** Its search field shows (default); false: the owner opens it with a search button of its own (the autolinker's sections) */
+  showSearch?: boolean
 }
 
 /**
  * A list of the app's objects to pick one: kind buttons on top (All, Article, Map, Object card, Folder, Project), a search, and the
  * rows, read a page at a time (useObjectSearch) as the list is scrolled
  */
-export default function ObjectPicker({ onPick, only, exclude, chosen, listHeight = 'max-h-64', autoFocus = true }: Props) {
+export default function ObjectPicker({ onPick, only, exclude, chosen, listHeight = 'max-h-64', autoFocus = true, showSearch = true }: Props) {
   const kinds = pickerKinds().filter((k) => !only || only.includes(k.type))
   const [kind, setKind] = useState<ObjectType | 'all'>(kinds.length === 1 ? kinds[0].type : 'all')
   const [query, setQuery] = useState('')
@@ -63,7 +65,7 @@ export default function ObjectPicker({ onPick, only, exclude, chosen, listHeight
           ))}
         </div>
       )}
-      <SearchInput label="Search objects" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus={autoFocus} />
+      {showSearch && <SearchInput label="Search objects" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus={autoFocus} />}
       <div role="listbox" aria-label="Objects" className={`flex flex-col overflow-y-auto ${listHeight}`}>
         {search.hits.map((hit) => {
           const resource = resourceByPanelType(hit.type)
@@ -75,6 +77,7 @@ export default function ObjectPicker({ onPick, only, exclude, chosen, listHeight
               aria-selected={picked}
               variant={picked ? 'selected' : 'ghost'}
               size="sm"
+              plain
               icon={resource?.ui.icon}
               className="w-full shrink-0 justify-start"
               onClick={() => onPick(hit)}

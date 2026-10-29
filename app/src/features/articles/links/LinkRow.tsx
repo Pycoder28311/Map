@@ -4,6 +4,7 @@ import { LuCornerDownRight, LuExternalLink, LuFileSymlink, LuMessageSquareText, 
 import Button from '../../../components/ui/buttons/Button'
 import type { PlainIcon } from '../../../components/ui/icons/IconSlot'
 import BarPopover from '../../../components/ui/overlays/BarPopover'
+import Modal from '../../../components/ui/overlays/Modal'
 import { TextButton } from '../ArticleToolbar'
 import AutolinkPanel from './AutolinkPanel'
 import FollowPicker from './FollowPicker'
@@ -102,11 +103,22 @@ export default function LinkRow({ editor, self, expanded, open, onOpenChange }: 
     const onRemove = link ? remove : undefined
     switch (id) {
       case 'url':
-        return <RealLinkForm url={link?.kind === 'url' ? link.url : ''} name={state.words} onApply={(url, name) => apply({ kind: 'url', url }, name)} onRemove={onRemove} />
+        return (
+          <RealLinkForm
+            url={link?.kind === 'url' ? link.url : ''}
+            name={state.words}
+            onApply={(url, name) => apply({ kind: 'url', url }, name)}
+            onRemove={onRemove}
+          />
+        )
       case 'object':
         return (
           <div className="flex flex-col gap-2">
-            <ObjectPicker exclude={self} chosen={link?.kind === 'object' ? link : null} onPick={(hit) => apply({ kind: 'object', type: hit.type, id: hit.id })} />
+            <ObjectPicker
+              exclude={self}
+              chosen={link?.kind === 'object' ? link : null}
+              onPick={(hit) => apply({ kind: 'object', type: hit.type, id: hit.id })}
+            />
             {onRemove && (
               <Button variant="ghost" size="sm" className="self-end" onClick={onRemove}>
                 Remove
@@ -115,16 +127,31 @@ export default function LinkRow({ editor, self, expanded, open, onOpenChange }: 
           </div>
         )
       case 'msg':
-        return <MessageForm title={link?.kind === 'msg' ? link.title : ''} content={link?.kind === 'msg' ? link.content : ''} onApply={(title, content) => apply({ kind: 'msg', title, content })} onRemove={onRemove} />
+        return (
+          <MessageForm
+            title={link?.kind === 'msg' ? link.title : ''}
+            content={link?.kind === 'msg' ? link.content : ''}
+            onApply={(title, content) => apply({ kind: 'msg', title, content })}
+            onRemove={onRemove}
+          />
+        )
       case 'jump':
-        return <JumpPicker editor={editor} chosen={link?.kind === 'jump' ? link.to : null} onPick={(to) => apply({ kind: 'jump', to })} onMarkPlace={state.empty ? undefined : startMarking} onRemove={onRemove} />
+        return (
+          <JumpPicker
+            editor={editor}
+            chosen={link?.kind === 'jump' ? link.to : null}
+            onPick={(to) => apply({ kind: 'jump', to })}
+            onMarkPlace={state.empty ? undefined : startMarking}
+            onRemove={onRemove}
+          />
+        )
       case 'follow':
         return <FollowPicker chosen={link} onPick={(l) => apply(l)} onRemove={onRemove} />
     }
   }
 
   return (
-    // The popouts hang under the whole bar (its full width, centred), so the Autolinker's panel has room
+    // The popouts hang under the whole bar (its full width, centred)
     <div className="relative flex flex-col items-center">
       <div className="inline-flex animate-share-pop max-w-full flex-wrap items-center gap-0.5 rounded-(--card-radius) border border-line bg-surface px-1 py-0.5 shadow-sm">
         {/* The five kinds: joined by a line under them while the Autolinker is open (all but Message, which it can't make) */}
@@ -147,7 +174,7 @@ export default function LinkRow({ editor, self, expanded, open, onOpenChange }: 
                     small
                     active={open === b.id || (auto && !skipped) || !!current(b.id)}
                     disabled={!enabled || skipped}
-                    title={skipped ? 'The Autolinker does not make messages' : enabled ? b.title : 'Select some words first'}
+                    tip={skipped ? 'The Autolinker does not make messages.' : enabled ? b.title : 'Select some words first.'}
                     onClick={() => toggle(b.id)}
                   />
                 }
@@ -158,20 +185,24 @@ export default function LinkRow({ editor, self, expanded, open, onOpenChange }: 
           })}
         </div>
         <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-(--divider-line)" />
-        <BarPopover
+        <TextButton
+          icon={LuWandSparkles}
           label="Autolinker"
-          open={auto}
-          onOpenChange={(next) => onOpenChange(next ? 'auto' : null)}
-          // Wider than the article: its four modals side by side with room (AutolinkPanel.tsx), centred under the row, inside the window
-          width="w-[72rem]"
-          free
-          trigger={<TextButton icon={LuWandSparkles} label="Autolinker" small active={auto} title="Link words everywhere they are written" onClick={() => toggle('auto')} />}
-        >
-          <AutolinkPanel editor={editor} self={self} startText={state.words} />
-        </BarPopover>
+          small
+          active={auto}
+          tip="Links the words you choose everywhere they are written in the article."
+          onClick={() => toggle('auto')}
+        />
+        {/* Its own modal (the shared one, with no zoom) */}
+        <Modal open={auto} onClose={close} title="Autolinker" size="xl">
+          <AutolinkPanel editor={editor} self={self} startText={state.words} onClose={close} />
+        </Modal>
       </div>
       {marking && (
-        <div role="status" className="mt-1 inline-flex flex-wrap items-center gap-2 rounded-(--card-radius) border border-accent bg-surface px-2 py-1 text-small shadow-sm">
+        <div
+          role="status"
+          className="mt-1 inline-flex flex-wrap items-center gap-2 rounded-(--card-radius) border border-accent bg-surface px-2 py-1 text-small shadow-sm"
+        >
           <span>Select the place to jump to, then</span>
           <Button size="sm" disabled={!canMark} onMouseDown={(e) => e.preventDefault()} onClick={mark}>
             Mark it

@@ -5,7 +5,7 @@ import { Plugin, PluginKey, TextSelection, type Transaction } from '@tiptap/pm/s
 import { AddMarkStep, RemoveMarkStep } from '@tiptap/pm/transform'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import type { RefObject } from 'react'
-import { applyRule, rulesFrom } from './autolink'
+import { applyRule, longestFirst, rulesFrom } from './autolink'
 import { linkAt, type LinkRange } from './docLinks'
 import { findMatches } from './find'
 import { fromHref, LINK_PREFIX, toHref, type ArticleLink } from './linkHref'
@@ -90,7 +90,7 @@ const Autolinker = Extension.create({
           const tr = state.tr
           const skipAt = state.selection.empty ? state.selection.from : undefined
           let linked = 0
-          for (const rule of rules) linked += applyRule(tr, rule, { within, skipAt })
+          for (const rule of rules) for (const text of longestFirst(rule.phrases)) linked += applyRule(tr, { id: rule.id, text, link: rule.link }, { within, skipAt })
           if (!linked) return null
           // With typing it is undone with the typing (history joins an appended transaction to its own); after a caret move, never
           if (!changed) tr.setMeta('addToHistory', false)

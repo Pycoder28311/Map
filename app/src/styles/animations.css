@@ -159,7 +159,8 @@
     from {
       opacity: 0;
       scale: 0.9;
-      translate: 0 -6px;
+      /* (--dropdown-x: the menu's own sideways shift when it is centred under its button, so it does not jump while it opens) */
+      translate: var(--dropdown-x, 0) -6px;
     }
   }
 }

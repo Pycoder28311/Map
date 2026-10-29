@@ -10,7 +10,7 @@ import {
   LuAlignVerticalSpaceBetween,
   LuBold,
   LuChevronDown,
-  LuEllipsis,
+  LuX,
   LuCode,
   LuHighlighter,
   LuImage,
@@ -40,9 +40,11 @@ import BarPopover from '../../components/ui/overlays/BarPopover'
 import Dropdown from '../../components/ui/overlays/Dropdown'
 import DropdownField from '../../components/ui/fields/DropdownField'
 import { FONTS } from '../board/fonts'
-import { insertStructure, STRUCTURE_KINDS, STRUCTURES } from '../../components/ui/editors/structures'
+import { insertStructure, STRUCTURE_KINDS, STRUCTURES, type StructureKind } from '../../components/ui/editors/structures'
 import MoreFormats from './MoreFormats'
 import StructureIcon from './StructureIcon'
+import HoverInfo from '../../components/ui/overlays/HoverInfo'
+import { GROUP_EXAMPLES } from './symbols'
 import { useToolbarLevel } from './toolbarLevel'
 
 /** The colours a picker starts on when the text has none of its own */
@@ -51,31 +53,31 @@ const BACKGROUND_COLOUR = '#fde047'
 
 /** The sizes the dropdown inside the size field offers (px); a few have a name, shown faint at the right of the number. The field itself takes MIN_SIZE to MAX_SIZE; the editor's own size is NORMAL_SIZE */
 const COMMON_SIZES: { size: number; name?: string }[] = [
-  { size: 8 },
-  { size: 9 },
-  { size: 10 },
-  { size: 11 },
+  { size: 8, name: 'Tiny' },
+  { size: 9, name: 'Tiny' },
+  { size: 10, name: 'Tiny' },
+  { size: 11, name: 'Small' },
   { size: 12, name: 'Small' },
-  { size: 13 },
-  { size: 14 },
-  { size: 15 },
+  { size: 13, name: 'Small' },
+  { size: 14, name: 'Medium' },
+  { size: 15, name: 'Medium' },
   { size: 16, name: 'Medium' },
-  { size: 18 },
-  { size: 20 },
-  { size: 22 },
+  { size: 18, name: 'Medium' },
+  { size: 20, name: 'Large' },
+  { size: 22, name: 'Large' },
   { size: 24, name: 'Large' },
-  { size: 26 },
-  { size: 28 },
+  { size: 26, name: 'Big' },
+  { size: 28, name: 'Big' },
   { size: 32, name: 'XL' },
-  { size: 36 },
-  { size: 40 },
-  { size: 48 },
-  { size: 56 },
-  { size: 64 },
-  { size: 72 },
-  { size: 96 },
-  { size: 128 },
-  { size: 200 },
+  { size: 36, name: 'XL' },
+  { size: 40, name: 'XXL' },
+  { size: 48, name: 'XXL' },
+  { size: 56, name: 'Huge' },
+  { size: 64, name: 'Huge' },
+  { size: 72, name: 'Huge' },
+  { size: 96, name: 'Giant' },
+  { size: 128, name: 'Giant' },
+  { size: 200, name: 'Giant' },
 ]
 const MIN_SIZE = 8
 const MAX_SIZE = 200
@@ -117,6 +119,8 @@ type Props = {
   /** Whether the second row shows (the ⋯ on the bar's right edge): the page holds it, the link row shows with it too (LinkRow.tsx) */
   secondRow: boolean
   onSecondRowChange: (shown: boolean) => void
+  /** The X at the bar's top corner: hides the whole bar (the page shows a button to bring it back) */
+  onClose: () => void
 }
 
 /** A thin line between two groups of buttons (the gap around it is the row's) */
@@ -129,8 +133,21 @@ function Group({ children, className = '' }: { children: ReactNode; className?: 
   return <div className={`flex shrink-0 items-center gap-base ${className}`}>{children}</div>
 }
 
-/** A button that keeps the caret in the text while it is pressed */
+/**
+ * The small element that floats above a control while the pointer rests on it (or it has the focus): its name, and, for the second row's, a
+ * sentence on what it does (`text`). For a control that is not one button (a dropdown field): it wraps it
+ */
+function Tip({ name, text, children }: { name: string; text?: string; children: ReactNode }) {
+  return (
+    <HoverInfo title={name} text={text} side="top" delay={350}>
+      <span className="inline-flex">{children}</span>
+    </HoverInfo>
+  )
+}
+
+/** A button that keeps the caret in the text while it is pressed (`tip`: the sentence its floating element says) */
 function ToolButton(props: {
+  tip?: string
   icon: PlainIcon
   label: string
   onClick?: () => void
@@ -140,25 +157,29 @@ function ToolButton(props: {
   iconClassName?: string
 }) {
   return (
-    <IconButton
-      icon={props.icon}
-      label={props.label}
-      size="sm"
-      variant={props.active ? 'selected' : 'ghost'}
-      aria-pressed={props.active}
-      disabled={props.disabled}
-      // An icon button's icon is as big as its text (1em): the size is set on the icon itself (`!`: the button's own rule is more specific); the same as the
-      // List and Text align buttons have
-      className={props.bigIcon ? '[&>svg]:size-6!' : '[&>svg]:size-5!'}
-      iconClassName={props.iconClassName}
-      onMouseDown={(e) => e.preventDefault()}
-      onClick={props.onClick}
-    />
+    <HoverInfo title={props.label} text={props.tip} side="top" delay={350}>
+      <IconButton
+        icon={props.icon}
+        label={props.label}
+        size="sm"
+        variant={props.active ? 'selected' : 'ghost'}
+        aria-pressed={props.active}
+        disabled={props.disabled}
+        // An icon button's icon is as big as its text (1em): the size is set on the icon itself (`!`: the button's own rule is more specific); the same as the
+        // List and Text align buttons have
+        className={props.bigIcon ? '[&>svg]:size-6!' : '[&>svg]:size-5!'}
+        iconClassName={props.iconClassName}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={props.onClick}
+      />
+    </HoverInfo>
   )
 }
 
 /** A button with its name beside the icon, that keeps the caret in the text while it is pressed (`small`: the link row's, LinkRow.tsx) */
 export function TextButton(props: {
+  /** The sentence its floating element says under its name (left out: just the name) */
+  tip?: string
   icon?: PlainIcon
   label: string
   onClick?: () => void
@@ -170,24 +191,26 @@ export function TextButton(props: {
   small?: boolean
 }) {
   return (
-    <Button
-      icon={props.icon}
-      size={props.small ? 'xs' : 'sm'}
-      plain
-      filled={props.filled}
-      variant={props.active ? 'selected' : 'ghost'}
-      aria-pressed={props.active}
-      disabled={props.disabled}
-      title={props.title}
-      // The icon close to the text, the text of a field for all of them; a plain one has the bar's icon size (1.25rem), the big one (Section) a smaller icon (`!` wins over the bar's)
-      className={`[--btn-icon-gap:0.25rem]! font-normal! [--btn-font-size:1rem]! [--btn-text:var(--fg)]! [--btn-hover-text:var(--fg)]! ${
-        props.small ? '[--btn-icon-size:0.875rem]! [--btn-font-size:0.8125rem]!' : props.big ? '[--btn-icon-size:1rem]!' : '[--btn-icon-size:1.25rem]!'
-      }`}
-      onMouseDown={(e) => e.preventDefault()}
-      onClick={props.onClick}
-    >
-      {props.label}
-    </Button>
+    <HoverInfo title={props.label} text={props.tip} side="top" delay={350}>
+      <Button
+        icon={props.icon}
+        size={props.small ? 'xs' : 'sm'}
+        plain
+        filled={props.filled}
+        variant={props.active ? 'selected' : 'ghost'}
+        aria-pressed={props.active}
+        disabled={props.disabled}
+        title={props.title}
+        // The icon close to the text, the text of a field for all of them; a plain one has the bar's icon size (1.25rem), the big one (Section) a smaller icon (`!` wins over the bar's)
+        className={`[--btn-icon-gap:0.25rem]! font-normal! [--btn-font-size:1rem]! [--btn-text:var(--fg)]! [--btn-hover-text:var(--fg)]! ${
+          props.small ? '[--btn-icon-size:0.875rem]! [--btn-font-size:0.8125rem]!' : props.big ? '[--btn-icon-size:1rem]!' : '[--btn-icon-size:1.25rem]!'
+        }`}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={props.onClick}
+      >
+        {props.label}
+      </Button>
+    </HoverInfo>
   )
 }
 
@@ -197,7 +220,11 @@ function FontSelect({ editor, font }: { editor: Editor; font: string }) {
   const options = [
     { value: '', label: 'Default font' },
     ...(known ? [] : [{ value: font, label: font }]),
-    ...FONTS.map((f) => ({ value: f.stack, label: f.name, style: { fontFamily: f.stack } })),
+    ...FONTS.map((f) => ({
+      value: f.stack,
+      label: f.name,
+      style: { fontFamily: f.stack },
+    })),
   ]
   return (
     <DropdownField
@@ -226,7 +253,11 @@ function SizeControl({ editor, size }: { editor: Editor; size: number }) {
       width="w-16"
       centerOptions
       value={String(Math.round(size))}
-      options={COMMON_SIZES.map((z) => ({ value: String(z.size), label: String(z.size), hint: z.name }))}
+      options={COMMON_SIZES.map((z) => ({
+        value: String(z.size),
+        label: String(z.size),
+        hint: z.name,
+      }))}
       onChange={(n) => apply(Number(n))}
     >
       <input
@@ -286,7 +317,13 @@ function BoldControl({ editor, bold, weight }: { editor: Editor; bold: boolean; 
       bordered={false}
       options={[
         { value: 'heading:weight', label: 'Weight', heading: true },
-        ...WEIGHTS.map((w) => ({ value: w.value, label: w.label, hint: w.value, checked: w.value === current, style: { fontWeight: Number(w.value) } })),
+        ...WEIGHTS.map((w) => ({
+          value: w.value,
+          label: w.label,
+          hint: w.value,
+          checked: w.value === current,
+          style: { fontWeight: Number(w.value) },
+        })),
       ]}
       // A weight is the text's own, so the bold mark goes (they would mix); Regular takes both off
       onChange={(w) =>
@@ -327,7 +364,12 @@ function ItalicControl({ editor, italic, slant }: { editor: Editor; italic: bool
       bordered={false}
       options={[
         { value: 'heading:slant', label: 'Slant', heading: true },
-        ...SLANTS.map((z) => ({ value: z.value, label: z.label, checked: z.value === current, style: { fontStyle: z.value } })),
+        ...SLANTS.map((z) => ({
+          value: z.value,
+          label: z.label,
+          checked: z.value === current,
+          style: { fontStyle: z.value },
+        })),
       ]}
       // Normal is the editor's own italic; an oblique one is the text's own style, so the italic mark goes (they would mix)
       onChange={(z) => (z === 'italic' ? setTextLook(editor, 'fontStyle', null).setItalic().run() : setTextLook(editor, 'fontStyle', z).unsetItalic().run())}
@@ -346,14 +388,84 @@ function ItalicControl({ editor, italic, slant }: { editor: Editor; italic: bool
   )
 }
 
+/** "rgb(12, 34, 56)" (or rgba) as "#0c2238" */
+function rgbToHex(css: string): string | null {
+  const m = /rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(css)
+  return m ? `#${[m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, '0')).join('')}` : null
+}
+
+/** The colour the text at the selection really shows (its own, or the editor's): what the colour icons are drawn in */
+function shownTextColour(e: Editor): string {
+  try {
+    const node = e.view.domAtPos(e.state.selection.from).node
+    const el = node instanceof HTMLElement ? node : node.parentElement
+    return (el && rgbToHex(getComputedStyle(el).color)) || TEXT_COLOUR
+  } catch {
+    return TEXT_COLOUR
+  }
+}
+
 /** The values the paragraph dropdowns offer: padding and letter gap in px, row gap as a multiple of the text size, border width in px (0: none) */
 const PADDINGS = [0, 2, 4, 8, 12, 16, 24, 32, 48]
 const LETTER_GAPS = [-1, 0, 0.5, 1, 2, 3, 5, 10]
 const ROW_GAPS = [1, 1.2, 1.4, 1.5, 1.6, 1.8, 2, 2.5, 3]
 const BORDER_WIDTHS = [0, 1, 2, 3, 4, 6, 8]
+/** The word each value is tagged with in its list, as Bold's and Italic's have (value → word) */
+const PADDING_TAGS: Record<number, string> = {
+  0: 'None',
+  2: 'Tiny',
+  4: 'Small',
+  8: 'Medium',
+  12: 'Big',
+  16: 'Large',
+  24: 'Extra large',
+  32: 'Huge',
+  48: 'Giant',
+}
+const LETTER_GAP_TAGS: Record<number, string> = {
+  [-1]: 'Tight',
+  0: 'Normal',
+  0.5: 'Slight',
+  1: 'Small',
+  2: 'Medium',
+  3: 'Big',
+  5: 'Large',
+  10: 'Huge',
+}
+const ROW_GAP_TAGS: Record<number, string> = {
+  1: 'Tight',
+  1.2: 'Snug',
+  1.4: 'Small',
+  1.5: 'Normal',
+  1.6: 'Medium',
+  1.8: 'Big',
+  2: 'Large',
+  2.5: 'Extra large',
+  3: 'Huge',
+}
+const BORDER_WIDTH_TAGS: Record<number, string> = {
+  0: 'None',
+  1: 'Hairline',
+  2: 'Thin',
+  3: 'Medium',
+  4: 'Thick',
+  6: 'Heavy',
+  8: 'Extra heavy',
+}
 /** A border's colour until one is picked */
 const BORDER_COLOUR = '#9ca3af'
 const BORDER_LOOK = /^(\d+)px solid (.+)$/
+/** The structures the Ω box shows as examples: the first two (power and index); all four are in its popout's Basics */
+const BOX_STRUCTURES = STRUCTURE_KINDS.slice(0, 2)
+
+/** The sentence each structure's floating element says */
+const STRUCTURE_TIPS: Record<StructureKind, string> = {
+  power: 'Writes a base with a small raised power. Type the base, press Tab, then type the power.',
+  index: 'Writes a base with a small lowered index. Type the base, press Tab, then type the index.',
+  absolute: 'Writes a value between two bars, like |x|. Type the value between them.',
+  factorial: 'Writes a value followed by an exclamation mark, like n!. Type the value before it.',
+}
+
 /** What a paragraph has when it says nothing about its row gap */
 const NORMAL_ROW_GAP = 1.5
 
@@ -363,7 +475,9 @@ function Shown({ icon: Icon, children }: { icon: PlainIcon; children: ReactNode 
     <span className="relative flex">
       <Icon className="size-5 shrink-0" />
       {/* On a small pill, so it reads over the icon's lines */}
-      <span className="absolute -end-1.5 -bottom-1.5 rounded-full bg-fill-strong px-[3px] py-px text-[0.625rem] leading-none font-medium tabular-nums">{children}</span>
+      <span className="absolute -end-1.5 -bottom-1.5 rounded-full bg-fill-strong px-[3px] py-px text-[0.625rem] leading-none font-medium tabular-nums">
+        {children}
+      </span>
     </span>
   )
 }
@@ -383,44 +497,82 @@ function ParagraphLook({ editor, look }: { editor: Editor; look: Partial<Record<
   const field = { width: 'w-auto', bordered: false } as const
   return (
     <>
-      <DropdownField
-        {...field}
-        label="Padding"
-        display={<Shown icon={LuSquareDashed}>{padding}</Shown>}
-        options={PADDINGS.map((n) => ({ value: String(n), label: n ? `${n}px` : 'None', checked: n === padding }))}
-        onChange={(n) => setParagraphLook(editor, 'padding', Number(n) ? `${n}px` : null)}
-      />
-      <DropdownField
-        {...field}
-        label="Letter gap"
-        display={<Shown icon={LuMoveHorizontal}>{letterGap}</Shown>}
-        options={LETTER_GAPS.map((n) => ({ value: String(n), label: `${n}px`, checked: n === letterGap }))}
-        onChange={(n) => setParagraphLook(editor, 'letterSpacing', Number(n) ? `${Number(n).toFixed(1)}px` : null)}
-      />
-      <DropdownField
-        {...field}
-        label="Row gap"
-        display={<Shown icon={LuAlignVerticalSpaceBetween}>{rowGap}</Shown>}
-        options={ROW_GAPS.map((n) => ({ value: String(n), label: String(n), hint: n === NORMAL_ROW_GAP ? 'Normal' : undefined, checked: n === rowGap }))}
-        onChange={(n) => setParagraphLook(editor, 'lineHeight', Number(n) === NORMAL_ROW_GAP ? null : Number(n).toFixed(1))}
-      />
-      <DropdownField
-        {...field}
-        label="Border"
-        display={<Shown icon={LuFrame}>{borderWidth || '–'}</Shown>}
-        options={[
-          { value: 'heading:width', label: 'Width', heading: true },
-          ...BORDER_WIDTHS.map((n) => ({ value: `width:${n}`, label: n ? `${n}px` : 'None', checked: n === borderWidth })),
-        ]}
-        onChange={(v) => setBorder(Number(v.slice(6)), borderColour)}
-        // The colour: the picker, its own squares under the palette the only ones. A colour picked on a paragraph with no border gives it a 1px one, so the pick shows
-        extra={
-          <div className="border-t border-line p-2">
-            <p className="pb-1 text-small text-fg-subtle">Colour</p>
-            <ColourPicker key={borderColour} value={borderColour} onLive={(hex) => setBorder(Math.max(borderWidth, 1), hex)} onCommit={(hex) => setBorder(Math.max(borderWidth, 1), hex)} />
-          </div>
-        }
-      />
+      <Tip name="Padding" text="Sets the space between the paragraph’s text and its edge.">
+        <DropdownField
+          {...field}
+          label="Padding"
+          display={<Shown icon={LuSquareDashed}>{padding}</Shown>}
+          options={PADDINGS.map((n) => ({
+            value: String(n),
+            label: n ? `${n}px` : 'None',
+            hint: PADDING_TAGS[n],
+            hintBig: true,
+            checked: n === padding,
+          }))}
+          onChange={(n) => setParagraphLook(editor, 'padding', Number(n) ? `${n}px` : null)}
+        />
+      </Tip>
+      <Tip name="Letter gap" text="Sets the space between each letter of the paragraph.">
+        <DropdownField
+          {...field}
+          label="Letter gap"
+          display={<Shown icon={LuMoveHorizontal}>{letterGap}</Shown>}
+          options={LETTER_GAPS.map((n) => ({
+            value: String(n),
+            // The tag is the label, set with the letter gap it stands for; the number is the small hint
+            label: LETTER_GAP_TAGS[n],
+            hint: `${n}px`,
+            style: { letterSpacing: `${n}px` },
+            checked: n === letterGap,
+          }))}
+          onChange={(n) => setParagraphLook(editor, 'letterSpacing', Number(n) ? `${Number(n).toFixed(1)}px` : null)}
+        />
+      </Tip>
+      <Tip name="Row gap" text="Sets the space between the lines of the paragraph.">
+        <DropdownField
+          {...field}
+          label="Row gap"
+          display={<Shown icon={LuAlignVerticalSpaceBetween}>{rowGap}</Shown>}
+          options={ROW_GAPS.map((n) => ({
+            value: String(n),
+            label: String(n),
+            hint: ROW_GAP_TAGS[n],
+            hintBig: true,
+            checked: n === rowGap,
+          }))}
+          onChange={(n) => setParagraphLook(editor, 'lineHeight', Number(n) === NORMAL_ROW_GAP ? null : Number(n).toFixed(1))}
+        />
+      </Tip>
+      <Tip name="Border" text="Draws a line round the paragraph, in the width and colour you pick.">
+        <DropdownField
+          {...field}
+          label="Border"
+          display={<Shown icon={LuFrame}>{borderWidth || '–'}</Shown>}
+          options={[
+            { value: 'heading:width', label: 'Width', heading: true },
+            ...BORDER_WIDTHS.map((n) => ({
+              value: `width:${n}`,
+              label: n ? `${n}px` : 'None',
+              hint: BORDER_WIDTH_TAGS[n],
+              hintBig: true,
+              checked: n === borderWidth,
+            })),
+          ]}
+          onChange={(v) => setBorder(Number(v.slice(6)), borderColour)}
+          // The colour: the picker, its own squares under the palette the only ones. A colour picked on a paragraph with no border gives it a 1px one, so the pick shows
+          extra={
+            <div className="border-t border-line p-2">
+              <p className="pb-1 text-small text-fg-subtle">Colour</p>
+              <ColourPicker
+                key={borderColour}
+                value={borderColour}
+                onLive={(hex) => setBorder(Math.max(borderWidth, 1), hex)}
+                onCommit={(hex) => setBorder(Math.max(borderWidth, 1), hex)}
+              />
+            </div>
+          }
+        />
+      </Tip>
     </>
   )
 }
@@ -439,17 +591,29 @@ function UnderlineControl({ editor, on, kind, colour }: { editor: Editor; on: bo
       value: `kind:${k}`,
       label: k[0].toUpperCase() + k.slice(1),
       checked: on && kind === k,
-      style: { textDecorationLine: 'underline', textDecorationStyle: k as 'solid', textDecorationThickness: '2px', textUnderlineOffset: '4px' },
+      style: {
+        textDecorationLine: 'underline',
+        textDecorationStyle: k as 'solid',
+        textDecorationThickness: '2px',
+        textUnderlineOffset: '4px',
+      },
     })),
     { value: 'heading:colour', label: 'Colour', heading: true },
     // Any other colour: the picker under the list (its squares are the only ones)
-    { value: 'colour:', label: 'Same as the text', checked: on && colour === '' },
+    {
+      value: 'colour:',
+      label: 'Same as the text',
+      checked: on && colour === '',
+    },
   ]
   // A pick sets that part of the underline (and underlines the selection if it is not yet), keeping the other: solid and the text's colour are left unwritten
   const pick = (value: string) => {
     const [part, picked] = [value.slice(0, value.indexOf(':')), value.slice(value.indexOf(':') + 1)]
     if (part === 'none') return void editor.chain().focus().unsetUnderline().run()
-    const next = { textDecorationColor: colour || null, textDecorationStyle: kind === 'solid' ? null : kind }
+    const next = {
+      textDecorationColor: colour || null,
+      textDecorationStyle: kind === 'solid' ? null : kind,
+    }
     if (part === 'kind') next.textDecorationStyle = picked === 'solid' ? null : picked
     else next.textDecorationColor = picked || null
     editor.chain().focus().setMark('underline', next).run()
@@ -457,7 +621,12 @@ function UnderlineControl({ editor, on, kind, colour }: { editor: Editor; on: bo
   // Any colour: the picker the colour buttons have, at the end of the list
   const setColour = (hex: string, final: boolean) => {
     const chain = final ? editor.chain().focus() : editor.chain()
-    chain.setMark('underline', { textDecorationColor: hex, textDecorationStyle: kind === 'solid' ? null : kind }).run()
+    chain
+      .setMark('underline', {
+        textDecorationColor: hex,
+        textDecorationStyle: kind === 'solid' ? null : kind,
+      })
+      .run()
   }
   return (
     <DropdownField
@@ -473,7 +642,6 @@ function UnderlineControl({ editor, on, kind, colour }: { editor: Editor; on: bo
       }
     >
       <IconButton
-        icon={LuUnderline}
         label="Underline"
         size="sm"
         variant={on ? 'selected' : 'ghost'}
@@ -481,7 +649,10 @@ function UnderlineControl({ editor, on, kind, colour }: { editor: Editor; on: bo
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => editor.chain().focus().toggleUnderline().run()}
         className="ui-dropfield-icon [&>svg]:size-5!"
-      />
+      >
+        {/* The icon is drawn in the underline's own colour while the text has one */}
+        <LuUnderline style={colour ? { color: colour } : undefined} />
+      </IconButton>
     </DropdownField>
   )
 }
@@ -491,7 +662,7 @@ function UnderlineControl({ editor, on, kind, colour }: { editor: Editor; on: bo
  * the text (font and size, as the map's text sidebar has them, bold, italic, underline with a dropdown of its kind and colour, the text colour as a coloured A and the background colour), lists, the alignments one next to the other,
  * next to the alignments with no space: Media (an image icon and its name; it opens the image, table and divider choice) and Link (a link icon and its name) together, with no gap and a line before them.
  */
-export default function ArticleToolbar({ editor, onUploadImage, onUploadError, secondRow, onSecondRowChange }: Props) {
+export default function ArticleToolbar({ editor, onUploadImage, onUploadError, secondRow, onSecondRowChange, onClose }: Props) {
   const state = useEditorState({
     editor,
     selector: ({ editor: e }) => {
@@ -512,6 +683,7 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
         font: style.fontFamily ?? '',
         size: style.fontSize ?? '',
         colour: style.color ?? TEXT_COLOUR,
+        shownColour: style.color ?? shownTextColour(e),
         colourSet: style.color ?? '',
         background: style.backgroundColor ?? BACKGROUND_COLOUR,
         backgroundSet: style.backgroundColor ?? '',
@@ -567,20 +739,27 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
 
   const colours = (
     <Group>
-      <ColourField
-        label="Text colour"
-        letter="A"
-        value={state.colour}
-        onLive={(hex) => editor.chain().setColor(hex).run()}
-        onCommit={(hex) => editor.chain().focus().setColor(hex).run()}
-      />
-      <ColourField
-        label="Background colour"
-        icon={LuHighlighter}
-        value={state.background}
-        onLive={(hex) => editor.chain().setBackgroundColor(hex).run()}
-        onCommit={(hex) => editor.chain().focus().setBackgroundColor(hex).run()}
-      />
+      <Tip name="Text colour" text={level >= 2 ? 'Changes the colour of the selected text.' : undefined}>
+        <ColourField
+          label="Text colour"
+          letter="A"
+          value={state.colour}
+          shown={state.shownColour}
+          onLive={(hex) => editor.chain().setColor(hex).run()}
+          onCommit={(hex) => editor.chain().focus().setColor(hex).run()}
+        />
+      </Tip>
+      <Tip name="Background colour" text={level >= 2 ? 'Paints a colour behind the selected text, like a highlighter.' : undefined}>
+        <ColourField
+          label="Background colour"
+          icon={LuHighlighter}
+          value={state.background}
+          // No background on the text: no colour bar under the icon
+          shown={state.backgroundSet || 'transparent'}
+          onLive={(hex) => editor.chain().setBackgroundColor(hex).run()}
+          onCommit={(hex) => editor.chain().focus().setBackgroundColor(hex).run()}
+        />
+      </Tip>
     </Group>
   )
   // The Ω popout: Basics (the structures, superscript, subscript), SVGs, Mathematical, Others
@@ -600,15 +779,9 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
       // Every icon one size, 1.25rem: the buttons' own (a button sets its size from its text) and the colour fields'
       className="relative flex flex-col gap-base rounded-(--card-radius) border border-line bg-surface p-base shadow-sm [--btn-icon-size:1.25rem] [&_button]:[--btn-icon-size:1.25rem]"
     >
-      {/* Floats on the bar's right edge, its centre on it, level with the first row: it shows and hides the second row */}
-      <div className="absolute end-0 top-5 z-20 translate-x-1/2 -translate-y-1/2 rounded-full border border-line bg-surface shadow-md">
-        <ToolButton
-          icon={LuEllipsis}
-          label={secondRow ? 'Hide the second row' : 'Show the second row'}
-          active={secondRow}
-          bigIcon
-          onClick={() => onSecondRowChange(!secondRow)}
-        />
+      {/* The X: its centre on the bar's top right corner; it hides the whole bar */}
+      <div className="absolute end-0 top-0 z-20 translate-x-1/2 -translate-y-1/2 border border-line bg-surface shadow-md">
+        <ToolButton icon={LuX} label="Close the edit bar" onClick={onClose} />
       </div>
       {/* The first row: it scrolls sideways when it is too wide, until the bar is narrow enough to wrap it (level 3) */}
       <div className={rowClass}>
@@ -618,11 +791,21 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
         </Group>
         <Separator />
         <Group>
-          <FontSelect editor={editor} font={state.font} />
-          <SizeControl editor={editor} size={parseFloat(state.size) || NORMAL_SIZE} />
-          <BoldControl editor={editor} bold={state.bold} weight={state.weight} />
-          <ItalicControl editor={editor} italic={state.italic} slant={state.slant} />
-          <UnderlineControl editor={editor} on={state.underline} kind={state.underlineKind} colour={state.underlineColour} />
+          <Tip name="Font">
+            <FontSelect editor={editor} font={state.font} />
+          </Tip>
+          <Tip name="Font size">
+            <SizeControl editor={editor} size={parseFloat(state.size) || NORMAL_SIZE} />
+          </Tip>
+          <Tip name="Bold">
+            <BoldControl editor={editor} bold={state.bold} weight={state.weight} />
+          </Tip>
+          <Tip name="Italic">
+            <ItalicControl editor={editor} italic={state.italic} slant={state.slant} />
+          </Tip>
+          <Tip name="Underline">
+            <UnderlineControl editor={editor} on={state.underline} kind={state.underlineKind} colour={state.underlineColour} />
+          </Tip>
         </Group>
         {/* The colours, until the bar is narrow (level 2): then they are in the second row */}
         {level < 2 && (
@@ -633,27 +816,33 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
         )}
         <Separator />
         <Group>
-          <Dropdown
-            label="List"
-            triggerIcon={LISTS.find((l) => l.value === state.list)?.icon ?? LuList}
-            className="[&>svg]:size-5!"
-            value={state.list}
-            options={LISTS}
-            onChange={(list) => {
-              if (list !== 'none') TOGGLE_LIST[list](editor)
-              else if (state.list !== 'none') TOGGLE_LIST[state.list](editor)
-            }}
-          />
+          <Tip name="List">
+            <Dropdown
+              label="List"
+            center
+              triggerIcon={LISTS.find((l) => l.value === state.list)?.icon ?? LuList}
+              className="[&>svg]:size-5!"
+              value={state.list}
+              options={LISTS}
+              onChange={(list) => {
+                if (list !== 'none') TOGGLE_LIST[list](editor)
+                else if (state.list !== 'none') TOGGLE_LIST[state.list](editor)
+              }}
+            />
+          </Tip>
           {/* The alignments one next to the other, the current one pressed; one dropdown on a narrower bar (level 1) */}
           {level >= 1 ? (
-            <Dropdown
-              label="Align"
-              triggerIcon={ALIGNS.find((a) => a.value === state.align)?.icon ?? LuAlignLeft}
-              className="[&>svg]:size-5!"
-              value={state.align}
-              options={ALIGNS}
-              onChange={(align) => editor.chain().focus().setTextAlign(align).run()}
-            />
+            <Tip name="Align">
+              <Dropdown
+                label="Align"
+              center
+                triggerIcon={ALIGNS.find((a) => a.value === state.align)?.icon ?? LuAlignLeft}
+                className="[&>svg]:size-5!"
+                value={state.align}
+                options={ALIGNS}
+                onChange={(align) => editor.chain().focus().setTextAlign(align).run()}
+              />
+            </Tip>
           ) : (
             ALIGNS.map((a) => (
               <ToolButton
@@ -666,9 +855,9 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
             ))
           )}
         </Group>
-        {/* Next to the alignments with no space: the row's gap is taken back */}
-        <div className="-ms-base flex shrink-0 items-center">
-          <Separator />
+        {/* A line, then Media and Link together with no space between them; the row's gap is on both sides of the line */}
+        <Separator />
+        <div className="flex shrink-0 items-center">
           <BarPopover
             label="Insert"
             open={inserting}
@@ -703,6 +892,7 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
               <TextButton
                 icon={LuLink}
                 label="Link"
+                big
                 active={state.link}
                 onClick={() => {
                   setHref(state.href)
@@ -750,57 +940,119 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
             }}
           />
         </div>
+        {/* More: shows and hides the second row. Text like Media and Link's, but muted (not white), a line before it like the row's others, the
+            arrow at its right: it turns to point right while the second row is open */}
+        <div className="ms-auto flex shrink-0 items-center gap-base">
+          <Separator />
+          <HoverInfo title={secondRow ? 'Hide the second row' : 'Show the second row'} side="top" delay={350}>
+            <Button
+              variant="ghost"
+              size="sm"
+              plain
+              aria-expanded={secondRow}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => onSecondRowChange(!secondRow)}
+              className="font-normal! [--btn-font-size:1rem]! [--btn-hover-text:var(--fg)]! [--btn-text:var(--fg-muted)]!"
+            >
+              More
+              <LuChevronDown
+                aria-hidden
+                className={`ms-1 size-5 transition-transform duration-200 motion-reduce:transition-none ${secondRow ? '-rotate-90' : ''}`}
+              />
+            </Button>
+          </HoverInfo>
+        </div>
       </div>
       {/* The second row: the colours when the bar is narrow (shown even with the ⋯ closed), then, while the ⋯ has it open, Code at the left,
           the paragraph's dropdowns, Section and the Ω box at the right */}
       {(secondRow || level >= 2) && (
-        <div className="flex flex-wrap items-center gap-base">
+        <div className="flex flex-wrap items-center gap-lg">
           {level >= 2 && colours}
           {level >= 2 && secondRow && <Separator />}
           {secondRow && (
             <>
-              {/* Code, with its name like Section's, at the left */}
-              <TextButton icon={LuCode} label="Code" big filled active={state.code} onClick={() => editor.chain().focus().toggleCode().run()} />
+              {/* Add section, then Code (both with their background, no line between them), at the left */}
+              <TextButton
+                tip="Adds a new section at the end of the article: a heading and an empty paragraph."
+                icon={LuPlus}
+                label="Add section"
+                big
+                filled
+                onClick={() => addSection(editor)}
+              />
+              <TextButton
+                tip="Shows the selected text as code, in a fixed-width font with a background."
+                icon={LuCode}
+                label="Code"
+                big
+                filled
+                active={state.code}
+                onClick={() => editor.chain().focus().toggleCode().run()}
+              />
               <Separator />
-              <Group>
+              <Group className="gap-lg!">
                 <ParagraphLook editor={editor} look={state.look} />
               </Group>
-              {/* Section, and the Ω box at the right end of the row */}
-              <Group className="ms-auto">
+              {/* The Ω box at the right end of the row */}
+              <Group className="ms-auto gap-lg!">
                 <Separator />
-                <TextButton icon={LuPlus} label="Section" big onClick={() => addSection(editor)} />
                 {level >= 1 ? (
                   // A narrow bar: no examples, only the Ω that opens them all
                   omegaPopout(
-                    <IconButton
-                      icon={LuOmega}
-                      label="Structures, shapes, maths and other characters"
-                      size="sm"
-                      variant={more ? 'selected' : 'ghost'}
-                      aria-expanded={more}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => setMore((open) => !open)}
-                      className="[&>svg]:size-5!"
-                    />,
-                  )
-                ) : (
-                  // The examples (Word-like structures with places to fill), a line, and the square arrow that opens the popout
-                  <div role="group" aria-label="Maths structures" className="flex items-center rounded-(--field-radius) border border-line-strong">
-                    {STRUCTURE_KINDS.map((kind) => (
-                      <IconButton key={kind} label={STRUCTURES[kind].label} onMouseDown={(e) => e.preventDefault()} onClick={() => insertStructure(editor, kind)}>
-                        <StructureIcon kind={kind} />
-                      </IconButton>
-                    ))}
-                    <span aria-hidden className="w-px self-stretch bg-line-strong" />
-                    {omegaPopout(
+                    <HoverInfo
+                      title="Characters"
+                      text="Opens the structures, shapes, maths symbols and other characters to put in the text."
+                      side="top"
+                      delay={350}
+                    >
                       <IconButton
-                        icon={LuChevronDown}
-                        label="More structures, shapes, maths and other characters"
+                        icon={LuOmega}
+                        label="Structures, shapes, maths and other characters"
+                        size="sm"
                         variant={more ? 'selected' : 'ghost'}
                         aria-expanded={more}
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => setMore((open) => !open)}
-                      />,
+                        className="[&>svg]:size-5!"
+                      />
+                    </HoverInfo>,
+                  )
+                ) : (
+                  // The examples (Word-like structures with places to fill), a line, and the square arrow that opens the popout
+                  <div role="group" aria-label="Maths structures" className="flex items-center rounded-(--field-radius) border border-line-strong">
+                    {BOX_STRUCTURES.map((kind) => (
+                      <HoverInfo key={kind} title={STRUCTURES[kind].label} text={STRUCTURE_TIPS[kind]} side="top" delay={350}>
+                        <IconButton label={STRUCTURES[kind].label} onMouseDown={(e) => e.preventDefault()} onClick={() => insertStructure(editor, kind)}>
+                          <StructureIcon kind={kind} />
+                        </IconButton>
+                      </HoverInfo>
+                    ))}
+                    {/* The first character of each other group (SVGs, Mathematical, Others) */}
+                    {GROUP_EXAMPLES.map((char) => (
+                      <HoverInfo key={char} title={`Insert ${char}`} text={`Puts ${char} in the text where the cursor is.`} side="top" delay={350}>
+                        <IconButton
+                          label={`Insert ${char}`}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => editor.chain().focus().insertContent(char).run()}
+                        >
+                          <span aria-hidden className="text-[1.1rem] leading-none">
+                            {char}
+                          </span>
+                        </IconButton>
+                      </HoverInfo>
+                    ))}
+                    <span aria-hidden className="w-px self-stretch bg-line-strong" />
+                    {omegaPopout(
+                      <HoverInfo title="More characters" text="Opens all the structures, shapes, maths symbols and other characters." side="top" delay={350}>
+                        <IconButton
+                          icon={LuChevronDown}
+                          label="More structures, shapes, maths and other characters"
+                          variant={more ? 'selected' : 'ghost'}
+                          aria-expanded={more}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => setMore((open) => !open)}
+                        />
+                      </HoverInfo>,
                     )}
                   </div>
                 )}

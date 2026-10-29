@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyRule, occurrences, removeRule, ruleRanges, rulesFrom } from './autolink'
+import { applyRule, longestFirst, occurrences, removeRule, ruleRanges, rulesFrom } from './autolink'
 import { linkRanges } from './docLinks'
 import type { ArticleLink } from './linkHref'
 import { docOf, p, stateOf } from './testing'
@@ -36,7 +36,7 @@ describe('applyRule / rulesFrom / removeRule', () => {
     const state = stateOf(p('Athens is old. Athens is big.'))
     const tr = state.tr
     expect(applyRule(tr, rule)).toBe(2)
-    expect(rulesFrom(tr.doc)).toEqual([{ id: 'r1', text: 'Athens', link: ATHENS, count: 2 }])
+    expect(rulesFrom(tr.doc)).toEqual([{ id: 'r1', phrases: ['Athens'], link: ATHENS, count: 2 }])
     expect(ruleRanges(tr.doc, 'r1').map((r) => r.text)).toEqual(['Athens', 'Athens'])
     // Again: nothing more to do
     expect(applyRule(tr, rule)).toBe(0)
@@ -46,6 +46,18 @@ describe('applyRule / rulesFrom / removeRule', () => {
     const tr = state.tr
     expect(applyRule(tr, rule, { within: [{ from: 8, to: 14 }], skipAt: 14 })).toBe(0)
     expect(applyRule(tr, rule, { within: [{ from: 8, to: 14 }] })).toBe(1)
+  })
+  it('a rule with more phrases: one id, all the phrases, the longest linked first', () => {
+    const state = stateOf(p('The old town and the town, and Athens.'))
+    const tr = state.tr
+    for (const text of longestFirst(['town', 'old town', 'Athens'])) applyRule(tr, { id: 'r1', text, link: ATHENS })
+    const [rule] = rulesFrom(tr.doc)
+    expect(rulesFrom(tr.doc)).toHaveLength(1)
+    expect(rule.phrases.sort()).toEqual(['Athens', 'old town', 'town'])
+    expect(rule.count).toBe(3)
+    expect(ruleRanges(tr.doc, 'r1').map((r) => r.text)).toEqual(['old town', 'town', 'Athens'])
+    // Linking again changes nothing
+    for (const text of ['town', 'old town', 'Athens']) expect(applyRule(tr, { id: 'r1', text, link: ATHENS })).toBe(0)
   })
   it('a changed rule replaces its links', () => {
     const state = stateOf(p('Athens'))

@@ -46,3 +46,6 @@ export const SYMBOL_GROUPS: { title: 'SVGs' | 'Mathematical' | 'Others'; big?: b
     sections: ['Marks', 'Quotes and dashes', 'Currency', 'Latin letters', 'Brackets and marks'].map(section),
   },
 ]
+
+/** The first character of each group after Basics (SVGs, Mathematical, Others): shown with the structures in the toolbar's Ω box, as examples of each */
+export const GROUP_EXAMPLES: string[] = SYMBOL_GROUPS.map((group) => group.sections[0].symbols.split(' ')[0])
