@@ -45,6 +45,10 @@ look is not a `.ui-btn`, so the button settings don't apply to it.
 
 **ButtonLook** is a button's look on something you can't press: the names on the Dashboard's cards (Stone, like the Recent History button).
 
+**sortBy2** is the "Sort by" type of button (the Dashboard rows' `ExtendMenu variant="ghost"`) **without the white corner elements and without
+the arrow**: a Shade button with only its text and no background until hovered (`<Button variant="ghost" size="sm" plain>Cancel</Button>`).
+Say "sortBy2" to ask for one.
+
 **ExtendMenu** (a button that grows into its menu): open, it is dark grey (`--color-shade`). A `create` one (Venom split)
 turns its + into an ✕ and its label into "None" (`openLabel`); its two pieces then become Shade buttons. **The hover of
 Shade, of Sort by and of that open ✕ / None is one thing**: Shade's `--btn-hover-bg` (`--color-shade-hover`, a light

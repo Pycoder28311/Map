@@ -31,6 +31,46 @@ export function withRole(allowed: Allowed[], id: string, role: AllowedRole | nul
   return allowed.some((a) => a.id === id) ? allowed.map((a) => (a.id === id ? { id, role } : a)) : [...rest, { id, role }]
 }
 
+/** What a person is given while the list is being edited, before Apply: chosen or not, and the two switches */
+export type Permission = { on: boolean; read: boolean; edit: boolean }
+
+/** A person's permission as the saved list has it */
+export function permissionOf(allowed: Allowed[], id: string): Permission {
+  const a = allowed.find((x) => x.id === id)
+  return a ? { on: true, read: true, edit: a.role === 'editor' } : { on: false, read: false, edit: false }
+}
+
+/** The switches' rules: editing needs reading (editing on turns reading on, reading off turns editing off), choosing a person starts with reading */
+export function withSwitch(p: Permission, change: Partial<Permission>): Permission {
+  const next = { ...p, ...change }
+  if (change.on === true && !p.on && !next.read && !next.edit) next.read = true
+  if (change.on === false) return { on: false, read: false, edit: false }
+  if (change.edit === true) next.read = true
+  if (change.read === false) next.edit = false
+  return next
+}
+
+/** The saved list after the edits: a chosen person with a switch on is a reader (reading) or an editor (editing); the others are out */
+export function allowedFrom(allowed: Allowed[], edits: Record<string, Permission>): Allowed[] {
+  const ids = [...new Set([...allowed.map((a) => a.id), ...Object.keys(edits)])]
+  const out: Allowed[] = []
+  for (const id of ids) {
+    const p = edits[id] ?? permissionOf(allowed, id)
+    if (p.on && (p.read || p.edit)) out.push({ id, role: p.edit ? 'editor' : 'reader' })
+  }
+  return out
+}
+
+/** What changes if the edits are applied: who gets access, whose access changes, who loses it */
+export function changesOf(allowed: Allowed[], next: Allowed[]) {
+  const was = (id: string) => allowed.find((a) => a.id === id)
+  return {
+    added: next.filter((n) => !was(n.id)),
+    changed: next.filter((n) => was(n.id) && was(n.id)!.role !== n.role),
+    removed: allowed.filter((a) => !next.some((n) => n.id === a.id)),
+  }
+}
+
 export const DEFAULT_PRIVACY: ArticlePrivacy = { visibility: 'private', allowed: [] }
 
 const keyOf = (articleId: string) => `map:privacy:${articleId}`
