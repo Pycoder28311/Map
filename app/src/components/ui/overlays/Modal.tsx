@@ -41,6 +41,8 @@ type Props = {
   onZoom?: () => void
   /** No padding around the content (it draws its own), the header stays */
   flush?: boolean
+  /** Buttons in the header, at its right, before the zoom and close buttons */
+  actions?: ReactNode
   /** What a click on the backdrop does instead of `onClose` (a draft decides: create, discard or ask). Esc and the X still call `onClose` */
   onOutside?: () => void
 }
@@ -57,7 +59,7 @@ type Props = {
  *
  * `zoomable` + `pageHref` (or `onZoom`) add a button left of the X that closes it and opens the same thing as a page.
  */
-export default function Modal({ open, onClose, title, children, footer, size = 'md', bare = false, className = '', zoomable = false, pageHref, onZoom, flush = false, onOutside }: Props) {
+export default function Modal({ open, onClose, title, children, footer, size = 'md', bare = false, className = '', zoomable = false, pageHref, onZoom, flush = false, actions, onOutside }: Props) {
   const navigate = useNavigate()
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
@@ -111,6 +113,7 @@ export default function Modal({ open, onClose, title, children, footer, size = '
             <h2 id={titleId} className="truncate text-body font-medium">
               {title}
             </h2>
+            {actions && <div className="ml-auto flex items-center gap-(--btn-gap)">{actions}</div>}
             {zoomable && (pageHref || onZoom) ? (
               <>
                 <IconButton
@@ -121,12 +124,12 @@ export default function Modal({ open, onClose, title, children, footer, size = '
                     if (onZoom) onZoom()
                     else if (pageHref) navigate(pageHref)
                   }}
-                  className="ml-auto"
+                  className={actions ? '' : 'ml-auto'}
                 />
                 <IconButton icon={LuX} label="Close" onClick={onClose} />
               </>
             ) : (
-              <IconButton icon={LuX} label="Close" onClick={onClose} className="ml-auto" />
+              <IconButton icon={LuX} label="Close" onClick={onClose} className={actions ? '' : 'ml-auto'} />
             )}
           </header>
           )}

@@ -4,7 +4,6 @@ import { LuCornerDownRight, LuExternalLink, LuFileSymlink, LuMessageSquareText, 
 import Button from '../../../components/ui/buttons/Button'
 import type { PlainIcon } from '../../../components/ui/icons/IconSlot'
 import BarPopover from '../../../components/ui/overlays/BarPopover'
-import Modal from '../../../components/ui/overlays/Modal'
 import { TextButton } from '../ArticleToolbar'
 import AutolinkPanel from './AutolinkPanel'
 import FollowPicker from './FollowPicker'
@@ -193,10 +192,8 @@ export default function LinkRow({ editor, self, expanded, open, onOpenChange }: 
           tip="Links the words you choose everywhere they are written in the article."
           onClick={() => toggle('auto')}
         />
-        {/* Its own modal (the shared one, with no zoom) */}
-        <Modal open={auto} onClose={close} title="Autolinker" size="xl">
-          <AutolinkPanel editor={editor} self={self} startText={state.words} onClose={close} />
-        </Modal>
+        {/* Its own modal (AutolinkPanel: the shared one, with no zoom) */}
+        {auto && <AutolinkPanel editor={editor} self={self} startText={state.words} onClose={close} />}
       </div>
       {marking && (
         <div

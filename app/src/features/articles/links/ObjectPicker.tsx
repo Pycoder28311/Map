@@ -6,6 +6,7 @@ import SearchInput from '../../../components/ui/fields/SearchInput'
 import { resourceByPanelType } from '../../../resources/registry'
 import type { ObjectType } from './linkHref'
 import type { ObjectHit } from './objectSearch'
+import { PICK_ROW } from './pickRow'
 import { pickerKinds, useObjectSearch } from './useObjectSearch'
 
 type Props = {
@@ -79,7 +80,7 @@ export default function ObjectPicker({ onPick, only, exclude, chosen, listHeight
               size="sm"
               plain
               icon={resource?.ui.icon}
-              className="w-full shrink-0 justify-start"
+              className={PICK_ROW}
               onClick={() => onPick(hit)}
             >
               <span className="min-w-0 flex-1 truncate text-start">

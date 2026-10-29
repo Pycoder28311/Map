@@ -4,9 +4,14 @@ import Button from '../../../components/ui/buttons/Button'
 import SearchInput from '../../../components/ui/fields/SearchInput'
 import TextField from '../../../components/ui/fields/TextField'
 import { usePeople } from '../../people/mockPeople'
-import { FollowButton, PersonAvatar } from '../../people/PersonCard'
 import { FormActions } from './LinkForms'
+import { PICK_ROW } from './pickRow'
 import { isWebUrl, LIMITS, type ArticleLink } from './linkHref'
+
+const TABS = [
+  { id: 'people', label: 'Followers', icon: LuUsers },
+  { id: 'project', label: 'Project URL', icon: LuFolderOpen },
+] as const
 
 type Props = {
   /** A person or a project picked */
@@ -33,13 +38,23 @@ export default function FollowPicker({ onPick, chosen, onRemove, autoFocus = tru
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <div role="tablist" aria-label="Follow" className="flex shrink-0 flex-nowrap gap-0.5">
-        <Button role="tab" aria-selected={tab === 'people'} variant={tab === 'people' ? 'selected' : 'ghost'} size="sm" icon={LuUsers} onClick={() => setTab('people')}>
-          Followers
-        </Button>
-        <Button role="tab" aria-selected={tab === 'project'} variant={tab === 'project' ? 'selected' : 'ghost'} size="sm" icon={LuFolderOpen} onClick={() => setTab('project')}>
-          Project URL
-        </Button>
+      {/* Two tabs, as the map's Line and Border sidebars have: the picked one is half as wide again, the width gliding (PointToolButton.tsx) */}
+      <div role="tablist" aria-label="Follow" className="flex gap-1">
+        {TABS.map((t) => (
+          <Button
+            key={t.id}
+            role="tab"
+            aria-selected={tab === t.id}
+            variant={tab === t.id ? 'selected' : 'ghost'}
+            size="sm"
+            plain
+            icon={t.icon}
+            className={`min-w-0 basis-0 justify-center whitespace-nowrap transition-[flex-grow,background-color,color,padding] duration-200 motion-reduce:transition-none ${tab === t.id ? 'grow-3' : 'grow-2'}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </Button>
+        ))}
       </div>
       {tab === 'people' ? (
         <>
@@ -48,24 +63,21 @@ export default function FollowPicker({ onPick, chosen, onRemove, autoFocus = tru
             {people.map((person) => {
               const picked = chosen?.kind === 'person' && chosen.personId === person.id
               return (
-                <div key={person.id} className="flex items-center gap-1">
-                  <Button
-                    role="option"
-                    aria-selected={picked}
-                    variant={picked ? 'selected' : 'ghost'}
-                    size="sm"
-                    plain
-                    className="min-w-0 flex-1 justify-start"
-                    onClick={() => onPick({ kind: 'person', personId: person.id })}
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <PersonAvatar person={person} size="size-6" />
-                      <span className="truncate">{person.name}</span>
-                      <span className="truncate text-fg-subtle">@{person.handle}</span>
-                    </span>
-                  </Button>
-                  <FollowButton person={person} />
-                </div>
+                <Button
+                  key={person.id}
+                  role="option"
+                  aria-selected={picked}
+                  variant={picked ? 'selected' : 'ghost'}
+                  size="sm"
+                  plain
+                  className={PICK_ROW}
+                  onClick={() => onPick({ kind: 'person', personId: person.id })}
+                >
+                  {/* "Follow:" is only a word before the name, not a button */}
+                  <span className="min-w-0 truncate text-start">
+                    <span className="font-normal text-fg-subtle">Follow:</span> {person.name}
+                  </span>
+                </Button>
               )
             })}
             <p className="px-2 py-1 text-small text-fg-subtle" aria-live="polite">

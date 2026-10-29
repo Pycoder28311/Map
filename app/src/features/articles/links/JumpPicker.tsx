@@ -4,6 +4,7 @@ import { LuBookmark, LuHash, LuMapPinPlus } from 'react-icons/lu'
 import Button from '../../../components/ui/buttons/Button'
 import SearchInput from '../../../components/ui/fields/SearchInput'
 import { fold } from '../../search/search'
+import { PICK_ROW } from './pickRow'
 import { jumpTargets, resolveJump, type JumpTarget } from './jumpTargets'
 
 /** The mark a target has, in the list and in the text's left margin (JumpGutter) */
@@ -48,7 +49,7 @@ export default function JumpPicker({ editor, onPick, onMarkPlace, chosen, onRemo
                 size="sm"
                 plain
                 icon={targetIcon(target)}
-                className="w-full justify-start"
+                className={PICK_ROW}
                 onClick={() => onPick(target.to)}
               >
                 <span className="min-w-0 flex-1 truncate text-start">{target.text || <span className="text-fg-subtle">Untitled section</span>}</span>

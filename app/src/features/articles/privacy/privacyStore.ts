@@ -3,10 +3,32 @@
 import { useSyncExternalStore } from 'react'
 
 export type Visibility = 'private' | 'public'
+/** What an allowed person can do: only read the article, or edit it */
+export type AllowedRole = 'reader' | 'editor'
+export type Allowed = { id: string; role: AllowedRole }
 export type ArticlePrivacy = {
   visibility: Visibility
-  /** People (ids) who may see it while it is private */
-  allowed: string[]
+  /** People who may see it while it is private, each with what they can do */
+  allowed: Allowed[]
+}
+
+/** What was kept as the allowed people: the old list of ids (all readers) or the list of people with their role; anything else is dropped */
+export function normalizeAllowed(raw: unknown): Allowed[] {
+  if (!Array.isArray(raw)) return []
+  const out: Allowed[] = []
+  for (const x of raw) {
+    const entry: Allowed | null =
+      typeof x === 'string' ? { id: x, role: 'reader' } : x && typeof x === 'object' && typeof (x as Allowed).id === 'string' ? { id: (x as Allowed).id, role: (x as Allowed).role === 'editor' ? 'editor' : 'reader' } : null
+    if (entry && !out.some((o) => o.id === entry.id)) out.push(entry)
+  }
+  return out
+}
+
+/** The list with this person given a role (added if they were not there), or taken out (`role` null) */
+export function withRole(allowed: Allowed[], id: string, role: AllowedRole | null): Allowed[] {
+  const rest = allowed.filter((a) => a.id !== id)
+  if (!role) return rest
+  return allowed.some((a) => a.id === id) ? allowed.map((a) => (a.id === id ? { id, role } : a)) : [...rest, { id, role }]
 }
 
 export const DEFAULT_PRIVACY: ArticlePrivacy = { visibility: 'private', allowed: [] }
@@ -24,7 +46,7 @@ export function readPrivacy(articleId: string): ArticlePrivacy {
   try {
     const parsed = JSON.parse(localStorage.getItem(keyOf(articleId)) ?? 'null') as Partial<ArticlePrivacy> | null
     if (parsed && (parsed.visibility === 'private' || parsed.visibility === 'public')) {
-      privacy = { visibility: parsed.visibility, allowed: Array.isArray(parsed.allowed) ? parsed.allowed.filter((id) => typeof id === 'string') : [] }
+      privacy = { visibility: parsed.visibility, allowed: normalizeAllowed(parsed.allowed) }
     }
   } catch {
     // Not readable: the default
