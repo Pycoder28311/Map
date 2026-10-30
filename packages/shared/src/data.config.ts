@@ -3,6 +3,7 @@
 // makes its API calls and lists from it (app/src/resources/createResource.ts). How to change it: instructions/data-config.md.
 //
 // After changing a table here: `npx drizzle-kit generate` in backend/, read the SQL, apply it (--local, then --remote).
+import { autolinkers, EMPTY_AUTOLINKERS } from './autolinkers'
 import { field } from './fields'
 import { EMPTY_INFOBOX, infobox } from './infobox'
 import { defineTables, type FilterOf, type InputOf, type ItemOf, type ListItemOf, type UpdateOf } from './table'
@@ -53,7 +54,10 @@ export const DATA = defineTables({
     access: 'owner',
     share: true,
     order: ORDERED,
-    fields: { title: field.text(200), content: field.richText(), infobox: field.json(infobox, EMPTY_INFOBOX) },
+    fields: { title: field.text(200), content: field.richText(), infobox: field.json(infobox, EMPTY_INFOBOX), autolinkers: field.json(autolinkers, EMPTY_AUTOLINKERS) },
+    // The autolinkers are the editors' (the links they made are in the text) and big: not in lists, not in a reader's copy
+    omitFromLists: ['autolinkers'],
+    editorFields: ['autolinkers'],
     preview: 'content',
     requireOneOf: ['title', 'content'],
     link: PARENT,

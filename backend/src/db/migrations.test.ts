@@ -114,3 +114,15 @@ describe('0011 + 0012: sharing and messages', () => {
     expect(db.prepare('SELECT count(*) AS n FROM messages').all()[0]).toEqual({ n: 0 })
   })
 })
+
+describe('0013: articles get autolinkers', () => {
+  it('only adds the column: an old article keeps its data and starts with none', () => {
+    const db = new DatabaseSync(':memory:')
+    for (const file of files.filter((f) => f < '0013')) run(db, file)
+    const now = Math.floor(Date.now() / 1000)
+    db.prepare("INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES ('u', 'u', 'u@x.test', 1, ?, ?)").run(now, now)
+    db.prepare("INSERT INTO articles (user_id, title, content, created_at, updated_at) VALUES ('u', 'old', '<p>x</p>', ?, ?)").run(now, now)
+    run(db, files.find((f) => f.startsWith('0013'))!)
+    expect(db.prepare('SELECT title, content, autolinkers FROM articles').all()[0]).toEqual({ title: 'old', content: '<p>x</p>', autolinkers: '[]' })
+  })
+})

@@ -1,6 +1,7 @@
-import { isSafeLink, sanitizeRichText } from '@map/shared'
+import { isSafeLink } from './rich-text-policy'
+import { sanitizeRichText } from './sanitize-html'
 import { describe, expect, it } from 'vitest'
-import { fromHref, toHref, withoutRule, withRule, type ArticleLink } from './linkHref'
+import { fromHref, toHref, withoutRule, withRule, type ArticleLink } from './link-href'
 
 const LINKS: ArticleLink[] = [
   { kind: 'url', url: 'https://example.com/a?b=1&c=2#top' },

@@ -121,6 +121,8 @@ type Props = {
   onSecondRowChange: (shown: boolean) => void
   /** The X at the bar's top corner: hides the whole bar (the page shows a button to bring it back) */
   onClose: () => void
+  /** The bar's last row, under its own line (the links: LinkRow); nothing while it has nothing to show */
+  lastRow?: ReactNode
 }
 
 /** A thin line between two groups of buttons (the gap around it is the row's) */
@@ -662,7 +664,7 @@ function UnderlineControl({ editor, on, kind, colour }: { editor: Editor; on: bo
  * the text (font and size, as the map's text sidebar has them, bold, italic, underline with a dropdown of its kind and colour, the text colour as a coloured A and the background colour), lists, the alignments one next to the other,
  * next to the alignments with no space: Media (an image icon and its name; it opens the image, table and divider choice) and Link (a link icon and its name) together, with no gap and a line before them.
  */
-export default function ArticleToolbar({ editor, onUploadImage, onUploadError, secondRow, onSecondRowChange, onClose }: Props) {
+export default function ArticleToolbar({ editor, onUploadImage, onUploadError, secondRow, onSecondRowChange, onClose, lastRow }: Props) {
   const state = useEditorState({
     editor,
     selector: ({ editor: e }) => {
@@ -1061,6 +1063,7 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
           )}
         </div>
       )}
+      {lastRow}
     </div>
   )
 }

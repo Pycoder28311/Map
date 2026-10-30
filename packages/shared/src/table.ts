@@ -37,6 +37,10 @@ export type TableConfig = {
   readonly link?: { readonly types: Readonly<Record<string, string>> }
   /** The list filters kept first in the table's index (default: archived, and link when the table has one) */
   readonly listFilters?: readonly ListFilter[]
+  /** Fields a list leaves out (not even read), besides the one `preview` stands for: big and used only on the row's own page */
+  readonly omitFromLists?: readonly string[]
+  /** Fields of a shared table only its owner and editors get (a reader's copy of the row leaves them out) */
+  readonly editorFields?: readonly string[]
   /**
    * Its rows can be shared (docs/plans/34): other people may read or edit one (object_rights), or everyone signed in may read it
    * (`visibility: 'public'`). Adds `visibility`, `version` (a save says which version it changes: 409 when another was saved since)
@@ -63,7 +67,8 @@ export type ItemOf<C extends TableConfig> = { id: number; archived: boolean; cre
   ShareValues<C>
 
 /** A row in a list: without the field the preview stands for (lists send the preview instead) */
-export type ListItemOf<C extends TableConfig> = C extends { preview: infer P extends string } ? Omit<ItemOf<C>, P> : ItemOf<C>
+type Omitted<C extends TableConfig> = (C extends { preview: infer P extends string } ? P : never) | (C extends { omitFromLists: readonly (infer O extends string)[] } ? O : never)
+export type ListItemOf<C extends TableConfig> = [Omitted<C>] extends [never] ? ItemOf<C> : Omit<ItemOf<C>, Omitted<C>>
 
 /** What a client may write: any of its fields (the owner, id and dates always come from the server) */
 export type InputOf<C extends TableConfig> = Partial<FieldValues<C> & { archived: boolean } & OrderOutput<C['order']> & LinkValues<C>>

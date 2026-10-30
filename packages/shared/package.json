@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./rich-text-policy": "./src/rich-text-policy.ts",
-    "./page-size": "./src/page-size.ts"
+    "./page-size": "./src/page-size.ts",
+    "./link-href": "./src/link-href.ts"
   },
   "peerDependencies": {
     "zod": "^4.0.0"

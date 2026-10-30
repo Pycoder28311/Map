@@ -5,7 +5,7 @@ import { Plugin, PluginKey, TextSelection, type Transaction } from '@tiptap/pm/s
 import { AddMarkStep, RemoveMarkStep } from '@tiptap/pm/transform'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import type { RefObject } from 'react'
-import { applyRule, longestFirst, rulesFrom } from './autolink'
+import { applyRule, longestFirst, type AutoRule } from './autolink'
 import { linkAt, type LinkRange } from './docLinks'
 import { findMatches } from './find'
 import { fromHref, LINK_PREFIX, toHref, type ArticleLink } from './linkHref'
@@ -16,6 +16,8 @@ export type LinkHandlers = {
   onOpen: (link: ArticleLink, range: LinkRange, el: HTMLElement) => void
   /** Ctrl / ⌘ + F in the text */
   onFind: () => void
+  /** The article's autolinkers now (its `autolinkers` field: the page holds them) */
+  rules: () => AutoRule[]
 }
 
 /** A transaction that writes links itself (the toolbar's buttons, the autolinker's list): the autolinker leaves it alone */
@@ -61,11 +63,11 @@ const clicks = (handlers: RefObject<LinkHandlers>) =>
 const onlyMarks = (tr: Transaction) => tr.steps.every((step) => step instanceof AddMarkStep || step instanceof RemoveMarkStep)
 
 /**
- * Links what is typed: after a change, the rules found in the text (autolink.ts) link their words in the changed part. The word the caret
+ * Links what is typed: after a change, the page's autolinkers (the article's `autolinkers` field, autolink.ts) link their words in the changed part. The word the caret
  * is still typing waits until the caret leaves it. Not undone on its own (it is part of the typing), and never after a link was written
  * or taken away by hand (a word unlinked on purpose stays so)
  */
-const Autolinker = Extension.create({
+const Autolinker = (handlers: RefObject<LinkHandlers>) => Extension.create({
   name: 'articleAutolinker',
   addProseMirrorPlugins() {
     return [
@@ -85,7 +87,7 @@ const Autolinker = Extension.create({
             // The caret left a word: it can be linked now
             within = [{ from: Math.max(0, before.selection.from - 1), to: before.selection.from }]
           } else return null
-          const rules = rulesFrom(state.doc)
+          const rules = handlers.current.rules()
           if (rules.length === 0) return null
           const tr = state.tr
           const skipAt = state.selection.empty ? state.selection.from : undefined
@@ -139,7 +141,7 @@ const FindHighlight = Extension.create({
 
 /** The article's link extensions, talking to the page through `handlers` (read when something happens, so they can change) */
 export function linkExtensions(handlers: RefObject<LinkHandlers>): Extensions {
-  return [clicks(handlers), Autolinker, FindHighlight]
+  return [clicks(handlers), Autolinker(handlers), FindHighlight]
 }
 
 /** The link the caret or the selection is on, if it is one of ours */

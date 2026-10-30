@@ -230,6 +230,11 @@ each type to the table it is: `{ project: 'projects', folder: 'folders' }`.
   item can no longer be edited and keeps the draft. `listStore` never puts someone else's row into the user's lists. `ResourceEditor`
   is read-only for a reader and has `PrivacyButton` (`features/sharing/`) for the owner.
 
+### Fields only some people get, and fields lists leave out
+
+`omitFromLists: ['field']` in a table's config: lists do not read or send that field (as for the one `preview` stands for); the row's own page does.
+`editorFields: ['field']` (a shared table): a reader's copy of a row leaves them out. The articles' `autolinkers` use both (docs/plans/35).
+
 ### Something a table does its own way
 
 - **One repo method:** in `backend/src/index.ts`, give that table `ownedRepo(schema.x, DATA.x, { toJson, beforeCreate, beforeUpdate })`.

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { LuLayers } from 'react-icons/lu'
+import { LuArchive, LuLayers } from 'react-icons/lu'
 import Button from '../../../components/ui/buttons/Button'
 import LinkButton from '../../../components/ui/buttons/LinkButton'
 import SearchInput from '../../../components/ui/fields/SearchInput'
@@ -24,18 +24,21 @@ type Props = {
   autoFocus?: boolean
   /** Its search field shows (default); false: the owner opens it with a search button of its own (the autolinker's sections) */
   showSearch?: boolean
+  /** A "See archive" button: it lists the archived objects (the Trash) instead of the live ones. They are read only when it is pressed */
+  archive?: boolean
 }
 
 /**
  * A list of the app's objects to pick one: kind buttons on top (All, Article, Map, Object card, Folder, Project), a search, and the
  * rows, read a page at a time (useObjectSearch) as the list is scrolled
  */
-export default function ObjectPicker({ onPick, only, exclude, chosen, listHeight = 'max-h-64', autoFocus = true, showSearch = true }: Props) {
+export default function ObjectPicker({ onPick, only, exclude, chosen, listHeight = 'max-h-64', autoFocus = true, showSearch = true, archive = false }: Props) {
   const kinds = pickerKinds().filter((k) => !only || only.includes(k.type))
   const [kind, setKind] = useState<ObjectType | 'all'>(kinds.length === 1 ? kinds[0].type : 'all')
   const [query, setQuery] = useState('')
+  const [archived, setArchived] = useState(false)
   const types = kind === 'all' ? kinds.map((k) => k.type) : [kind]
-  const search = useObjectSearch(types, query, exclude)
+  const search = useObjectSearch(types, query, exclude, archived)
   const end = useRef<HTMLDivElement>(null)
 
   // The end of the list in sight: the next page
@@ -65,6 +68,19 @@ export default function ObjectPicker({ onPick, only, exclude, chosen, listHeight
             </Button>
           ))}
         </div>
+      )}
+      {archive && (
+        <Button
+          variant={archived ? 'selected' : 'ghost'}
+          size="sm"
+          plain
+          icon={LuArchive}
+          aria-pressed={archived}
+          className="self-start"
+          onClick={() => setArchived(!archived)}
+        >
+          {archived ? 'Hide archive' : 'See archive'}
+        </Button>
       )}
       {showSearch && <SearchInput label="Search objects" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus={autoFocus} />}
       <div role="listbox" aria-label="Objects" className={`flex flex-col overflow-y-auto ${listHeight}`}>
@@ -97,7 +113,7 @@ export default function ObjectPicker({ onPick, only, exclude, chosen, listHeight
           ) : search.loading ? (
             'Loading…'
           ) : search.hits.length === 0 && !search.hasMore ? (
-            query ? 'Nothing found.' : 'Nothing here yet.'
+            query ? 'Nothing found.' : archived ? 'The archive is empty.' : 'Nothing here yet.'
           ) : search.hasMore && query ? (
             <LinkButton onClick={search.keepSearching}>Keep searching</LinkButton>
           ) : null}

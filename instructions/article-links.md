@@ -1,7 +1,7 @@
 # Article links
 
 The article page's third toolbar row (Link, Attach Content, Jump link, Follow, Message, Autolinker), the hover card over a link,
-Public / Private and Search in article. The row is smaller than the other two and centred, and shows only while some words are selected
+Public / Private and Search in article. The row is smaller than the other two, under a line with its name (Types of Links), and shows only while some words are selected
 or the toolbar's ⋯ (on its right edge) has its rows open; it stays while one of its popouts is open. The plan is `docs/plans/31-article-links-and-privacy.md`.
 
 A link is never a record: everything it knows is written in the article's HTML (`content`), except a **message**, which is a row of the
@@ -12,7 +12,7 @@ server's `messages` table: its link keeps only its id (docs/plans/34). Privacy (
 
 ```
 app/src/features/articles/links/
-├── linkHref.ts          THE format: ArticleLink ⇄ href (toHref / fromHref)
+├── linkHref.ts          re-exports THE format (packages/shared/src/link-href.ts: ArticleLink ⇄ href, toHref / fromHref; the server reads it too)
 ├── docLinks.ts          the links of a document, each once (linkRanges, linkAt)
 ├── autolink.ts          autolinkers: occurrences, applyRule, removeRule, rulesFrom
 ├── jumpTargets.ts       sections and marked places; resolveJump
@@ -49,8 +49,19 @@ The server's sanitizer (`packages/shared/src/sanitize-html.ts`) keeps an `<a>`'s
 `a` and `t`: the autolinker that made it (its id and words). Unknown keys are ignored. `linkHref.test.ts` checks that every kind
 survives `sanitizeRichText` unchanged: a new key or kind needs a case there.
 
-An autolinker is kept only in the links it made: the list is `rulesFrom(doc)`. One whose words are written nowhere has no link, so it is
-not kept (the panel says so).
+## Autolinkers (docs/plans/35)
+
+The article's autolinkers are its `autolinkers` field (JSON, `packages/shared/src/autolinkers.ts`): `{ id, phrases, link, by }`, the link as an `#mapl:`
+href without its rule. They come with the article (an editor's and owner's copy; a reader's has none, and lists leave the field out) and are saved
+**with the text in the same request**: the page keeps all the values in one object (`field(name, value)` in `ArticlePanel`), so a rule and the links it
+made change together. A link in the text still carries its rule's id and phrase (`a`, `t`): they are what "Go there" and the hover card read, and the
+rule's `id` here is that `a`. Limits: 50 autolinkers, 20 phrases each, a phrase in one autolinker only (the server refuses otherwise).
+
+- The Autolinker while typing reads the page's rules (`handlers.current.rules()`), not the document.
+- A rule stays until it is deleted in the panel: its phrases written nowhere are linked when they are written; a link taken out by hand is linked again when
+  the phrase is typed again. Undo undoes the links in the text, not the rule.
+- An article made before the field: when an editor opens it, the rules found in its links are added to the field once (`adoptRules`) and saved.
+- Import from other article reads that article's `autolinkers`, or its text when it has none yet.
 
 ## Messages (docs/plans/34)
 

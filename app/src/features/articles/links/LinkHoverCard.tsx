@@ -14,9 +14,10 @@ type Shown = { link: ArticleLink; words: string; el: HTMLElement }
 /**
  * The card above a hovered link of the article (LinkPreview): its picture and the start of its text. The pointer can move onto it (a
  * person's card has Follow). In the top layer, so nothing clips it; it goes below the link when there is no room above. Closes on
- * leaving, scrolling, Esc, typing and pressing in the text
+ * leaving, scrolling, Esc, typing and pressing in the text. A message link has no card: the page opens the message itself (`onMessage`) when
+ * the pointer rests on its words, and is told (`null`) when the pointer leaves them
  */
-export default function LinkHoverCard({ editor }: { editor: Editor }) {
+export default function LinkHoverCard({ editor, onMessage }: { editor: Editor; onMessage?: (el: HTMLElement | null) => void }) {
   const [shown, setShown] = useState<Shown | null>(null)
   const [place, setPlace] = useState<HoverInfoPlace | null>(null)
   const card = useRef<HTMLDivElement>(null)
@@ -38,8 +39,9 @@ export default function LinkHoverCard({ editor }: { editor: Editor }) {
     const over = (e: PointerEvent) => {
       const el = linkOf(e.target)
       if (!el || e.buttons) return
-      if (el === current.current) return cancel()
       const link = fromHref(el.getAttribute('href'))
+      if (link?.kind === 'msg') return later(() => onMessage?.(el), OPEN_MS)
+      if (el === current.current) return cancel()
       if (!link || link.kind === 'anchor') return
       later(() => {
         current.current = el
@@ -48,7 +50,15 @@ export default function LinkHoverCard({ editor }: { editor: Editor }) {
       }, OPEN_MS)
     }
     const out = (e: PointerEvent) => {
-      if (!linkOf(e.target) || linkOf(e.relatedTarget) === current.current) return
+      const from = linkOf(e.target)
+      if (!from) return
+      if (fromHref(from.getAttribute('href'))?.kind === 'msg') {
+        // Moving inside the same words is not leaving them
+        if (linkOf(e.relatedTarget) === from) return
+        cancel()
+        return onMessage?.(null)
+      }
+      if (linkOf(e.relatedTarget) === current.current) return
       later(hide, CLOSE_MS)
     }
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && hide()
@@ -57,7 +67,9 @@ export default function LinkHoverCard({ editor }: { editor: Editor }) {
     dom.addEventListener('pointerdown', hide)
     dom.addEventListener('keydown', hide)
     window.addEventListener('keydown', onKey)
-    window.addEventListener('scroll', hide, true)
+    // (the open message scrolling inside itself is not the page scrolling)
+    const onScroll = (e: Event) => !(e.target instanceof Element && e.target.closest('[data-message-panel]')) && hide()
+    window.addEventListener('scroll', onScroll, true)
     window.addEventListener('resize', hide)
     return () => {
       dom.removeEventListener('pointerover', over)
@@ -65,10 +77,10 @@ export default function LinkHoverCard({ editor }: { editor: Editor }) {
       dom.removeEventListener('pointerdown', hide)
       dom.removeEventListener('keydown', hide)
       window.removeEventListener('keydown', onKey)
-      window.removeEventListener('scroll', hide, true)
+      window.removeEventListener('scroll', onScroll, true)
       window.removeEventListener('resize', hide)
     }
-  }, [editor, later, cancel])
+  }, [editor, later, cancel, onMessage])
 
   // Placed once it is measured, before it is painted; measured again when its content grows (a picture loaded)
   useLayoutEffect(() => {

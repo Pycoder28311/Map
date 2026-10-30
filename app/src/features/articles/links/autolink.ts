@@ -1,13 +1,14 @@
 // The autolinker: some phrases and where they link to (a rule). Every place a phrase is written in the article becomes that link, now and
-// while it is typed. A rule is not kept anywhere but in the links it made (their href holds its id and the phrase: linkHref.ts; the
-// phrases of one rule share its id), so the list of rules is read back from the document. Pure on ProseMirror documents and transactions (autolink.test.ts).
+// while it is typed. The rules are kept in the article's `autolinkers` field (docs/plans/35); the links they made also hold the rule's id and
+// the phrase (linkHref.ts; the phrases of one rule share its id), so a rule found in the document can be read back (rulesFrom: an article
+// made before the field). Pure on ProseMirror documents and transactions (autolink.test.ts).
 import type { Node as PMNode } from '@tiptap/pm/model'
 import type { Transaction } from '@tiptap/pm/state'
 import { linkRanges } from './docLinks'
 import { fromHref, toHref, withoutRule, withRule, type ArticleLink, type Rule } from './linkHref'
 
 /** A rule as the list shows it: its phrases, where they link, and how many places it linked */
-export type AutoRule = { id: string; phrases: string[]; link: ArticleLink; count: number }
+export type AutoRule = { id: string; phrases: string[]; link: ArticleLink; count: number; by?: string }
 
 /** One character, lower case, without its accent (one character for one, so places in the text stay right) */
 function foldChar(c: string) {
@@ -115,4 +116,37 @@ export function removeRule(tr: Transaction, ruleId: string): number {
 /** The places a rule linked (for Go there) */
 export function ruleRanges(doc: PMNode, ruleId: string) {
   return linkRanges(doc).filter((r) => 'rule' in r.link && r.link.rule?.id === ruleId)
+}
+
+/* ─────────────── The rules in the article's `autolinkers` field (docs/plans/35) ─────────────── */
+
+/** The field's rules (JSON text, or its value) as the page uses them; an entry whose link does not read any more is left out */
+export function fromStored(stored: string | readonly { id: string; phrases: string[]; link: string; by: string }[] | undefined): AutoRule[] {
+  let list: unknown = stored
+  if (typeof stored === 'string') {
+    try {
+      list = JSON.parse(stored)
+    } catch {
+      return []
+    }
+  }
+  if (!Array.isArray(list)) return []
+  return (list as { id: string; phrases: string[]; link: string; by?: string }[]).flatMap((r) => {
+    const link = fromHref(r.link)
+    return link && Array.isArray(r.phrases) ? [{ id: r.id, phrases: r.phrases, link: withoutRule(link), by: r.by ?? '', count: 0 }] : []
+  })
+}
+
+/** The rules as the field keeps them: the link as its href without a rule */
+export const toStored = (rules: AutoRule[]) => rules.map((r) => ({ id: r.id, phrases: r.phrases, link: toHref(withoutRule(r.link)), by: r.by }))
+
+/**
+ * The rules of the field plus those the document's links were made by that the field does not have yet (an article made before the
+ * field): adopted once when an editor opens it. The same list (the same object) when there is nothing to add. `by`: the user adopting
+ */
+export function adoptRules(rules: AutoRule[], doc: PMNode, by: string): AutoRule[] {
+  const known = new Set(rules.map((r) => r.id))
+  const found = rulesFrom(doc).filter((r) => !known.has(r.id))
+  if (found.length === 0) return rules
+  return [...rules, ...found.map((r) => ({ ...r, by, count: 0 }))]
 }

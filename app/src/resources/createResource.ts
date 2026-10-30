@@ -33,12 +33,14 @@ export function createResource(table: Table, ui: ResourceUi, api?: ResourceApi<I
     name: table.name,
     panelType: ui.panelType,
     api: api ?? createResourceApi(`/api/${table.path}`),
-    // A written item goes into the lists in the server's order, without the field its preview stands for
+    // A written item goes into the lists in the server's order, without the field its preview stands for and the fields the config keeps out of lists
     list: {
       order: table.order,
       toItem: (item) => {
-        if (!table.preview) return item
-        const { [table.preview]: _heavy, ...rest } = item
+        const left = [table.preview, ...(table.omitFromLists ?? [])].filter((name): name is string => !!name && name in item)
+        if (left.length === 0) return item
+        const rest = { ...item } as Record<string, unknown>
+        for (const name of left) delete rest[name]
         return rest as Item
       },
     },

@@ -18,6 +18,8 @@ import { uploadImage } from '../../lib/api/images'
 import { useResourceMenu } from '../../lib/resource/actions'
 import { valuesOf, type FormValues } from '../../lib/resource/changed'
 import { dropFocus, isNewId, peekFocus } from '../../lib/resource/newItem'
+import { authClient } from '../../lib/auth-client'
+import { useTimeout } from '../../lib/useTimeout'
 import { resourceByName } from '../../resources/registry'
 import type { AnyResource } from '../../resources/types'
 import { personById, type Person } from '../people/mockPeople'
@@ -37,10 +39,11 @@ import LinkRow, { type LinkPopout } from './links/LinkRow'
 import MessagePanel from './links/MessagePanel'
 import { forgetArticleMessages } from './messages/messagesStore'
 import { useLegacyMessages } from './messages/useLegacyMessages'
+import { adoptRules, fromStored, toStored, type AutoRule } from './links/autolink'
 import PrivacyButton from '../sharing/PrivacyButton'
 import { isEmptyInfobox } from './infoRows'
 import ProjectFolders from './ProjectFolders'
-import type { LinkRange } from './links/docLinks'
+import { linkAt, type LinkRange } from './links/docLinks'
 import SaveButton from './save/SaveButton'
 import { useSaved } from './save/savedStore'
 import { useArticleRole } from './save/useArticleRole'
@@ -88,15 +91,20 @@ function useNarrower(el: HTMLElement | null, width: number) {
   return narrow
 }
 
-/** The article's values for autosave: its form fields, and the Info box as JSON text */
+/** The article's values for autosave: its form fields, and the Info box and the autolinkers as JSON text */
 const articleValues =
   (resource: AnyResource) =>
   (item: Record<string, unknown>): FormValues => ({
     ...valuesOf(resource, item),
     infobox: JSON.stringify(item.infobox ?? EMPTY_INFOBOX),
+    // (a reader's copy has none: they never save)
+    autolinkers: JSON.stringify(item.autolinkers ?? []),
   })
-const articlePatch = (changed: FormValues): Record<string, unknown> =>
-  changed.infobox === undefined ? changed : { ...changed, infobox: JSON.parse(changed.infobox) as Infobox }
+const articlePatch = (changed: FormValues): Record<string, unknown> => ({
+  ...changed,
+  ...(changed.infobox === undefined ? {} : { infobox: JSON.parse(changed.infobox) as Infobox }),
+  ...(changed.autolinkers === undefined ? {} : { autolinkers: JSON.parse(changed.autolinkers) as unknown }),
+})
 
 /**
  * An article's page (the articles' panel, resources.config.ts): one bordered box: the banner, the folders of its project, the title with Info / Share / ⋯, the toolbar, and the text with the Info box
@@ -125,7 +133,25 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   })
   const { menuOf, dialogs } = useResourceMenu(resource)
   const workspace = useWorkspace()
+  const { data: session } = authClient.useSession()
   const [editor, setEditor] = useState<Editor | null>(null)
+
+  // The values the page saves, all of them in one object: a change of one field (the text, the title, the Info box, the autolinkers) goes
+  // into it and the autosave gets them all, so two fields changed together (the text and its autolinkers) are one save. It starts again
+  // with every new start (a draft kept, the server's version taken)
+  const values = useRef({ start: autosave.start.version, all: autosave.start.values })
+  const field = (name: string, value: string) => {
+    if (values.current.start !== autosave.start.version) values.current = { start: autosave.start.version, all: autosave.start.values }
+    values.current.all = { ...values.current.all, [name]: value }
+    autosave.change(values.current.all)
+  }
+  // The article's autolinkers (docs/plans/35): held here, read by the Autolinker while typing and shown by its panel; a change is saved with the text
+  const [rules, setRulesState] = useState(() => ({ start: autosave.start.version, list: fromStored(autosave.start.values.autolinkers) }))
+  if (rules.start !== autosave.start.version) setRulesState({ start: autosave.start.version, list: fromStored(autosave.start.values.autolinkers) })
+  const setRules = (next: AutoRule[]) => {
+    setRulesState({ start: autosave.start.version, list: next })
+    field('autolinkers', JSON.stringify(toStored(next)))
+  }
   const [infoShown, setInfoShown] = useState(readInfoShown)
   const [sharing, setSharing] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -137,7 +163,9 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   const [barShown, setBarShown] = useState(true)
   const [finding, setFinding] = useState(false)
   // The message open beside the text: its id (null: an old one, its text in the link), its words and where it opens
-  const [message, setMessage] = useState<{ id: number | null; legacy?: { title: string; content: string }; from: number; to: number; top: number } | null>(null)
+  // (`hover`: opened by the pointer resting on its words, it closes when the pointer leaves them and its panel)
+  const [message, setMessage] = useState<{ id: number | null; legacy?: { title: string; content: string }; from: number; to: number; top: number; hover?: boolean } | null>(null)
+  const { set: laterClose, clear: cancelClose } = useTimeout()
   const [person, setPerson] = useState<Person | null>(null)
   // The box around the text: what the message, the hover card and the jump marks are placed in
   const textBox = useRef<HTMLDivElement>(null)
@@ -164,12 +192,32 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   }
 
   /** Opens a message beside the text, level with its words (`el`: the link's element, found from the text when not given) */
-  const openMessage = (range: LinkRange, el?: HTMLElement | null) => {
+  const openMessage = (range: LinkRange, el?: HTMLElement | null, hover = false) => {
     if (range.link.kind !== 'msg') return
     const at = el ?? (editor ? (editor.view.domAtPos(range.from + 1).node as HTMLElement).parentElement?.closest('a') : null)
     const top = (at?.getBoundingClientRect().top ?? 0) - (textBox.current?.getBoundingClientRect().top ?? 0)
-    setMessage({ id: range.link.id, legacy: range.link.legacy, from: range.from, to: range.to, top: Math.max(0, top) })
+    setMessage({ id: range.link.id, legacy: range.link.legacy, from: range.from, to: range.to, top: Math.max(0, top), hover })
   }
+
+  /** The pointer rests on a message's words (`el`), or has left them (null): its panel opens, and closes shortly after the pointer left both */
+  const hoverMessage = (el: HTMLElement | null) => {
+    if (!el) return laterClose(() => setMessage((open) => (open?.hover ? null : open)), 250)
+    cancelClose()
+    if (!editor) return
+    const range = linkAt(editor.state.doc, editor.view.posAtDOM(el, 0))
+    if (range) openMessage(range, el, true)
+  }
+
+  // Autolinkers already in the text (an article made before the field) are added to the field once, when an editor opens the article
+  const adopted = useRef(false)
+  useEffect(() => {
+    if (!editor || !canEdit || adopted.current || !session) return
+    adopted.current = true
+    const next = adoptRules(rules.list, editor.state.doc, session.user.id)
+    if (next !== rules.list) setRules(next)
+    // Once, when the editor is there
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, canEdit, session])
 
   // Old messages become messages when an editor opens the article; what was read of its messages is forgotten when the page closes
   useLegacyMessages(editor, articleId, canEdit, autosave.flush)
@@ -191,20 +239,20 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   }, [zoomed])
 
   // What a click on one of the article's links does (linkExtensions.ts reads it when it happens, so it always sees this render's state)
-  const handlers = useRef<LinkHandlers>({ onOpen: () => {}, onFind: () => {} })
+  const handlers = useRef<LinkHandlers>({ onOpen: () => {}, onFind: () => {}, rules: () => [] })
   useEffect(() => {
     handlers.current = {
-      onOpen: (link, range, el) => {
+      onOpen: (link) => {
         if (link.kind === 'url' || link.kind === 'project-url') window.open(link.url, '_blank', 'noopener,noreferrer')
         else if (link.kind === 'object') workspace.open({ type: link.type, id: link.id })
         else if (link.kind === 'person') setPerson(personById(link.personId))
-        else if (link.kind === 'msg') openMessage(range, el)
         else if (link.kind === 'jump' && editor) {
           const target = resolveJump(editor.state.doc, link.to)
           if (target) goTo(editor, target.kind === 'heading' ? target.from + 1 : target.from, target.kind === 'heading' ? target.end - 1 : target.end)
         }
       },
       onFind: () => setFinding(true),
+      rules: () => rules.list,
     }
   })
   // The article's formats and its links: made once, the editor reads them when it opens
@@ -323,7 +371,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         key={autosave.start.version}
         resource={resource}
         start={autosave.start.values}
-        onChange={autosave.change}
+        onField={field}
         readOnly={!canEdit}
         focusField={focusField}
         editor={editor}
@@ -335,9 +383,11 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         textExtras={
           editor && (
             <>
-              <LinkHoverCard editor={editor} />
+              <LinkHoverCard editor={editor} onMessage={hoverMessage} />
               <JumpGutter editor={editor} box={textBox} />
               {message && (
+                // (the pointer on the panel keeps it open while it was opened by hovering)
+                <div className="contents" data-message-panel onPointerEnter={cancelClose} onPointerLeave={() => message.hover && hoverMessage(null)}>
                 <MessagePanel
                   key={`${message.id}:${message.from}`}
                   id={message.id}
@@ -357,6 +407,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
                     setMessage(null)
                   }}
                 />
+                </div>
               )}
             </>
           )
@@ -379,15 +430,32 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         toolbar={
           <div className="sticky top-0 z-20 flex flex-col gap-1 bg-surface py-1 empty:hidden">
             {!canEdit ? null : barShown ? (
-              <ArticleToolbar editor={editor} onUploadImage={upload} onUploadError={onUploadError} secondRow={rowsOpen} onSecondRowChange={setRowsOpen} onClose={() => setBarShown(false)} />
+              <ArticleToolbar
+                editor={editor}
+                onUploadImage={upload}
+                onUploadError={onUploadError}
+                secondRow={rowsOpen}
+                onSecondRowChange={setRowsOpen}
+                onClose={() => setBarShown(false)}
+                // The third row, inside the bar: the links (while words are selected, or the ⋯ has the rows open)
+                lastRow={
+                  <LinkRow
+                    editor={editor}
+                    self={`${resource.panelType}:${item.id}`}
+                    articleId={articleId}
+                    expanded={rowsOpen}
+                    open={linkPopout}
+                    onOpenChange={setLinkPopout}
+                    rules={rules.list}
+                    onRules={setRules}
+                    userId={session?.user.id ?? ''}
+                  />
+                }
+              />
             ) : (
               <Button variant="ghost" size="sm" plain icon={LuPencilLine} className="self-start" onClick={() => setBarShown(true)}>
                 Edit bar
               </Button>
-            )}
-            {/* The third row, smaller and centred, a little gap under the others: the links (while words are selected, or the ⋯ has the rows open) */}
-            {canEdit && barShown && (
-              <LinkRow editor={editor} self={`${resource.panelType}:${item.id}`} articleId={articleId} expanded={rowsOpen} open={linkPopout} onOpenChange={setLinkPopout} />
             )}
             {finding && editor && <FindBar editor={editor} onClose={() => setFinding(false)} />}
             {uploadError && (
@@ -425,8 +493,8 @@ type BodyProps = {
   resource: AnyResource
   /** The values the fields open on (not followed afterwards) */
   start: FormValues
-  /** Called with all the values after every change */
-  onChange: (values: FormValues) => void
+  /** Called with a field's new value after every change (the page keeps all the values and saves them) */
+  onField: (name: string, value: string) => void
   /** A reader's page: shown, nothing can be changed */
   readOnly: boolean
   focusField?: string
@@ -461,7 +529,7 @@ type BodyProps = {
 function ArticleBody({
   resource,
   start,
-  onChange,
+  onField,
   readOnly,
   focusField,
   editor,
@@ -478,14 +546,9 @@ function ArticleBody({
   toolbar,
   footer,
 }: BodyProps) {
-  // The latest values, so quick changes of different fields all stay
-  const latest = useRef(start)
   const [title, setTitle] = useState(start.title ?? '')
   const [infobox, setInfobox] = useState<Infobox>(() => JSON.parse(start.infobox ?? 'null') ?? EMPTY_INFOBOX)
-  const change = (name: string, value: string) => {
-    latest.current = { ...latest.current, [name]: value }
-    onChange(latest.current)
-  }
+  const change = onField
   const fields = Object.fromEntries(resource.ui.fields.map((f) => [f.name, f]))
   // The cursor is in the text's last row (its last top-level block)
   const inLastRow =

@@ -1,0 +1,1 @@
+ALTER TABLE `articles` ADD `autolinkers` text DEFAULT '[]' NOT NULL;

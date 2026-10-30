@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyRule, longestFirst, occurrences, removeRule, ruleRanges, rulesFrom } from './autolink'
+import { adoptRules, applyRule, fromStored, longestFirst, occurrences, removeRule, ruleRanges, rulesFrom, toStored, type AutoRule } from './autolink'
 import { linkRanges } from './docLinks'
 import type { ArticleLink } from './linkHref'
 import { docOf, p, stateOf } from './testing'
@@ -73,5 +73,44 @@ describe('applyRule / rulesFrom / removeRule', () => {
     expect(removeRule(tr, 'r1')).toBe(2)
     expect(linkRanges(tr.doc)).toEqual([])
     expect(tr.doc.textContent).toBe('Athens and Athens')
+  })
+})
+
+describe('the rules in the article\'s field', () => {
+  const stored = [{ id: 'r1', phrases: ['Athens', 'Athina'], link: '#mapl:k=object&ty=article&id=7', by: 'u1' }]
+
+  it('reads the field (as a value or as JSON text) and writes it back the same', () => {
+    const rules = fromStored(stored)
+    expect(rules).toEqual([{ id: 'r1', phrases: ['Athens', 'Athina'], link: ATHENS, by: 'u1', count: 0 }])
+    expect(fromStored(JSON.stringify(stored))).toEqual(rules)
+    expect(toStored(rules)).toEqual(stored)
+  })
+
+  it('leaves out what does not read: broken JSON, not a list, an entry whose link is not one', () => {
+    expect(fromStored('not json')).toEqual([])
+    expect(fromStored('{"a":1}')).toEqual([])
+    expect(fromStored(undefined)).toEqual([])
+    expect(fromStored([{ ...stored[0], link: 'javascript:alert(1)' }])).toEqual([])
+  })
+
+  it('takes a link\'s own rule keys off when it is stored', () => {
+    const rules: AutoRule[] = [{ id: 'r2', phrases: ['x'], link: { ...ATHENS, rule: { id: 'r2', text: 'x' } }, by: '', count: 3 }]
+    expect(toStored(rules)[0].link).toBe('#mapl:k=object&ty=article&id=7')
+  })
+
+  it('adopts the rules the text\'s links were made by and the field does not have, once', () => {
+    const doc = docOf(
+      p({ text: 'Athens', link: { ...ATHENS, rule: { id: 'r1', text: 'Athens' } } }, ' ', { text: 'Sparta', link: { kind: 'url', url: 'https://a.b', rule: { id: 'r9', text: 'Sparta' } } }),
+    )
+    const own = fromStored(stored)
+    const adopted = adoptRules(own, doc, 'me')
+    expect(adopted.map((r) => [r.id, r.by])).toEqual([
+      ['r1', 'u1'],
+      ['r9', 'me'],
+    ])
+    expect(adopted[1]).toMatchObject({ phrases: ['Sparta'], link: { kind: 'url', url: 'https://a.b' } })
+    // Nothing to add: the same list, so nothing is saved
+    expect(adoptRules(adopted, doc, 'me')).toBe(adopted)
+    expect(adoptRules([], docOf(p('no links')), 'me')).toEqual([])
   })
 })

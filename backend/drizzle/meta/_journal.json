@@ -92,6 +92,13 @@
       "when": 1793353745604,
       "tag": "0012_object_rights_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1793359016212,
+      "tag": "0013_article_autolinkers",
+      "breakpoints": true
     }
   ]
 }

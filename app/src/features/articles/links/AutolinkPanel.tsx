@@ -1,4 +1,4 @@
-import { useEditorState, type Editor } from '@tiptap/react'
+import type { Editor } from '@tiptap/react'
 import { DOMParser as PMDOMParser, type Node as PMNode } from '@tiptap/pm/model'
 import { useState, type ReactNode } from 'react'
 import { LuCornerDownRight, LuDownload, LuExternalLink, LuFileSymlink, LuPencil, LuPlus, LuSearch, LuTrash2, LuUserPlus, LuX } from 'react-icons/lu'
@@ -14,7 +14,8 @@ import Modal from '../../../components/ui/overlays/Modal'
 import { resourceByName } from '../../../resources/registry'
 import { fold } from '../../search/search'
 import { useWorkspace } from '../../workspace/useWorkspace'
-import { applyRule, longestFirst, removeRule, ruleRanges, rulesFrom, type AutoRule } from './autolink'
+import { AUTOLINKERS_MAX, AUTOLINKER_PHRASES_MAX } from '@map/shared'
+import { applyRule, fromStored, longestFirst, removeRule, ruleRanges, rulesFrom, type AutoRule } from './autolink'
 import FollowPicker from './FollowPicker'
 import JumpPicker from './JumpPicker'
 import { goTo, LINK_EDIT } from './linkExtensions'
@@ -28,6 +29,10 @@ type Props = {
   self: string
   /** The words the first input starts with (the selection): given, the form is open at once */
   startText: string
+  /** The article's autolinkers (its field: the page holds them), changed with `onRules`; `userId`: who makes a new one */
+  rules: AutoRule[]
+  onRules: (rules: AutoRule[]) => void
+  userId: string
   /** Closes the Autolinker (Go there and the endpoints leave it, to show the place) */
   onClose: () => void
 }
@@ -121,15 +126,16 @@ function Endpoint({ link, editor, onLeave }: { link: ArticleLink; editor: Editor
 
 /**
  * The Autolinker, in the shared Modal: its header has the title, Import from other article and Add New (primary); Add New (or Edit on a
- * list row) opens the form: a sentence on what it does, the phrase inputs (an X at the right of each; Add autolink under them adds another
- * input), the four kinds of link as four sections side by side, and Save. Under it the article's autolinkers, a
+ * list row) opens the form: a sentence on what it does, the phrases as tags inside one input (Enter or leaving the input makes a tag; an X takes one out), the four kinds of link as four sections side by side, and Save. Under it the article's autolinkers, a
  * row each: "Link: <endpoint>", the phrases as tags (clicking one goes to where it is written), Edit and Delete. All the phrases of one
  * autolinker link to the same place; Save links every place they are written, and they are linked as they are typed (linkExtensions.ts).
- * An autolinker lives only in the links it made (autolink.ts)
+ * The autolinkers are the article's `autolinkers` field (the page holds them and saves them with the text); links in the text carry their rule's id
  */
-export default function AutolinkPanel({ editor, self, startText, onClose }: Props) {
+export default function AutolinkPanel({ editor, self, startText, rules, onRules, userId, onClose }: Props) {
   const [formOpen, setFormOpen] = useState(startText.trim() !== '')
-  const [phrases, setPhrases] = useState<string[]>([startText.slice(0, LIMITS.ruleText)])
+  // The phrases already made into tags, and the words being typed (they become a tag on Enter or when the input loses the focus)
+  const [phrases, setPhrases] = useState<string[]>(startText.trim() ? [startText.trim().slice(0, LIMITS.ruleText)] : [])
+  const [draft, setDraft] = useState('')
   const [target, setTarget] = useState<ArticleLink | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -138,17 +144,22 @@ export default function AutolinkPanel({ editor, self, startText, onClose }: Prop
   const [visited, setVisited] = useState<Record<string, number>>({})
   // A new target: the sections start on it (they read it once)
   const [version, setVersion] = useState(0)
-  const rules = useEditorState({ editor, selector: ({ editor: e }) => rulesFrom(e.state.doc), equalityFn: (a, b) => JSON.stringify(a) === JSON.stringify(b) }) ?? []
 
-  const words = phrases.map((p) => p.trim()).filter(Boolean)
-  const setPhrase = (i: number, text: string) => setPhrases(phrases.map((p, at) => (at === i ? text : p)))
-  // The X of an input: takes it away; the last one left is only emptied
-  const removePhrase = (i: number) => setPhrases(phrases.length === 1 ? [''] : phrases.filter((_, at) => at !== i))
+  // (words typed and not made a tag yet count too: Save does not lose them)
+  const words = [...phrases, draft].map((p) => p.trim()).filter(Boolean)
+  const removePhrase = (i: number) => setPhrases(phrases.filter((_, at) => at !== i))
+  /** The typed words become a tag (once: the same words twice make one) */
+  const commitDraft = () => {
+    const text = draft.trim()
+    setDraft('')
+    if (text && !phrases.some((p) => sameText(p, text))) setPhrases([...phrases, text])
+  }
 
   /** A fresh form (Add New), or none (after Save or Cancel) */
   const start = (open: boolean, text = '') => {
     setFormOpen(open)
-    setPhrases([text])
+    setPhrases(text.trim() ? [text.trim()] : [])
+    setDraft('')
     setTarget(null)
     setEditing(null)
     setVersion((v) => v + 1)
@@ -160,7 +171,12 @@ export default function AutolinkPanel({ editor, self, startText, onClose }: Prop
     const unique = words.filter((w, i) => words.findIndex((x) => sameText(x, w)) === i)
     const taken = unique.find((w) => rules.some((r) => r.id !== editing && r.phrases.some((p) => sameText(p, w))))
     if (taken) return setNotice(`“${taken}” already has an autolinker: edit that one.`)
+    if (unique.length > AUTOLINKER_PHRASES_MAX) return setNotice(`An autolinker has at most ${AUTOLINKER_PHRASES_MAX} phrases.`)
+    if (!editing && rules.length >= AUTOLINKERS_MAX) return setNotice(`An article has at most ${AUTOLINKERS_MAX} autolinkers: delete one first.`)
     const id = editing ?? newId()
+    // The field first (the page saves it with the text the next lines change)
+    const made: AutoRule = { id, phrases: unique, link: target, by: rules.find((r) => r.id === editing)?.by ?? userId, count: 0 }
+    onRules(editing ? rules.map((r) => (r.id === editing ? made : r)) : [...rules, made])
     const tr = editor.state.tr
     if (editing) removeRule(tr, editing)
     let count = 0
@@ -168,7 +184,7 @@ export default function AutolinkPanel({ editor, self, startText, onClose }: Prop
     editor.view.dispatch(tr.setMeta(LINK_EDIT, true))
     setNotice(
       count === 0
-        ? `${unique.length === 1 ? 'That phrase is' : 'Those phrases are'} not written anywhere in the article yet, so nothing was linked (an autolinker is kept in its links).`
+        ? `${unique.length === 1 ? 'That phrase is' : 'Those phrases are'} not written anywhere in the article yet, so nothing was linked. The autolinker is kept: it links them when they are written.`
         : `Linked ${count} ${count === 1 ? 'place' : 'places'}.`,
     )
     start(false)
@@ -178,11 +194,13 @@ export default function AutolinkPanel({ editor, self, startText, onClose }: Prop
     start(true)
     setEditing(rule.id)
     setPhrases(rule.phrases)
+    setDraft('')
     setTarget(rule.link)
     setNotice(null)
   }
 
   const remove = (rule: AutoRule) => {
+    onRules(rules.filter((r) => r.id !== rule.id))
     const tr = editor.state.tr
     removeRule(tr, rule.id)
     editor.view.dispatch(tr.setMeta(LINK_EDIT, true))
@@ -231,36 +249,36 @@ export default function AutolinkPanel({ editor, self, startText, onClose }: Prop
               Write the words you want to link, then choose where they go. Every place they are written in the article becomes that link, and so do the ones you write later.
             </p>
 
-            {/* The phrases: an input each, its X at the right (no background until hovered); Add autolink under them adds another input */}
-            <div className="flex flex-col gap-2">
+            {/* The phrases: tags inside one input. Write the words and press Enter, or click away, and they become a tag (an X on it takes it out;
+                Backspace on an empty input takes the last one out) */}
+            <InputBox className="h-auto min-h-(--field-h) min-w-0 flex-wrap py-1">
               {phrases.map((phrase, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <InputBox className="min-w-0 flex-1">
-                    <input
-                      aria-label={i === 0 ? 'Words to link' : `Link phrase ${i + 1}`}
-                      placeholder={i === 0 ? 'The words to link…' : 'Another phrase to link to the same place…'}
-                      value={phrase}
-                      onChange={(e) => setPhrase(i, e.target.value)}
-                      // Enter goes on to the next phrase (a new one after the last)
-                      onKeyDown={(e) => {
-                        if (e.key !== 'Enter') return
-                        e.preventDefault()
-                        if (i === phrases.length - 1 && phrase.trim()) setPhrases([...phrases, ''])
-                      }}
-                      maxLength={LIMITS.ruleText}
-                      className={FIELD_INPUT}
-                      autoFocus={i === phrases.length - 1}
-                    />
-                  </InputBox>
-                  <IconButton icon={LuX} label={phrases.length === 1 ? 'Clear the words' : `Remove phrase ${i + 1}`} size="lg" disabled={phrases.length === 1 && phrase === ''} onClick={() => removePhrase(i)} />
-                </div>
+                <span key={phrase} className="group/tag inline-flex max-w-44 shrink-0 items-center rounded-[4px] bg-fill-strong ps-2.5 pe-1 text-body">
+                  <span className="truncate">{phrase}</span>
+                  {/* The X shows when the tag is hovered (or has the keyboard focus); its box is clipped to the tag's corners, since a button has no
+                      shape of its own (styles/buttons.css) */}
+                  <span className="inline-flex overflow-hidden rounded-[4px] opacity-0 transition-opacity group-focus-within/tag:opacity-100 group-hover/tag:opacity-100">
+                    <IconButton icon={LuX} label={`Remove: ${phrase}`} size="sm" className="size-5 min-h-0 min-w-0" onClick={() => removePhrase(i)} />
+                  </span>
+                </span>
               ))}
-              <div className="flex justify-end">
-                <Button variant="ghost" size="sm" plain icon={LuPlus} onClick={() => setPhrases([...phrases, ''])}>
-                  Add autolink
-                </Button>
-              </div>
-            </div>
+              <input
+                aria-label="Words to link"
+                placeholder={phrases.length === 0 ? 'The words to link… (Enter makes a tag)' : 'Another phrase…'}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={commitDraft}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    commitDraft()
+                  } else if (e.key === 'Backspace' && draft === '' && phrases.length > 0) removePhrase(phrases.length - 1)
+                }}
+                maxLength={LIMITS.ruleText}
+                className={`${FIELD_INPUT} min-w-32`}
+                autoFocus
+              />
+            </InputBox>
 
             {/* The four kinds side by side, in the order of the link row's buttons (one box, a line between them): each with its name and, but Link, a
                 search button at the right of the name */}
@@ -279,6 +297,7 @@ export default function AutolinkPanel({ editor, self, startText, onClose }: Prop
                           listHeight="max-h-48"
                           autoFocus={searching}
                           showSearch={searching}
+                          archive
                         />
                       ) : s.id === 'jump' ? (
                         <JumpPicker editor={editor} chosen={target?.kind === 'jump' ? target.to : null} onPick={(to) => pick({ kind: 'jump', to })} autoFocus={searching} showSearch={searching} />
@@ -343,11 +362,10 @@ export default function AutolinkPanel({ editor, self, startText, onClose }: Prop
           have={phrases}
           onClose={() => setImporting(false)}
           onImport={(imported) => {
-            // Into the form: the empty inputs are filled first, then new ones
-            const kept = phrases.filter((p) => p.trim() !== '')
-            const added = imported.filter((p) => !kept.some((k) => sameText(k, p)))
+            // Into the form, as tags after the ones there
+            const added = imported.filter((p) => !phrases.some((k) => sameText(k, p)))
             setFormOpen(true)
-            setPhrases([...kept, ...added, ...(kept.length + added.length === 0 ? [''] : [])])
+            setPhrases([...phrases, ...added])
             setNotice(added.length ? `Added ${added.length} ${added.length === 1 ? 'phrase' : 'phrases'}: they link to the same place as the others.` : 'Those phrases are already here.')
           }}
         />
@@ -368,8 +386,10 @@ function ImportModal({ editor, self, have, onClose, onImport }: { editor: Editor
     if (!articles) return
     setState('loading')
     try {
-      const article = (await articles.api.get(id)) as { content?: string }
-      const found = rulesFrom(parse(editor, article.content ?? '')).flatMap((r) => r.phrases)
+      const article = (await articles.api.get(id)) as { content?: string; autolinkers?: unknown }
+      // Its autolinkers; an article not opened since they became a field has none yet: its text then
+      const own = fromStored(article.autolinkers as never)
+      const found = (own.length > 0 ? own : rulesFrom(parse(editor, article.content ?? ''))).flatMap((r) => r.phrases)
       const unique = found.filter((p, i) => found.findIndex((x) => sameText(x, p)) === i)
       setFrom({ title, phrases: unique })
       setTicked(new Set(unique.filter((p) => !here(p))))

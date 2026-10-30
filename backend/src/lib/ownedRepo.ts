@@ -32,6 +32,7 @@ export type RepoOverrides = {
  *   user's, and does not make a cycle (a folder in itself or in its own children). Writes that do not set a parent read nothing for it
  * - a new row without a `position` goes first, before the rows of every ordered table (same pinned flag): one read per table
  * - deleting a row sets the parent of its children (rows of any table pointing at it) to none: they become orphans, not lost
+ * - a list leaves out `omitFromLists`' fields too; a reader's copy of a shared row has no `editorFields`
  * - a shared table (`share: true`, docs/plans/34): get and update also serve the people the row is shared with (lib/access.ts); a
  *   non-owner's JSON has no owner fields; an update of the row's own fields raises its `version`, and with `baseVersion` it is written
  *   only if that is still the version (409 CONFLICT otherwise). List, create and delete stay the owner's
@@ -47,8 +48,9 @@ const HIDDEN_FROM_OTHERS = ['pinned', 'position', 'objectType', 'objectId', 'vis
 export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverrides = {}): Repo<Fields, Fields, Record<string, unknown>, Filter, Record<string, unknown>> {
   const columns = getTableColumns(table)
   const sort = listSort(sortColumnsOf(table as never, config.order))
-  // A list leaves out the field the preview stands for (up to 100 KB of HTML each)
-  const listColumns = Object.fromEntries(Object.entries(columns).filter(([name]) => name !== config.preview)) as typeof columns
+  // A list leaves out the field the preview stands for (up to 100 KB of HTML each) and the fields the config keeps out of lists
+  const notInLists = new Set([config.preview, ...(config.omitFromLists ?? [])])
+  const listColumns = Object.fromEntries(Object.entries(columns).filter(([name]) => !notInLists.has(name))) as typeof columns
 
   const baseJson: (row: Row) => Record<string, unknown> =
     overrides.toJson ??
@@ -62,6 +64,8 @@ export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverr
     const json = baseJson(row)
     if (!shared) return json
     if (access !== 'owner') for (const key of HIDDEN_FROM_OTHERS) delete json[key]
+    // A reader gets no editor-only field (the autolinkers: the links they made are in the text already)
+    if (access === 'reader') for (const key of config.editorFields ?? []) delete json[key]
     // Whether the caller saved it last: a draft kept on their device after a save that landed but was never answered is theirs
     return { ...json, access, editedByMe: me !== undefined && row.editedBy === me }
   }
