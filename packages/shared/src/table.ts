@@ -50,10 +50,10 @@ type LinkTypes<C extends TableConfig> = C extends { link: { types: infer T } } ?
 type LinkValues<C extends TableConfig> = [LinkTypes<C>] extends [never] ? unknown : { objectType: LinkTypes<C> | null; objectId: number | null }
 type PreviewValue<C extends TableConfig> = C extends { preview: string } ? { preview: string } : unknown
 /**
- * A shared table's row also says its version and what the caller may do with it. `visibility` comes only to the owner; a non-owner
+ * A shared table's row also says its version, whether the caller saved it last (`editedByMe`) and what they may do with it. `visibility` comes only to the owner; a non-owner
  * gets the row without the owner's own fields (pinned, position, parent, visibility)
  */
-type ShareValues<C extends TableConfig> = C extends { share: true } ? { version: number; access: ItemAccess; visibility?: Visibility } : unknown
+type ShareValues<C extends TableConfig> = C extends { share: true } ? { version: number; access: ItemAccess; visibility?: Visibility; editedByMe: boolean } : unknown
 
 /** A whole row as the API sends it (GET /:id, and what a write answers) */
 export type ItemOf<C extends TableConfig> = { id: number; archived: boolean; createdAt: string; updatedAt: string } & FieldValues<C> &

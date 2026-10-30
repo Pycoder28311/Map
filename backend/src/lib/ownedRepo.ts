@@ -58,11 +58,12 @@ export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverr
     })
   const shared = config.share === true && isShareable(config.name)
   /** The row as the API sends it; a shared row also says what the caller may do, and a non-owner gets it without the owner's fields */
-  const toJson = (row: Row, access: ItemAccess = 'owner') => {
+  const toJson = (row: Row, access: ItemAccess = 'owner', me?: string) => {
     const json = baseJson(row)
     if (!shared) return json
     if (access !== 'owner') for (const key of HIDDEN_FROM_OTHERS) delete json[key]
-    return { ...json, access }
+    // Whether the caller saved it last: a draft kept on their device after a save that landed but was never answered is theirs
+    return { ...json, access, editedByMe: me !== undefined && row.editedBy === me }
   }
 
   const withPreview = (fields: Fields) => {
@@ -171,16 +172,16 @@ export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverr
         .where(and(eq(columns.userId, userId(ctx)), eq(columns.archived, filter.archived), parentFilter(filter), sort.after(page)))
         .orderBy(...sort.orderBy)
         .limit(fetchLimit(page) ?? -1)) as Row[]
-      return mapPage(toPage(rows, page, sort.cursorOf as (row: Row) => string), (row) => toJson(row))
+      return mapPage(toPage(rows, page, sort.cursorOf as (row: Row) => string), (row) => toJson(row, 'owner', userId(ctx)))
     },
 
     async get(ctx, id) {
       if (shared) {
         const found = await accessOf(ctx, config.name as never, table, id)
-        return found ? toJson(found.row, found.access) : null
+        return found ? toJson(found.row, found.access, userId(ctx)) : null
       }
       const row = (await ctx.db.select().from(table).where(mine(ctx, id)).get()) as Row | undefined
-      return row ? toJson(row) : null
+      return row ? toJson(row, 'owner', userId(ctx)) : null
     },
 
     async create(ctx, input) {
@@ -188,7 +189,7 @@ export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverr
       await checkParent(ctx, fields)
       const placed = config.order.position && fields.position === undefined ? { ...fields, position: await firstPosition(ctx, fields) } : fields
       const row = (await ctx.db.insert(table).values({ ...withPreview(placed), userId: userId(ctx) }).returning().get()) as Row
-      return toJson(row)
+      return toJson(row, 'owner', userId(ctx))
     },
 
     // updated_at is refreshed by the schema on every update
@@ -198,7 +199,7 @@ export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverr
       if (!hasChanges(fields)) return repo.get(ctx, id) // nothing to change (Drizzle rejects an empty SET): the row as it is
       await checkParent(ctx, fields, id)
       const row = (await ctx.db.update(table).set(withPreview(fields)).where(mine(ctx, id)).returning().get()) as Row | undefined
-      return row ? toJson(row) : null
+      return row ? toJson(row, 'owner', userId(ctx)) : null
     },
 
     async remove(ctx, id) {
@@ -248,7 +249,7 @@ export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverr
       .where(and(eq(columns.id, id), base === undefined ? undefined : eq(columns.version, base), editor ? or(eq(columns.userId, me), editor) : eq(columns.userId, me)))
       .returning()
       .get()) as Row | undefined
-    if (written) return toJson(written, written.userId === me ? 'owner' : 'editor')
+    if (written) return toJson(written, written.userId === me ? 'owner' : 'editor', me)
 
     // Not written: say why (one read)
     const found = await accessOf(ctx, config.name as never, table, id)

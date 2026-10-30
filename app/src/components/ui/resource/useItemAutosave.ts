@@ -54,7 +54,10 @@ export function useItemAutosave(resource: AnyResource, item: EditedItem, { value
     const storage = browserStorage()
     const key = userId ? draftKey(userId, resource.name, item.id) : null
     const draft = key ? readDraft<FormValues>(storage, key) : null
-    const decision = decideOnOpen(draft, { updatedAt: String(versionOf(item)), values: saved.current }, sameValues)
+    // A save that landed on the server but was never answered (the page was reloaded while it was on its way) is the only change since
+    // the draft's version when the server is exactly one version ahead and the user saved it: the draft is theirs on top of it
+    const own = draft && item.editedByMe === true && typeof item.version === 'number' && draft.baseUpdatedAt === String(item.version - 1)
+    const decision = decideOnOpen(draft, { updatedAt: own ? draft.baseUpdatedAt : String(versionOf(item)), values: saved.current }, sameValues)
     if (draft && decision === 'none' && key) clearDraft(storage, key)
     return { key, draft, decision }
   })

@@ -114,6 +114,19 @@ for (const name of SHAREABLE) {
       expect(await update(owner, row.id, { title: 'x', baseVersion: 0 })).toMatchObject({ version: 1 })
     })
 
+    it('says whether the caller saved it last (a draft after an unanswered save is theirs)', async () => {
+      const owner = newUser()
+      const row = await make(owner)
+      const editor = newUser()
+      await give(owner, name, row.id, editor, 'editor')
+      expect(await repo.get(owner, row.id)).toMatchObject({ editedByMe: false })
+      await update(editor, row.id, { title: 'x', baseVersion: 0 })
+      expect(await repo.get(editor, row.id)).toMatchObject({ editedByMe: true })
+      expect(await repo.get(owner, row.id)).toMatchObject({ editedByMe: false })
+      expect(await update(owner, row.id, { title: 'y', baseVersion: 1 })).toMatchObject({ editedByMe: true })
+      expect(await repo.get(editor, row.id)).toMatchObject({ editedByMe: false })
+    })
+
     it('the owner can still save without a version (last write wins, as before)', async () => {
       const owner = newUser()
       const row = await make(owner)
