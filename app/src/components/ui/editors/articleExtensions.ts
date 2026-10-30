@@ -5,10 +5,11 @@ import Superscript from '@tiptap/extension-superscript'
 import { TableKit } from '@tiptap/extension-table'
 import TextAlign from '@tiptap/extension-text-align'
 import { BackgroundColor, FontFamily } from '@tiptap/extension-text-style'
+import { blockExtensions } from './blocks'
 import { Structures } from './structures'
 
 // What an article's text can do beyond the editor's base set (RichTextEditor): fonts, a background colour, an underline colour and kind,
-// alignment, superscript / subscript, tables, a paragraph look and numbered sources. The server keeps exactly this markup
+// alignment, superscript / subscript, tables, a paragraph look, numbered sources and boxes of blocks (cards, rows, callouts). The server keeps exactly this markup
 // (packages/shared/src/sanitize-html.ts): a new format here needs its rule there too.
 
 /** A style attribute read from and written to the element's inline CSS (`name`: the CSS property) */
@@ -71,6 +72,8 @@ export const articleExtensions: Extensions = [
   ParagraphStyle,
   // Maths structures with places to fill (the Ω box)
   Structures,
+  // Cards, rows of columns, callouts (the section menu)
+  ...blockExtensions,
 ]
 
 /** Sets one part of the look of the paragraph or heading the caret is in (null: back to none) */
@@ -111,24 +114,6 @@ export function showAsHtml(editor: Editor) {
     .chain()
     .focus()
     .insertContentAt({ from, to }, { type: 'text', text: htmlOf(editor, from, to), marks: [{ type: 'code' }] })
-    .run()
-}
-
-/**
- * Adds a section at the end of the text: a heading and an empty paragraph, the caret in the heading. With text selected it makes a
- * section of that text instead: the blocks it touches become headings (the words stay where they are)
- */
-export function addSection(editor: Editor) {
-  if (!editor.state.selection.empty) {
-    editor.chain().focus().setNode('heading', { level: 2 }).run()
-    return
-  }
-  const end = editor.state.doc.content.size
-  editor
-    .chain()
-    .insertContentAt(end, [{ type: 'heading', attrs: { level: 2 } }, { type: 'paragraph' }])
-    .focus(end + 1)
-    .scrollIntoView()
     .run()
 }
 

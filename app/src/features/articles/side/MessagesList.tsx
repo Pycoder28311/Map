@@ -1,23 +1,18 @@
 import { MESSAGE_EXCLUDE_MAX, previewOf, type Message } from '@map/shared'
 import { useEditorState, type Editor } from '@tiptap/react'
 import { useState } from 'react'
-import { LuMessageSquareText, LuPencil, LuTrash2 } from 'react-icons/lu'
+import { LuMessageSquareText, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu'
 import Button from '../../../components/ui/buttons/Button'
-import IconButton from '../../../components/ui/buttons/IconButton'
+import TreeMenu from '../../../components/ui/tree/TreeMenu'
 import { messagesApi } from '../../../lib/api/messages'
 import { linkRanges, type LinkRange } from '../links/docLinks'
 import { setArticleLink } from '../links/linkExtensions'
 import { peekMessage, rememberMessage, removeMessage, useMessagesRevision } from '../messages/messagesStore'
+import { sameJson, useTextState, type ArticleText } from '../text/articleText'
 
-/** The article's messages (Message links, plan 31) in the order of the text */
-export function useMessages(editor: Editor | null): LinkRange[] {
-  return (
-    useEditorState({
-      editor,
-      selector: ({ editor: e }) => (e ? linkRanges(e.state.doc).filter((r) => r.link.kind === 'msg') : []),
-      equalityFn: (a, b) => JSON.stringify(a) === JSON.stringify(b),
-    }) ?? []
-  )
+/** The article's messages (Message links, plan 31) in the order of the text (all of it, whatever the editor holds) */
+export function useMessages(text: ArticleText): LinkRange[] {
+  return useTextState(text, (doc) => linkRanges(doc).filter((r) => r.link.kind === 'msg'), sameJson)
 }
 
 /** The ids of the messages whose words are in the text */
@@ -80,32 +75,42 @@ function NotInText({ editor, articleId, ranges }: { editor: Editor; articleId: n
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="truncate text-small font-medium">{m.title || 'Message'}</span>
               {m.content && <span className="line-clamp-2 text-small text-fg-subtle">{previewOf(m.content, 90)}</span>}
-              <Button
-                variant="text"
-                size="xs"
-                plain
-                className="self-start"
-                disabled={!hasSelection}
-                title={hasSelection ? undefined : 'Select some words in the text first.'}
-                onClick={() => {
-                  setArticleLink(editor, { kind: 'msg', id: m.id })
-                  forget(m.id)
-                }}
-              >
-                Place on the selected words
-              </Button>
             </span>
-            {m.can.remove && (
-              <IconButton
-                icon={LuTrash2}
-                label={`Delete: ${m.title || 'message'}`}
-                size="sm"
-                onClick={() =>
-                  void removeMessage(m.id).then(
-                    () => forget(m.id),
-                    (e: Error) => setError(e.message),
-                  )
-                }
+            {(m.can.remove || hasSelection) && (
+              <TreeMenu
+                label={`More: ${m.title || 'message'}`}
+                groups={[
+                  ...(hasSelection
+                    ? [
+                        [
+                          {
+                            label: 'Place on the selected words',
+                            icon: LuPlus,
+                            onClick: () => {
+                              setArticleLink(editor, { kind: 'msg', id: m.id })
+                              forget(m.id)
+                            },
+                          },
+                        ],
+                      ]
+                    : []),
+                  ...(m.can.remove
+                    ? [
+                        [
+                          {
+                            label: 'Delete',
+                            icon: LuTrash2,
+                            danger: true,
+                            onClick: () =>
+                              void removeMessage(m.id).then(
+                                () => forget(m.id),
+                                (e: Error) => setError(e.message),
+                              ),
+                          },
+                        ],
+                      ]
+                    : []),
+                ]}
               />
             )}
           </li>
@@ -122,6 +127,8 @@ function NotInText({ editor, articleId, ranges }: { editor: Editor; articleId: n
 }
 
 type Props = {
+  text: ArticleText
+  /** The text's editor, once it was opened ("Not in the text" places a message on its selection) */
   editor: Editor | null
   articleId: number
   /** The user edits the article (they see "Not in the text" and ✎) */
@@ -136,8 +143,8 @@ type Props = {
  * Messages (the round button on the body's left edge): every message link of the text, in order, with the words it is on, and its title
  * once it was read (nothing is read for this list: a message is read when it is opened). Editors also get "Not in the text"
  */
-export default function MessagesList({ editor, articleId, canEdit, onOpen, onEdit }: Props) {
-  const messages = useMessages(editor)
+export default function MessagesList({ text, editor, articleId, canEdit, onOpen, onEdit }: Props) {
+  const messages = useMessages(text)
   // The titles of messages read meanwhile show as they come
   useMessagesRevision()
   return (
@@ -147,7 +154,7 @@ export default function MessagesList({ editor, articleId, canEdit, onOpen, onEdi
         Messages ({messages.length})
       </h2>
       {messages.length === 0 ? (
-        <p className="px-1 text-small text-fg-subtle">{canEdit ? 'None yet. Select some words and use Message in the toolbar’s third row.' : 'None yet.'}</p>
+        <p className="px-1 text-small text-fg-subtle">{canEdit ? 'None yet. Select some words and use Message in the links row.' : 'None yet.'}</p>
       ) : (
         <ul className="flex max-h-80 flex-col overflow-y-auto">
           {messages.map((m) => {
@@ -161,7 +168,7 @@ export default function MessagesList({ editor, articleId, canEdit, onOpen, onEdi
                     {known?.content && <span className="line-clamp-2 text-small font-normal text-fg-subtle">{previewOf(known.content, 90)}</span>}
                   </span>
                 </Button>
-                {canEdit && <IconButton icon={LuPencil} label={`Edit: ${known?.title || m.text}`} size="sm" onClick={() => onEdit(m)} />}
+                {canEdit && <TreeMenu label={`More: ${known?.title || m.text}`} groups={[[{ label: 'Edit', icon: LuPencil, onClick: () => onEdit(m) }]]} />}
               </li>
             )
           })}

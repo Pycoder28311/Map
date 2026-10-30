@@ -1,12 +1,14 @@
 import { EMPTY_INFOBOX, type Infobox, type ItemAccess, type Visibility } from '@map/shared'
 import { useEditorState, type Editor, type Extensions } from '@tiptap/react'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { LuBookmark, LuEllipsis, LuPencilLine, LuInfo, LuLock, LuLockOpen, LuPlus, LuSearch, LuShare2 } from 'react-icons/lu'
+import { LuBookmark, LuEllipsis, LuInfo, LuLock, LuLockOpen, LuPlus, LuSearch, LuShare2 } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
-import { addSection, articleExtensions } from '../../components/ui/editors/articleExtensions'
-import RichTextField from '../../components/ui/fields/RichTextField'
+import { articleExtensions } from '../../components/ui/editors/articleExtensions'
+import { closeTypeTrigger, type TriggerMatch } from '../../components/ui/editors/typeTrigger'
+import { useImagePicker } from '../../components/ui/editors/useImagePicker'
 import TitleInput from '../../components/ui/fields/TitleInput'
 import BarPopover from '../../components/ui/overlays/BarPopover'
+import FloatingAt from '../../components/ui/overlays/FloatingAt'
 import Modal from '../../components/ui/overlays/Modal'
 import ItemConflictModal from '../../components/ui/resource/ItemConflictModal'
 import NewItemEditor from '../../components/ui/resource/NewItemEditor'
@@ -33,7 +35,7 @@ import InfoBox from './InfoBox'
 import FindBar from './links/FindBar'
 import JumpGutter from './links/JumpGutter'
 import { resolveJump } from './links/jumpTargets'
-import { goTo, linkExtensions, removeArticleLink, type LinkHandlers } from './links/linkExtensions'
+import { linkExtensions, removeArticleLink, type LinkHandlers } from './links/linkExtensions'
 import LinkHoverCard from './links/LinkHoverCard'
 import LinkRow, { type LinkPopout } from './links/LinkRow'
 import MessagePanel from './links/MessagePanel'
@@ -45,6 +47,7 @@ import { useSharing } from '../sharing/sharing'
 import { isEmptyInfobox } from './infoRows'
 import ProjectFolders from './ProjectFolders'
 import { linkAt, type LinkRange } from './links/docLinks'
+import type { ArticleLink } from './links/linkHref'
 import SaveButton from './save/SaveButton'
 import { useSaved } from './save/savedStore'
 import { useArticleRole } from './save/useArticleRole'
@@ -53,6 +56,11 @@ import ContentsTree from './side/ContentsTree'
 import MessagesList, { useMessages } from './side/MessagesList'
 import NotesPanel from './side/NotesPanel'
 import RoundTools, { type SidePart } from './side/RoundTools'
+import { SectionPicker } from './sections/SectionMenu'
+import { placeSection, type SectionType } from './sections/sectionTypes'
+import ArticleText from './text/ArticleText'
+import { useArticleText, useTextEditor, type ArticleText as Text } from './text/articleText'
+import SectionHandles from './text/SectionHandles'
 
 const DATE = new Intl.DateTimeFormat(undefined, {
   day: 'numeric',
@@ -117,7 +125,6 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   const { menuOf, dialogs } = useResourceMenu(resource)
   const workspace = useWorkspace()
   const { data: session } = authClient.useSession()
-  const [editor, setEditor] = useState<Editor | null>(null)
 
   // The values the page saves, all of them in one object: a change of one field (the text, the title, the Info box, the autolinkers) goes
   // into it and the autosave gets them all, so two fields changed together (the text and its autolinkers) are one save. It starts again
@@ -143,16 +150,18 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   const [uploadError, setUploadError] = useState<string | null>(null)
   // The link row's open popout, Search in article, the message open beside the text and the person shown (their words were clicked)
   const [linkPopout, setLinkPopout] = useState<LinkPopout | null>(null)
-  // The toolbar's ⋯: its second row, and the link row even with nothing selected
+  // The toolbar's More: its second row
   const [rowsOpen, setRowsOpen] = useState(true)
-  // The edit bar's X hides it; a button in its place brings it back
-  const [barShown, setBarShown] = useState(true)
+  // Link types (row 2): the links row shown under the bar with nothing selected
+  const [linkTypesShown, setLinkTypesShown] = useState(false)
+  // `@` typed in the text: the links row floats above its row (and is not shown under the bar meanwhile)
+  const [mention, setMention] = useState<TriggerMatch | null>(null)
   const [finding, setFinding] = useState(false)
   // The ⋯ menu's Info: how to edit the article
   const [editInfo, setEditInfo] = useState(false)
   // The message open beside the text: its id (null: an old one, its text in the link), its words and where it opens
   // (`hover`: opened by the pointer resting on its words, it closes when the pointer leaves them and its panel)
-  const [message, setMessage] = useState<{ id: number | null; legacy?: { title: string; content: string }; from: number; to: number; top: number; hover?: boolean } | null>(null)
+  const [message, setMessage] = useState<{ id: number | null; legacy?: { title: string; content: string }; from: number; to: number; top: number; anchor?: { x: number; y: number }; hover?: boolean } | null>(null)
   const { set: laterClose, clear: cancelClose } = useTimeout()
   const [person, setPerson] = useState<Person | null>(null)
   // The box around the text: what the message, the hover card and the jump marks are placed in
@@ -164,13 +173,37 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   const canEdit = role === 'editor'
   const isOwner = ((item.access as ItemAccess | undefined) ?? 'owner') === 'owner'
   const articleId = Number(item.id)
+
+  // What a click on one of the article's links does (linkExtensions.ts reads it when it happens, so it always sees this render's state)
+  const handlers = useRef<LinkHandlers>({ onOpen: () => {}, onFind: () => {}, rules: () => [] })
+  // The article's formats and its links: made once, the editor reads them when it opens
+  const [extensions] = useState(() => [...articleExtensions, ...linkExtensions(handlers)])
+  // The text (docs/plans/36): static until an editor clicks it; everything below reads and changes it through `text`
+  const text = useArticleText(autosave.start.version, autosave.start.values.content, extensions, canEdit)
+  useLayoutEffect(() => {
+    text.onChange = (html) => field('content', html)
+  })
+  const editor = useTextEditor(text)
+  const images = useImagePicker(() => text.editor, (file) => upload(file), (error) => onUploadError(error))
+  /** Adds a section of a kind (Add section's menu): at the caret, or at the end of the text when it was not opened yet */
+  const addSection = (type: SectionType) => {
+    const context = { pickImage: images.open }
+    if (editor) placeSection(editor, type, context)
+    else void text.open('end').then((ed) => ed && placeSection(ed, type, context))
+  }
+  const closeMention = () => {
+    if (editor) closeTypeTrigger(editor, '@')
+    setMention(null)
+    setLinkPopout(null)
+  }
   const [saved, setSaved] = useSaved(panelKey)
   // The left column's elements the round buttons opened, the zoom, and whether the page is too narrow to have the column beside it
-  const [side, setSide] = useState<Set<SidePart>>(new Set())
+  // (Contents starts open when the page is wide enough to have it beside the article)
+  const [side, setSide] = useState<Set<SidePart>>(() => new Set(window.innerWidth >= SIDE_MIN_WIDTH ? ['contents'] : []))
   const [zoomed, setZoomed] = useState(false)
   const [page, setPage] = useState<HTMLDivElement | null>(null)
   const narrow = useNarrower(page, SIDE_MIN_WIDTH)
-  const messages = useMessages(editor)
+  const messages = useMessages(text)
   const { ids: noteIds } = useArticleNotes(String(item.id))
   const toggleSide = (part: SidePart) => {
     const next = new Set(side)
@@ -182,33 +215,37 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   /** Opens a message beside the text, level with its words (`el`: the link's element, found from the text when not given) */
   const openMessage = (range: LinkRange, el?: HTMLElement | null, hover = false) => {
     if (range.link.kind !== 'msg') return
-    const at = el ?? (editor ? (editor.view.domAtPos(range.from + 1).node as HTMLElement).parentElement?.closest('a') : null)
-    const top = (at?.getBoundingClientRect().top ?? 0) - (textBox.current?.getBoundingClientRect().top ?? 0)
-    setMessage({ id: range.link.id, legacy: range.link.legacy, from: range.from, to: range.to, top: Math.max(0, top), hover })
+    const box = textBox.current?.getBoundingClientRect()
+    // The words' last line: the element's own rect, or where the words end in the text
+    const end = el?.getBoundingClientRect() ?? text.rectAt(range.to - 1)
+    const start = el?.getBoundingClientRect() ?? text.rectAt(range.from + 1)
+    const top = (start?.top ?? 0) - (box?.top ?? 0)
+    const anchor = end && box ? { x: ('right' in end ? end.right : end.left) - box.left, y: (end.top + end.bottom) / 2 - box.top } : undefined
+    setMessage({ id: range.link.id, legacy: range.link.legacy, from: range.from, to: range.to, top: Math.max(0, top), anchor, hover })
   }
 
   /** The pointer rests on a message's words (`el`), or has left them (null): its panel opens, and closes shortly after the pointer left both */
   const hoverMessage = (el: HTMLElement | null) => {
     if (!el) return laterClose(() => setMessage((open) => (open?.hover ? null : open)), 250)
     cancelClose()
-    if (!editor) return
-    const range = linkAt(editor.state.doc, editor.view.posAtDOM(el, 0))
+    const pos = text.posAtDom(el, 0)
+    const range = pos === null ? null : linkAt(text.doc(), pos + 1)
     if (range) openMessage(range, el, true)
   }
 
   // Autolinkers already in the text (an article made before the field) are added to the field once, when an editor opens the article
   const adopted = useRef(false)
   useEffect(() => {
-    if (!editor || !canEdit || adopted.current || !session) return
+    if (!canEdit || adopted.current || !session) return
     adopted.current = true
-    const next = adoptRules(rules.list, editor.state.doc, session.user.id)
+    const next = adoptRules(rules.list, text.doc(), session.user.id)
     if (next !== rules.list) setRules(next)
-    // Once, when the editor is there
+    // Once, when the session is there
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, canEdit, session])
+  }, [text, canEdit, session])
 
   // Old messages become messages when an editor opens the article; what was read of its messages is forgotten when the page closes
-  useLegacyMessages(editor, articleId, canEdit, autosave.flush)
+  useLegacyMessages(text, articleId, canEdit, autosave.flush)
   useEffect(() => () => forgetArticleMessages(articleId), [articleId])
 
   // Zoom: the page goes to the top layer, over the panes, the sidebar and the navbar (they stay as they are under it); Esc leaves it
@@ -226,26 +263,21 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
     return () => window.removeEventListener('keydown', onKey)
   }, [zoomed])
 
-  // What a click on one of the article's links does (linkExtensions.ts reads it when it happens, so it always sees this render's state)
-  const handlers = useRef<LinkHandlers>({ onOpen: () => {}, onFind: () => {}, rules: () => [] })
   useEffect(() => {
     handlers.current = {
       onOpen: (link) => {
         if (link.kind === 'url' || link.kind === 'project-url') window.open(link.url, '_blank', 'noopener,noreferrer')
         else if (link.kind === 'object') workspace.open({ type: link.type, id: link.id })
         else if (link.kind === 'person') setPerson(personById(link.personId))
-        else if (link.kind === 'jump' && editor) {
-          const target = resolveJump(editor.state.doc, link.to)
-          if (target) goTo(editor, target.kind === 'heading' ? target.from + 1 : target.from, target.kind === 'heading' ? target.end - 1 : target.end)
+        else if (link.kind === 'jump') {
+          const target = resolveJump(text.doc(), link.to)
+          if (target) text.goTo(target.kind === 'heading' ? target.from + 1 : target.from, target.kind === 'heading' ? target.end - 1 : target.end)
         }
       },
       onFind: () => setFinding(true),
       rules: () => rules.list,
     }
   })
-  // The article's formats and its links: made once, the editor reads them when it opens
-  const [extensions] = useState(() => [...articleExtensions, ...linkExtensions(handlers)])
-
   const onUploadError = (error: unknown) => setUploadError(error instanceof Error ? error.message : 'The picture could not be uploaded.')
   const upload = (file: File) => {
     setUploadError(null)
@@ -314,7 +346,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   )
 
   // The left column: Contents (beside the article on a wide page; on a narrow one only when its round button opened it), then Messages and Notes
-  const showContents = !narrow || side.has('contents')
+  const showContents = side.has('contents')
   const sideColumn = (showContents || side.has('messages') || side.has('notes')) && (
     <aside
       aria-label="Article tools"
@@ -325,20 +357,18 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
           : 'sticky top-0 flex max-h-screen w-56 shrink-0 flex-col gap-3 self-start overflow-y-auto pt-2 pb-4'
       }
     >
-      {showContents && <ContentsTree editor={editor} />}
+      {showContents && <ContentsTree text={text} />}
       {side.has('messages') && (
         <MessagesList
+          text={text}
           editor={editor}
           articleId={articleId}
           canEdit={canEdit}
           onOpen={(range) => {
-            if (editor) goTo(editor, range.from, range.to)
+            text.goTo(range.from, range.to)
             openMessage(range)
           }}
-          onEdit={(range) => {
-            editor?.chain().focus().setTextSelection({ from: range.from, to: range.to }).run()
-            setLinkPopout('msg')
-          }}
+          onEdit={(range) => void text.open({ from: range.from, to: range.to }).then(() => setLinkPopout('msg'))}
         />
       )}
       {side.has('notes') && <NotesPanel articleId={String(item.id)} />}
@@ -362,20 +392,45 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         onField={field}
         readOnly={!canEdit}
         focusField={focusField}
+        text={text}
         editor={editor}
-        onEditor={setEditor}
         onUploadImage={upload}
         onUploadError={onUploadError}
         extensions={extensions}
+        onLinkClick={(link, range, el) => handlers.current.onOpen(link, range, el)}
+        onFind={() => setFinding(true)}
+        onMention={setMention}
+        onSection={addSection}
         textBox={textBox}
         textExtras={
-          editor && (
-            <>
-              <LinkHoverCard editor={editor} onMessage={hoverMessage} />
-              <JumpGutter editor={editor} box={textBox} />
-              {message && (
-                // (the pointer on the panel keeps it open while it was opened by hovering)
-                <div className="contents" data-message-panel onPointerEnter={cancelClose} onPointerLeave={() => message.hover && hoverMessage(null)}>
+          <>
+            <LinkHoverCard text={text} onMessage={hoverMessage} />
+            <JumpGutter text={text} box={textBox} />
+            {canEdit && <SectionHandles text={text} box={textBox} />}
+            {images.input}
+            {/* `@` typed: the links row over the text, above the caret's row; a link picked is written at the `@` */}
+            {mention && editor && (
+              <FloatingAt anchor={mention.rect} side="above" label="Links" onDismiss={closeMention} className="w-[min(44rem,calc(100vw-2rem))]">
+                <LinkRow
+                  editor={editor}
+                  text={text}
+                  self={`${resource.panelType}:${item.id}`}
+                  articleId={articleId}
+                  expanded
+                  placement="floating"
+                  onClose={closeMention}
+                  insertAt={{ from: mention.from, to: mention.to }}
+                  open={linkPopout}
+                  onOpenChange={setLinkPopout}
+                  rules={rules.list}
+                  onRules={setRules}
+                  userId={session?.user.id ?? ''}
+                />
+              </FloatingAt>
+            )}
+            {message && (
+              // (the pointer on the panel keeps it open while it was opened by hovering)
+              <div className="contents" data-message-panel onPointerEnter={cancelClose} onPointerLeave={() => message.hover && hoverMessage(null)}>
                 <MessagePanel
                   key={`${message.id}:${message.from}`}
                   id={message.id}
@@ -383,22 +438,24 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
                   articleId={articleId}
                   canEditArticle={canEdit}
                   top={message.top}
+                  anchor={message.anchor}
                   onClose={() => setMessage(null)}
-                  onEdit={() => {
-                    editor.chain().focus().setTextSelection({ from: message.from, to: message.to }).run()
-                    setMessage(null)
-                    setLinkPopout('msg')
-                  }}
-                  onRemoveLink={() => {
-                    editor.chain().setTextSelection({ from: message.from, to: message.to }).run()
-                    removeArticleLink(editor)
-                    setMessage(null)
-                  }}
+                  onEdit={() =>
+                    void text.open({ from: message.from, to: message.to }).then(() => {
+                      setMessage(null)
+                      setLinkPopout('msg')
+                    })
+                  }
+                  onRemoveLink={() =>
+                    void text.open({ from: message.from, to: message.to }).then((ed) => {
+                      if (ed) removeArticleLink(ed)
+                      setMessage(null)
+                    })
+                  }
                 />
-                </div>
-              )}
-            </>
-          )
+              </div>
+            )}
+          </>
         }
         leftTools={
           <RoundTools
@@ -408,7 +465,6 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
             onToggle={toggleSide}
             messages={messages.length}
             notes={noteIds.length}
-            narrow={narrow}
           />
         }
         actions={actions}
@@ -416,36 +472,37 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         // Where it is in its owner's projects: theirs only
         folders={isOwner ? <ProjectFolders resource={resource} item={item} /> : null}
         toolbar={
+          // Always there for an editor (its buttons wait for the text to be opened), so opening the text never pushes it down
           <div className="sticky top-0 z-20 flex flex-col gap-1 bg-surface py-1 empty:hidden">
-            {!canEdit ? null : barShown ? (
+            {canEdit && (
               <ArticleToolbar
                 editor={editor}
                 onUploadImage={upload}
                 onUploadError={onUploadError}
                 secondRow={rowsOpen}
                 onSecondRowChange={setRowsOpen}
-                onClose={() => setBarShown(false)}
-                // The third row, inside the bar: the links (while words are selected, or the ⋯ has the rows open)
-                lastRow={
-                  <LinkRow
-                    editor={editor}
-                    self={`${resource.panelType}:${item.id}`}
-                    articleId={articleId}
-                    expanded={rowsOpen}
-                    open={linkPopout}
-                    onOpenChange={setLinkPopout}
-                    rules={rules.list}
-                    onRules={setRules}
-                    userId={session?.user.id ?? ''}
-                  />
+                onSection={addSection}
+                linkTypes={{ shown: linkTypesShown, onToggle: () => setLinkTypesShown(!linkTypesShown) }}
+                // Under the bar (while words are selected, or Link types is pressed), unless it floats at an `@`
+                linkRow={
+                  !mention && (
+                    <LinkRow
+                      editor={editor}
+                      text={text}
+                      self={`${resource.panelType}:${item.id}`}
+                      articleId={articleId}
+                      expanded={linkTypesShown}
+                      open={linkPopout}
+                      onOpenChange={setLinkPopout}
+                      rules={rules.list}
+                      onRules={setRules}
+                      userId={session?.user.id ?? ''}
+                    />
+                  )
                 }
               />
-            ) : (
-              <Button variant="ghost" size="sm" plain icon={LuPencilLine} className="self-start" onClick={() => setBarShown(true)}>
-                Edit bar
-              </Button>
             )}
-            {finding && editor && <FindBar editor={editor} onClose={() => setFinding(false)} />}
+            {finding && <FindBar text={text} onClose={() => setFinding(false)} />}
             {uploadError && (
               <p role="alert" className="text-small text-danger">
                 {uploadError}
@@ -489,15 +546,24 @@ type BodyProps = {
   /** A reader's page: shown, nothing can be changed */
   readOnly: boolean
   focusField?: string
+  /** The article's text (static until it is clicked), and its editor once it was */
+  text: Text
   editor: Editor | null
-  onEditor: (editor: Editor | null) => void
   onUploadImage: (file: File) => Promise<string>
   onUploadError: (error: unknown) => void
   /** The text's extensions (its formats and its links), read once when it opens */
   extensions: Extensions
+  /** A link clicked in the static text */
+  onLinkClick: (link: ArticleLink, range: LinkRange, el: HTMLElement) => void
+  /** Ctrl / ⌘ + F in the static text */
+  onFind: () => void
+  /** `@` typed in the text (or its menu closed) */
+  onMention: (match: TriggerMatch | null) => void
+  /** Add section's menu (under the last row) picked a kind */
+  onSection: (type: SectionType) => void
   /** The box around the text (positioned): what is placed over the text is placed in it */
   textBox: RefObject<HTMLDivElement | null>
-  /** Placed in that box: the link's hover card, the jump marks in its left margin, an open message */
+  /** Placed in that box: the link's hover card, the jump marks and the sections' ⠿ in its left margin, an open message, the `@` links row */
   textExtras: ReactNode
   /** On the body's left line: the round buttons (Zoom, Messages, Notes) */
   leftTools: ReactNode
@@ -523,11 +589,15 @@ function ArticleBody({
   onField,
   readOnly,
   focusField,
+  text,
   editor,
-  onEditor,
   onUploadImage,
   onUploadError,
   extensions,
+  onLinkClick,
+  onFind,
+  onMention,
+  onSection,
   textBox,
   textExtras,
   leftTools,
@@ -541,12 +611,13 @@ function ArticleBody({
   const [infobox, setInfobox] = useState<Infobox>(() => JSON.parse(start.infobox ?? 'null') ?? EMPTY_INFOBOX)
   const change = onField
   const fields = Object.fromEntries(resource.ui.fields.map((f) => [f.name, f]))
-  // The cursor is in the text's last row (its last top-level block)
+  // The cursor is in the text's last row (its last section, wherever the editor's window is)
   const inLastRow =
     useEditorState({
       editor,
-      selector: ({ editor: e }) => !!e && e.isFocused && e.state.selection.$from.index(0) === e.state.doc.childCount - 1,
+      selector: ({ editor: e }) => !!e && e.isFocused && text.sectionAt(text.fromEditor(e.state.selection.from)) === text.doc().childCount - 1,
     }) ?? false
+  const [adding, setAdding] = useState(false)
 
   return (
     // Positioned: the round buttons sit on the body's left line (outside the bordered box, which clips)
@@ -569,7 +640,8 @@ function ArticleBody({
           />
           {/* The folder buttons sit on the border between the banner and the body, half over each */}
           <div className="relative z-10 -mt-3.5 px-4 pb-1 empty:hidden">{folders}</div>
-          <div className="relative flex flex-1 flex-col gap-2 p-4 pt-1">
+          {/* An editor's page has room at the left for the sections' ⠿ */}
+          <div className={`relative flex flex-1 flex-col gap-2 p-4 pt-1 ${readOnly ? '' : 'ps-11'}`}>
             <div className="flex items-center gap-3">
               <TitleInput
                 size="xl"
@@ -604,29 +676,42 @@ function ArticleBody({
                   />
                 </aside>
               )}
-              <RichTextField
-                value={start.content}
-                onChange={(html) => change('content', html)}
-                label={fields.content?.label ?? 'Text'}
-                placeholder={fields.content?.placeholder}
+              <ArticleText
+                text={text}
                 extensions={extensions}
-                onEditor={onEditor}
+                label={fields.content?.label ?? 'Text'}
+                placeholder={readOnly ? undefined : fields.content?.placeholder}
+                autoFocus={!readOnly && focusField === 'content'}
                 onUploadImage={onUploadImage}
                 onUploadError={onUploadError}
-                autoFocus={!readOnly && focusField === 'content'}
-                editable={!readOnly}
-                minHeight="min-h-[40vh]"
+                onLinkClick={onLinkClick}
+                onFind={onFind}
+                onMention={onMention}
               />
               {textExtras}
             </div>
             {/* Under the last row, only while the cursor is in it */}
-            {editor && inLastRow && !readOnly && (
-              <div>
-                <Button variant="ghost" size="sm" plain filled icon={LuPlus} onMouseDown={(e) => e.preventDefault()} onClick={() => addSection(editor)}>
-                  Add section
-                </Button>
+            {(editor && inLastRow) || adding ? (
+              <div className="relative">
+                <BarPopover
+                  label="Add section"
+                  open={adding}
+                  onOpenChange={setAdding}
+                  trigger={
+                    <Button variant="ghost" size="sm" plain filled icon={LuPlus} aria-expanded={adding} onMouseDown={(e) => e.preventDefault()} onClick={() => setAdding(!adding)}>
+                      Add section
+                    </Button>
+                  }
+                >
+                  <SectionPicker
+                    onPick={(type) => {
+                      setAdding(false)
+                      onSection(type)
+                    }}
+                  />
+                </BarPopover>
               </div>
-            )}
+            ) : null}
             <div className="mt-auto">{footer}</div>
           </div>
         </div>

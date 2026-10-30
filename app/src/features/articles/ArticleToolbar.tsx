@@ -1,5 +1,5 @@
 import { useEditorState, type Editor } from '@tiptap/react'
-import { useRef, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   LuAlignCenter,
   LuAlignJustify,
@@ -10,7 +10,6 @@ import {
   LuAlignVerticalSpaceBetween,
   LuBold,
   LuChevronDown,
-  LuX,
   LuCode,
   LuHighlighter,
   LuImage,
@@ -31,19 +30,23 @@ import {
 } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
-import { addSection, paragraphLookOf, setParagraphLook, showAsHtml } from '../../components/ui/editors/articleExtensions'
+import { paragraphLookOf, setParagraphLook, showAsHtml } from '../../components/ui/editors/articleExtensions'
+import { idleEditor } from '../../components/ui/editors/idleEditor'
+import { useImagePicker } from '../../components/ui/editors/useImagePicker'
 import ColourField from '../../components/ui/fields/ColourField'
 import ColourPicker from '../../components/ui/fields/ColourPicker'
 import TextField from '../../components/ui/fields/TextField'
 import type { PlainIcon } from '../../components/ui/icons/IconSlot'
 import BarPopover from '../../components/ui/overlays/BarPopover'
-import Dropdown from '../../components/ui/overlays/Dropdown'
-import DropdownField from '../../components/ui/fields/DropdownField'
 import { FONTS } from '../board/fonts'
 import { insertStructure, STRUCTURE_KINDS, STRUCTURES, type StructureKind } from '../../components/ui/editors/structures'
 import MoreFormats from './MoreFormats'
+import { SectionPicker } from './sections/SectionMenu'
+import type { SectionType } from './sections/sectionTypes'
 import StructureIcon from './StructureIcon'
 import HoverInfo from '../../components/ui/overlays/HoverInfo'
+import { FormatToggle, Group, Idle, Separator, TextButton, Tip, ToolButton } from './toolbar/parts'
+import ToolbarDropdown from './toolbar/ToolbarDropdown'
 import { GROUP_EXAMPLES } from './symbols'
 import { useToolbarLevel } from './toolbarLevel'
 
@@ -112,113 +115,20 @@ const INSERTS: { value: Insert; label: string; icon: PlainIcon }[] = [
 ]
 
 type Props = {
+  /** The text's editor; null until the text is clicked: the bar is drawn the same, its buttons disabled (but Add section) */
   editor: Editor | null
   /** Stores a picture and answers its address (Insert ▸ Image) */
   onUploadImage: (file: File) => Promise<string>
   onUploadError: (error: unknown) => void
-  /** Whether the second row shows (the ⋯ on the bar's right edge): the page holds it, the link row shows with it too (LinkRow.tsx) */
+  /** Whether the second row shows (More, at the first row's right end): the page holds it */
   secondRow: boolean
   onSecondRowChange: (shown: boolean) => void
-  /** The X at the bar's top corner: hides the whole bar (the page shows a button to bring it back) */
-  onClose: () => void
-  /** The bar's last row, under its own line (the links: LinkRow); nothing while it has nothing to show */
-  lastRow?: ReactNode
-}
-
-/** A thin line between two groups of buttons (the gap around it is the row's) */
-function Separator() {
-  return <span aria-hidden className="h-5 w-px shrink-0 bg-(--divider-line)" />
-}
-
-function Group({ children, className = '' }: { children: ReactNode; className?: string }) {
-  // Never split: a narrow bar breaks its rows between groups (toolbarLevel.ts, level 3)
-  return <div className={`flex shrink-0 items-center gap-base ${className}`}>{children}</div>
-}
-
-/**
- * The small element that floats above a control while the pointer rests on it (or it has the focus): its name, and, for the second row's, a
- * sentence on what it does (`text`). For a control that is not one button (a dropdown field): it wraps it
- */
-function Tip({ name, text, children }: { name: string; text?: string; children: ReactNode }) {
-  return (
-    <HoverInfo title={name} text={text} side="top" delay={350}>
-      <span className="inline-flex">{children}</span>
-    </HoverInfo>
-  )
-}
-
-/** A button that keeps the caret in the text while it is pressed (`tip`: the sentence its floating element says) */
-function ToolButton(props: {
-  tip?: string
-  icon: PlainIcon
-  label: string
-  onClick?: () => void
-  active?: boolean
-  disabled?: boolean
-  bigIcon?: boolean
-  iconClassName?: string
-}) {
-  return (
-    <HoverInfo title={props.label} text={props.tip} side="top" delay={350}>
-      <IconButton
-        icon={props.icon}
-        label={props.label}
-        size="sm"
-        variant={props.active ? 'selected' : 'ghost'}
-        aria-pressed={props.active}
-        disabled={props.disabled}
-        // An icon button's icon is as big as its text (1em): the size is set on the icon itself (`!`: the button's own rule is more specific); the same as the
-        // List and Text align buttons have
-        className={props.bigIcon ? '[&>svg]:size-6!' : '[&>svg]:size-5!'}
-        iconClassName={props.iconClassName}
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={props.onClick}
-      />
-    </HoverInfo>
-  )
-}
-
-/** A button with its name beside the icon, that keeps the caret in the text while it is pressed (`small`: the link row's, LinkRow.tsx) */
-export function TextButton(props: {
-  /** The sentence its floating element says under its name (left out: just the name) */
-  tip?: string
-  icon?: PlainIcon
-  label: string
-  onClick?: () => void
-  active?: boolean
-  disabled?: boolean
-  title?: string
-  filled?: boolean
-  big?: boolean
-  small?: boolean
-  /** An underline button (the text variant): chosen = underlined (the link row's) */
-  underline?: boolean
-}) {
-  return (
-    <HoverInfo title={props.label} text={props.tip} side="top" delay={350}>
-      <Button
-        icon={props.icon}
-        size={props.small ? 'xs' : 'sm'}
-        plain
-        filled={props.filled}
-        variant={props.underline ? 'text' : props.active ? 'selected' : 'ghost'}
-        aria-pressed={props.active}
-        disabled={props.disabled}
-        title={props.title}
-        // The icon close to the text, the text of a field for all of them; a plain one has the bar's icon size (1.25rem), the big one (Section) a smaller icon (`!` wins over the bar's)
-        // (one font size only: two `!` sizes on a button, the later in the stylesheet wins, whatever order they are written in)
-        className={`[--btn-icon-gap:0.25rem]! font-normal! [--btn-text:var(--fg)]! [--btn-hover-text:var(--fg)]! ${
-          props.small
-            ? '[--btn-icon-size:0.875rem]! [--btn-font-size:0.75rem]! [--btn-pad-y:0]! [--btn-line-height:1]! [--btn-underline-offset:1px]!'
-            : `[--btn-font-size:1rem]! ${props.big ? '[--btn-icon-size:1rem]!' : '[--btn-icon-size:1.25rem]!'}`
-        }`}
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={props.onClick}
-      >
-        {props.label}
-      </Button>
-    </HoverInfo>
-  )
+  /** Add section's menu picked a kind (the page adds it at the caret, opening the text first when it is not open yet) */
+  onSection: (type: SectionType) => void
+  /** Link types (row 2, right of the Ω, while nothing is selected): whether it shows the links row now, and its press */
+  linkTypes: { shown: boolean; onToggle: () => void }
+  /** The links row (LinkRow): its own box under the bar, a small gap away, floating over the text so it never pushes it down */
+  linkRow?: ReactNode
 }
 
 /** The font, as the map's text sidebar has it: each name in its own font */
@@ -234,7 +144,8 @@ function FontSelect({ editor, font }: { editor: Editor; font: string }) {
     })),
   ]
   return (
-    <DropdownField
+    <ToolbarDropdown
+      kind="field"
       label="Font"
       width="w-36"
       value={font}
@@ -255,7 +166,8 @@ function SizeControl({ editor, size }: { editor: Editor; size: number }) {
     if (Number.isFinite(n) && n >= MIN_SIZE && n <= MAX_SIZE && n !== size) apply(n)
   }
   return (
-    <DropdownField
+    <ToolbarDropdown
+      kind="field"
       label="Font size"
       width="w-16"
       centerOptions
@@ -287,7 +199,7 @@ function SizeControl({ editor, size }: { editor: Editor; size: number }) {
         onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
         className="box-content h-4 min-w-0 flex-1 appearance-none border-0 bg-transparent px-2 py-sm text-center text-body leading-none outline-none [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
-    </DropdownField>
+    </ToolbarDropdown>
   )
 }
 
@@ -318,10 +230,10 @@ function BoldControl({ editor, bold, weight }: { editor: Editor; bold: boolean; 
   const current = weight || (bold ? '700' : '400')
   const on = bold || (weight !== '' && weight !== '400')
   return (
-    <DropdownField
+    <ToolbarDropdown
+      kind="split"
+      name="Bold"
       label="How bold"
-      width="w-auto"
-      bordered={false}
       options={[
         { value: 'heading:weight', label: 'Weight', heading: true },
         ...WEIGHTS.map((w) => ({
@@ -339,17 +251,8 @@ function BoldControl({ editor, bold, weight }: { editor: Editor; bold: boolean; 
           .run()
       }
     >
-      <IconButton
-        icon={LuBold}
-        label="Bold"
-        size="sm"
-        variant={on ? 'selected' : 'ghost'}
-        aria-pressed={on}
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => (on ? setTextLook(editor, 'fontWeight', null).unsetBold().run() : editor.chain().focus().toggleBold().run())}
-        className="ui-dropfield-icon [&>svg]:size-5!"
-      />
-    </DropdownField>
+      <FormatToggle icon={LuBold} label="Bold" on={on} onClick={() => (on ? setTextLook(editor, 'fontWeight', null).unsetBold().run() : editor.chain().focus().toggleBold().run())} />
+    </ToolbarDropdown>
   )
 }
 
@@ -365,10 +268,10 @@ function ItalicControl({ editor, italic, slant }: { editor: Editor; italic: bool
   const current = slant || (italic ? 'italic' : '')
   const on = italic || slant !== ''
   return (
-    <DropdownField
+    <ToolbarDropdown
+      kind="split"
+      name="Italic"
       label="How slanted"
-      width="w-auto"
-      bordered={false}
       options={[
         { value: 'heading:slant', label: 'Slant', heading: true },
         ...SLANTS.map((z) => ({
@@ -381,17 +284,8 @@ function ItalicControl({ editor, italic, slant }: { editor: Editor; italic: bool
       // Normal is the editor's own italic; an oblique one is the text's own style, so the italic mark goes (they would mix)
       onChange={(z) => (z === 'italic' ? setTextLook(editor, 'fontStyle', null).setItalic().run() : setTextLook(editor, 'fontStyle', z).unsetItalic().run())}
     >
-      <IconButton
-        icon={LuItalic}
-        label="Italic"
-        size="sm"
-        variant={on ? 'selected' : 'ghost'}
-        aria-pressed={on}
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => (on ? setTextLook(editor, 'fontStyle', null).unsetItalic().run() : editor.chain().focus().toggleItalic().run())}
-        className="ui-dropfield-icon [&>svg]:size-5!"
-      />
-    </DropdownField>
+      <FormatToggle icon={LuItalic} label="Italic" on={on} onClick={() => (on ? setTextLook(editor, 'fontStyle', null).unsetItalic().run() : editor.chain().focus().toggleItalic().run())} />
+    </ToolbarDropdown>
   )
 }
 
@@ -501,12 +395,12 @@ function ParagraphLook({ editor, look }: { editor: Editor; look: Partial<Record<
   const borderWidth = border ? Number(border[1]) : 0
   const borderColour = border?.[2] ?? BORDER_COLOUR
   const setBorder = (width: number, colour: string) => setParagraphLook(editor, 'border', width > 0 ? `${width}px solid ${colour}` : null)
-  const field = { width: 'w-auto', bordered: false } as const
   return (
     <>
-      <Tip name="Padding" text="Sets the space between the paragraph’s text and its edge.">
-        <DropdownField
-          {...field}
+      <ToolbarDropdown
+        kind="split"
+          name="Padding"
+          tip="Sets the space between the paragraph’s text and its edge."
           label="Padding"
           display={<Shown icon={LuSquareDashed}>{padding}</Shown>}
           options={PADDINGS.map((n) => ({
@@ -518,10 +412,10 @@ function ParagraphLook({ editor, look }: { editor: Editor; look: Partial<Record<
           }))}
           onChange={(n) => setParagraphLook(editor, 'padding', Number(n) ? `${n}px` : null)}
         />
-      </Tip>
-      <Tip name="Letter gap" text="Sets the space between each letter of the paragraph.">
-        <DropdownField
-          {...field}
+      <ToolbarDropdown
+        kind="split"
+          name="Letter gap"
+          tip="Sets the space between each letter of the paragraph."
           label="Letter gap"
           display={<Shown icon={LuMoveHorizontal}>{letterGap}</Shown>}
           options={LETTER_GAPS.map((n) => ({
@@ -534,10 +428,10 @@ function ParagraphLook({ editor, look }: { editor: Editor; look: Partial<Record<
           }))}
           onChange={(n) => setParagraphLook(editor, 'letterSpacing', Number(n) ? `${Number(n).toFixed(1)}px` : null)}
         />
-      </Tip>
-      <Tip name="Row gap" text="Sets the space between the lines of the paragraph.">
-        <DropdownField
-          {...field}
+      <ToolbarDropdown
+        kind="split"
+          name="Row gap"
+          tip="Sets the space between the lines of the paragraph."
           label="Row gap"
           display={<Shown icon={LuAlignVerticalSpaceBetween}>{rowGap}</Shown>}
           options={ROW_GAPS.map((n) => ({
@@ -549,10 +443,10 @@ function ParagraphLook({ editor, look }: { editor: Editor; look: Partial<Record<
           }))}
           onChange={(n) => setParagraphLook(editor, 'lineHeight', Number(n) === NORMAL_ROW_GAP ? null : Number(n).toFixed(1))}
         />
-      </Tip>
-      <Tip name="Border" text="Draws a line round the paragraph, in the width and colour you pick.">
-        <DropdownField
-          {...field}
+      <ToolbarDropdown
+        kind="split"
+          name="Border"
+          tip="Draws a line round the paragraph, in the width and colour you pick."
           label="Border"
           display={<Shown icon={LuFrame}>{borderWidth || '–'}</Shown>}
           options={[
@@ -579,7 +473,6 @@ function ParagraphLook({ editor, look }: { editor: Editor; look: Partial<Record<
             </div>
           }
         />
-      </Tip>
     </>
   )
 }
@@ -636,10 +529,10 @@ function UnderlineControl({ editor, on, kind, colour }: { editor: Editor; on: bo
       .run()
   }
   return (
-    <DropdownField
+    <ToolbarDropdown
+      kind="split"
+      name="Underline"
       label="Underline kind and colour"
-      width="w-auto"
-      bordered={false}
       options={options}
       onChange={pick}
       extra={
@@ -648,19 +541,11 @@ function UnderlineControl({ editor, on, kind, colour }: { editor: Editor; on: bo
         </div>
       }
     >
-      <IconButton
-        label="Underline"
-        size="sm"
-        variant={on ? 'selected' : 'ghost'}
-        aria-pressed={on}
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => editor.chain().focus().toggleUnderline().run()}
-        className="ui-dropfield-icon [&>svg]:size-5!"
-      >
-        {/* The icon is drawn in the underline's own colour while the text has one */}
+      {/* The icon is drawn in the underline's own colour while the text has one */}
+      <FormatToggle label="Underline" on={on} onClick={() => editor.chain().focus().toggleUnderline().run()}>
         <LuUnderline style={colour ? { color: colour } : undefined} />
-      </IconButton>
-    </DropdownField>
+      </FormatToggle>
+    </ToolbarDropdown>
   )
 }
 
@@ -669,7 +554,10 @@ function UnderlineControl({ editor, on, kind, colour }: { editor: Editor; on: bo
  * the text (font and size, as the map's text sidebar has them, bold, italic, underline with a dropdown of its kind and colour, the text colour as a coloured A and the background colour), lists, the alignments one next to the other,
  * next to the alignments with no space: Media (an image icon and its name; it opens the image, table and divider choice) and Link (a link icon and its name) together, with no gap and a line before them.
  */
-export default function ArticleToolbar({ editor, onUploadImage, onUploadError, secondRow, onSecondRowChange, onClose, lastRow }: Props) {
+export default function ArticleToolbar({ editor: own, onUploadImage, onUploadError, secondRow, onSecondRowChange, onSection, linkTypes, linkRow }: Props) {
+  // Before the text is opened the buttons read an editor of their own (and are disabled)
+  const idle = !own
+  const editor = own ?? idleEditor()
   const state = useEditorState({
     editor,
     selector: ({ editor: e }) => {
@@ -713,29 +601,16 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
   const [more, setMore] = useState(false)
   const [linking, setLinking] = useState(false)
   const [inserting, setInserting] = useState(false)
+  const [adding, setAdding] = useState(false)
   const [href, setHref] = useState('')
-  const picker = useRef<HTMLInputElement>(null)
+  const images = useImagePicker(() => own, onUploadImage, onUploadError)
   // How narrow the bar is (toolbarLevel.ts): what folds into dropdowns and what moves to the second row
   const [level, bar] = useToolbarLevel()
 
-  if (!editor || !state) return null
+  if (!state) return null
 
-  const insertImages = async (files: File[]) => {
-    for (const file of files) {
-      try {
-        const src = await onUploadImage(file)
-        editor
-          .chain()
-          .focus()
-          .setImage({ src, alt: file.name.replace(/\.[^.]+$/, '') })
-          .run()
-      } catch (error) {
-        onUploadError(error)
-      }
-    }
-  }
   const insert = (what: Insert) => {
-    if (what === 'image') picker.current?.click()
+    if (what === 'image') images.open()
     else if (what === 'table') editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
     else editor.chain().focus().setHorizontalRule().run()
   }
@@ -788,35 +663,22 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
       // Every icon one size, 1.25rem: the buttons' own (a button sets its size from its text) and the colour fields'
       className="relative flex flex-col gap-base rounded-(--card-radius) border border-line bg-surface p-base shadow-sm [--btn-icon-size:1.25rem] [&_button]:[--btn-icon-size:1.25rem]"
     >
-      {/* The X: its centre on the bar's top right corner; it hides the whole bar */}
-      <div className="absolute end-0 top-0 z-20 translate-x-1/2 -translate-y-1/2 border border-line bg-surface shadow-md">
-        <ToolButton icon={LuX} label="Close the edit bar" onClick={onClose} />
-      </div>
       {/* The first row: its buttons scroll sideways when they are too wide, until the bar is narrow enough to wrap them (level 3); More is outside
           the part that scrolls, so it is always in view, and the buttons give way to it */}
       <div className={`flex gap-base ${level >= 3 ? 'items-start' : 'items-center'}`}>
       <div className={`${rowClass} min-w-0 flex-1`}>
+        <Idle idle={idle}>
         <Group>
           <ToolButton icon={LuUndo2} label="Undo" disabled={!state.canUndo} onClick={() => editor.chain().focus().undo().run()} />
           <ToolButton icon={LuRedo2} label="Redo" disabled={!state.canRedo} onClick={() => editor.chain().focus().redo().run()} />
         </Group>
         <Separator />
         <Group>
-          <Tip name="Font">
-            <FontSelect editor={editor} font={state.font} />
-          </Tip>
-          <Tip name="Font size">
-            <SizeControl editor={editor} size={parseFloat(state.size) || NORMAL_SIZE} />
-          </Tip>
-          <Tip name="Bold">
-            <BoldControl editor={editor} bold={state.bold} weight={state.weight} />
-          </Tip>
-          <Tip name="Italic">
-            <ItalicControl editor={editor} italic={state.italic} slant={state.slant} />
-          </Tip>
-          <Tip name="Underline">
-            <UnderlineControl editor={editor} on={state.underline} kind={state.underlineKind} colour={state.underlineColour} />
-          </Tip>
+          <FontSelect editor={editor} font={state.font} />
+          <SizeControl editor={editor} size={parseFloat(state.size) || NORMAL_SIZE} />
+          <BoldControl editor={editor} bold={state.bold} weight={state.weight} />
+          <ItalicControl editor={editor} italic={state.italic} slant={state.slant} />
+          <UnderlineControl editor={editor} on={state.underline} kind={state.underlineKind} colour={state.underlineColour} />
         </Group>
         {/* The colours, until the bar is narrow (level 2): then they are in the second row */}
         {level < 2 && (
@@ -827,33 +689,28 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
         )}
         <Separator />
         <Group>
-          <Tip name="List">
-            <Dropdown
-              label="List"
-            center
-              triggerIcon={LISTS.find((l) => l.value === state.list)?.icon ?? LuList}
-              className="[&>svg]:size-5!"
-              value={state.list}
-              options={LISTS}
-              onChange={(list) => {
-                if (list !== 'none') TOGGLE_LIST[list](editor)
-                else if (state.list !== 'none') TOGGLE_LIST[state.list](editor)
-              }}
-            />
-          </Tip>
+          <ToolbarDropdown
+            kind="menu"
+            label="List"
+            triggerIcon={LISTS.find((l) => l.value === state.list)?.icon ?? LuList}
+            value={state.list}
+            options={LISTS}
+            onChange={(picked) => {
+              const list = picked as ListKind
+              if (list !== 'none') TOGGLE_LIST[list](editor)
+              else if (state.list !== 'none') TOGGLE_LIST[state.list](editor)
+            }}
+          />
           {/* The alignments one next to the other, the current one pressed; one dropdown on a narrower bar (level 1) */}
           {level >= 1 ? (
-            <Tip name="Align">
-              <Dropdown
-                label="Align"
-              center
-                triggerIcon={ALIGNS.find((a) => a.value === state.align)?.icon ?? LuAlignLeft}
-                className="[&>svg]:size-5!"
-                value={state.align}
-                options={ALIGNS}
-                onChange={(align) => editor.chain().focus().setTextAlign(align).run()}
-              />
-            </Tip>
+            <ToolbarDropdown
+              kind="menu"
+              label="Align"
+              triggerIcon={ALIGNS.find((a) => a.value === state.align)?.icon ?? LuAlignLeft}
+              value={state.align}
+              options={ALIGNS}
+              onChange={(align) => editor.chain().focus().setTextAlign(align as Align).run()}
+            />
           ) : (
             ALIGNS.map((a) => (
               <ToolButton
@@ -942,20 +799,11 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
               </div>
             </form>
           </BarPopover>
-          <input
-            ref={picker}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            hidden
-            onChange={(e) => {
-              void insertImages([...(e.target.files ?? [])])
-              e.target.value = ''
-            }}
-          />
+          {images.input}
         </div>
+        </Idle>
       </div>
-        {/* More: shows and hides the second row. Text like Media and Link's, but muted (not white), a line before it like the row's others, the
+        {/* More: shows and hides the second row (it works before the text is opened too). Text like Media and Link's, but muted (not white), a line before it like the row's others, the
             arrow at its right: it turns to point right while the second row is open */}
         <div className="flex shrink-0 items-center gap-base">
           <Separator />
@@ -982,19 +830,36 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
           the paragraph's dropdowns, Section and the Ω box at the right */}
       {(secondRow || level >= 2) && (
         <div className="flex flex-wrap items-center gap-base">
-          {level >= 2 && colours}
+          {level >= 2 && <Idle idle={idle}>{colours}</Idle>}
           {level >= 2 && secondRow && <Separator />}
           {secondRow && (
             <>
-              {/* Add section, then Code (both with their background, no line between them), at the left */}
-              <TextButton
-                tip="Adds a new section at the end of the article: a heading and an empty paragraph. With text selected, it turns that text into a section (a heading)."
-                icon={LuPlus}
+              {/* Add section (its menu of kinds, in groups: the same as typing / in the text), then Code (both with their background, no line between them), at the left */}
+              <BarPopover
                 label="Add section"
-                big
-                filled
-                onClick={() => addSection(editor)}
-              />
+                open={adding}
+                onOpenChange={setAdding}
+                width="w-72"
+                trigger={
+                  <TextButton
+                    tip="Adds a section at the caret (or at the end of the article): a paragraph kind, a list, cards, a row of columns, a picture, a table… Typing / in the text opens the same menu."
+                    icon={LuPlus}
+                    label="Add section"
+                    big
+                    filled
+                    active={adding}
+                    onClick={() => setAdding((open) => !open)}
+                  />
+                }
+              >
+                <SectionPicker
+                  onPick={(type) => {
+                    setAdding(false)
+                    onSection(type)
+                  }}
+                />
+              </BarPopover>
+              <Idle idle={idle}>
               <TextButton
                 tip="Shows the selected text as its HTML code, in a fixed-width font. Click it again on that code to turn it back into text."
                 icon={LuCode}
@@ -1076,12 +941,31 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
                     )}
                   </div>
                 )}
+                {/* Link types: shows the links row while nothing is selected (with words selected it shows by itself). Shade: a background only when hovered */}
+                {!state.selected && (
+                  <HoverInfo title="Link types" text="Shows the row of links: a web page, an article or object, a jump, a person, a message, the Autolinker. Typing @ in the text opens it there." side="top" delay={350}>
+                    <Button
+                      variant={linkTypes.shown ? 'selected' : 'ghost'}
+                      size="sm"
+                      plain
+                      icon={LuLink}
+                      aria-pressed={linkTypes.shown}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={linkTypes.onToggle}
+                      className="font-normal! [--btn-font-size:1rem]! [--btn-icon-size:1rem]!"
+                    >
+                      Link types
+                    </Button>
+                  </HoverInfo>
+                )}
               </Group>
+              </Idle>
             </>
           )}
         </div>
       )}
-      {lastRow}
+      {/* The links row: its own box a small gap (--spacing-sm) under the bar, over the text */}
+      {linkRow && <div className="absolute inset-x-0 top-full z-20 mt-sm">{linkRow}</div>}
     </div>
   )
 }

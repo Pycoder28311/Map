@@ -1,5 +1,4 @@
-import type { Editor } from '@tiptap/react'
-import { DOMParser as PMDOMParser, type Node as PMNode } from '@tiptap/pm/model'
+import { DOMParser as PMDOMParser, type Node as PMNode, type Schema } from '@tiptap/pm/model'
 import { useEffect, useState, type ReactNode } from 'react'
 import { LuCornerDownRight, LuCheck, LuDownload, LuExternalLink, LuFileSymlink, LuInfo, LuPencil, LuPlus, LuSearch, LuTrash2, LuUserPlus, LuX } from 'react-icons/lu'
 import Button from '../../../components/ui/buttons/Button'
@@ -19,9 +18,11 @@ import { LINK_EDIT } from './linkExtensions'
 import { isWebUrl, LIMITS, newId, toHref, type ArticleLink } from './linkHref'
 import { LinkTargetName, useLinkInfo } from './LinkPreview'
 import ObjectPicker from './ObjectPicker'
+import type { ArticleText } from '../text/articleText'
 
 type Props = {
-  editor: Editor
+  /** The article's text: the autolinkers link all of it, whatever the editor holds */
+  text: ArticleText
   /** The article itself (`article:<id>`): not offered as a target, nor to import from */
   self: string
   /** The words the first input starts with (the selection): given, the form is open at once */
@@ -132,9 +133,9 @@ function SectionBody({ title, icon: Icon, searchable, children }: { title: strin
  * "Link: <where it goes>" of a list row. The endpoint is clickable (an address opens in a new tab, an object opens beside the article) except
  * for a Jump link and Follow, which are only named
  */
-function Endpoint({ link, editor, onLeave }: { link: ArticleLink; editor: Editor; onLeave: () => void }) {
+function Endpoint({ link, doc, onLeave }: { link: ArticleLink; doc: PMNode; onLeave: () => void }) {
   const workspace = useWorkspace()
-  const info = useLinkInfo(link, editor)
+  const info = useLinkInfo(link, doc)
   const text = link.kind === 'url' || link.kind === 'project-url' ? link.url : info.title
   const open =
     link.kind === 'url'
@@ -168,7 +169,7 @@ function Endpoint({ link, editor, onLeave }: { link: ArticleLink; editor: Editor
  * autolinker link to the same place; Save links every place they are written, and they are linked as they are typed (linkExtensions.ts).
  * The autolinkers are the article's `autolinkers` field (the page holds them and saves them with the text); links in the text carry their rule's id
  */
-export default function AutolinkPanel({ editor, self, startText, rules, onRules, userId, onClose }: Props) {
+export default function AutolinkPanel({ text, self, startText, rules, onRules, userId, onClose }: Props) {
   const [formOpen, setFormOpen] = useState(startText.trim() !== '')
   // The phrases already made into tags, and the words being typed (they become a tag on Enter or when the input loses the focus)
   const [phrases, setPhrases] = useState<string[]>(startText.trim() ? [startText.trim().slice(0, LIMITS.ruleText)] : [])
@@ -212,11 +213,12 @@ export default function AutolinkPanel({ editor, self, startText, rules, onRules,
     // The field first (the page saves it with the text the next lines change)
     const made: AutoRule = { id, phrases: unique, link: target, by: rules.find((r) => r.id === editing)?.by ?? userId, count: 0 }
     onRules(editing ? rules.map((r) => (r.id === editing ? made : r)) : [...rules, made])
-    const tr = editor.state.tr
-    if (editing) removeRule(tr, editing)
     let count = 0
-    for (const text of longestFirst(unique)) count += applyRule(tr, { id, text, link: target })
-    editor.view.dispatch(tr.setMeta(LINK_EDIT, true))
+    text.change((tr) => {
+      if (editing) removeRule(tr, editing)
+      for (const phrase of longestFirst(unique)) count += applyRule(tr, { id, text: phrase, link: target })
+      tr.setMeta(LINK_EDIT, true)
+    })
     setNotice(
       count === 0
         ? `${unique.length === 1 ? 'That phrase is' : 'Those phrases are'} not written anywhere in the article yet, so nothing was linked. The autolinker is kept: it links them when they are written.`
@@ -236,9 +238,10 @@ export default function AutolinkPanel({ editor, self, startText, rules, onRules,
 
   const remove = (rule: AutoRule) => {
     onRules(rules.filter((r) => r.id !== rule.id))
-    const tr = editor.state.tr
-    removeRule(tr, rule.id)
-    editor.view.dispatch(tr.setMeta(LINK_EDIT, true))
+    text.change((tr) => {
+      removeRule(tr, rule.id)
+      tr.setMeta(LINK_EDIT, true)
+    })
     if (editing === rule.id) start(false)
     setNotice(`“${rule.phrases.join('”, “')}” ${rule.phrases.length === 1 ? 'is' : 'are'} not linked any more.`)
   }
@@ -265,7 +268,7 @@ export default function AutolinkPanel({ editor, self, startText, rules, onRules,
                   <span key={`${words.join('|')}>${target ? toHref(target) : ''}`} className="ms-1 inline-flex animate-share-pop flex-wrap items-center gap-1 align-middle font-medium text-fg">
                     {words.length > 0 && <span>{`“${words.join('”, “')}”`}</span>}
                     <span aria-hidden>→</span>
-                    {target ? <LinkTargetName link={target} editor={editor} /> : <span className="font-normal text-fg-subtle">choose where they link</span>}
+                    {target ? <LinkTargetName link={target} doc={text.doc()} /> : <span className="font-normal text-fg-subtle">choose where they link</span>}
                   </span>
                 )}
               </span>
@@ -325,7 +328,7 @@ export default function AutolinkPanel({ editor, self, startText, rules, onRules,
                           archive
                         />
                       ) : s.id === 'jump' ? (
-                        <JumpPicker editor={editor} chosen={target?.kind === 'jump' ? target.to : null} onPick={(to) => pick({ kind: 'jump', to })} autoFocus={searching} showSearch={searching} />
+                        <JumpPicker text={text} chosen={target?.kind === 'jump' ? target.to : null} onPick={(to) => pick({ kind: 'jump', to })} autoFocus={searching} showSearch={searching} />
                       ) : (
                         <FollowPicker chosen={target} onPick={pick} autoFocus={searching} showSearch={searching} />
                       )
@@ -396,7 +399,7 @@ export default function AutolinkPanel({ editor, self, startText, rules, onRules,
                 </li>
               ) : (
               <li key={rule.id} className={`flex min-w-0 items-center gap-3 rounded-(--card-radius) border bg-surface-muted p-2 ${editing === rule.id ? 'border-accent' : 'border-line'}`}>
-                <Endpoint link={rule.link} editor={editor} onLeave={onClose} />
+                <Endpoint link={rule.link} doc={text.doc()} onLeave={onClose} />
                 {/* The phrases as tags, as in the input (not clickable) */}
                 <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
                   {rule.phrases.map((phrase) => (
@@ -413,7 +416,7 @@ export default function AutolinkPanel({ editor, self, startText, rules, onRules,
       </div>
       {importing && (
         <ImportModal
-          editor={editor}
+          schema={text.schema}
           self={self}
           have={phrases}
           onClose={() => setImporting(false)}
@@ -431,7 +434,7 @@ export default function AutolinkPanel({ editor, self, startText, rules, onRules,
 }
 
 /** Import from other article: pick an article, then which of the phrases of its autolinkers to add here; they link to the place chosen here */
-function ImportModal({ editor, self, have, onClose, onImport }: { editor: Editor; self: string; have: string[]; onClose: () => void; onImport: (phrases: string[]) => void }) {
+function ImportModal({ schema, self, have, onClose, onImport }: { schema: Schema; self: string; have: string[]; onClose: () => void; onImport: (phrases: string[]) => void }) {
   const [from, setFrom] = useState<{ title: string; phrases: string[] } | null>(null)
   const [ticked, setTicked] = useState<Set<string>>(new Set())
   const [state, setState] = useState<'pick' | 'loading' | 'error'>('pick')
@@ -445,7 +448,7 @@ function ImportModal({ editor, self, have, onClose, onImport }: { editor: Editor
       const article = (await articles.api.get(id)) as { content?: string; autolinkers?: unknown }
       // Its autolinkers; an article not opened since they became a field has none yet: its text then
       const own = fromStored(article.autolinkers as never)
-      const found = (own.length > 0 ? own : rulesFrom(parse(editor, article.content ?? ''))).flatMap((r) => r.phrases)
+      const found = (own.length > 0 ? own : rulesFrom(parse(schema, article.content ?? ''))).flatMap((r) => r.phrases)
       const unique = found.filter((p, i) => found.findIndex((x) => sameText(x, p)) === i)
       setFrom({ title, phrases: unique })
       setTicked(new Set(unique.filter((p) => !here(p))))
@@ -513,8 +516,8 @@ function ImportModal({ editor, self, have, onClose, onImport }: { editor: Editor
   )
 }
 
-/** Another article's text as a document of this editor's kind (to read its links) */
-function parse(editor: Editor, html: string): PMNode {
+/** Another article's text as a document of this article's kind (to read its links) */
+function parse(schema: Schema, html: string): PMNode {
   const body = new window.DOMParser().parseFromString(html, 'text/html').body
-  return PMDOMParser.fromSchema(editor.schema).parse(body)
+  return PMDOMParser.fromSchema(schema).parse(body)
 }

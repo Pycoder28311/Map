@@ -13,10 +13,8 @@ import IconButton from '../../components/ui/buttons/IconButton'
 import Modal from '../../components/ui/overlays/Modal'
 import type { Entry } from '../../lib/resource/reorder'
 import CardFace from './cards/cardFaces'
+import { ON_HOVER } from './cards/cardStyles'
 import MapPreview from './cards/MapPreview'
-
-// Shown on hover or keyboard focus, and while its menu is open
-const ON_HOVER = 'opacity-0 transition-opacity group-hover/card:opacity-100 group-focus-within/card:opacity-100 has-[:popover-open]:opacity-100'
 
 type Props = {
   resource: AnyResource

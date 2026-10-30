@@ -1,7 +1,7 @@
-import type { Editor } from '@tiptap/react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { hoverInfoPosition, type HoverInfoPlace } from '../../../components/ui/overlays/hoverInfoPosition'
 import { useTimeout } from '../../../lib/useTimeout'
+import type { ArticleText } from '../text/articleText'
 import { fromHref, type ArticleLink } from './linkHref'
 import LinkPreview from './LinkPreview'
 
@@ -15,9 +15,9 @@ type Shown = { link: ArticleLink; words: string; el: HTMLElement }
  * The card above a hovered link of the article (LinkPreview): its picture and the start of its text. The pointer can move onto it (a
  * person's card has Follow). In the top layer, so nothing clips it; it goes below the link when there is no room above. Closes on
  * leaving, scrolling, Esc, typing and pressing in the text. A message link has no card: the page opens the message itself (`onMessage`) when
- * the pointer rests on its words, and is told (`null`) when the pointer leaves them
+ * the pointer rests on its words, and is told (`null`) when the pointer leaves them. It follows the whole text, edited or not
  */
-export default function LinkHoverCard({ editor, onMessage }: { editor: Editor; onMessage?: (el: HTMLElement | null) => void }) {
+export default function LinkHoverCard({ text, onMessage }: { text: ArticleText; onMessage?: (el: HTMLElement | null) => void }) {
   const [shown, setShown] = useState<Shown | null>(null)
   const [place, setPlace] = useState<HoverInfoPlace | null>(null)
   const card = useRef<HTMLDivElement>(null)
@@ -25,7 +25,9 @@ export default function LinkHoverCard({ editor, onMessage }: { editor: Editor; o
   const current = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
-    const dom = editor.view.dom
+    // The text's element: its static parts and the editor alike
+    const dom = text.root
+    if (!dom) return
     const hide = () => {
       cancel()
       current.current = null
@@ -80,7 +82,7 @@ export default function LinkHoverCard({ editor, onMessage }: { editor: Editor; o
       window.removeEventListener('scroll', onScroll, true)
       window.removeEventListener('resize', hide)
     }
-  }, [editor, later, cancel, onMessage])
+  }, [text, later, cancel, onMessage])
 
   // Placed once it is measured, before it is painted; measured again when its content grows (a picture loaded)
   useLayoutEffect(() => {
@@ -113,7 +115,7 @@ export default function LinkHoverCard({ editor, onMessage }: { editor: Editor; o
         }, CLOSE_MS)
       }
     >
-      <LinkPreview link={shown.link} editor={editor} words={shown.words} />
+      <LinkPreview link={shown.link} doc={text.doc()} words={shown.words} />
     </div>
   )
 }

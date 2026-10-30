@@ -1,0 +1,50 @@
+/* The article's boxes of blocks (components/ui/editors/blocks.ts): a card, a row of columns, a callout. The server keeps only their
+   `data-type` (and a callout's `data-tone`), so their look is read from those, the same in the editor and in the static text.
+   Each box is its own formatting context (flow-root, flex): beside the floating Info box it gets narrower instead of running under it. */
+:is(.ProseMirror, .article-static) div[data-type='card'] {
+  display: flow-root;
+  margin-block: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--card-radius);
+  background-color: var(--surface-muted);
+}
+
+/* Columns side by side; each at least 14rem wide, so on a narrow text they go one under the other */
+:is(.ProseMirror, .article-static) div[data-type='row'] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-block: 0.5rem;
+}
+:is(.ProseMirror, .article-static) div[data-type='column'] {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+/* A card in a column fills it (no extra space above or below it) */
+:is(.ProseMirror, .article-static) div[data-type='column'] > div[data-type='card'] {
+  margin-block: 0;
+  height: 100%;
+}
+/* While editing, the columns show their edges faintly, so an empty one can be found */
+.ProseMirror div[data-type='column'] {
+  outline: 1px dashed color-mix(in srgb, var(--line) 70%, transparent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+:is(.ProseMirror, .article-static) div[data-type='callout'] {
+  --callout-tone: var(--accent);
+  display: flow-root;
+  margin-block: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  border-inline-start: 3px solid var(--callout-tone);
+  border-radius: var(--corner-sm, 4px);
+  background-color: color-mix(in srgb, var(--callout-tone) 10%, transparent);
+}
+:is(.ProseMirror, .article-static) div[data-type='callout'][data-tone='tip'] {
+  --callout-tone: #22c55e;
+}
+:is(.ProseMirror, .article-static) div[data-type='callout'][data-tone='warning'] {
+  --callout-tone: #f59e0b;
+}

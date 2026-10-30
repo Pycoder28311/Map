@@ -1,9 +1,9 @@
-import { useEditorState, type Editor } from '@tiptap/react'
 import { useState } from 'react'
 import { LuBookmark, LuHash, LuMapPinPlus } from 'react-icons/lu'
 import Button from '../../../components/ui/buttons/Button'
 import SearchInput from '../../../components/ui/fields/SearchInput'
 import { fold } from '../../search/search'
+import { sameJson, useTextState, type ArticleText } from '../text/articleText'
 import { PICK_ROW } from './pickRow'
 import { jumpTargets, resolveJump, type JumpTarget } from './jumpTargets'
 
@@ -11,7 +11,8 @@ import { jumpTargets, resolveJump, type JumpTarget } from './jumpTargets'
 export const targetIcon = (target: Pick<JumpTarget, 'kind'>) => (target.kind === 'heading' ? LuHash : LuBookmark)
 
 type Props = {
-  editor: Editor
+  /** The article's text (its targets are in all of it, whatever the editor holds) */
+  text: ArticleText
   /** A target picked: its `to` (jumpTargets.ts) */
   onPick: (to: string) => void
   /** "Mark a place…": the next selection in the text becomes the target */
@@ -26,10 +27,10 @@ type Props = {
 }
 
 /** Jump link: the article's sections and marked places, each with its mark at its left, to pick where the words jump to */
-export default function JumpPicker({ editor, onPick, onMarkPlace, chosen, onRemove, autoFocus = true, showSearch = true }: Props) {
+export default function JumpPicker({ text, onPick, onMarkPlace, chosen, onRemove, autoFocus = true, showSearch = true }: Props) {
   const [query, setQuery] = useState('')
-  const targets = useEditorState({ editor, selector: ({ editor: e }) => jumpTargets(e.state.doc), equalityFn: (a, b) => JSON.stringify(a) === JSON.stringify(b) })
-  const chosenTarget = chosen ? resolveJump(editor.state.doc, chosen) : null
+  const targets = useTextState(text, jumpTargets, sameJson)
+  const chosenTarget = chosen ? resolveJump(text.doc(), chosen) : null
   const words = fold(query).split(/\s+/).filter(Boolean)
   const shown = targets.filter((t) => words.every((w) => fold(t.text).includes(w)))
 

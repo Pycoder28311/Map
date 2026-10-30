@@ -1,16 +1,20 @@
 import { useEditorState, type Editor } from '@tiptap/react'
 import { useState } from 'react'
-import { LuCornerDownRight, LuExternalLink, LuFileSymlink, LuMessageSquareText, LuUserPlus } from 'react-icons/lu'
+import { LuCornerDownRight, LuExternalLink, LuFileSymlink, LuMessageSquareText, LuUserPlus, LuX } from 'react-icons/lu'
 import Button from '../../../components/ui/buttons/Button'
+import IconButton from '../../../components/ui/buttons/IconButton'
 import HoverInfo from '../../../components/ui/overlays/HoverInfo'
 import type { PlainIcon } from '../../../components/ui/icons/IconSlot'
 import BarPopover from '../../../components/ui/overlays/BarPopover'
-import { TextButton } from '../ArticleToolbar'
+import { TextButton } from '../toolbar/parts'
 import AutolinkPanel from './AutolinkPanel'
 import type { AutoRule } from './autolink'
 import FollowPicker from './FollowPicker'
 import JumpPicker from './JumpPicker'
-import { currentLink, LINK_EDIT, removeArticleLink, setArticleLink } from './linkExtensions'
+import { personById } from '../../people/mockPeople'
+import type { ArticleText } from '../text/articleText'
+import { resolveJump } from './jumpTargets'
+import { currentLink, insertArticleLink, LINK_EDIT, removeArticleLink, setArticleLink } from './linkExtensions'
 import MessageLinkForm from '../messages/MessageLinkForm'
 import { RealLinkForm } from './LinkForms'
 import { newId, toHref, type ArticleLink, type LinkKind } from './linkHref'
@@ -34,12 +38,22 @@ const WIDTH: Partial<Record<Kind, string>> = { object: 'w-[28rem]', follow: 'w-9
 
 type Props = {
   editor: Editor | null
+  /** The article's text (Jump link and the Autolinker read all of it) */
+  text: ArticleText
   /** The article itself (`article:<id>`): not offered as a target */
   self: string
   /** The article's id (its messages are written on it) */
   articleId: number
-  /** The toolbar's ⋯ has its rows open: the row shows even with nothing selected */
+  /** Shown even with nothing selected (the toolbar's Link types is pressed) */
   expanded: boolean
+  /**
+   * Where it is: `docked`, its own box under the toolbar; `floating`, over the text above the caret's row (typing `@`), with an X that
+   * closes it (`onClose`)
+   */
+  placement?: 'docked' | 'floating'
+  onClose?: () => void
+  /** Typing `@`: the `@` and what was typed after it (in the editor's document). A link picked is written there as words of its own */
+  insertAt?: { from: number; to: number } | null
   /** Which popout is open (the page opens one too: a message's Edit) */
   open: LinkPopout | null
   onOpenChange: (open: LinkPopout | null) => void
@@ -50,13 +64,13 @@ type Props = {
 }
 
 /**
- * The toolbar's third row, smaller than the other two, with its name (Types of Links) at its left: Link, Attach Content, Jump link, Follow and Message, then the Autolinker.
- * It shows only while some words are selected, or the toolbar's ⋯ has its rows open (and, so nothing vanishes under the pointer, while
- * one of its popouts is open or a jump's place is being marked). Each makes the selected words a link, written only in the text's HTML (linkHref.ts; a
+ * The links row, smaller than the toolbar's rows, with its name (Types of Links) at its left: Link, Attach Content, Jump link, Follow and Message, then the Autolinker.
+ * Docked under the toolbar it shows only while some words are selected, or the toolbar's Link types is pressed (and, so nothing vanishes under the pointer, while
+ * one of its popouts is open or a jump's place is being marked); floating, it is the `@` menu, and a link picked is written at the `@`. Each makes the selected words a link, written only in the text's HTML (linkHref.ts; a
  * Message also writes the message on the server, and the link keeps its id); on a link of its kind it opens on it,
  * with Remove. The Autolinker joins the other kinds (all but Message) into one panel with one big input (AutolinkPanel)
  */
-export default function LinkRow({ editor, self, articleId, expanded, open, onOpenChange, rules, onRules, userId }: Props) {
+export default function LinkRow({ editor, text, self, articleId, expanded, placement = 'docked', onClose, insertAt = null, open, onOpenChange, rules, onRules, userId }: Props) {
   const state = useEditorState({
     editor,
     selector: ({ editor: e }) => {
@@ -69,7 +83,7 @@ export default function LinkRow({ editor, self, articleId, expanded, open, onOpe
   // Jump link's "Mark a place…": the words that will jump, while the place is being selected
   const [marking, setMarking] = useState<{ from: number; to: number } | null>(null)
   if (!editor || !state) return null
-  if (!expanded && state.empty && open === null && marking === null) return null
+  if (!expanded && !insertAt && state.empty && open === null && marking === null) return null
 
   const auto = open === 'auto'
   const close = () => onOpenChange(null)
@@ -79,8 +93,17 @@ export default function LinkRow({ editor, self, articleId, expanded, open, onOpe
     if (id !== 'auto' && state.empty && current(id)) editor.chain().extendMarkRange('link').run()
     onOpenChange(open === id ? null : id)
   }
+  /** The words a link written at the `@` shows: the name given, or its target's own */
+  const wordsOf = (link: ArticleLink, given?: string) => {
+    if (given?.trim()) return given.trim()
+    if (link.kind === 'url' || link.kind === 'project-url') return link.url
+    if (link.kind === 'person') return personById(link.personId)?.name ?? 'Someone'
+    if (link.kind === 'jump') return resolveJump(text.doc(), link.to)?.text || 'Section'
+    return 'Link'
+  }
   const apply = (link: ArticleLink, words?: string) => {
-    setArticleLink(editor, link, words)
+    if (insertAt) insertArticleLink(editor, insertAt, wordsOf(link, words), link)
+    else setArticleLink(editor, link, words)
     close()
   }
   const remove = () => {
@@ -126,7 +149,7 @@ export default function LinkRow({ editor, self, articleId, expanded, open, onOpe
             <ObjectPicker
               exclude={self}
               chosen={link?.kind === 'object' ? link : null}
-              onPick={(hit) => apply({ kind: 'object', type: hit.type, id: hit.id })}
+              onPick={(hit) => apply({ kind: 'object', type: hit.type, id: hit.id }, insertAt ? hit.title : undefined)}
             />
             {onRemove && (
               <Button variant="ghost" size="sm" className="self-end" onClick={onRemove}>
@@ -141,7 +164,7 @@ export default function LinkRow({ editor, self, articleId, expanded, open, onOpe
       case 'jump':
         return (
           <JumpPicker
-            editor={editor}
+            text={text}
             chosen={link?.kind === 'jump' ? link.to : null}
             onPick={(to) => apply({ kind: 'jump', to })}
             onMarkPlace={state.empty ? undefined : startMarking}
@@ -154,15 +177,22 @@ export default function LinkRow({ editor, self, articleId, expanded, open, onOpe
   }
 
   return (
-    // The popouts hang under the whole bar (its full width, centred)
-    <div className="relative flex flex-col">
+    // Its own box; the popouts hang under the whole row (its full width, centred)
+    <div className={`relative flex flex-col rounded-(--card-radius) border border-line bg-surface px-base py-1 ${placement === 'floating' ? 'shadow-xl' : 'shadow-sm'}`}>
+      {placement === 'floating' && onClose && (
+        // Its X: on the box's top right corner, as the edit bar's was
+        <div className="absolute end-0 top-0 z-20 translate-x-1/2 -translate-y-1/2 border border-line bg-surface shadow-md">
+          <IconButton icon={LuX} label="Close the links" size="xs" onMouseDown={(e) => e.preventDefault()} onClick={onClose} />
+        </div>
+      )}
       <div className="grid animate-share-pop -mb-0.5 max-w-full grid-cols-[1fr_auto_1fr] items-center gap-x-3 px-1">
         {/* The row's name at its left, the five kinds in the middle, the Autolinker at its right */}
         <span className="justify-self-start text-[0.75rem] leading-none font-medium text-fg-muted">Types of Links</span>
         {/* The five kinds, underline buttons: the chosen one is underlined (all but Message while the Autolinker is open, which it can't make) */}
         <div role="group" aria-label="Links" className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
           {BUTTONS.map((b) => {
-            const enabled = !state.empty || !!current(b.id)
+            // At an `@` there are no words yet: every kind but Message (it needs words already written)
+            const enabled = !state.empty || !!current(b.id) || (!!insertAt && b.id !== 'msg')
             const skipped = auto && b.id === 'msg'
             return (
               <BarPopover
@@ -180,7 +210,7 @@ export default function LinkRow({ editor, self, articleId, expanded, open, onOpe
                     underline
                     active={open === b.id || (auto && !skipped) || !!current(b.id)}
                     disabled={!enabled || skipped}
-                    tip={skipped ? 'The Autolinker does not make messages.' : enabled ? b.title : 'Select some words first.'}
+                    tip={skipped ? 'The Autolinker does not make messages.' : enabled ? b.title : insertAt ? 'Select words you wrote to make them a message.' : 'Select some words first.'}
                     onClick={() => toggle(b.id)}
                   />
                 }
@@ -208,7 +238,7 @@ export default function LinkRow({ editor, self, articleId, expanded, open, onOpe
           </HoverInfo>
         </div>
         {/* Its own modal (AutolinkPanel: the shared one, with no zoom) */}
-        {auto && <AutolinkPanel editor={editor} self={self} startText={state.words} rules={rules} onRules={onRules} userId={userId} onClose={close} />}
+        {auto && <AutolinkPanel text={text} self={self} startText={state.words} rules={rules} onRules={onRules} userId={userId} onClose={close} />}
       </div>
       {marking && (
         <div

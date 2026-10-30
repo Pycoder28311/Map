@@ -43,6 +43,8 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
   'features/board/sidebar/selection/SelectionList.tsx': { count: 1, why: 'list rows' },
   'features/board/sidebar/text/TextStylesSection.tsx': { count: 1, why: 'list rows' },
   'features/dashboard/DashboardColumns.tsx': { count: 1, why: 'a drag handle' },
+  'features/articles/sections/SectionMenu.tsx': { count: 1, why: 'the menu items (the section kinds)' },
+  'features/articles/text/SectionHandles.tsx': { count: 1, why: "a drag handle (a section's ⠿)" },
   'features/dashboard/RowHeader.tsx': { count: 1, why: "the row's title (a heading that opens its project)" },
   'features/layouts/LayoutThumb.tsx': { count: 1, why: 'a layout tile' },
   'features/objects/ListRows.tsx': { count: 1, why: 'list rows' },

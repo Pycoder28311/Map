@@ -7,7 +7,6 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import type { RefObject } from 'react'
 import { applyRule, longestFirst, type AutoRule } from './autolink'
 import { linkAt, type LinkRange } from './docLinks'
-import { findMatches } from './find'
 import { fromHref, LINK_PREFIX, toHref, type ArticleLink } from './linkHref'
 
 /** What the page does when something happens in the text */
@@ -103,8 +102,8 @@ const Autolinker = (handlers: RefObject<LinkHandlers>) => Extension.create({
   },
 })
 
-/** Search in article: the query, which match is the current one, and where they all are */
-type FindState = { query: string; current: number; matches: { from: number; to: number }[] }
+/** Search in article: the matches in the editor's document (FindBar finds them in the whole text and hands over those in the window) and the current one (-1: not in the window) */
+export type FindState = { matches: { from: number; to: number }[]; current: number }
 export const findKey = new PluginKey<FindState>('articleFind')
 
 const FindHighlight = Extension.create({
@@ -114,14 +113,13 @@ const FindHighlight = Extension.create({
       new Plugin<FindState>({
         key: findKey,
         state: {
-          init: () => ({ query: '', current: 0, matches: [] }),
-          apply: (tr, value, _old, state) => {
-            const meta = tr.getMeta(findKey) as Partial<Pick<FindState, 'query' | 'current'>> | undefined
-            if (!meta && !tr.docChanged) return value
-            const query = meta?.query ?? value.query
-            const matches = findMatches(state.doc, query)
-            const current = matches.length === 0 ? 0 : Math.min(Math.max(meta?.current ?? value.current, 0), matches.length - 1)
-            return { query, current, matches }
+          init: () => ({ matches: [], current: -1 }),
+          apply: (tr, value) => {
+            const meta = tr.getMeta(findKey) as FindState | undefined
+            if (meta) return meta
+            if (!tr.docChanged || value.matches.length === 0) return value
+            // Until FindBar hands over the new ones, they move with the text
+            return { current: value.current, matches: value.matches.map((m) => ({ from: tr.mapping.map(m.from), to: tr.mapping.map(m.to) })) }
           },
         },
         props: {
@@ -163,6 +161,19 @@ export function setArticleLink(editor: Editor, link: ArticleLink, text?: string)
   chain.setMeta(LINK_EDIT, true).run()
 }
 
+/** Writes a link's words at a place of the text (the `@` menu: in place of the `@` and what was typed after it), then a space, the caret after it */
+export function insertArticleLink(editor: Editor, range: { from: number; to: number }, words: string, link: ArticleLink) {
+  editor
+    .chain()
+    .focus()
+    .insertContentAt(range, [
+      { type: 'text', text: words, marks: [{ type: 'link', attrs: { href: toHref(link) } }] },
+      { type: 'text', text: ' ' },
+    ])
+    .setMeta(LINK_EDIT, true)
+    .run()
+}
+
 /** Takes away the link the caret or the selection is on (its words stay) */
 export function removeArticleLink(editor: Editor) {
   editor.chain().focus().extendMarkRange('link').unsetLink().setMeta(LINK_EDIT, true).run()
@@ -171,8 +182,12 @@ export function removeArticleLink(editor: Editor) {
 /** Selects a place of the text and brings it into view, with a short flash of its block */
 export function goTo(editor: Editor, from: number, to: number) {
   editor.chain().focus().setTextSelection({ from, to }).setMeta(LINK_EDIT, true).run()
-  const dom = editor.view.domAtPos(from).node
-  const block = (dom instanceof HTMLElement ? dom : dom.parentElement)?.closest<HTMLElement>('p, h1, h2, h3, h4, h5, h6, li, td, th')
+  flashBlock(editor.view.domAtPos(from).node)
+}
+
+/** Brings the block a DOM node is in into view, and flashes it once (in the editor or in the static text) */
+export function flashBlock(node: Node) {
+  const block = (node instanceof HTMLElement ? node : node.parentElement)?.closest<HTMLElement>('p, h1, h2, h3, h4, h5, h6, li, td, th')
   if (!block) return
   block.scrollIntoView({ block: 'center', behavior: 'smooth' })
   block.classList.remove('article-flash')

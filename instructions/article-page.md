@@ -1,7 +1,7 @@
-# The article page: toolbar states, Ω structures, side tools, Save
+# The article page: the text, sections, toolbar states, Ω structures, side tools, Save
 
-What plan `docs/plans/32-article-toolbar-responsive-and-side-tools.md` added to the article page. The links (third row, Autolinker,
-Private / Public) are in `article-links.md`.
+What plans `docs/plans/32-article-toolbar-responsive-and-side-tools.md` and `docs/plans/36-article-sections-and-lazy-editing.md` added to the
+article page. The links (the links row, `@`, Autolinker, Private / Public) are in `article-links.md`.
 
 ## Where things are
 
@@ -12,10 +12,41 @@ app/src/features/articles/
 ├── StructureIcon.tsx        a structure drawn with dotted places (the Ω box's examples)
 ├── MoreFormats.tsx          the Ω popout: Basics · SVGs · Mathematical · Others (symbols.ts SYMBOL_GROUPS)
 ├── save/                    useArticleRole (editor / reader) · savedStore (the saved list) · SaveButton
-└── side/                    ContentsTree (+ contentsTree.ts) · RoundTools · MessagesList · NotesPanel · articleNotes.ts
+├── side/                    ContentsTree (+ contentsTree.ts) · RoundTools · MessagesList · NotesPanel · articleNotes.ts
+├── text/                    THE TEXT (plan 36):
+│   ├── articleDoc.ts        pure: sections, windows (WINDOW: tune them here), moving a section
+│   ├── articleText.ts       ArticleText: the whole document, the window, the editor; useArticleText · useTextState · useTextEditor
+│   ├── ArticleText.tsx      the view: static parts · the window's editor · the `/` menu; the hint (SECTION_HINT)
+│   ├── StaticSections.tsx   sections drawn as HTML without an editor
+│   ├── staticDom.ts         a position ⇄ a point of the static HTML
+│   └── SectionHandles.tsx   the ⠿ (+ sectionDrag.ts, pure)
+└── sections/                sectionTypes.ts (THE list of section kinds, its groups, placeSection) · SectionMenu.tsx · useSectionMenu.ts
 app/src/components/ui/editors/structures.ts   the Word-like structures: places, Tab / Shift+Tab, Enter ends
+app/src/components/ui/editors/blocks.ts       Card, Row / Column, Callout (`<div data-type>`; the server's sanitizer keeps exactly these)
+app/src/components/ui/editors/typeTrigger.ts  a character that opens a menu while typing (`/`, `@`)
+app/src/components/ui/overlays/FloatingAt.tsx a box floating above or below a line of text (the `/` menu, the `@` row)
+app/src/styles/articleBlocks.css              the look of cards, rows and callouts (editor and static text alike)
 app/src/lib/localStore.ts    the mock stores' base: a JSON value on this device that screens watch
 ```
+
+## The text (plan 36)
+
+- **Static until clicked.** The text is drawn as plain HTML (`StaticSections`); an editor's click opens a TipTap editor at the click (or on
+  the words selected). A reader's page never gets an editor. Before the first click the static text can take the focus: Enter opens it.
+- **A window for a big text.** More than `WINDOW.maxSections` sections or `WINDOW.maxChars` characters (`articleDoc.ts`): only the clicked
+  section ± `WINDOW.around` sections are in the editor, the rest stays static around it with the same look. The window moves when the caret
+  is within `WINDOW.edge` sections of its end. A selection stops at the window's edge; Ctrl / ⌘ + A a second time puts the whole text in the
+  editor; Undo is per window.
+- **One source of truth**: `ArticleText` (`text/articleText.ts`) holds the whole document. Everything that reads or changes the text
+  (Contents, Messages, jump marks, the hover card, Search, the Autolinker, the old messages) goes through it, in positions of the whole
+  document: `text.doc()`, `useTextState(text, select)`, `text.goTo`, `text.rectAt`, `text.change(tr => …)`, `text.open(at)`.
+- **Sections** are the top-level blocks. The ⠿ left of a section's first line drags it (a line shows where it goes) or, clicked, selects it;
+  Alt + ↑ / ↓ moves the caret's section. The ⠿ is on the page only, never in the text.
+- **New sections**: one list (`sections/sectionTypes.ts`, in groups: Text, Paragraph kinds, Lists, Cards, Rows, Media and data, Article), opened
+  by the toolbar's Add section, by typing `/` at a row's start or after a space (filtered by what is typed after it; ↑ ↓ Enter, Esc), and by
+  the button under the last row. An empty row becomes the section; otherwise it goes after the caret's section. A row of columns always goes
+  at the top of the text. A new kind: one entry there (and, if it is new markup, its node in `blocks.ts` and its rule in the server's sanitizer).
+- **The hint** "Type / for sections and @ for links" shows faintly on the empty row the caret is on.
 
 ## Toolbar states
 
@@ -25,6 +56,10 @@ app/src/lib/localStore.ts    the mock stores' base: a JSON value on this device 
 | 1 | 800–959 | the four alignments are one dropdown; the Ω box is only Ω (no examples) |
 | 2 | 640–799 | the text and background colours move to row 2, shown even when the ⋯ hides row 2 |
 | 3 | < 640 | the rows wrap between their groups, as many rows as needed |
+
+The bar is always there for an editor, also before the text is opened (its buttons disabled until then, but More and Add section), so
+opening the text never pushes it down. It has no X any more. More shows and hides row 2. The links row is its own box `--spacing-sm` under
+the bar, over the text (`article-links.md`).
 
 ## Ω structures
 

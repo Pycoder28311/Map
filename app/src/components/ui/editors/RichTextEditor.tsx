@@ -3,15 +3,18 @@ import Image from '@tiptap/extension-image'
 import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { Color, FontSize, TextStyle } from '@tiptap/extension-text-style'
 import { EditorContent, useEditor, type Editor, type Extensions, type JSONContent } from '@tiptap/react'
-import { Placeholder } from '@tiptap/extensions'
+import { Placeholder, type PlaceholderOptions } from '@tiptap/extensions'
 import StarterKit from '@tiptap/starter-kit'
 import { useEffect, useRef } from 'react'
 
 type Props = {
   /** The document the editor starts with: TipTap's JSON or HTML. It is not followed afterwards: the editor owns the text while it is open */
   content: JSONContent | string
-  /** Shown, grey, while the document is empty */
-  placeholder?: string
+  /**
+   * Shown, grey, while the document is empty. A function is asked for every empty block the caret is in, nested ones too (the article's
+   * hint on its empty rows); '' shows nothing
+   */
+  placeholder?: string | PlaceholderOptions['placeholder']
   /** Screen-reader name of the text area */
   label?: string
   /** Added to the base set (bold, italic, underline, strike, colour, font size): what a caller needs more, e.g. lists */
@@ -44,6 +47,14 @@ const TASKS = [TaskList, TaskItem.configure({ nested: true })]
 
 const PLAIN = { heading: false, blockquote: false, bulletList: false, orderedList: false, listItem: false, listKeymap: false, code: false, codeBlock: false, horizontalRule: false, dropcursor: false, gapcursor: false, link: false } as const
 
+/**
+ * The editor's set: the base (StarterKit with the map's marks, pictures and checklists, or only lines of words with `plain`) and the
+ * caller's own. Also what a document of the same kind is read with outside an editor (`getSchema(editorExtensions(…))`)
+ */
+export function editorExtensions({ plain = false, extensions = [] }: { plain?: boolean; extensions?: Extensions } = {}): Extensions {
+  return [StarterKit.configure(plain ? PLAIN : { link: LINKS }), ...(plain ? [] : [IMAGES, ...TASKS]), TextStyle, Color, FontSize, ...extensions]
+}
+
 /** Hands the image files of a paste or drop on, and tells the editor it was handled (true); other pastes and drops go on as usual */
 function takeImages(files: FileList | undefined | null, onImageFiles: ((files: File[]) => void) | undefined, event: Event) {
   const images = [...(files ?? [])].filter((f) => f.type.startsWith('image/'))
@@ -61,7 +72,20 @@ export default function RichTextEditor({ content, placeholder, label, extensions
   // The placeholder can change while the editor lives (a different kind of note): the extension reads it from here
   const placeholderRef = useRef(placeholder)
   const editor = useEditor({
-    extensions: [StarterKit.configure(plain ? PLAIN : { link: LINKS }), ...(plain ? [] : [IMAGES, ...TASKS]), TextStyle, Color, FontSize, ...(placeholder === undefined ? [] : [Placeholder.configure({ placeholder: () => placeholderRef.current ?? '' })]), ...extensions],
+    extensions: [
+      ...editorExtensions({ plain, extensions }),
+      ...(placeholder === undefined
+        ? []
+        : [
+            Placeholder.configure({
+              placeholder: (props) => {
+                const current = placeholderRef.current
+                return typeof current === 'function' ? current(props) : (current ?? '')
+              },
+              includeChildren: typeof placeholder === 'function',
+            }),
+          ]),
+    ],
     content,
     editable,
     autofocus: autoFocus ? 'end' : false,

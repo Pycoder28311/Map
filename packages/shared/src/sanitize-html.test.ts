@@ -189,3 +189,28 @@ describe('sanitizeRichText: the checklist', () => {
     expect(sanitizeRichText('<ul data-type="evil"><li data-type="x">a</li></ul>')).toBe('<ul><li>a</li></ul>')
   })
 })
+
+describe('sanitizeRichText: the article boxes (cards, rows, callouts)', () => {
+  it('keeps what the editor writes', () => {
+    const html =
+      '<div data-type="card"><p>c</p></div>' +
+      '<div data-type="row"><div data-type="column"><div data-type="card"><p>a</p></div></div><div data-type="column"><p>b</p></div></div>' +
+      '<div data-type="callout" data-tone="tip"><p>t</p></div>'
+    expect(sanitizeRichText(html)).toBe(html)
+  })
+
+  it('keeps only the type and a known tone', () => {
+    expect(sanitizeRichText('<div data-type="card" class="x" style="color:red" onclick="a()"><p>c</p></div>')).toBe('<div data-type="card"><p>c</p></div>')
+    expect(sanitizeRichText('<div data-type="callout" data-tone="danger"><p>t</p></div>')).toBe('<div data-type="callout" data-tone="note"><p>t</p></div>')
+    expect(sanitizeRichText('<div data-type="callout"><p>t</p></div>')).toBe('<div data-type="callout" data-tone="note"><p>t</p></div>')
+  })
+
+  it('drops a box out of its place but keeps its words', () => {
+    // A column outside a row, a row inside a box, a card inside a card, an unknown kind
+    expect(sanitizeRichText('<div data-type="column"><p>a</p></div>')).toBe('<p>a</p>')
+    expect(sanitizeRichText('<div data-type="card"><div data-type="row"><div data-type="column"><p>a</p></div></div></div>')).toBe('<div data-type="card"><p>a</p></div>')
+    expect(sanitizeRichText('<div data-type="card"><div data-type="card"><p>a</p></div></div>')).toBe('<div data-type="card"><p>a</p></div>')
+    expect(sanitizeRichText('<blockquote><div data-type="callout"><p>a</p></div></blockquote>')).toBe('<blockquote><p>a</p></blockquote>')
+    expect(sanitizeRichText('<div data-type="evil"><p>a</p></div>')).toBe('<p>a</p>')
+  })
+})

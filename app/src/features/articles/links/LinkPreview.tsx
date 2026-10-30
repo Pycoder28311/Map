@@ -1,7 +1,7 @@
 // What a link shows of where it goes: its name (the autolinker's list) and its preview (the card over a hovered link). The one place that
 // knows how to read each kind's target: when the server can tell more (an outside page's picture and text), `useLinkInfo` asks it.
 import { previewOf, type Infobox } from '@map/shared'
-import type { Editor } from '@tiptap/react'
+import type { Node as PMNode } from '@tiptap/pm/model'
 import type { ReactNode } from 'react'
 import { LuBookmark, LuExternalLink, LuFolderOpen, LuMessageSquareText, LuUser } from 'react-icons/lu'
 import type { PlainIcon } from '../../../components/ui/icons/IconSlot'
@@ -49,7 +49,7 @@ function Placeholder({ seed, icon: Icon }: { seed: string; icon: PlainIcon }) {
 }
 
 /** Where a link goes, as it can be shown: read from the app for its objects, from the text for jumps, from the link itself for the rest */
-export function useLinkInfo(link: ArticleLink, editor: Editor | null, words = ''): Info {
+export function useLinkInfo(link: ArticleLink, doc: PMNode | null, words = ''): Info {
   const object = link.kind === 'object' ? link : null
   const resource = object ? resourceByPanelType(object.type) : undefined
   const { item, notFound, error } = useResourceItem(resource ?? NONE, resource ? object?.id : undefined)
@@ -91,9 +91,9 @@ export function useLinkInfo(link: ArticleLink, editor: Editor | null, words = ''
         : { icon: LuMessageSquareText, title: 'Message', text: 'Click the words to read it.' }
     }
     case 'jump': {
-      const target = editor ? resolveJump(editor.state.doc, link.to) : null
-      if (!editor || !target) return { icon: LuBookmark, title: 'The place is gone', missing: true }
-      const after = editor.state.doc.textBetween(target.end, Math.min(target.end + 400, editor.state.doc.content.size), ' ', ' ')
+      const target = doc ? resolveJump(doc, link.to) : null
+      if (!doc || !target) return { icon: LuBookmark, title: 'The place is gone', missing: true }
+      const after = doc.textBetween(target.end, Math.min(target.end + 400, doc.content.size), ' ', ' ')
       return { icon: LuBookmark, title: target.text || 'Untitled section', text: previewOf(after, 160) }
     }
     case 'person': {
@@ -106,8 +106,8 @@ export function useLinkInfo(link: ArticleLink, editor: Editor | null, words = ''
 }
 
 /** A link's target in a line: its icon and name (the autolinker's list) */
-export function LinkTargetName({ link, editor }: { link: ArticleLink; editor: Editor | null }) {
-  const info = useLinkInfo(link, editor)
+export function LinkTargetName({ link, doc }: { link: ArticleLink; doc: PMNode | null }) {
+  const info = useLinkInfo(link, doc)
   const Icon = info.icon
   return (
     <span className={`flex min-w-0 items-center gap-1 text-small ${info.missing ? 'text-danger' : 'text-fg-muted'}`}>
@@ -118,8 +118,8 @@ export function LinkTargetName({ link, editor }: { link: ArticleLink; editor: Ed
 }
 
 /** The card over a hovered link: its picture and the start of its text; a person's card for a person */
-export default function LinkPreview({ link, editor, words }: { link: ArticleLink; editor: Editor | null; words: string }) {
-  const info = useLinkInfo(link, editor, words)
+export default function LinkPreview({ link, doc, words }: { link: ArticleLink; doc: PMNode | null; words: string }) {
+  const info = useLinkInfo(link, doc, words)
   const person = link.kind === 'person' ? personById(link.personId) : null
   if (person) return <PersonCard person={person} />
   const Icon = info.icon

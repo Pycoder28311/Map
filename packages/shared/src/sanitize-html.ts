@@ -61,13 +61,33 @@ function safeStyle(raw: string | undefined, rules: StyleRules): string | null {
  *   <ul data-type="taskList"><li data-type="taskItem" data-checked="false"><label><input type="checkbox"><span></span></label><div><p>…</p></div></li></ul>
  * `label`, `input` and `div` are allowed only at their place in it, and with no other attribute than the ones named here.
  */
-type Part = 'taskList' | 'taskItem' | 'taskLabel'
+type Part = 'taskList' | 'taskItem' | 'taskLabel' | Box
 
 /** Whether a tag outside TAGS is one of the checklist's own, given the tag it sits in */
 function isTaskTag(tag: string, parent: Part | undefined, attribs: Record<string, string>): boolean {
   if (tag === 'label' || tag === 'div') return parent === 'taskItem'
   if (tag === 'input') return parent === 'taskLabel' && attribs.type === 'checkbox'
   return false
+}
+
+/**
+ * The article's boxes of blocks (the app's components/ui/editors/blocks.ts), the only other `div`s kept, each at its place:
+ *   <div data-type="row"><div data-type="column">…</div>…</div>     a row: at the top of the text only; a column: only in a row
+ *   <div data-type="card">…</div>                                  at the top, or in a column
+ *   <div data-type="callout" data-tone="note|tip|warning">…</div>  at the top, or in a column
+ * Any other `div` (another place, another kind, nested rows) loses its tag and keeps its words.
+ */
+type Box = 'row' | 'column' | 'card' | 'callout'
+const CALLOUT_TONE = /^(?:note|tip|warning)$/
+
+/** Which box a tag is (null: none), given the tag it sits in and whether it is at the top of the text (no kept tag around it) */
+function boxOf(tag: string, attribs: Record<string, string>, parent: Part | undefined, atTop: boolean): Box | null {
+  if (tag !== 'div') return null
+  const type = attribs['data-type']
+  if (type === 'row') return atTop ? 'row' : null
+  if (type === 'column') return parent === 'row' ? 'column' : null
+  if (type === 'card' || type === 'callout') return atTop || parent === 'column' ? type : null
+  return null
 }
 
 /** The text is HTML from the editor when it starts with a tag; otherwise it is plain text */
@@ -95,12 +115,17 @@ export function sanitizeRichText(text: string): string {
       // The tag this one sits in, if it was written: the checklist's pieces check their place against it
       const parent = open.at(-1)
       const parentPart = parent?.written ? parent.part : undefined
-      const written = !dropped && (TAGS.has(tag) || isTaskTag(tag, parentPart, attribs))
+      const box = dropped || isTaskTag(tag, parentPart, attribs) ? null : boxOf(tag, attribs, parentPart, open.every((e) => !e.written))
+      const written = !dropped && (TAGS.has(tag) || isTaskTag(tag, parentPart, attribs) || box !== null)
       const entry: (typeof open)[number] = { tag, written, dropped }
       open.push(entry)
       if (!written) return
       let attrs = ''
-      if (tag === 'ul' && attribs['data-type'] === 'taskList') {
+      if (box) {
+        entry.part = box
+        attrs = ` data-type="${box}"`
+        if (box === 'callout') attrs += ` data-tone="${CALLOUT_TONE.test(attribs['data-tone'] ?? '') ? attribs['data-tone'] : 'note'}"`
+      } else if (tag === 'ul' && attribs['data-type'] === 'taskList') {
         entry.part = 'taskList'
         attrs = ' data-type="taskList"'
       } else if (tag === 'li' && attribs['data-type'] === 'taskItem' && parentPart === 'taskList') {

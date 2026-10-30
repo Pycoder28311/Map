@@ -1,38 +1,50 @@
-import { previewOf } from '@map/shared'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
-import { LuLink, LuPlus, LuStickyNote, LuTrash2, LuUnlink } from 'react-icons/lu'
-import Button from '../../../components/ui/buttons/Button'
+import { LuExternalLink, LuLink, LuPlus, LuStickyNote, LuTrash2, LuUnlink } from 'react-icons/lu'
 import IconButton from '../../../components/ui/buttons/IconButton'
 import LinkButton from '../../../components/ui/buttons/LinkButton'
 import SearchInput from '../../../components/ui/fields/SearchInput'
 import TextField from '../../../components/ui/fields/TextField'
 import ResourceDeleteDialog from '../../../components/ui/resource/ResourceDeleteDialog'
+import TreeMenu from '../../../components/ui/tree/TreeMenu'
+import type { TreeMenuGroup } from '../../../components/ui/tree/types'
 import { useResourceActions, useResourceItem, useResourceList } from '../../../lib/resource/hooks'
 import { resourceByName } from '../../../resources/registry'
 import type { AnyResource } from '../../../resources/types'
 import { useOptionalItemModal } from '../../items/ItemModal'
+import CardFace from '../../dashboard/cards/cardFaces'
+import { ON_HOVER } from '../../dashboard/cards/cardStyles'
 import { fold } from '../../search/search'
 import { useWorkspace } from '../../workspace/useWorkspace'
 import { useArticleNotes } from './articleNotes'
 
 type Note = Record<string, unknown> & { id: number | string }
-type Row = { id: string; title: string; preview: string }
+type Row = { id: string; title: string }
 
-const rowOf = (notes: AnyResource, item: Note): Row => ({ id: String(item.id), title: notes.ui.row.title(item), preview: previewOf(String(item.content ?? item.preview ?? ''), 80) })
+const rowOf = (notes: AnyResource, item: Note): Row => ({ id: String(item.id), title: notes.ui.row.title(item) })
 
-/** A note's row: its title and start (opens it), and its actions at the right */
-function NoteRow({ row, onOpen, actions }: { row: Row; onOpen: () => void; actions: ReactNode }) {
+/** A note as the Dashboard shows it (the shared CardFace, its look from the resource), opening on a click, its actions in the card's ⋯ */
+function NoteCard({ notes, item, menu, onOpen }: { notes: AnyResource; item: Note; menu: TreeMenuGroup[]; onOpen: () => void }) {
+  const title = notes.ui.row.title(item)
   return (
-    <li className="flex items-start gap-0.5">
-      <Button variant="ghost" size="sm" plain icon={LuStickyNote} className="h-auto! min-w-0 flex-1 justify-start" onClick={onOpen}>
-        <span className="flex min-w-0 flex-col items-start py-0.5 text-start">
-          <span className="w-full truncate">{row.title}</span>
-          {row.preview && <span className="line-clamp-2 text-small font-normal text-fg-subtle">{row.preview}</span>}
-        </span>
-      </Button>
-      {actions}
-    </li>
+    <CardFace
+      resource={notes}
+      item={item}
+      title={title}
+      className="cursor-pointer"
+      box={{ role: 'button', tabIndex: 0, 'aria-label': title, 'data-card-id': String(item.id), onClick: onOpen, onKeyDown: (e) => e.key === 'Enter' && e.target === e.currentTarget && onOpen() }}
+      marks={
+        // Its own menu: clicking it doesn't open the card
+        <div onClick={(e) => e.stopPropagation()} className={`absolute end-2 top-2 flex ${ON_HOVER}`}>
+          <TreeMenu label={`More: ${title}`} groups={menu} />
+        </div>
+      }
+    />
   )
+}
+
+/** The cards of notes in one horizontal row */
+function CardRow({ children }: { children: ReactNode }) {
+  return <div className="flex snap-x gap-2 overflow-x-auto pb-1">{children}</div>
 }
 
 /** A connected note, read by its id; one that is gone is disconnected */
@@ -41,18 +53,14 @@ function ConnectedNote({ notes, id, onOpen, onDisconnect, onDelete }: { notes: A
   useEffect(() => {
     if (notFound) onDisconnect()
   }, [notFound, onDisconnect])
-  if (!item) return <li className="px-2 py-1 text-small text-fg-subtle">{notFound ? 'Gone' : 'Loading…'}</li>
+  if (!item) return <p className="w-48 shrink-0 px-2 py-1 text-small text-fg-subtle">{notFound ? 'Gone' : 'Loading…'}</p>
   const row = rowOf(notes, item as Note)
   return (
-    <NoteRow
-      row={row}
+    <NoteCard
+      notes={notes}
+      item={item as Note}
       onOpen={onOpen}
-      actions={
-        <>
-          <IconButton icon={LuUnlink} label={`Disconnect: ${row.title}`} size="sm" onClick={onDisconnect} />
-          <IconButton icon={LuTrash2} label={`Delete: ${row.title}`} size="sm" onClick={() => onDelete(row)} />
-        </>
-      }
+      menu={[[{ label: 'Open', icon: LuExternalLink, onClick: onOpen }, { label: 'Disconnect', icon: LuUnlink, onClick: onDisconnect }], [{ label: 'Delete', icon: LuTrash2, danger: true, onClick: () => onDelete(row) }]]}
     />
   )
 }
@@ -91,9 +99,7 @@ export default function NotesPanel({ articleId }: { articleId: string }) {
   }
 
   const words = fold(query).split(/\s+/).filter(Boolean)
-  const rest = (others.items as Note[])
-    .map((item) => rowOf(notes, item))
-    .filter((row) => !ids.includes(row.id) && words.every((w) => fold(`${row.title} ${row.preview}`).includes(w)))
+  const rest = (others.items as Note[]).filter((item) => !ids.includes(String(item.id)) && words.every((w) => fold(`${notes.ui.row.title(item)} ${String(item.preview ?? item.content ?? '')}`).includes(w)))
 
   return (
     <section aria-label="Notes" className="flex flex-col gap-2 rounded-(--card-radius) border border-line bg-surface p-2 shadow-sm">
@@ -104,11 +110,11 @@ export default function NotesPanel({ articleId }: { articleId: string }) {
       {ids.length === 0 ? (
         <p className="px-1 text-small text-fg-subtle">None yet: make one, or connect one of yours below.</p>
       ) : (
-        <ul className="flex flex-col">
+        <CardRow>
           {ids.map((id) => (
             <ConnectedNote key={id} notes={notes} id={id} onOpen={() => open(id)} onDisconnect={() => disconnect(id)} onDelete={setDeleting} />
           ))}
-        </ul>
+        </CardRow>
       )}
 
       <form className="flex items-end gap-1" onSubmit={(e) => void create(e)}>
@@ -124,23 +130,22 @@ export default function NotesPanel({ articleId }: { articleId: string }) {
       <div className="flex flex-col gap-1 border-t border-line pt-2">
         <h3 className="px-1 text-small font-medium text-fg-muted">Other notes</h3>
         <SearchInput label="Search notes" value={query} onChange={(e) => setQuery(e.target.value)} />
-        <ul className="flex max-h-72 flex-col overflow-y-auto">
-          {rest.map((row) => (
-            <NoteRow
-              key={row.id}
-              row={row}
-              onOpen={() => open(row.id)}
-              actions={
-                <>
-                  <IconButton icon={LuLink} label={`Connect: ${row.title}`} size="sm" onClick={() => connect(row.id)} />
-                  <IconButton icon={LuTrash2} label={`Delete: ${row.title}`} size="sm" onClick={() => setDeleting(row)} />
-                </>
-              }
-            />
-          ))}
-          {others.status === 'loading' && <li className="px-2 py-1 text-small text-fg-subtle">Loading…</li>}
-          {others.status !== 'loading' && rest.length === 0 && !others.hasMore && <li className="px-2 py-1 text-small text-fg-subtle">{query ? 'Nothing found.' : 'No other notes.'}</li>}
-        </ul>
+        <CardRow>
+          {rest.map((item) => {
+            const row = rowOf(notes, item)
+            return (
+              <NoteCard
+                key={row.id}
+                notes={notes}
+                item={item}
+                onOpen={() => open(row.id)}
+                menu={[[{ label: 'Open', icon: LuExternalLink, onClick: () => open(row.id) }, { label: 'Connect', icon: LuLink, onClick: () => connect(row.id) }], [{ label: 'Delete', icon: LuTrash2, danger: true, onClick: () => setDeleting(row) }]]}
+              />
+            )
+          })}
+          {others.status === 'loading' && <p className="px-2 py-1 text-small text-fg-subtle">Loading…</p>}
+          {others.status !== 'loading' && rest.length === 0 && !others.hasMore && <p className="px-2 py-1 text-small text-fg-subtle">{query ? 'Nothing found.' : 'No other notes.'}</p>}
+        </CardRow>
         {others.hasMore && (
           <LinkButton onClick={others.loadMore} className="ms-1 self-start">
             {others.loadingMore ? 'Loading…' : 'Load more'}

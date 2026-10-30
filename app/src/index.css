@@ -4,6 +4,7 @@
 @import "./styles/typography.css";
 @import "./styles/animations.css";
 @import "./styles/articleLinks.css";
+@import "./styles/articleBlocks.css";
 @import "./styles/valueBar.css";
 @import "./styles/cornerMarks.css";
 @import "./styles/pixelSquare.css";
@@ -59,26 +60,52 @@ input[type='number']:not(:focus):not(:disabled) {
   color: var(--color-fg-subtle);
 }
 
-/* A checklist in the rich-text editor (Tiptap's TaskList / TaskItem): a box before each item, ticked items struck through */
-.tiptap ul[data-type='taskList'] {
+/* The article's hint on the empty row the caret is on (features/articles/text/ArticleText.tsx, SECTION_HINT): fainter than a placeholder */
+.article-text .tiptap p.is-empty:not(.is-editor-empty)[data-placeholder]:not([data-placeholder=''])::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--color-fg-subtle);
+  opacity: 0.7;
+}
+
+/* The article's text shown without an editor (features/articles/text/StaticSections.tsx): laid out exactly as the editor's own element
+   (ProseMirror's base CSS), so nothing moves when a part of it becomes the editor */
+.article-static {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  white-space: break-spaces;
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0;
+}
+.article-static pre {
+  white-space: pre-wrap;
+}
+.article-static li {
+  position: relative;
+}
+
+/* A checklist in the rich-text editor (Tiptap's TaskList / TaskItem), and in the article's static text: a box before each item, ticked items struck through */
+:is(.tiptap, .article-static) ul[data-type='taskList'] {
   list-style: none;
   padding-inline-start: 0;
 }
-.tiptap ul[data-type='taskList'] li {
+:is(.tiptap, .article-static) ul[data-type='taskList'] li {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
 }
-.tiptap ul[data-type='taskList'] li > label {
+:is(.tiptap, .article-static) ul[data-type='taskList'] li > label {
   flex: none;
   margin-top: 0.15em;
   user-select: none;
 }
-.tiptap ul[data-type='taskList'] li > div {
+:is(.tiptap, .article-static) ul[data-type='taskList'] li > div {
   flex: 1;
   min-width: 0;
 }
-.tiptap ul[data-type='taskList'] li[data-checked='true'] > div {
+:is(.tiptap, .article-static) ul[data-type='taskList'] li[data-checked='true'] > div {
   text-decoration: line-through;
   opacity: 0.6;
 }

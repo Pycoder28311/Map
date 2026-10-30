@@ -1,26 +1,24 @@
-import { useEditorState, type Editor } from '@tiptap/react'
 import { useEffect, useState } from 'react'
 import { LuChevronDown, LuChevronRight, LuHash, LuListTree } from 'react-icons/lu'
 import Button from '../../../components/ui/buttons/Button'
 import IconButton from '../../../components/ui/buttons/IconButton'
 import { jumpTargets } from '../links/jumpTargets'
-import { goTo } from '../links/linkExtensions'
+import { sameJson, useTextState, type ArticleText } from '../text/articleText'
 import { contentsTree, type ContentsNode } from './contentsTree'
 
 /** How far under the top of the window a heading counts as the one being read (px) */
 const READING_LINE = 120
 
 /** Which heading (by its place among the headings) is the one being read: the last one above the reading line */
-function useCurrentHeading(editor: Editor | null) {
+function useCurrentHeading(text: ArticleText) {
   const [current, setCurrent] = useState(-1)
   useEffect(() => {
-    if (!editor) return
     let frame = 0
     const measure = () => {
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
-        if (editor.isDestroyed) return
-        const headings = editor.view.dom.querySelectorAll('h1, h2, h3, h4, h5, h6')
+        // The headings in the order of the text: the static parts' and the editor's alike
+        const headings = text.root?.querySelectorAll('h1, h2, h3, h4, h5, h6') ?? []
         let at = -1
         headings.forEach((h, i) => {
           if (h.getBoundingClientRect().top < READING_LINE) at = i
@@ -31,14 +29,14 @@ function useCurrentHeading(editor: Editor | null) {
     measure()
     window.addEventListener('scroll', measure, true)
     window.addEventListener('resize', measure)
-    editor.on('update', measure)
+    const unsubscribe = text.subscribe(measure)
     return () => {
       cancelAnimationFrame(frame)
       window.removeEventListener('scroll', measure, true)
       window.removeEventListener('resize', measure)
-      editor.off('update', measure)
+      unsubscribe()
     }
-  }, [editor])
+  }, [text])
   return current
 }
 
@@ -46,14 +44,9 @@ function useCurrentHeading(editor: Editor | null) {
  * Contents: the article's sections (its headings) as a tree, a section's subsections under it (folded with its arrow). Clicking one goes
  * there; the one being read is marked. It follows the text as it is written
  */
-export default function ContentsTree({ editor }: { editor: Editor | null }) {
-  const nodes =
-    useEditorState({
-      editor,
-      selector: ({ editor: e }) => (e ? contentsTree(jumpTargets(e.state.doc)) : []),
-      equalityFn: (a, b) => JSON.stringify(a) === JSON.stringify(b),
-    }) ?? []
-  const current = useCurrentHeading(editor)
+export default function ContentsTree({ text }: { text: ArticleText }) {
+  const nodes = useTextState(text, (doc) => contentsTree(jumpTargets(doc)), sameJson)
+  const current = useCurrentHeading(text)
   const [folded, setFolded] = useState<Set<number>>(new Set())
 
   const row = (node: ContentsNode, depth: number) => {
@@ -85,7 +78,7 @@ export default function ContentsTree({ editor }: { editor: Editor | null }) {
             icon={LuHash}
             aria-current={current === heading.index ? 'location' : undefined}
             className="min-w-0 flex-1 justify-start"
-            onClick={() => editor && goTo(editor, heading.from + 1, heading.end - 1)}
+            onClick={() => text.goTo(heading.from + 1, heading.end - 1)}
           >
             <span className="min-w-0 truncate text-start">{heading.text || <span className="text-fg-subtle">Untitled section</span>}</span>
           </Button>
@@ -101,7 +94,7 @@ export default function ContentsTree({ editor }: { editor: Editor | null }) {
         <LuListTree className="size-4" />
         Contents
       </h2>
-      {nodes.length === 0 ? <p className="px-1 text-small text-fg-subtle">Add sections with the toolbar’s Section to see them here.</p> : <ul>{nodes.map((n) => row(n, 0))}</ul>}
+      {nodes.length === 0 ? <p className="px-1 text-small text-fg-subtle">Add headings (the toolbar’s Add section, or type / in the text) to see them here.</p> : <ul>{nodes.map((n) => row(n, 0))}</ul>}
     </nav>
   )
 }

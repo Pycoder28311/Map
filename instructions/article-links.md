@@ -1,8 +1,15 @@
 # Article links
 
-The article page's third toolbar row (Link, Attach Content, Jump link, Follow, Message, Autolinker), the hover card over a link,
-Public / Private and Search in article. The row is smaller than the other two, with its name (Types of Links) at its left, and shows only while some words are selected
-or the toolbar's ⋯ (on its right edge) has its rows open; it stays while one of its popouts is open. The plan is `docs/plans/31-article-links-and-privacy.md`.
+The article page's links row (Link, Attach Content, Jump link, Follow, Message, Autolinker), the hover card over a link,
+Public / Private and Search in article. The row is smaller than the toolbar's, with its name (Types of Links) at its left, in a box of its own
+`--spacing-sm` under the bar, floating over the text (it never pushes it down). It shows while some words are selected, or while row 2's
+**Link types** (right of the Ω, shown with nothing selected) is pressed; it stays while one of its popouts is open. Typing **`@`** (at a row's
+start or after a space) opens the same row **above the caret's row** instead, with an X: a link picked there is written at the `@` as words of
+its own (the target's name; Message needs words already written). While it floats there it is not under the bar. The plans are
+`docs/plans/31-article-links-and-privacy.md` and `docs/plans/36-article-sections-and-lazy-editing.md`.
+
+Everything here works on the whole text, edited or not (`ArticleText`, `article-page.md`): links are followed and hovered in the static
+text too, Search highlights it with the browser's CSS Custom Highlight API, and the Autolinker changes all of it.
 
 A link is never a record: everything it knows is written in the article's HTML (`content`), except a **message**, which is a row of the
 server's `messages` table: its link keeps only its id (docs/plans/34). Privacy (who can read or edit) is on the server too
@@ -20,7 +27,7 @@ app/src/features/articles/links/
 ├── objectSearch.ts      the Article link picker's pages (ObjectPages, nextToLoad)   ← server search goes here
 ├── useObjectSearch.ts   the picker's hook (one shared ObjectPages, fresh after 5 min)
 ├── linkExtensions.ts    editor: clicks, the autolinker while typing, find highlights, Ctrl/⌘+F; setArticleLink / removeArticleLink / goTo
-├── LinkRow.tsx          the third row and its popouts
+├── LinkRow.tsx          the links row and its popouts (docked under the bar, or floating at an `@`: insertAt)
 ├── LinkForms.tsx        Real link and Message forms
 ├── ObjectPicker.tsx · JumpPicker.tsx · FollowPicker.tsx · AutolinkPanel.tsx
 ├── LinkPreview.tsx      what a link shows of its target (useLinkInfo)                ← URL previews go here

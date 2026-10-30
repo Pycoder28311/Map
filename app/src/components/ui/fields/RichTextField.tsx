@@ -2,6 +2,7 @@ import { RICH_TEXT_MAX } from '@map/shared/rich-text-policy'
 import { useCallback, useRef, useState, type KeyboardEvent } from 'react'
 import type { Editor, Extensions } from '@tiptap/react'
 import { cleanHtml, toHtml } from '../../../features/notes/noteHtml'
+import { IMAGE_ACCEPT, insertImages } from '../editors/insertImages'
 import RichTextEditor from '../editors/RichTextEditor'
 import RichTextToolbar from '../editors/RichTextToolbar'
 
@@ -42,8 +43,8 @@ type Props = {
   className?: string
 }
 
-/** The shape of the text inside: the editor's own element is borderless; headings and lists get their look here */
-const TEXT =
+/** The shape of the text inside: the editor's own element is borderless; headings and lists get their look here. Also the look of the same text shown without an editor (the article's) */
+export const RICH_TEXT_CLASSES =
   'text-body [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[inherit] [&_p]:min-h-[1lh] [&_h1]:text-title [&_h2]:text-heading [&_h3]:text-heading ' +
   '[&_ul]:list-disc [&_ol]:list-decimal [&_ul]:ps-5 [&_ol]:ps-5 [&_blockquote]:border-s-2 [&_blockquote]:border-line [&_blockquote]:ps-3 ' +
   '[&_a]:underline [&_a]:text-accent ' +
@@ -87,15 +88,7 @@ export default function RichTextField({
   const picker = useRef<HTMLInputElement>(null)
   const showsToolbar = toolbar && editable && !plain
   const upload = async (files: File[]) => {
-    if (!onUploadImage || !editor) return
-    for (const file of files) {
-      try {
-        const src = await onUploadImage(file)
-        editor.chain().focus().setImage({ src, alt: file.name.replace(/\.[^.]+$/, '') }).run()
-      } catch (error) {
-        onUploadError?.(error)
-      }
-    }
+    if (onUploadImage && editor) await insertImages(editor, files, onUploadImage, onUploadError)
   }
   return (
     // A column only with the toolbar: without it the text is plain blocks, so it can flow around a float beside the field (the article's Info box)
@@ -105,7 +98,7 @@ export default function RichTextField({
         <input
           ref={picker}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept={IMAGE_ACCEPT}
           multiple
           hidden
           onChange={(e) => {
@@ -129,7 +122,7 @@ export default function RichTextField({
           if (html.length > maxLength) e.commands.undo() // too long for the server: it would reject the save
           else onChange?.(cleanHtml(html))
         }}
-        className={`${minHeight} ${TEXT}`}
+        className={`${minHeight} ${RICH_TEXT_CLASSES}`}
       />
     </div>
   )
