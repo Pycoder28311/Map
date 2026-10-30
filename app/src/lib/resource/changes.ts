@@ -24,6 +24,18 @@ export function subscribeChanges(listener: Listener) {
   }
 }
 
+/**
+ * The last version of each shared item that this tab's own writes got back from the server (docs/plans/34). An open editor of the item
+ * takes such a version as the one its next save changes (a rename from the sidebar is not a conflict); a newer version it read from
+ * the server is someone else's, and is not taken (its next save is a conflict, as it should be)
+ */
+const ownVersions = new Map<string, number>()
+const versionKey = (name: string, id: number | string) => `${name}:${id}`
+export function rememberOwnVersion(name: string, item: { id: number | string; version?: unknown }) {
+  if (typeof item.version === 'number') ownVersions.set(versionKey(name, item.id), item.version)
+}
+export const isOwnVersion = (name: string, id: number | string, version: number) => ownVersions.get(versionKey(name, id)) === version
+
 /** Whether the event is about this item (ids are numbers on the server and strings in panel refs) */
 export const isAbout = (event: ChangeEvent, id: number | string) =>
   (event.item !== undefined && String(event.item.id) === String(id)) || (event.removedId !== undefined && String(event.removedId) === String(id))

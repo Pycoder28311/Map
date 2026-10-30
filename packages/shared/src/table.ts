@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { entityId, queryId } from './common'
 import type { Field, ValueOf } from './fields'
 import { orderFields, type OrderOutput, type OrderSpec } from './order'
+import type { ItemAccess, Visibility } from './rights'
 
 /**
  * Who may read and write a table (the backend's crudRoutes guards each one):
@@ -36,25 +37,38 @@ export type TableConfig = {
   readonly link?: { readonly types: Readonly<Record<string, string>> }
   /** The list filters kept first in the table's index (default: archived, and link when the table has one) */
   readonly listFilters?: readonly ListFilter[]
+  /**
+   * Its rows can be shared (docs/plans/34): other people may read or edit one (object_rights), or everyone signed in may read it
+   * (`visibility: 'public'`). Adds `visibility`, `version` (a save says which version it changes: 409 when another was saved since)
+   * and `edited_by` to the table
+   */
+  readonly share?: true
 }
 
 type FieldValues<C extends TableConfig> = { -readonly [K in keyof C['fields']]: ValueOf<C['fields'][K]> }
 type LinkTypes<C extends TableConfig> = C extends { link: { types: infer T } } ? keyof T & string : never
 type LinkValues<C extends TableConfig> = [LinkTypes<C>] extends [never] ? unknown : { objectType: LinkTypes<C> | null; objectId: number | null }
 type PreviewValue<C extends TableConfig> = C extends { preview: string } ? { preview: string } : unknown
+/**
+ * A shared table's row also says its version and what the caller may do with it. `visibility` comes only to the owner; a non-owner
+ * gets the row without the owner's own fields (pinned, position, parent, visibility)
+ */
+type ShareValues<C extends TableConfig> = C extends { share: true } ? { version: number; access: ItemAccess; visibility?: Visibility } : unknown
 
 /** A whole row as the API sends it (GET /:id, and what a write answers) */
 export type ItemOf<C extends TableConfig> = { id: number; archived: boolean; createdAt: string; updatedAt: string } & FieldValues<C> &
   OrderOutput<C['order']> &
   PreviewValue<C> &
-  LinkValues<C>
+  LinkValues<C> &
+  ShareValues<C>
 
 /** A row in a list: without the field the preview stands for (lists send the preview instead) */
 export type ListItemOf<C extends TableConfig> = C extends { preview: infer P extends string } ? Omit<ItemOf<C>, P> : ItemOf<C>
 
 /** What a client may write: any of its fields (the owner, id and dates always come from the server) */
 export type InputOf<C extends TableConfig> = Partial<FieldValues<C> & { archived: boolean } & OrderOutput<C['order']> & LinkValues<C>>
-export type UpdateOf<C extends TableConfig> = InputOf<C>
+/** A shared table's update may say which version it changes (`baseVersion`): it is written only if that is still the latest */
+export type UpdateOf<C extends TableConfig> = InputOf<C> & (C extends { share: true } ? { baseVersion?: number } : unknown)
 
 /** A list's filters, parsed from its query string */
 export type FilterOf<C extends TableConfig> = { archived: boolean } & ([LinkTypes<C>] extends [never]
@@ -108,7 +122,7 @@ function defineTable(name: string, config: TableConfig): Table {
       path: [required[0] ?? ''],
     })
     .refine(pairOk, pairRule)
-  const update = writable.refine(pairOk, pairRule)
+  const update = (config.share ? writable.extend({ baseVersion: z.number().int().min(0).optional() }) : writable).refine(pairOk, pairRule)
 
   const filter = z
     .object({

@@ -33,10 +33,22 @@ function columnOf(name: string, kind: string, fallback: unknown): SQLiteColumnBu
 }
 
 /**
+ * The columns of a shared table (`share: true`, docs/plans/34). Only added columns, so its migration is ALTER TABLE … ADD (no table
+ * rebuild): `visibility` is checked by zod, not a CHECK, and `edited_by` has no foreign key (it only names who saved, on a conflict)
+ */
+const shareColumns = () => ({
+  visibility: text('visibility').notNull().default('private'),
+  // +1 with every change of one of the config's fields (not pin, position, parent, archive, visibility): what a save says it changes
+  version: integer('version').notNull().default(0),
+  editedBy: text('edited_by'),
+})
+
+/**
  * A user-owned table from its config (shared/src/data.config.ts), in this column order: id, the owner, the config's fields,
  * `preview` (when the config has one: the first words of that rich-text field, written with it by ownedRepo), the parent pair
- * `object_type`/`object_id` (when it has a `link`; both set or both empty), the dates, `archived`, then the order columns. Its
- * list index: the owner, the list filters, then the list order (lib/sort.ts), so a filtered list reads only its own rows.
+ * `object_type`/`object_id` (when it has a `link`; both set or both empty), the dates, `archived`,
+ * `visibility`/`version`/`edited_by` (when it has `share`), then the order columns. Its list index: the owner, the list filters, then
+ * the list order (lib/sort.ts), so a filtered list reads only its own rows.
  */
 export function ownedTable(config: Table): OwnedTable {
   const columns: Record<string, SQLiteColumnBuilderBase> = {
@@ -48,6 +60,7 @@ export function ownedTable(config: Table): OwnedTable {
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
+    ...(config.share ? shareColumns() : {}),
     ...(orderColumns(config.order) as Record<string, SQLiteColumnBuilderBase>),
   }
   const filters = config.listFilters.flatMap((f) => (f === 'link' ? ['objectType', 'objectId'] : [f]))

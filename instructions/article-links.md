@@ -4,8 +4,9 @@ The article page's third toolbar row (Link, Attach Content, Jump link, Follow, M
 Public / Private and Search in article. The row is smaller than the other two and centred, and shows only while some words are selected
 or the toolbar's ⋯ (on its right edge) has its rows open; it stays while one of its popouts is open. The plan is `docs/plans/31-article-links-and-privacy.md`.
 
-**Frontend only for now.** A link is never a record: everything it knows is written in the article's HTML (`content`). People and
-privacy are mock stores on this device.
+A link is never a record: everything it knows is written in the article's HTML (`content`), except a **message**, which is a row of the
+server's `messages` table: its link keeps only its id (docs/plans/34). Privacy (who can read or edit) is on the server too
+(`object_rights`, `features/sharing/`). People to follow are still a mock store on this device (`mockPeople.ts`).
 
 ## Where things are
 
@@ -24,7 +25,8 @@ app/src/features/articles/links/
 ├── ObjectPicker.tsx · JumpPicker.tsx · FollowPicker.tsx · AutolinkPanel.tsx
 ├── LinkPreview.tsx      what a link shows of its target (useLinkInfo)                ← URL previews go here
 ├── LinkHoverCard.tsx · MessagePanel.tsx · JumpGutter.tsx · FindBar.tsx
-app/src/features/articles/privacy/   privacyStore.ts (ArticlePrivacy, on this device) · PrivacyButton.tsx · PrivacyModal.tsx
+app/src/features/articles/messages/  messagesStore.ts (messages read on click, kept for the page) · MessageLinkForm.tsx · useLegacyMessages.ts
+app/src/features/sharing/            sharing.ts (the switches' rules, useSharing) · PrivacyButton.tsx · PrivacyPanel.tsx (every shared table)
 app/src/features/people/             mockPeople.ts (people, whom you follow) · PersonCard.tsx
 app/src/styles/articleLinks.css      each kind's look, read from the href
 ```
@@ -38,7 +40,7 @@ The server's sanitizer (`packages/shared/src/sanitize-html.ts`) keeps an `<a>`'s
 |---|---|---|
 | `url` | `u` (http/https) | opens it in a new tab |
 | `object` | `ty` (article, map, object, folder, project), `id` | opens it beside the article |
-| `msg` | `ti` (≤ 100), `c` (≤ 2000) | the message panel at the right of the text |
+| `msg` | `id` (the message's row) | the message panel at the right of the text; the message is read now (once) |
 | `jump` | `to`: `a:<anchor id>` or `h:<heading index>:<slug>` | scrolls there |
 | `anchor` | `id` | (a jump's target: a soft mark on the words) |
 | `person` | `p` | the person's card (Follow) |
@@ -50,12 +52,29 @@ survives `sanitizeRichText` unchanged: a new key or kind needs a case there.
 An autolinker is kept only in the links it made: the list is `rulesFrom(doc)`. One whose words are written nowhere has no link, so it is
 not kept (the panel says so).
 
+## Messages (docs/plans/34)
+
+- **Written by the article's editors and owner only** (Message in the link row): `POST /api/messages`, then the selected words get
+  `#mapl:k=msg&id=<id>` and the autosave saves the text. Readers only read them.
+- **Read only when the words are clicked** (`GET /api/messages/:id`, one query: the message, its article's access, its author), then kept
+  in `messagesStore` until the page closes. The hover card and the side list never read: they show a message only once it was read.
+- **Done**: its author, the editors and the owner (`PATCH { done }`); its text: its author only, while they can edit the article.
+- **Removing the words does not delete the message.** Editors find it under Messages → "Not in the text" (read only when pressed,
+  `GET /api/messages?articleId=&exclude=<ids in the text>`), to delete it or place it on selected words. Cut and paste, and Undo, keep it.
+- **A link to another article's message** opens "This message was deleted" (the panel checks `articleId`); a deleted message's link can
+  be taken out from its panel.
+- **Old messages** (`k=msg&ti=…&c=…`, from before) still open from their link. The first time an editor opens the article they are made
+  rows (`POST /api/messages/import`, 50 at a time) and their links rewritten to ids, saved at once (`useLegacyMessages`).
+
+## Who can read or edit (docs/plans/34)
+
+The server answers each shared row with `access` (`owner`, `editor`, `reader`): `useArticleRole` reads it. The owner has Private / Public
+and the people (`PrivacyButton`, which reads the people only when it opens and sends Apply as one request); an editor gets the editor's
+page without the owner's ⋯ actions; a reader gets the page read-only (no toolbar, the Info box and banner only shown).
+
 ## Connecting the backend later
 
 - **People / followers**: replace `usePeople`, `personById` and the follow store in `mockPeople.ts`; keep their shapes.
-- **Privacy**: `privacyStore.ts` → a field of `articles` with the `ArticlePrivacy` shape (`data.config.ts`, a migration). `useArticlePrivacy`
-  keeps its signature.
 - **Search of objects**: `ObjectSource.list` gets the query, and `ObjectPages.results` stops filtering.
 - **URL previews** (picture and text of an outside page): `useLinkInfo`'s `url` / `project-url` case.
-- **Link records**, if wanted: read every `#mapl:` link with `linkRanges` / `fromHref` (the same parser works on the server: it has no
-  browser imports) and migrate.
+- **More link records**, if wanted: as messages did (a table, the id in the href, read on click).

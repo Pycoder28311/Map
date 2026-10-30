@@ -7,7 +7,8 @@ const LINKS: ArticleLink[] = [
   { kind: 'url', url: 'https://example.com', rule: { id: 'r1', text: 'Athens' } },
   { kind: 'object', type: 'article', id: '12' },
   { kind: 'object', type: 'map', id: 'abc-9', rule: { id: 'r2', text: 'The map' } },
-  { kind: 'msg', title: 'A "quote" & more', content: 'Line one\nLine two # 50% ✨ <b>no tags</b>' },
+  { kind: 'msg', id: 42 },
+  { kind: 'msg', id: null, legacy: { title: 'A "quote" & more', content: 'Line one\nLine two # 50% ✨ <b>no tags</b>' } },
   { kind: 'jump', to: 'a:x1y2z3' },
   { kind: 'jump', to: 'h:2:the-war', rule: { id: 'r3', text: 'war' } },
   { kind: 'anchor', id: 'x1y2z3' },
@@ -59,7 +60,19 @@ describe('withRule / withoutRule', () => {
     expect(withoutRule(ruled)).toEqual(link)
   })
   it('never puts one on a message', () => {
-    const msg: ArticleLink = { kind: 'msg', title: 't', content: '' }
+    const msg: ArticleLink = { kind: 'msg', id: 3 }
     expect(withRule(msg, { id: 'r', text: 'x' })).toBe(msg)
+  })
+})
+
+describe('messages', () => {
+  it('keeps only the id of a message', () => {
+    expect(toHref({ kind: 'msg', id: 42 })).toBe('#mapl:k=msg&id=42')
+  })
+  it('reads an old message (title and text in the href) as legacy', () => {
+    expect(fromHref('#mapl:k=msg&ti=Hi&c=There')).toEqual({ kind: 'msg', id: null, legacy: { title: 'Hi', content: 'There' } })
+  })
+  it('refuses ids that are not a row\'s', () => {
+    for (const id of ['0', '-1', '1.5', 'abc', '1234567890123456']) expect(fromHref(`#mapl:k=msg&id=${id}`)).toBeNull()
   })
 })

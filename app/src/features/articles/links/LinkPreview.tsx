@@ -11,6 +11,7 @@ import MapPreview from '../../dashboard/cards/MapPreview'
 import { placeholderArt } from '../../objects/placeholderArt'
 import { personById } from '../../people/mockPeople'
 import PersonCard from '../../people/PersonCard'
+import { useMessage } from '../messages/messagesStore'
 import { resolveJump } from './jumpTargets'
 import type { ArticleLink } from './linkHref'
 
@@ -52,6 +53,7 @@ export function useLinkInfo(link: ArticleLink, editor: Editor | null, words = ''
   const object = link.kind === 'object' ? link : null
   const resource = object ? resourceByPanelType(object.type) : undefined
   const { item, notFound, error } = useResourceItem(resource ?? NONE, resource ? object?.id : undefined)
+  const message = useMessage(link.kind === 'msg' ? link.id : null, false)
 
   switch (link.kind) {
     case 'object': {
@@ -80,8 +82,14 @@ export function useLinkInfo(link: ArticleLink, editor: Editor | null, words = ''
         text: link.kind === 'url' ? domainOf(link.url) : `Someone's project · ${domainOf(link.url)}`,
         picture: <Placeholder seed={domainOf(link.url)} icon={link.kind === 'url' ? LuExternalLink : LuFolderOpen} />,
       }
-    case 'msg':
-      return { icon: LuMessageSquareText, title: link.title || 'Message', text: previewOf(link.content, 160) }
+    case 'msg': {
+      // Never read for a hover: a message is read when its words are clicked (docs/plans/34). One read already shows
+      if (link.id === null) return { icon: LuMessageSquareText, title: link.legacy.title || 'Message', text: previewOf(link.legacy.content, 160) }
+      const known = message?.status === 'ready' && message.message.id === link.id ? message.message : null
+      return known
+        ? { icon: LuMessageSquareText, title: known.title || 'Message', text: previewOf(known.content, 160) }
+        : { icon: LuMessageSquareText, title: 'Message', text: 'Click the words to read it.' }
+    }
     case 'jump': {
       const target = editor ? resolveJump(editor.state.doc, link.to) : null
       if (!editor || !target) return { icon: LuBookmark, title: 'The place is gone', missing: true }

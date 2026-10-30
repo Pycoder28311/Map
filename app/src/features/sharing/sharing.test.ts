@@ -1,22 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { allowedFrom, changesOf, normalizeAllowed, permissionOf, withRole, withSwitch } from './privacyStore'
-
-describe('normalizeAllowed', () => {
-  it('takes the old list of ids as readers, and keeps roles', () => {
-    expect(normalizeAllowed(['u1', 'u2'])).toEqual([
-      { id: 'u1', role: 'reader' },
-      { id: 'u2', role: 'reader' },
-    ])
-    expect(normalizeAllowed([{ id: 'u1', role: 'editor' }, { id: 'u2', role: 'nonsense' }])).toEqual([
-      { id: 'u1', role: 'editor' },
-      { id: 'u2', role: 'reader' },
-    ])
-  })
-  it('drops what is not a person, and doubles', () => {
-    expect(normalizeAllowed('x')).toEqual([])
-    expect(normalizeAllowed([1, null, { role: 'editor' }, 'u1', 'u1'])).toEqual([{ id: 'u1', role: 'reader' }])
-  })
-})
+import { allowedFrom, allowedOf, changesOf, initialsOf, permissionOf, withRole, withSwitch } from './sharing'
 
 describe('withRole', () => {
   const start = [{ id: 'u1', role: 'reader' as const }]
@@ -66,5 +49,15 @@ describe('permissions while editing', () => {
 
   it('no edits change nothing', () => {
     expect(allowedFrom(saved, {})).toEqual(saved)
+  })
+})
+
+describe('people from the server', () => {
+  it('takes the rights as the switches read them', () => {
+    expect(allowedOf([{ id: 7, role: 'editor', user: { id: 'u1', name: 'Ann Lee', image: null } }])).toEqual([{ id: 'u1', role: 'editor' }])
+  })
+  it('makes initials, also of an empty name', () => {
+    expect(initialsOf({ name: 'ann  lee smith' })).toBe('AL')
+    expect(initialsOf({ name: '' })).toBe('?')
   })
 })

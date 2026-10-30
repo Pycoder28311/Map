@@ -78,6 +78,20 @@
       "when": 1793103940071,
       "tag": "0010_article_infobox",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1793353718263,
+      "tag": "0011_sharing_and_messages",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1793353745604,
+      "tag": "0012_object_rights_triggers",
+      "breakpoints": true
     }
   ]
 }

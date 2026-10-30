@@ -5,6 +5,7 @@ export const ERROR_CODES = [
   'FORBIDDEN',
   'FORBIDDEN_ORIGIN',
   'NOT_FOUND',
+  'CONFLICT', // the row was saved by someone else since the version this write changes (409)
   'VALIDATION_FAILED',
   'TOO_MANY_REQUESTS',
   'SERVER_MISCONFIGURED',

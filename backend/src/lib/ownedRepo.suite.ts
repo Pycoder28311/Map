@@ -3,35 +3,64 @@
 import { comparePositions, DATA, positionBetween, previewOf, TABLE_NAMES, type Table, type TableName } from '@map/shared'
 import { generateSQLiteDrizzleJson, generateSQLiteMigration } from 'drizzle-kit/api'
 import { drizzle } from 'drizzle-orm/sqlite-proxy'
+import { readFileSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 import { describe, expect, it } from 'vitest'
 import * as schema from '../db/schema'
 import type { Ctx, Repo } from './crud'
 import { ownedRepo } from './ownedRepo'
+import { D1_MAX_PARAMS } from './relations'
 
-// The real schema in a real in-memory SQLite, created from the SQL drizzle-kit writes for it
+// The real schema in a real in-memory SQLite, created from the SQL drizzle-kit writes for it, with foreign keys on (as D1) and the
+// hand-written triggers of the migrations (drizzle-kit does not make them)
 export const sqlite = new DatabaseSync(':memory:')
+sqlite.exec('PRAGMA foreign_keys = ON')
 for (const statement of await generateSQLiteMigration(await generateSQLiteDrizzleJson({}), await generateSQLiteDrizzleJson(schema))) sqlite.exec(statement)
+for (const statement of readFileSync('drizzle/0012_object_rights_triggers.sql', 'utf8').split('--> statement-breakpoint')) sqlite.exec(statement)
+
+type Method = 'run' | 'all' | 'values' | 'get'
+// D1 binds at most 100 values in one statement: a query with more works here but fails there, so it fails here too
+const runOne = (query: string, params: unknown[], method: Method) => {
+  if (params.length > D1_MAX_PARAMS) throw new Error(`Too many SQL variables for D1: ${params.length} (at most ${D1_MAX_PARAMS})`)
+  const stmt = sqlite.prepare(query)
+  if (method === 'run') {
+    stmt.run(...(params as never[]))
+    return { rows: [] }
+  }
+  // Arrays, as D1 gives drizzle: objects would merge two columns of one name (a join's `id`s)
+  stmt.setReturnArrays(true)
+  const rows = stmt.all(...(params as never[])) as unknown as unknown[][]
+  return { rows: method === 'get' ? rows[0] : rows } // .get() expects one row, the others a list
+}
 const db = drizzle(
-  async (query, params, method) => {
-    const stmt = sqlite.prepare(query)
-    if (method === 'run') {
-      stmt.run(...params)
-      return { rows: [] }
+  async (query, params, method) => runOne(query, params, method),
+  // db.batch(): one transaction, as D1 runs it (all or nothing)
+  async (queries) => {
+    sqlite.exec('BEGIN')
+    try {
+      const results = queries.map(({ sql, params, method }) => runOne(sql, params, method))
+      sqlite.exec('COMMIT')
+      return results as never
+    } catch (error) {
+      sqlite.exec('ROLLBACK')
+      throw error
     }
-    const rows = stmt.all(...params).map((row) => Object.values(row))
-    return { rows: method === 'get' ? rows[0] : rows } // .get() expects one row, the others a list
   },
   { schema },
 )
 
 let users = 0
 /** A new user (each test has its own, so lists hold only what the test made) */
-export function newUser(): Ctx {
+export function newUser(name?: string): Ctx {
   const id = `user-${++users}`
   const now = Math.floor(Date.now() / 1000)
-  sqlite.prepare('INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)').run(id, id, `${id}@x.test`, now, now)
-  return { db, env: {} as CloudflareBindings, user: { id } } as unknown as Ctx
+  sqlite.prepare('INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)').run(id, name ?? id, `${id}@x.test`, now, now)
+  return { db, env: {} as CloudflareBindings, user: { id, name: name ?? id, image: null } } as unknown as Ctx
+}
+
+/** Gives `to` a right on a row of `owner`'s (as the privacy panel would) */
+export async function give(owner: Ctx, type: string, id: number, to: Ctx, role: 'reader' | 'editor') {
+  await owner.db.insert(schema.objectRights).values({ objectType: type, objectId: id, userId: to.user!.id, role, grantedBy: owner.user!.id })
 }
 
 type AnyRepo = Repo<Record<string, unknown>, Record<string, unknown>, Record<string, unknown>, Record<string, unknown>, Record<string, unknown>>

@@ -10,6 +10,11 @@ type Options<V> = {
   save: (values: V, options: { keepalive: boolean }) => Promise<void>
   /** Keep the values on this device until the server has them: the storage key, and the server version the changes are made on */
   draft?: { key: string; baseUpdatedAt: () => string }
+  /**
+   * A failure that trying again will not mend (a newer version on the server, the item gone or no longer editable): sending stops
+   * (as `hold`), the changes and their draft stay, until `release` (send again) or `reset` (drop them). Others are tried again later
+   */
+  stopOn?: (error: Error) => boolean
   idleMs?: number
   maxWaitMs?: number
 }
@@ -91,8 +96,16 @@ export function useAutosave<V>(options: Options<V>) {
       } catch (e) {
         r.saving = false
         if (r.gone) return
-        setError(e instanceof Error ? e : new Error(String(e)))
+        const failure = e instanceof Error ? e : new Error(String(e))
+        setError(failure)
         setStatus('error')
+        persistDraft()
+        if (config.current.stopOn?.(failure)) {
+          // Not worth trying again: wait for the user (release or reset)
+          window.clearTimeout(r.saveTimer)
+          r.held = true
+          return
+        }
         // The draft stays; try again later (5 s, 10 s, 20 s… at most a minute)
         window.clearTimeout(r.saveTimer)
         r.saveTimer = window.setTimeout(() => void sender.current(false), retryDelay(r.attempt++))
@@ -138,6 +151,22 @@ export function useAutosave<V>(options: Options<V>) {
     run.current.held = false
     schedule()
   }, [schedule])
+  /** What was not sent, and its draft, are dropped (the user chose the server's version); it goes on saving the changes made from now */
+  const reset = useCallback(() => {
+    const r = run.current
+    window.clearTimeout(r.saveTimer)
+    window.clearTimeout(r.draftTimer)
+    r.saveTimer = r.draftTimer = undefined
+    r.held = false
+    r.dirty = false
+    r.latest = undefined
+    r.attempt = 0
+    const { draft } = config.current
+    if (draft) clearDraft(browserStorage(), draft.key)
+    setError(null)
+    setStatus('idle')
+  }, [])
+
   /** The thing was deleted: what was not sent, and its draft, are dropped, and nothing is sent again */
   const discard = useCallback(() => {
     const r = run.current
@@ -179,5 +208,5 @@ export function useAutosave<V>(options: Options<V>) {
     }
   }, [persistDraft, send])
 
-  return { change, flush, hold, release, discard, status, error }
+  return { change, flush, hold, release, reset, discard, status, error }
 }

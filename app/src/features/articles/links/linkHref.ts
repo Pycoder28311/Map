@@ -1,6 +1,6 @@
 // The article's own links (docs/plans/31): everything a link knows is written in its href, `#mapl:k=<kind>&…`, because the server's
-// sanitizer keeps an <a>'s href and drops every other attribute. No record is made anywhere: the text is the only place a link lives.
-// Pure (linkHref.test.ts).
+// sanitizer keeps an <a>'s href and drops every other attribute. A message is the one link with a record of its own (docs/plans/34): its
+// href keeps only the message's id, and the message is read when its words are clicked. Pure (linkHref.test.ts).
 import { isSafeLink } from '@map/shared/rich-text-policy'
 
 /** The kinds of object an Article link can point to: the resources' panel types */
@@ -13,7 +13,12 @@ export type Rule = { id: string; text: string }
 export type ArticleLink =
   | { kind: 'url'; url: string; rule?: Rule }
   | { kind: 'object'; type: ObjectType; id: string; rule?: Rule }
-  | { kind: 'msg'; title: string; content: string }
+  /**
+   * A message (a row of the server's messages), by its id. `legacy`: a message from before they were rows, its title and text in the
+   * href (`id` null): read as it is, and made a row when an editor opens the article (useLegacyMessages)
+   */
+  | { kind: 'msg'; id: number; legacy?: undefined }
+  | { kind: 'msg'; id: null; legacy: { title: string; content: string } }
   /** `to`: 'a:<anchor id>' or 'h:<heading index>:<slug>' (jumpTargets.ts) */
   | { kind: 'jump'; to: string; rule?: Rule }
   | { kind: 'anchor'; id: string }
@@ -29,6 +34,8 @@ export const LINK_PREFIX = '#mapl:'
 export const LIMITS = { title: 100, content: 2000, url: 500, ruleText: 100 } as const
 
 const ID = /^[\w-]{1,40}$/
+/** A row's id (a message's) */
+const ROW_ID = /^[1-9]\d{0,14}$/
 const JUMP = /^(?:a:[\w-]{1,40}|h:\d{1,4}:[\w-]{0,60})$/
 
 /** An outside address a link may open: http or https, and safe */
@@ -50,8 +57,11 @@ export function toHref(link: ArticleLink): string {
       p.set('id', link.id)
       break
     case 'msg':
-      p.set('ti', link.title.slice(0, LIMITS.title))
-      p.set('c', link.content.slice(0, LIMITS.content))
+      if (link.id !== null) p.set('id', String(link.id))
+      else {
+        p.set('ti', link.legacy.title.slice(0, LIMITS.title))
+        p.set('c', link.legacy.content.slice(0, LIMITS.content))
+      }
       break
     case 'jump':
       p.set('to', link.to)
@@ -96,9 +106,11 @@ export function fromHref(href: string | null | undefined): ArticleLink | null {
       return OBJECT_TYPES.includes(type) && ID.test(id) ? { kind: 'object', type, id, ...rule } : null
     }
     case 'msg': {
+      const id = get('id')
+      if (ROW_ID.test(id)) return { kind: 'msg', id: Number(id) }
       const title = get('ti')
       const content = get('c')
-      return title.length <= LIMITS.title && content.length <= LIMITS.content && (title || content) ? { kind: 'msg', title, content } : null
+      return title.length <= LIMITS.title && content.length <= LIMITS.content && (title || content) ? { kind: 'msg', id: null, legacy: { title, content } } : null
     }
     case 'jump': {
       const to = get('to')

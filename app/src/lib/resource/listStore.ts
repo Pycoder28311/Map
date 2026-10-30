@@ -31,6 +31,8 @@ type ItemEntry = {
 
 type Row = Record<string, unknown> & { id: number | string }
 const sameId = (a: Row, id: number | string) => String(a.id) === String(id)
+/** Whether an item is the user's own: every item but a shared one someone else owns (its `access` says so) */
+const isOwnItem = (item: Row) => item.access === undefined || item.access === 'owner'
 
 /** How long a list that nobody was reading counts as fresh when it is read again (a change made here makes it stale at once) */
 export const STALE_MS = 5 * 60 * 1000
@@ -212,7 +214,8 @@ export function createListStore({ now = Date.now, staleMs = STALE_MS }: { now?: 
       const held = entry.state.items as Row[]
       const without = held.filter((row) => !sameId(row, (event.removedId ?? item!.id) as number | string))
       let next = without
-      if (event.removedId === undefined && matchesFilter(entry.filter, item!)) {
+      // A shared item that is not the user's (docs/plans/34) is never in their lists: its owner's place for it is not theirs
+      if (event.removedId === undefined && isOwnItem(item!) && matchesFilter(entry.filter, item!)) {
         const list = entry.source.list!
         const row = list.toItem(item as never) as Row
         const before = compareFor(list.order)

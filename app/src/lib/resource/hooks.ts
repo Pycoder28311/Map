@@ -3,7 +3,7 @@
 import { PAGE_SIZE_DEFAULT, PAGE_SIZE_MAX } from '@map/shared/page-size'
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import type { AnyResource } from '../../resources/types'
-import { notifyChanged, patchChanged } from './changes'
+import { notifyChanged, patchChanged, rememberOwnVersion } from './changes'
 import { itemKey, listKey, NO_ITEM } from './listStore'
 import { useListStore } from './listStoreContext'
 import type { ItemState, ListState } from './state'
@@ -159,7 +159,7 @@ export function actionsOf<TItem extends { id: number | string }, TListItem, TInp
   resource: ResourceCore<TItem, TListItem, TInput, TUpdate, TFilter>,
 ): ResourceActions<TItem, TInput, TUpdate> {
   const { name, api } = resource
-  const written = (item: TItem) => (notifyChanged({ name, item }), item)
+  const written = (item: TItem) => (rememberOwnVersion(name, item), notifyChanged({ name, item }), item)
   /**
    * The change shows at once (patchChanged); the request follows. Updates of one item go to the server one after the other, in the
    * order they were made. The answer replaces what was shown (with the fields of updates still waiting on top of it, so they do not
@@ -169,7 +169,8 @@ export function actionsOf<TItem extends { id: number | string }, TListItem, TInp
     const key = itemKey(name, id)
     const queue = queues.get(key) ?? { last: Promise.resolve(), ops: [] }
     queues.set(key, queue)
-    const fields = patch as Record<string, unknown>
+    // What the update changes (a shared item's `baseVersion` is only what it says to the server: never shown in the item)
+    const { baseVersion: _base, ...fields } = patch as Record<string, unknown>
     const shown = patchChanged(name, id, fields)
     const op: Op = { fields, before: shown?.before ?? {}, row: shown?.row ?? null }
     queue.ops.push(op)

@@ -1,13 +1,13 @@
-import { useLocation } from 'react-router-dom'
+import type { ItemAccess } from '@map/shared'
 
 export type ArticleRole = 'editor' | 'reader'
 
 /**
- * Whether the user edits this article or only reads it. Today the API answers only the user's own articles (access: 'owner'), so it is
- * always the editor; `?as=reader` in the address shows the reader's page, to try it. The sharing backend answers it for real (the
- * article's owner, or the people it allows)
+ * Whether the user edits this article or only reads it, from what the server says they may do with it (`access`, docs/plans/34): its
+ * owner and the people it allows to edit get the editor's page; the people it allows to read, and everyone when it is public, the
+ * reader's
  */
-export function useArticleRole(): ArticleRole {
-  const { search } = useLocation()
-  return new URLSearchParams(search).get('as') === 'reader' ? 'reader' : 'editor'
+export function useArticleRole(item: Record<string, unknown>): ArticleRole {
+  const access = (item.access as ItemAccess | undefined) ?? 'owner'
+  return access === 'reader' ? 'reader' : 'editor'
 }

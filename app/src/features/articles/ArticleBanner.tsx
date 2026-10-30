@@ -23,13 +23,15 @@ type Props = {
   /** Stores a picture and answers its address */
   onUploadImage: (file: File) => Promise<string>
   onUploadError: (error: unknown) => void
+  /** Only shown (a reader's page): no Add, Replace or Remove */
+  readOnly?: boolean
 }
 
 /**
  * The picture across the top of an article's page, as wide as the box it is in: click Add banner image (or drop a picture on it) to put one
  * there; its bottom edge is a crack, as the image cards' (crack.ts), where the body begins; over it, Replace and Remove show while the pointer is on it. Without one it is a tall place to add it from (9rem; the picture itself is 11rem).
  */
-export default function ArticleBanner({ image, onChange, onUploadImage, onUploadError }: Props) {
+export default function ArticleBanner({ image, onChange, onUploadImage, onUploadError, readOnly = false }: Props) {
   const picker = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const upload = async (file: File | undefined) => {
@@ -48,6 +50,15 @@ export default function ArticleBanner({ image, onChange, onUploadImage, onUpload
     if (!file) return
     e.preventDefault()
     void upload(file)
+  }
+  if (readOnly) {
+    return (
+      <div className="relative" style={{ marginBottom: -REACH }}>
+        <div className="ui-crack" style={{ height: image ? `calc(11rem + ${REACH}px)` : `calc(3rem + ${REACH}px)` }}>
+          {image ? <img src={image} alt="" style={{ clipPath: CLIP }} className="size-full object-cover" /> : <div style={{ clipPath: CLIP }} className="size-full bg-fill" />}
+        </div>
+      </div>
+    )
   }
   return (
     <div onDragOver={(e) => e.preventDefault()} onDrop={drop} className="group/banner relative" style={{ marginBottom: -REACH }}>

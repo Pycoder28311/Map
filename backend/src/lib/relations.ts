@@ -49,6 +49,17 @@ export async function assertExists(db: Db, table: SQLiteTable, idColumn: SQLiteC
   }
 }
 
+/** D1 binds at most 100 values in one statement: a multi-row INSERT is split so each part stays under it */
+export const D1_MAX_PARAMS = 100
+
+/** Rows in parts small enough for one INSERT each (`perRow`: how many values one row binds, counted high to be safe) */
+export function inParts<T>(rows: T[], perRow: number): T[][] {
+  const size = Math.max(1, Math.floor(D1_MAX_PARAMS / perRow))
+  const parts: T[][] = []
+  for (let i = 0; i < rows.length; i += size) parts.push(rows.slice(i, i + size))
+  return parts
+}
+
 /** db.batch() for a statement list built at runtime (one transaction); does nothing when it's empty */
 export async function runBatch(db: Db, statements: BatchItem<'sqlite'>[]) {
   if (statements.length === 0) return

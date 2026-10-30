@@ -12,11 +12,13 @@ type Props = {
   onChange: (values: FormValues) => void
   /** The name of the field that gets the cursor when it opens */
   autoFocusField?: string
+  /** Shown, not changed (a reader of a shared item) */
+  readOnly?: boolean
   className?: string
 }
 
 /** The edit form of a resource, built from its `ui.fields`: each field is the component of its kind (FieldRenderer) */
-export default function ResourceForm({ resource, initial, onChange, autoFocusField, className = '' }: Props) {
+export default function ResourceForm({ resource, initial, onChange, autoFocusField, readOnly = false, className = '' }: Props) {
   const [values, setValues] = useState<FormValues>(() => valuesOf(resource, initial))
   // The latest values, so two quick changes of different fields both stay
   const latest = useRef(values)
@@ -31,7 +33,14 @@ export default function ResourceForm({ resource, initial, onChange, autoFocusFie
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
       {resource.ui.fields.map((field) => (
-        <FieldRenderer key={field.name} field={field} value={values[field.name]} onChange={(value) => change(field.name, value)} autoFocus={field.name === autoFocusField} />
+        <FieldRenderer
+          key={field.name}
+          field={field}
+          value={values[field.name]}
+          onChange={(value) => change(field.name, value)}
+          autoFocus={!readOnly && field.name === autoFocusField}
+          readOnly={readOnly}
+        />
       ))}
     </div>
   )

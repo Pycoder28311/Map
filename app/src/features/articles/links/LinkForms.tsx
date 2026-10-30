@@ -45,24 +45,60 @@ export function RealLinkForm({ url: startUrl = '', name: startName, onApply, onR
   )
 }
 
-/** Message: a title and a text, shown beside the article when the words are clicked */
-export function MessageForm({ title: startTitle = '', content: startContent = '', onApply, onRemove }: { title?: string; content?: string; onApply: (title: string, content: string) => void; onRemove?: () => void }) {
+/**
+ * Message: a title and a text, shown beside the article when the words are clicked. `onApply` may be a request (busy until it ends; its
+ * error shows here and the text stays). `note`: why it can't be changed (only its author changes a message)
+ */
+export function MessageForm({
+  title: startTitle = '',
+  content: startContent = '',
+  onApply,
+  onRemove,
+  note,
+}: {
+  title?: string
+  content?: string
+  onApply: (title: string, content: string) => void | Promise<void>
+  onRemove?: () => void
+  note?: string
+}) {
   const [title, setTitle] = useState(startTitle)
   const [content, setContent] = useState(startContent)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const valid = title.trim() !== '' || content.trim() !== ''
+  const readOnly = note !== undefined
+  const send = async () => {
+    if (!valid || busy || readOnly) return
+    setBusy(true)
+    setError(null)
+    try {
+      await onApply(title.trim(), content.trim())
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'It could not be saved. Try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
   return (
-    <form className="flex flex-col gap-2" onSubmit={submit(() => valid && onApply(title.trim(), content.trim()))}>
-      <TextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={LIMITS.title} autoFocus />
+    <form className="flex flex-col gap-2" onSubmit={submit(() => void send())}>
+      <TextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={LIMITS.title} autoFocus readOnly={readOnly} />
       <label className="flex flex-col gap-1">
         <span className="text-small text-fg-muted">Content</span>
         <InputBox as="span" row={false} className="block px-(--field-px) py-2">
-          <TextAreaField label="Content" rows={4} value={content} onChange={(e) => setContent(e.target.value)} maxLength={LIMITS.content} className="max-h-60" />
+          <TextAreaField label="Content" rows={4} value={content} onChange={(e) => setContent(e.target.value)} maxLength={LIMITS.content} readOnly={readOnly} className="max-h-60" />
         </InputBox>
         <span className="self-end text-small text-fg-subtle">
           {content.length} / {LIMITS.content}
         </span>
       </label>
-      <FormActions onRemove={onRemove} canApply={valid} />
+      {note && <p className="text-small text-fg-subtle">{note}</p>}
+      {error && (
+        <p role="alert" className="text-small text-danger">
+          {error}
+        </p>
+      )}
+      <FormActions onRemove={onRemove} canApply={valid && !busy && !readOnly} />
     </form>
   )
 }

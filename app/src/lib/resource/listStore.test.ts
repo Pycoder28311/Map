@@ -215,6 +215,15 @@ describe('createListStore', () => {
       expect(list).toHaveBeenCalledTimes(1)
     })
 
+    it('never puts someone else\'s shared note into the user\'s lists (an editor saved it)', async () => {
+      const { store, list } = await loaded(3)
+      store.apply({ name: 'notes', item: { id: 7, archived: false, title: 'theirs', access: 'editor' } as never })
+      expect(ids(store)).toEqual([1, 2, 3])
+      store.apply({ name: 'notes', item: note(8, { access: 'owner' } as never) as never })
+      expect(ids(store)).toEqual([1, 2, 3, 8])
+      expect(list).toHaveBeenCalledTimes(1)
+    })
+
     it('removes a deleted note', async () => {
       const { store, list } = await loaded(3)
       store.apply({ name: 'notes', removedId: 2 })

@@ -210,6 +210,26 @@ each type to the table it is: `{ project: 'projects', folder: 'folders' }`.
   its own item. A pane whose item is gone is left out when the layout opens.
 - Migration `0009_layouts.sql` creates the table.
 
+### Share a table's rows (`share: true`)
+
+`share: true` in a table's config (projects, notes, folders, articles and object cards have it; docs/plans/34) makes its rows shareable:
+
+- **Columns** (`ownedTable`): `visibility` (`private` | `public`), `version` (+1 with each change of one of the config's `fields`; not
+  pin, position, parent, archive or visibility) and `edited_by` (who saved last). Only added columns: the migration is `ALTER TABLE … ADD`.
+- **Who** (`lib/access.ts`, one query): the owner (`user_id`), a person with a row in `object_rights` (`reader` or `editor`), or anyone
+  signed in when it is public (reader). Not inherited: a right on a folder is not one on its items. A row in the Trash is its owner's only.
+- **Routes**: `GET /:id` answers the row with `access`; a non-owner's copy has no `pinned`, `position`, `objectType`, `objectId` or
+  `visibility`. `PATCH /:id` takes `baseVersion`: the row is written only if that is still its version, else `409 CONFLICT` with the
+  version and who saved it (`details`). An editor must send it, may change only the config's fields (owner fields: 403). List, create
+  and delete stay the owner's.
+- **Who else**: `/api/object-rights` (the owner: `GET ?objectType=&objectId=`, `POST /apply` with only the changes, one batch), `GET
+  /api/shared` (Shared with me, newest first), `GET /api/users/lookup?email=` (exact email, `USER_LOOKUP` rate limit). A row's rights
+  go with it: a trigger on each shared table (migration `0012`) deletes them, also when an account's rows go by cascade. A new shared
+  table needs its trigger in a new migration (`drizzle-kit generate --custom`) and its name in `SHAREABLE` (`data.config.ts`).
+- **App**: `useItemAutosave` sends `baseVersion`; a 409 stops saving and asks (Keep mine / Use the saved version); a 404 or 403 says the
+  item can no longer be edited and keeps the draft. `listStore` never puts someone else's row into the user's lists. `ResourceEditor`
+  is read-only for a reader and has `PrivacyButton` (`features/sharing/`) for the owner.
+
 ### Something a table does its own way
 
 - **One repo method:** in `backend/src/index.ts`, give that table `ownedRepo(schema.x, DATA.x, { toJson, beforeCreate, beforeUpdate })`.
@@ -261,6 +281,8 @@ cd app && npx tsc -b && npx vitest run && npx oxlint src
 - Lists are shared: every screen that shows the same list (a table and its filter) reads it once (`lib/resource/listStore.ts`).
   A screen that needs more reads only the rest, after the cursor.
 - Writes go into the cached lists and open items with the server's answer: no read after a create, update or delete.
+- An article's messages are read one at a time, when their words are clicked; the article's GET has none. Who a row is shared with is
+  read when its privacy panel opens, and "Shared with me" when its sidebar section opens.
 - The Trash reads its lists only when it is opened; search and Recent use what the lists already hold first.
 - Do not add a `useResourceList` with a new filter where an existing list would do: each filter is a list of its own.
 

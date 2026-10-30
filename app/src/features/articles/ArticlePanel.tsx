@@ -1,4 +1,4 @@
-import { EMPTY_INFOBOX, type Infobox } from '@map/shared'
+import { EMPTY_INFOBOX, type Infobox, type ItemAccess, type Visibility } from '@map/shared'
 import { useEditorState, type Editor, type Extensions } from '@tiptap/react'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { LuBookmark, LuEllipsis, LuPencilLine, LuInfo, LuPlus, LuSearch, LuShare2 } from 'react-icons/lu'
@@ -31,12 +31,14 @@ import InfoBox from './InfoBox'
 import FindBar from './links/FindBar'
 import JumpGutter from './links/JumpGutter'
 import { resolveJump } from './links/jumpTargets'
-import { goTo, linkExtensions, type LinkHandlers } from './links/linkExtensions'
+import { goTo, linkExtensions, removeArticleLink, type LinkHandlers } from './links/linkExtensions'
 import LinkHoverCard from './links/LinkHoverCard'
 import LinkRow, { type LinkPopout } from './links/LinkRow'
 import MessagePanel from './links/MessagePanel'
-import PrivacyButton from './privacy/PrivacyButton'
-import { useArticlePrivacy } from './privacy/privacyStore'
+import { forgetArticleMessages } from './messages/messagesStore'
+import { useLegacyMessages } from './messages/useLegacyMessages'
+import PrivacyButton from '../sharing/PrivacyButton'
+import { isEmptyInfobox } from './infoRows'
 import ProjectFolders from './ProjectFolders'
 import type { LinkRange } from './links/docLinks'
 import SaveButton from './save/SaveButton'
@@ -127,7 +129,6 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   const [infoShown, setInfoShown] = useState(readInfoShown)
   const [sharing, setSharing] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
-  const [privacy] = useArticlePrivacy(String(item.id))
   // The link row's open popout, Search in article, the message open beside the text and the person shown (their words were clicked)
   const [linkPopout, setLinkPopout] = useState<LinkPopout | null>(null)
   // The toolbar's ⋯: its second row, and the link row even with nothing selected
@@ -135,13 +136,18 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   // The edit bar's X hides it; a button in its place brings it back
   const [barShown, setBarShown] = useState(true)
   const [finding, setFinding] = useState(false)
-  const [message, setMessage] = useState<{ title: string; content: string; from: number; to: number; top: number } | null>(null)
+  // The message open beside the text: its id (null: an old one, its text in the link), its words and where it opens
+  const [message, setMessage] = useState<{ id: number | null; legacy?: { title: string; content: string }; from: number; to: number; top: number } | null>(null)
   const [person, setPerson] = useState<Person | null>(null)
   // The box around the text: what the message, the hover card and the jump marks are placed in
   const textBox = useRef<HTMLDivElement>(null)
   const panelKey = `${resource.panelType}:${item.id}`
-  // Editor or reader (the reader's Save is where Private / Public is; the editor's is in the ⋯ menu)
-  const role = useArticleRole()
+  // Editor or reader (the server says: docs/plans/34). Only the owner has Private / Public and the ⋯ menu's actions; the others have
+  // Save where Private / Public is
+  const role = useArticleRole(item)
+  const canEdit = role === 'editor'
+  const isOwner = ((item.access as ItemAccess | undefined) ?? 'owner') === 'owner'
+  const articleId = Number(item.id)
   const [saved, setSaved] = useSaved(panelKey)
   // The left column's elements the round buttons opened, the zoom, and whether the page is too narrow to have the column beside it
   const [side, setSide] = useState<Set<SidePart>>(new Set())
@@ -162,8 +168,12 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
     if (range.link.kind !== 'msg') return
     const at = el ?? (editor ? (editor.view.domAtPos(range.from + 1).node as HTMLElement).parentElement?.closest('a') : null)
     const top = (at?.getBoundingClientRect().top ?? 0) - (textBox.current?.getBoundingClientRect().top ?? 0)
-    setMessage({ title: range.link.title, content: range.link.content, from: range.from, to: range.to, top: Math.max(0, top) })
+    setMessage({ id: range.link.id, legacy: range.link.legacy, from: range.from, to: range.to, top: Math.max(0, top) })
   }
+
+  // Old messages become messages when an editor opens the article; what was read of its messages is forgotten when the page closes
+  useLegacyMessages(editor, articleId, canEdit, autosave.flush)
+  useEffect(() => () => forgetArticleMessages(articleId), [articleId])
 
   // Zoom: the page goes to the top layer, over the panes, the sidebar and the navbar (they stay as they are under it); Esc leaves it
   useLayoutEffect(() => {
@@ -213,10 +223,14 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
       <Button variant="text" size="sm" disabled title="Add text from a note (soon)">
         Import from Notes
       </Button>
-      {/* Info's place: who can see it (Info is in the ⋯ menu); for a reader, Save */}
-      {role === 'editor' ? <PrivacyButton articleId={String(item.id)} /> : <SaveButton panelKey={panelKey} />}
+      {/* Info's place: who can see it (Info is in the ⋯ menu), for its owner; for the others, Save */}
+      {isOwner ? (
+        <PrivacyButton objectType="articles" objectId={articleId} visibility={(item.visibility as Visibility | undefined) ?? 'private'} what="article" />
+      ) : (
+        <SaveButton panelKey={panelKey} />
+      )}
       {/* Only a public article can be shared */}
-      {privacy.visibility === 'public' && (
+      {item.visibility === 'public' && (
       <BarPopover
         label="Share"
         open={sharing}
@@ -236,11 +250,14 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         icon={LuEllipsis}
         turn={false}
         groups={[
-          ...menuOf({
-            id: item.id,
-            title: name,
-            pinned: resource.ui.row.pinned?.(item),
-          }),
+          // Pin, move, Trash, delete: the owner's
+          ...(isOwner
+            ? menuOf({
+                id: item.id,
+                title: name,
+                pinned: resource.ui.row.pinned?.(item),
+              })
+            : []),
           [
             {
               label: 'Info box',
@@ -252,8 +269,8 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
               },
             },
             { label: 'Search in article', icon: LuSearch, onClick: () => setFinding(true) },
-            // The editor's Save (a reader has it by the title)
-            ...(role === 'editor' ? [{ label: saved ? 'Saved' : 'Save', icon: LuBookmark, checked: saved, onClick: () => setSaved(!saved) }] : []),
+            // The owner's Save (the others have it by the title)
+            ...(isOwner ? [{ label: saved ? 'Saved' : 'Save', icon: LuBookmark, checked: saved, onClick: () => setSaved(!saved) }] : []),
           ],
         ]}
       />
@@ -276,6 +293,8 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
       {side.has('messages') && (
         <MessagesList
           editor={editor}
+          articleId={articleId}
+          canEdit={canEdit}
           onOpen={(range) => {
             if (editor) goTo(editor, range.from, range.to)
             openMessage(range)
@@ -305,6 +324,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         resource={resource}
         start={autosave.start.values}
         onChange={autosave.change}
+        readOnly={!canEdit}
         focusField={focusField}
         editor={editor}
         onEditor={setEditor}
@@ -319,14 +339,22 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
               <JumpGutter editor={editor} box={textBox} />
               {message && (
                 <MessagePanel
-                  title={message.title}
-                  content={message.content}
+                  key={`${message.id}:${message.from}`}
+                  id={message.id}
+                  legacy={message.legacy}
+                  articleId={articleId}
+                  canEditArticle={canEdit}
                   top={message.top}
                   onClose={() => setMessage(null)}
                   onEdit={() => {
                     editor.chain().focus().setTextSelection({ from: message.from, to: message.to }).run()
                     setMessage(null)
                     setLinkPopout('msg')
+                  }}
+                  onRemoveLink={() => {
+                    editor.chain().setTextSelection({ from: message.from, to: message.to }).run()
+                    removeArticleLink(editor)
+                    setMessage(null)
                   }}
                 />
               )}
@@ -346,10 +374,11 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         }
         actions={actions}
         infoShown={infoShown}
-        folders={<ProjectFolders resource={resource} item={item} />}
+        // Where it is in its owner's projects: theirs only
+        folders={isOwner ? <ProjectFolders resource={resource} item={item} /> : null}
         toolbar={
-          <div className="sticky top-0 z-20 flex flex-col gap-1 bg-surface py-1">
-            {barShown ? (
+          <div className="sticky top-0 z-20 flex flex-col gap-1 bg-surface py-1 empty:hidden">
+            {!canEdit ? null : barShown ? (
               <ArticleToolbar editor={editor} onUploadImage={upload} onUploadError={onUploadError} secondRow={rowsOpen} onSecondRowChange={setRowsOpen} onClose={() => setBarShown(false)} />
             ) : (
               <Button variant="ghost" size="sm" plain icon={LuPencilLine} className="self-start" onClick={() => setBarShown(true)}>
@@ -357,7 +386,9 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
               </Button>
             )}
             {/* The third row, smaller and centred, a little gap under the others: the links (while words are selected, or the ⋯ has the rows open) */}
-            {barShown && <LinkRow editor={editor} self={`${resource.panelType}:${item.id}`} expanded={rowsOpen} open={linkPopout} onOpenChange={setLinkPopout} />}
+            {canEdit && barShown && (
+              <LinkRow editor={editor} self={`${resource.panelType}:${item.id}`} articleId={articleId} expanded={rowsOpen} open={linkPopout} onOpenChange={setLinkPopout} />
+            )}
             {finding && editor && <FindBar editor={editor} onClose={() => setFinding(false)} />}
             {uploadError && (
               <p role="alert" className="text-small text-danger">
@@ -367,9 +398,16 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
           </div>
         }
         footer={
-          <div className="flex items-center gap-2">
-            <SaveStatus status={autosave.status} />
-            <span className="ms-auto text-small text-fg-subtle">Created {DATE.format(new Date(item.createdAt))}</span>
+          <div className="flex flex-col gap-1">
+            {autosave.lost && (
+              <p role="alert" className="text-small text-danger">
+                You can no longer edit this article (it was deleted, or your access changed). Your changes are kept on this device.
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              {canEdit && <SaveStatus status={autosave.status} />}
+              <span className="ms-auto text-small text-fg-subtle">Created {DATE.format(new Date(item.createdAt))}</span>
+            </div>
           </div>
         }
       />
@@ -377,7 +415,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
       <Modal open={!!person} onClose={() => setPerson(null)} title={person?.name ?? 'Person'} size="sm">
         {person && <PersonCard person={person} />}
       </Modal>
-      {autosave.conflict && <ItemConflictModal what={resource.ui.label.toLowerCase()} onKeepMine={autosave.keepMine} onUseServers={autosave.useServers} />}
+      {autosave.conflict && <ItemConflictModal what={resource.ui.label.toLowerCase()} conflict={autosave.conflict} onKeepMine={autosave.keepMine} onUseServers={autosave.useServers} />}
       </div>
     </div>
   )
@@ -389,6 +427,8 @@ type BodyProps = {
   start: FormValues
   /** Called with all the values after every change */
   onChange: (values: FormValues) => void
+  /** A reader's page: shown, nothing can be changed */
+  readOnly: boolean
   focusField?: string
   editor: Editor | null
   onEditor: (editor: Editor | null) => void
@@ -422,6 +462,7 @@ function ArticleBody({
   resource,
   start,
   onChange,
+  readOnly,
   focusField,
   editor,
   onEditor,
@@ -470,6 +511,7 @@ function ArticleBody({
             }}
             onUploadImage={onUploadImage}
             onUploadError={onUploadError}
+            readOnly={readOnly}
           />
           {/* The folder buttons sit on the border between the banner and the body, half over each */}
           <div className="relative z-10 -mt-3.5 px-4 pb-1 empty:hidden">{folders}</div>
@@ -482,10 +524,11 @@ function ArticleBody({
                   setTitle(e.target.value)
                   change('title', e.target.value)
                 }}
-                placeholder={fields.title?.placeholder ?? 'Title'}
+                placeholder={readOnly ? 'Untitled article' : (fields.title?.placeholder ?? 'Title')}
                 aria-label="Title"
                 maxLength={200}
-                autoFocus={focusField === 'title' || (focusField === undefined && !start.title)}
+                readOnly={readOnly}
+                autoFocus={!readOnly && (focusField === 'title' || (focusField === undefined && !start.title))}
                 className="min-w-0 flex-1"
               />
               <div className="shrink-0">{actions}</div>
@@ -493,7 +536,7 @@ function ArticleBody({
             {toolbar}
             {/* The Info box floats at the text's top right so the text flows around it, like an encyclopedia's; it is not part of the text (saved in `infobox`) */}
             <div ref={textBox} className="relative flow-root">
-              {infoShown && (
+              {infoShown && !(readOnly && isEmptyInfobox(infobox)) && (
                 <aside className="relative z-10 float-right mb-3 ms-4 w-[clamp(10rem,30%,16rem)]" aria-label="About this article">
                   <InfoBox
                     value={infobox}
@@ -503,6 +546,7 @@ function ArticleBody({
                     }}
                     onUploadImage={onUploadImage}
                     onUploadError={onUploadError}
+                    readOnly={readOnly}
                   />
                 </aside>
               )}
@@ -515,13 +559,14 @@ function ArticleBody({
                 onEditor={onEditor}
                 onUploadImage={onUploadImage}
                 onUploadError={onUploadError}
-                autoFocus={focusField === 'content'}
+                autoFocus={!readOnly && focusField === 'content'}
+                editable={!readOnly}
                 minHeight="min-h-[40vh]"
               />
               {textExtras}
             </div>
             {/* Under the last row, only while the cursor is in it */}
-            {editor && inLastRow && (
+            {editor && inLastRow && !readOnly && (
               <div>
                 <Button variant="ghost" size="sm" plain filled icon={LuPlus} onMouseDown={(e) => e.preventDefault()} onClick={() => addSection(editor)}>
                   Add section

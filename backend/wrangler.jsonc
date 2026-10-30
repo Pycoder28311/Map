@@ -37,6 +37,12 @@
       "name": "API_GENERAL",
       "namespace_id": "2002",
       "simple": { "limit": 120, "period": 60 }
+    },
+    // People search of the privacy panel (GET /api/users/lookup), per signed-in user: slows down "has this email an account?"
+    {
+      "name": "USER_LOOKUP",
+      "namespace_id": "2003",
+      "simple": { "limit": 20, "period": 60 }
     }
   ],
   // Workers Logs: CPU time per request (cpuTimeMs)

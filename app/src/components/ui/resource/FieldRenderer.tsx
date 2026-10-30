@@ -12,12 +12,15 @@ export type WidgetProps = {
   placeholder?: string
   autoFocus?: boolean
   heading?: boolean
+  /** Shown, not changed (a reader of a shared item) */
+  readOnly?: boolean
 }
 
-function TextWidget({ value, onChange, label, placeholder, autoFocus, heading }: WidgetProps) {
+function TextWidget({ value, onChange, label, placeholder, autoFocus, heading, readOnly }: WidgetProps) {
   return (
     <input
       data-autofocus={autoFocus || undefined}
+      readOnly={readOnly}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
@@ -27,12 +30,12 @@ function TextWidget({ value, onChange, label, placeholder, autoFocus, heading }:
   )
 }
 
-function TextAreaWidget({ value, onChange, label, placeholder, autoFocus }: WidgetProps) {
-  return <TextAreaField value={value} onChange={(e) => onChange(e.target.value)} label={label} placeholder={placeholder} rows={3} data-autofocus={autoFocus || undefined} />
+function TextAreaWidget({ value, onChange, label, placeholder, autoFocus, readOnly }: WidgetProps) {
+  return <TextAreaField value={value} onChange={(e) => onChange(e.target.value)} label={label} placeholder={placeholder} rows={3} readOnly={readOnly} data-autofocus={autoFocus || undefined} />
 }
 
-function RichTextWidget({ value, onChange, label, placeholder, autoFocus }: WidgetProps) {
-  return <RichTextField value={value} onChange={onChange} label={label} placeholder={placeholder} autoFocus={autoFocus} toolbar />
+function RichTextWidget({ value, onChange, label, placeholder, autoFocus, readOnly }: WidgetProps) {
+  return <RichTextField value={value} onChange={onChange} label={label} placeholder={readOnly ? undefined : placeholder} autoFocus={autoFocus} toolbar={!readOnly} editable={!readOnly} />
 }
 
 /** One component per kind of field. A new kind: add its name to FIELD_WIDGET_NAMES (resources/types.ts) and its component here */
@@ -47,10 +50,11 @@ type Props = {
   value: string
   onChange: (value: string) => void
   autoFocus?: boolean
+  readOnly?: boolean
 }
 
 /** A field of a resource's form: the component of its kind */
-export default function FieldRenderer({ field, value, onChange, autoFocus }: Props) {
+export default function FieldRenderer({ field, value, onChange, autoFocus, readOnly }: Props) {
   const Widget = FIELD_WIDGETS[field.widget]
-  return <Widget value={value} onChange={onChange} label={field.label ?? field.name} placeholder={field.placeholder} heading={field.heading} autoFocus={autoFocus} />
+  return <Widget value={value} onChange={onChange} label={field.label ?? field.name} placeholder={field.placeholder} heading={field.heading} autoFocus={autoFocus} readOnly={readOnly} />
 }

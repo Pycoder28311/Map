@@ -1,7 +1,10 @@
 // The edits of an article's Info box rows (packages/shared/src/infobox.ts), each giving new rows. Pure (infoRows.test.ts).
-import type { InfoRow, InfoRowKind } from '@map/shared'
+import type { Infobox, InfoRow, InfoRowKind } from '@map/shared'
 
 const newId = () => crypto.randomUUID()
+
+/** Whether an Info box has nothing to show (a reader's page leaves it out) */
+export const isEmptyInfobox = (value: Infobox) => !value.image && !value.name && value.rows.length === 0
 
 /** What a row is made as, in the Add info menu: a row's kind, with the list split into numbered and bulleted */
 export type RowType = InfoRowKind | 'bullets'

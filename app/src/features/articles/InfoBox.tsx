@@ -84,6 +84,8 @@ type Props = {
   /** Stores a picture and answers its address */
   onUploadImage: (file: File) => Promise<string>
   onUploadError: (error: unknown) => void
+  /** Only shown (a reader's page): nothing in it can be changed, and nothing is offered to add */
+  readOnly?: boolean
 }
 
 /**
@@ -92,7 +94,7 @@ type Props = {
  * and coordinates. A square + in the gap between two blocks (and under the picture) opens a menu of what to put there; a row's ⋯ changes its type, moves or deletes it;
  * Add info (full width, its menu opens on its left) adds one at the end, and shows a faint example of the option under the pointer. Every change is sent to `onChange`.
  */
-export default function InfoBox({ value, onChange, onUploadImage, onUploadError }: Props) {
+export default function InfoBox({ value, onChange, onUploadImage, onUploadError, readOnly = false }: Props) {
   const rows = value.rows
   const setRows = (next: InfoRow[]) => onChange({ ...value, rows: next })
   const [preview, setPreview] = useState<RowType | null>(null)
@@ -112,9 +114,10 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError 
   return (
     // The box clips itself to the cracked edge; its wrapper draws the outline along that shape. While a preview shows it is that much taller, but its
     // place in the text is not: a negative margin takes the extra height back, so the text beside it stays where it is
-    <div className="ui-crack" style={{ marginBottom: -extra }}>
+    // A reader's box is inert: shown as it is, nothing in it reacts
+    <div className="ui-crack" style={{ marginBottom: -extra }} inert={readOnly || undefined}>
       <Card variant="muted" radius={0} className="flex flex-col p-base" style={{ clipPath: EDGE }}>
-        <Picture image={value.image} onChange={(image) => onChange({ ...value, image })} onUploadImage={onUploadImage} onUploadError={onUploadError} />
+        {(!readOnly || value.image) && <Picture image={value.image} onChange={(image) => onChange({ ...value, image })} onUploadImage={onUploadImage} onUploadError={onUploadError} />}
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -124,7 +127,7 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError 
         >
           {rows.map((row, i) => (
             <Fragment key={row.id}>
-              <Gap onInsert={(type) => setRows(insertRow(rows, i, emptyRow(type)))} />
+              {readOnly ? <div className="h-sm" /> : <Gap onInsert={(type) => setRows(insertRow(rows, i, emptyRow(type)))} />}
               <Draggable id={row.id}>
                 {(grip) => (
                   <Row
@@ -170,11 +173,13 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError 
             />
           </div>
         )}
-        <div className="mt-2">
-          <SideMenu label="Add info" items={TYPES} onSelect={(type) => setRows([...rows, emptyRow(type)])} onHover={setPreview} className="w-full">
-            Add info
-          </SideMenu>
-        </div>
+        {!readOnly && (
+          <div className="mt-2">
+            <SideMenu label="Add info" items={TYPES} onSelect={(type) => setRows([...rows, emptyRow(type)])} onHover={setPreview} className="w-full">
+              Add info
+            </SideMenu>
+          </div>
+        )}
       </Card>
     </div>
   )

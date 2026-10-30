@@ -26,6 +26,7 @@ const PARENT = { types: { project: 'projects', folder: 'folders' } } as const
 export const DATA = defineTables({
   projects: {
     access: 'owner',
+    share: true,
     order: ORDERED,
     fields: { title: field.text(200), content: field.richText() },
     preview: 'content',
@@ -33,6 +34,7 @@ export const DATA = defineTables({
   },
   notes: {
     access: 'owner',
+    share: true,
     order: ORDERED,
     fields: { title: field.text(200), content: field.richText() },
     preview: 'content',
@@ -41,6 +43,7 @@ export const DATA = defineTables({
   },
   folders: {
     access: 'owner',
+    share: true,
     order: ORDERED,
     fields: { title: field.text(200), description: field.plainText(2000) },
     requireOneOf: ['title'],
@@ -48,6 +51,7 @@ export const DATA = defineTables({
   },
   articles: {
     access: 'owner',
+    share: true,
     order: ORDERED,
     fields: { title: field.text(200), content: field.richText(), infobox: field.json(infobox, EMPTY_INFOBOX) },
     preview: 'content',
@@ -56,6 +60,7 @@ export const DATA = defineTables({
   },
   objectCards: {
     access: 'owner',
+    share: true,
     order: ORDERED,
     fields: { title: field.text(200), content: field.richText() },
     preview: 'content',
@@ -85,6 +90,11 @@ export const DATA = defineTables({
 /** The tables' names (config keys) */
 export type TableName = keyof typeof DATA
 export const TABLE_NAMES = Object.keys(DATA) as TableName[]
+
+/** The tables whose rows can be shared (`share: true`), by name: object_rights.object_type is one of them */
+export const SHAREABLE = ['projects', 'notes', 'folders', 'articles', 'objectCards'] as const satisfies readonly TableName[]
+export type ShareableName = (typeof SHAREABLE)[number]
+export const isShareable = (name: string): name is ShareableName => (SHAREABLE as readonly string[]).includes(name)
 
 /** The types of one table, e.g. `Item<'notes'>` */
 export type Item<N extends TableName> = ItemOf<(typeof DATA)[N]>

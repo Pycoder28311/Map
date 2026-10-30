@@ -10,13 +10,14 @@ import { resourcesWith } from '../../../resources/registry'
 import type { TreeNode, TreeRightIcon } from '../../ui/tree/types'
 import ResourceSidebarSection from './ResourceSidebarSection'
 import type { SidebarTreeSettings } from './ResourceRows'
+import SharedSection from './SharedSection'
 import SidebarPinned from './SidebarPinned'
 
 const IN_SIDEBAR = resourcesWith('sidebar')
 
 /**
  * The sidebar's content, in sections (top to bottom): Layouts, Pinned, then one section per resource that has one (Projects,
- * Notes), as the UI config says (resources.config.ts: surfaces.sidebar). The other items (folders, articles, object cards, maps) are
+ * Notes), then Shared with me (what other people shared with the user), as the UI config says (resources.config.ts: surfaces.sidebar). The other items (folders, articles, object cards, maps) are
  * on the Dashboard, in their project's row. Items are created (+: a new page, the item is made when something is typed, NewItemEditor), renamed in place (menu or double-click on the name), pinned,
  * duplicated, moved to the Trash and deleted through their ⋯ menu. Rows open on screen stay visible.
  */
@@ -54,6 +55,8 @@ export default function SidebarTree({ compact }: { compact: boolean }) {
       {IN_SIDEBAR.map((resource) => (
         <ResourceSidebarSection key={resource.name} resource={resource} tree={tree} compact={compact} onCreate={() => (resource.surfaces.modal ? itemModal.open(resource, NEW_ID) : navigate(workspace.hrefOf({ type: resource.panelType, id: NEW_ID })))} />
       ))}
+
+      <SharedSection compact={compact} />
     </>
   )
 }

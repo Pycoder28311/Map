@@ -24,7 +24,9 @@ Map/
     ├── middleware/           CORE: env check, auth (optional/required/role), csrf, rate limit
     ├── lib/ownedTable.ts     tables from the data config (shared/src/data.config.ts)
     ├── lib/ownedRepo.ts      the repo of every user-owned table, from its config (+ overrides)
-    ├── resources/<name>/     PROJECT: only what is not plain CRUD (images: uploads)
+    ├── lib/access.ts         accessOf(): what the user may do with a shared row (owner | editor | reader), one query
+    ├── resources/<name>/     PROJECT: what is not plain CRUD: images (uploads), messages and object-rights (crudRoutes with
+    │                         their own repo + an extra route), shared (Shared with me), users (lookup by email)
     ├── db/schema.ts          PROJECT: one ownedTable() line per table, plus images and auth
     ├── auth.ts, emails.ts    PROJECT: sign-in methods and email texts
     └── index.ts              PROJECT: mounts every table under /api/<path> (a loop) and the other routers

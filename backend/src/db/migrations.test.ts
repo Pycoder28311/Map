@@ -58,3 +58,59 @@ describe('0008: positions become keys', () => {
     }
   })
 })
+
+describe('0011 + 0012: sharing and messages', () => {
+  const db = new DatabaseSync(':memory:')
+  db.exec('PRAGMA foreign_keys = ON') // as D1
+  for (const file of files.filter((f) => f < '0011')) run(db, file)
+  const now = Math.floor(Date.now() / 1000)
+  const addUser = (id: string) => db.prepare('INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)').run(id, id, `${id}@x.test`, now, now)
+  addUser('owner')
+  addUser('other')
+  // A row of each table written before the migrations
+  for (const table of TABLES) db.prepare(`INSERT INTO ${table} (user_id, title, created_at, updated_at) VALUES ('owner', 'old', ?, ?)`).run(now, now)
+  for (const file of files.filter((f) => f >= '0011')) run(db, file)
+  const NAMES: Record<string, string> = { projects: 'projects', notes: 'notes', folders: 'folders', articles: 'articles', object_cards: 'objectCards' }
+
+  it('only adds columns: the old rows keep their data and get private, version 0', () => {
+    for (const table of TABLES) {
+      expect(db.prepare(`SELECT title, visibility, version, edited_by FROM ${table}`).all()[0]).toEqual({ title: 'old', visibility: 'private', version: 0, edited_by: null })
+    }
+  })
+
+  it('deleting a row deletes its rights (each table its own type), and nothing else', () => {
+    const give = (type: string, id: number) =>
+      db.prepare("INSERT INTO object_rights (object_type, object_id, user_id, role, created_at) VALUES (?, ?, 'other', 'reader', ?)").run(type, id, now)
+    for (const table of TABLES) give(NAMES[table], 1)
+    db.prepare('DELETE FROM notes WHERE id = 1').run()
+    const left = (db.prepare('SELECT object_type FROM object_rights ORDER BY object_type').all() as { object_type: string }[]).map((r) => r.object_type)
+    expect(left).toEqual(['articles', 'folders', 'objectCards', 'projects'])
+  })
+
+  it('an account deleted with its rows takes their rights with it (the cascade runs the triggers)', () => {
+    db.prepare("DELETE FROM user WHERE id = 'owner'").run()
+    expect(db.prepare('SELECT count(*) AS n FROM object_rights').all()[0]).toEqual({ n: 0 })
+  })
+
+  it('refuses an unknown table or role, and a person twice on one row', () => {
+    addUser('owner')
+    db.prepare("INSERT INTO notes (user_id, title, created_at, updated_at) VALUES ('owner', 'n', ?, ?)").run(now, now)
+    const insert = db.prepare('INSERT INTO object_rights (object_type, object_id, user_id, role, created_at) VALUES (?, 2, ?, ?, ?)')
+    expect(() => insert.run('layouts', 'other', 'reader', now)).toThrow()
+    expect(() => insert.run('notes', 'other', 'admin', now)).toThrow()
+    insert.run('notes', 'other', 'reader', now)
+    expect(() => insert.run('notes', 'other', 'editor', now)).toThrow()
+  })
+
+  it('messages: go with their article; a deleted author becomes null; never empty', () => {
+    db.prepare("INSERT INTO articles (user_id, title, created_at, updated_at) VALUES ('owner', 'a', ?, ?)").run(now, now)
+    const article = (db.prepare('SELECT max(id) AS id FROM articles').all()[0] as { id: number }).id
+    const add = db.prepare('INSERT INTO messages (article_id, user_id, title, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)')
+    expect(() => add.run(article, 'other', '', '', now, now)).toThrow()
+    add.run(article, 'other', 't', '', now, now)
+    db.prepare("DELETE FROM user WHERE id = 'other'").run()
+    expect(db.prepare('SELECT user_id FROM messages').all()[0]).toEqual({ user_id: null })
+    db.prepare('DELETE FROM articles WHERE id = ?').run(article)
+    expect(db.prepare('SELECT count(*) AS n FROM messages').all()[0]).toEqual({ n: 0 })
+  })
+})

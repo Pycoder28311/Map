@@ -9,7 +9,8 @@ import AutolinkPanel from './AutolinkPanel'
 import FollowPicker from './FollowPicker'
 import JumpPicker from './JumpPicker'
 import { currentLink, LINK_EDIT, removeArticleLink, setArticleLink } from './linkExtensions'
-import { MessageForm, RealLinkForm } from './LinkForms'
+import MessageLinkForm from '../messages/MessageLinkForm'
+import { RealLinkForm } from './LinkForms'
 import { newId, toHref, type ArticleLink, type LinkKind } from './linkHref'
 import ObjectPicker from './ObjectPicker'
 
@@ -33,6 +34,8 @@ type Props = {
   editor: Editor | null
   /** The article itself (`article:<id>`): not offered as a target */
   self: string
+  /** The article's id (its messages are written on it) */
+  articleId: number
   /** The toolbar's ⋯ has its rows open: the row shows even with nothing selected */
   expanded: boolean
   /** Which popout is open (the page opens one too: a message's Edit) */
@@ -43,10 +46,11 @@ type Props = {
 /**
  * The toolbar's third row, smaller than the other two and centred: Link, Attach Content, Jump link, Follow and Message, then the Autolinker.
  * It shows only while some words are selected, or the toolbar's ⋯ has its rows open (and, so nothing vanishes under the pointer, while
- * one of its popouts is open or a jump's place is being marked). Each makes the selected words a link, written only in the text's HTML (linkHref.ts); on a link of its kind it opens on it,
+ * one of its popouts is open or a jump's place is being marked). Each makes the selected words a link, written only in the text's HTML (linkHref.ts; a
+ * Message also writes the message on the server, and the link keeps its id); on a link of its kind it opens on it,
  * with Remove. The Autolinker joins the other kinds (all but Message) into one panel with one big input (AutolinkPanel)
  */
-export default function LinkRow({ editor, self, expanded, open, onOpenChange }: Props) {
+export default function LinkRow({ editor, self, articleId, expanded, open, onOpenChange }: Props) {
   const state = useEditorState({
     editor,
     selector: ({ editor: e }) => {
@@ -126,14 +130,8 @@ export default function LinkRow({ editor, self, expanded, open, onOpenChange }: 
           </div>
         )
       case 'msg':
-        return (
-          <MessageForm
-            title={link?.kind === 'msg' ? link.title : ''}
-            content={link?.kind === 'msg' ? link.content : ''}
-            onApply={(title, content) => apply({ kind: 'msg', title, content })}
-            onRemove={onRemove}
-          />
-        )
+        // Opened only while it shows (it reads the message, and keeps the words it was opened on)
+        return open === 'msg' && <MessageLinkForm editor={editor} articleId={articleId} link={link?.kind === 'msg' ? link : null} onDone={close} onRemove={onRemove} />
       case 'jump':
         return (
           <JumpPicker

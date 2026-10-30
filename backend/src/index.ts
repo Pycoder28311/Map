@@ -10,6 +10,10 @@ import { csrfProtection } from './middleware/csrf'
 import { checkEnv } from './middleware/env'
 import { rateLimit } from './middleware/rate-limit'
 import imagesRoutes from './resources/images/images.routes'
+import messagesRoutes from './resources/messages/messages.routes'
+import rightsRoutes from './resources/rights/rights.routes'
+import sharedRoutes from './resources/shared/shared.routes'
+import usersRoutes from './resources/users/users.routes'
 import { imagesBase } from './resources/images/images.repo'
 import { DATA, TABLE_NAMES } from '@map/shared'
 import * as schema from './db/schema'
@@ -58,7 +62,13 @@ for (const name of TABLE_NAMES) {
 }
 
 // Routes that are not plain CRUD (see instructions/adding-a-resource.md)
-const routes = app.route('/api/images', imagesRoutes)
+const routes = app
+  .route('/api/images', imagesRoutes)
+  // Sharing and an article's messages (docs/plans/34)
+  .route('/api/messages', messagesRoutes)
+  .route('/api/object-rights', rightsRoutes)
+  .route('/api/shared', sharedRoutes)
+  .route('/api/users', usersRoutes)
 
 // Serves R2 files through the Worker for LOCAL development only (production uses the IMAGES_URL domain).
 // The bucket is shared with other apps, so only keys inside this app's IMAGES_FOLDER are served.
