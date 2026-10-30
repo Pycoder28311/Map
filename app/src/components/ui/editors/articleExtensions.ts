@@ -1,3 +1,4 @@
+import { DOMSerializer } from '@tiptap/pm/model'
 import { Extension, type Editor, type Extensions, type JSONContent } from '@tiptap/react'
 import Subscript from '@tiptap/extension-subscript'
 import Superscript from '@tiptap/extension-superscript'
@@ -83,8 +84,45 @@ export function paragraphLookOf(editor: Editor): Partial<Record<ParagraphLook, s
   return editor.getAttributes(type) as Partial<Record<ParagraphLook, string>>
 }
 
-/** Adds a section at the end of the text: a heading and an empty paragraph, the caret in the heading */
+/** The HTML of a part of the document, as the editor would copy it */
+export function htmlOf(editor: Editor, from: number, to: number): string {
+  const box = document.createElement('div')
+  box.append(DOMSerializer.fromSchema(editor.schema).serializeFragment(editor.state.doc.slice(from, to).content))
+  return box.innerHTML
+}
+
+/**
+ * The Code button: the selected text shown as its HTML code, in a fixed-width font (the words `<strong>bold</strong>` themselves, not bold
+ * text). On text that is already such code, it turns it back into text from that HTML. With nothing selected it is the plain code format
+ * for the words that are typed next
+ */
+export function showAsHtml(editor: Editor) {
+  const { from, to, empty } = editor.state.selection
+  if (empty) {
+    editor.chain().focus().toggleCode().run()
+    return
+  }
+  if (editor.isActive('code')) {
+    const html = editor.state.doc.textBetween(from, to, '\n')
+    editor.chain().focus().unsetCode().insertContentAt({ from, to }, html).run()
+    return
+  }
+  editor
+    .chain()
+    .focus()
+    .insertContentAt({ from, to }, { type: 'text', text: htmlOf(editor, from, to), marks: [{ type: 'code' }] })
+    .run()
+}
+
+/**
+ * Adds a section at the end of the text: a heading and an empty paragraph, the caret in the heading. With text selected it makes a
+ * section of that text instead: the blocks it touches become headings (the words stay where they are)
+ */
 export function addSection(editor: Editor) {
+  if (!editor.state.selection.empty) {
+    editor.chain().focus().setNode('heading', { level: 2 }).run()
+    return
+  }
   const end = editor.state.doc.content.size
   editor
     .chain()

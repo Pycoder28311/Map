@@ -49,7 +49,7 @@ export default function JumpPicker({ editor, onPick, onMarkPlace, chosen, onRemo
                 size="sm"
                 plain
                 icon={targetIcon(target)}
-                className={PICK_ROW}
+                className={`${PICK_ROW} [--btn-icon-size:0.875rem]!`}
                 onClick={() => onPick(target.to)}
               >
                 <span className="min-w-0 flex-1 truncate text-start">{target.text || <span className="text-fg-subtle">Untitled section</span>}</span>

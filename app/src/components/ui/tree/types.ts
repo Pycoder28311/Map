@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { PanelRef } from '../../../features/workspace/types'
 import type { IconEffects } from '../icons/iconEffects'
 import type { ButtonIcon, PlainIcon } from '../icons/IconSlot'
@@ -104,6 +105,8 @@ export type TreeMenuItem = {
   checked?: boolean
   /** Instead of acting, it opens a small menu beside it with these (e.g. Create ▸ the kinds that can be made); `onClick` is ignored */
   submenu?: Omit<TreeMenuItem, 'submenu'>[]
+  /** IconMenu only: picking it keeps the menu open and shows this panel at the menu's left, touching it (the article's Private / Public); `onClick` is ignored */
+  panel?: ReactNode
 }
 
 /** Actions that belong together; the menu draws a line between groups */

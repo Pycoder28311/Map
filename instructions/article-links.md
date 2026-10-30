@@ -1,7 +1,7 @@
 # Article links
 
 The article page's third toolbar row (Link, Attach Content, Jump link, Follow, Message, Autolinker), the hover card over a link,
-Public / Private and Search in article. The row is smaller than the other two, under a line with its name (Types of Links), and shows only while some words are selected
+Public / Private and Search in article. The row is smaller than the other two, with its name (Types of Links) at its left, and shows only while some words are selected
 or the toolbar's ⋯ (on its right edge) has its rows open; it stays while one of its popouts is open. The plan is `docs/plans/31-article-links-and-privacy.md`.
 
 A link is never a record: everything it knows is written in the article's HTML (`content`), except a **message**, which is a row of the

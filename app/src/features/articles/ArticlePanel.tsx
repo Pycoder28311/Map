@@ -1,7 +1,7 @@
 import { EMPTY_INFOBOX, type Infobox, type ItemAccess, type Visibility } from '@map/shared'
 import { useEditorState, type Editor, type Extensions } from '@tiptap/react'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { LuBookmark, LuEllipsis, LuPencilLine, LuInfo, LuPlus, LuSearch, LuShare2 } from 'react-icons/lu'
+import { LuBookmark, LuEllipsis, LuPencilLine, LuInfo, LuLock, LuLockOpen, LuPlus, LuSearch, LuShare2 } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import { addSection, articleExtensions } from '../../components/ui/editors/articleExtensions'
 import RichTextField from '../../components/ui/fields/RichTextField'
@@ -40,7 +40,8 @@ import MessagePanel from './links/MessagePanel'
 import { forgetArticleMessages } from './messages/messagesStore'
 import { useLegacyMessages } from './messages/useLegacyMessages'
 import { adoptRules, fromStored, toStored, type AutoRule } from './links/autolink'
-import PrivacyButton from '../sharing/PrivacyButton'
+import PrivacyPanel from '../sharing/PrivacyPanel'
+import { useSharing } from '../sharing/sharing'
 import { isEmptyInfobox } from './infoRows'
 import ProjectFolders from './ProjectFolders'
 import { linkAt, type LinkRange } from './links/docLinks'
@@ -58,24 +59,6 @@ const DATE = new Intl.DateTimeFormat(undefined, {
   month: 'short',
   year: 'numeric',
 })
-/** Whether the Info box shows, remembered on this device */
-const INFO_SHOWN_KEY = 'map:article-info-shown'
-
-const readInfoShown = () => {
-  try {
-    return localStorage.getItem(INFO_SHOWN_KEY) !== 'false'
-  } catch {
-    return true
-  }
-}
-const writeInfoShown = (shown: boolean) => {
-  try {
-    localStorage.setItem(INFO_SHOWN_KEY, String(shown))
-  } catch {
-    // Not remembered: it shows again next time
-  }
-}
-
 /** Below this page width (px) the left column (Contents, Messages, Notes) is not beside the article: its round buttons open it over the text */
 const SIDE_MIN_WIDTH = 1024
 
@@ -152,7 +135,10 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
     setRulesState({ start: autosave.start.version, list: next })
     field('autolinkers', JSON.stringify(toStored(next)))
   }
-  const [infoShown, setInfoShown] = useState(readInfoShown)
+  // The Info box always shows (it had a switch in the ⋯ menu once)
+  const infoShown = true
+  // Who can see the article (its owner's: the ⋯ menu's Private / Public); the people are read only when its panel opens
+  const privacy = useSharing('articles', Number(item.id), (item.visibility as Visibility | undefined) ?? 'private')
   const [sharing, setSharing] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   // The link row's open popout, Search in article, the message open beside the text and the person shown (their words were clicked)
@@ -162,6 +148,8 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   // The edit bar's X hides it; a button in its place brings it back
   const [barShown, setBarShown] = useState(true)
   const [finding, setFinding] = useState(false)
+  // The ⋯ menu's Info: how to edit the article
+  const [editInfo, setEditInfo] = useState(false)
   // The message open beside the text: its id (null: an old one, its text in the link), its words and where it opens
   // (`hover`: opened by the pointer resting on its words, it closes when the pointer leaves them and its panel)
   const [message, setMessage] = useState<{ id: number | null; legacy?: { title: string; content: string }; from: number; to: number; top: number; hover?: boolean } | null>(null)
@@ -271,12 +259,8 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
       <Button variant="text" size="sm" disabled title="Add text from a note (soon)">
         Import from Notes
       </Button>
-      {/* Info's place: who can see it (Info is in the ⋯ menu), for its owner; for the others, Save */}
-      {isOwner ? (
-        <PrivacyButton objectType="articles" objectId={articleId} visibility={(item.visibility as Visibility | undefined) ?? 'private'} what="article" />
-      ) : (
-        <SaveButton panelKey={panelKey} />
-      )}
+      {/* The owner's Private / Public is in the ⋯ menu; the others have Save here */}
+      {!isOwner && <SaveButton panelKey={panelKey} />}
       {/* Only a public article can be shared */}
       {item.visibility === 'public' && (
       <BarPopover
@@ -298,6 +282,24 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         icon={LuEllipsis}
         turn={false}
         groups={[
+          [
+            // About editing the article (not the Info box)
+            { label: 'Info', icon: LuInfo, onClick: () => setEditInfo(true) },
+            // Who can see it (the owner's): its panel opens beside the menu
+            ...(isOwner
+              ? [
+                  {
+                    label: privacy.visibility === 'public' ? 'Public' : 'Private',
+                    icon: privacy.visibility === 'public' ? LuLockOpen : LuLock,
+                    onClick: () => {},
+                    panel: <PrivacyPanel sharing={privacy} what="article" />,
+                  },
+                ]
+              : []),
+            { label: 'Search in article', icon: LuSearch, onClick: () => setFinding(true) },
+            // The owner's Save (the others have it by the title)
+            ...(isOwner ? [{ label: saved ? 'Saved' : 'Save', icon: LuBookmark, checked: saved, onClick: () => setSaved(!saved) }] : []),
+          ],
           // Pin, move, Trash, delete: the owner's
           ...(isOwner
             ? menuOf({
@@ -306,20 +308,6 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
                 pinned: resource.ui.row.pinned?.(item),
               })
             : []),
-          [
-            {
-              label: 'Info box',
-              icon: LuInfo,
-              checked: infoShown,
-              onClick: () => {
-                setInfoShown(!infoShown)
-                writeInfoShown(!infoShown)
-              },
-            },
-            { label: 'Search in article', icon: LuSearch, onClick: () => setFinding(true) },
-            // The owner's Save (the others have it by the title)
-            ...(isOwner ? [{ label: saved ? 'Saved' : 'Save', icon: LuBookmark, checked: saved, onClick: () => setSaved(!saved) }] : []),
-          ],
         ]}
       />
     </div>
@@ -480,6 +468,9 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         }
       />
       {dialogs}
+      <Modal open={editInfo} onClose={() => setEditInfo(false)} title="Editing this article" size="sm">
+        <p className="text-body">Select some words to make them a link, a message or an autolinker, or to change how they look. Your changes are saved as you write.</p>
+      </Modal>
       <Modal open={!!person} onClose={() => setPerson(null)} title={person?.name ?? 'Person'} size="sm">
         {person && <PersonCard person={person} />}
       </Modal>

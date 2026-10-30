@@ -49,7 +49,7 @@ export default function FollowPicker({ onPick, chosen, onRemove, autoFocus = tru
             size="sm"
             plain
             icon={t.icon}
-            className={`min-w-0 basis-0 justify-center whitespace-nowrap transition-[flex-grow,background-color,color,padding] duration-200 motion-reduce:transition-none ${tab === t.id ? 'grow-3' : 'grow-2'}`}
+            className={`min-w-0 basis-0 justify-center whitespace-nowrap [--btn-icon-size:0.875rem]! transition-[flex-grow,background-color,color,padding] duration-200 motion-reduce:transition-none ${tab === t.id ? 'grow-3' : 'grow-2'}`}
             onClick={() => setTab(t.id)}
           >
             {t.label}

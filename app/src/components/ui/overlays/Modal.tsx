@@ -20,6 +20,9 @@ const DIALOG =
   'backdrop:bg-overlay/30 backdrop:backdrop-blur-sm backdrop:transition-opacity backdrop:duration-200 starting:open:backdrop:opacity-0 ' +
   'motion-reduce:transition-none motion-reduce:backdrop:transition-none'
 
+// The same, and a change of `size` slides the width instead of jumping
+const DIALOG_SMOOTH = DIALOG.replace('transition-[opacity,scale] duration-200', 'transition-[opacity,scale,max-width] duration-300')
+
 type Props = {
   open: boolean
   /** Called on Esc, the close button and a click on the backdrop; set `open` to false there */
@@ -43,6 +46,10 @@ type Props = {
   flush?: boolean
   /** Buttons in the header, at its right, before the zoom and close buttons */
   actions?: ReactNode
+  /** A change of `size` slides the dialog's width */
+  smoothSize?: boolean
+  /** The header's buttons close together (--spacing-sm between the actions and the X, --spacing-base between the actions) */
+  tightHeader?: boolean
   /** What a click on the backdrop does instead of `onClose` (a draft decides: create, discard or ask). Esc and the X still call `onClose` */
   onOutside?: () => void
 }
@@ -59,7 +66,7 @@ type Props = {
  *
  * `zoomable` + `pageHref` (or `onZoom`) add a button left of the X that closes it and opens the same thing as a page.
  */
-export default function Modal({ open, onClose, title, children, footer, size = 'md', bare = false, className = '', zoomable = false, pageHref, onZoom, flush = false, actions, onOutside }: Props) {
+export default function Modal({ open, onClose, title, children, footer, size = 'md', bare = false, className = '', zoomable = false, pageHref, onZoom, flush = false, actions, tightHeader = false, smoothSize = false, onOutside }: Props) {
   const navigate = useNavigate()
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
@@ -100,7 +107,7 @@ export default function Modal({ open, onClose, title, children, footer, size = '
       }}
       onPointerDown={onPointerDown}
       onClick={onBackdrop}
-      className={`${DIALOG} ${SIZES[size]} ${className || 'bg-surface'}`}
+      className={`${smoothSize ? DIALOG_SMOOTH : DIALOG} ${SIZES[size]} ${className || 'bg-surface'}`}
     >
       {open && (
         <div className="flex max-h-[calc(100vh-2rem)] flex-col">
@@ -109,11 +116,11 @@ export default function Modal({ open, onClose, title, children, footer, size = '
               {title}
             </h2>
           ) : (
-          <header className="flex shrink-0 items-center gap-(--btn-gap) border-b border-line py-2 pr-2 pl-4">
+          <header className={`flex shrink-0 items-center border-b border-line py-2 pr-2 pl-4 ${tightHeader ? 'gap-sm' : 'gap-(--btn-gap)'}`}>
             <h2 id={titleId} className="truncate text-body font-medium">
               {title}
             </h2>
-            {actions && <div className="ml-auto flex items-center gap-(--btn-gap)">{actions}</div>}
+            {actions && <div className={`ml-auto flex items-center ${tightHeader ? 'gap-base' : 'gap-(--btn-gap)'}`}>{actions}</div>}
             {zoomable && (pageHref || onZoom) ? (
               <>
                 <IconButton

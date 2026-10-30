@@ -1,8 +1,8 @@
 import { useEditorState, type Editor } from '@tiptap/react'
 import { useState } from 'react'
-import { LuCornerDownRight, LuExternalLink, LuFileSymlink, LuMessageSquareText, LuUserPlus, LuWandSparkles } from 'react-icons/lu'
+import { LuCornerDownRight, LuExternalLink, LuFileSymlink, LuMessageSquareText, LuUserPlus } from 'react-icons/lu'
 import Button from '../../../components/ui/buttons/Button'
-import Divider from '../../../components/ui/Divider'
+import HoverInfo from '../../../components/ui/overlays/HoverInfo'
 import type { PlainIcon } from '../../../components/ui/icons/IconSlot'
 import BarPopover from '../../../components/ui/overlays/BarPopover'
 import { TextButton } from '../ArticleToolbar'
@@ -50,7 +50,7 @@ type Props = {
 }
 
 /**
- * The toolbar's third row, smaller than the other two, under a line with its name (Types of Links): Link, Attach Content, Jump link, Follow and Message, then the Autolinker.
+ * The toolbar's third row, smaller than the other two, with its name (Types of Links) at its left: Link, Attach Content, Jump link, Follow and Message, then the Autolinker.
  * It shows only while some words are selected, or the toolbar's ⋯ has its rows open (and, so nothing vanishes under the pointer, while
  * one of its popouts is open or a jump's place is being marked). Each makes the selected words a link, written only in the text's HTML (linkHref.ts; a
  * Message also writes the message on the server, and the link keeps its id); on a link of its kind it opens on it,
@@ -156,11 +156,11 @@ export default function LinkRow({ editor, self, articleId, expanded, open, onOpe
   return (
     // The popouts hang under the whole bar (its full width, centred)
     <div className="relative flex flex-col">
-      {/* The row's top border, with its name at the left like the sidebar's section lines (Projects, Notes) */}
-      <Divider label="Types of Links" className="-mt-1.5" />
-      <div className="flex animate-share-pop max-w-full flex-wrap items-center gap-0.5 px-1 pb-0.5">
-        {/* The five kinds: joined by a line under them while the Autolinker is open (all but Message, which it can't make) */}
-        <div role="group" aria-label="Links" className={`flex flex-wrap items-center gap-0.5 border-b-2 ${auto ? 'border-accent' : 'border-transparent'}`}>
+      <div className="grid animate-share-pop -mb-0.5 max-w-full grid-cols-[1fr_auto_1fr] items-center gap-x-3 px-1">
+        {/* The row's name at its left, the five kinds in the middle, the Autolinker at its right */}
+        <span className="justify-self-start text-[0.75rem] leading-none font-medium text-fg-muted">Types of Links</span>
+        {/* The five kinds, underline buttons: the chosen one is underlined (all but Message while the Autolinker is open, which it can't make) */}
+        <div role="group" aria-label="Links" className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
           {BUTTONS.map((b) => {
             const enabled = !state.empty || !!current(b.id)
             const skipped = auto && b.id === 'msg'
@@ -177,6 +177,7 @@ export default function LinkRow({ editor, self, articleId, expanded, open, onOpe
                     icon={b.icon}
                     label={b.label}
                     small
+                    underline
                     active={open === b.id || (auto && !skipped) || !!current(b.id)}
                     disabled={!enabled || skipped}
                     tip={skipped ? 'The Autolinker does not make messages.' : enabled ? b.title : 'Select some words first.'}
@@ -190,15 +191,21 @@ export default function LinkRow({ editor, self, articleId, expanded, open, onOpe
           })}
         </div>
         {/* At the row's right end */}
-        <div className="ms-auto">
-          <TextButton
-            icon={LuWandSparkles}
-            label="Autolinker"
-            small
-            active={auto}
-            tip="Links the words you choose everywhere they are written in the article."
-            onClick={() => toggle('auto')}
-          />
+        <div className="justify-self-end">
+          {/* sortBy2: a Shade button with its text only, without the white corner elements and without an arrow */}
+          <HoverInfo title="Autolinker" text="Links the words you choose everywhere they are written in the article." side="top" delay={350}>
+            <Button
+              variant="ghost"
+              size="sm"
+              plain
+              aria-pressed={auto}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => toggle('auto')}
+              className="[--btn-font-size:0.875rem]!"
+            >
+              Autolinker
+            </Button>
+          </HoverInfo>
         </div>
         {/* Its own modal (AutolinkPanel: the shared one, with no zoom) */}
         {auto && <AutolinkPanel editor={editor} self={self} startText={state.words} rules={rules} onRules={onRules} userId={userId} onClose={close} />}

@@ -2,7 +2,6 @@ import { useEditorState, type Editor } from '@tiptap/react'
 import { useEffect, useState } from 'react'
 import { LuChevronDown, LuChevronUp, LuX } from 'react-icons/lu'
 import IconButton from '../../../components/ui/buttons/IconButton'
-import SearchInput from '../../../components/ui/fields/SearchInput'
 import { findKey } from './linkExtensions'
 
 /**
@@ -35,11 +34,14 @@ export default function FindBar({ editor, onClose }: { editor: Editor; onClose: 
   }
 
   return (
-    <div role="search" className="flex items-center gap-1 rounded-(--card-radius) border border-line bg-surface p-1 shadow-sm">
-      <SearchInput
-        label="Search in article"
+    // A plain input in a row with nothing behind it: no background, no border, no shadow of its own
+    <div role="search" className="flex items-center gap-1">
+      <input
+        type="search"
+        aria-label="Search in article"
+        placeholder="Search in article"
         value={query}
-        className="min-w-0 flex-1"
+        className="min-w-0 flex-1 border border-line bg-transparent px-2 py-1 text-body outline-none placeholder:text-fg-subtle focus:border-accent"
         autoFocus
         onChange={(e) => {
           setQuery(e.target.value)

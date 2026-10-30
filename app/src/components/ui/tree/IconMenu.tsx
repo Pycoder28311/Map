@@ -36,6 +36,8 @@ export default function IconMenu({ label, icon: Icon, groups, square = false, tu
   const stopWatching = useRef<(() => void) | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
+  // The item whose panel shows at the menu's left (an item with `panel`)
+  const [panelOf, setPanelOf] = useState<string | null>(null)
 
   const close = () => menuRef.current?.hidePopover()
 
@@ -49,6 +51,7 @@ export default function IconMenu({ label, icon: Icon, groups, square = false, tu
   }
   const watch = (e: ToggleEvent<HTMLDivElement>) => {
     setOpen(e.newState === 'open')
+    if (e.newState !== 'open') setPanelOf(null)
     if (e.newState === 'open') {
       stopWatching.current = closeOnOutsideScroll(e.currentTarget, close)
     } else {
@@ -74,7 +77,7 @@ export default function IconMenu({ label, icon: Icon, groups, square = false, tu
       >
         <Icon className={`${small ? 'size-3' : square ? 'size-(--tree-row-icon)' : 'size-(--btn-icon-size)'} transition-transform duration-200 ease-out motion-reduce:transition-none ${turn && open ? 'rotate-45' : ''}`} />
       </button>
-      <div ref={menuRef} id={id} popover="auto" role="menu" aria-label={label} onBeforeToggle={place} onToggle={watch} className={DROPDOWN_MENU}>
+      <div ref={menuRef} id={id} popover="auto" role="menu" aria-label={label} onBeforeToggle={place} onToggle={watch} className={`${DROPDOWN_MENU} overflow-visible`}>
         {groups.map((group, g) => (
           <Fragment key={g}>
             {g > 0 && <hr className="my-(--menu-p) border-line" />}
@@ -84,7 +87,10 @@ export default function IconMenu({ label, icon: Icon, groups, square = false, tu
                 type="button"
                 role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
                 aria-checked={item.checked}
+                aria-expanded={item.panel ? panelOf === item.label : undefined}
                 onClick={() => {
+                  // An item with a panel keeps the menu open and shows the panel beside it
+                  if (item.panel) return setPanelOf(panelOf === item.label ? null : item.label)
                   close()
                   item.onClick()
                 }}
@@ -97,6 +103,14 @@ export default function IconMenu({ label, icon: Icon, groups, square = false, tu
             ))}
           </Fragment>
         ))}
+        {/* The open item's panel: at the menu's left, its right edge on the menu's left edge (no gap), level with the menu's top */}
+        {groups.flat().map((item) =>
+          item.panel && panelOf === item.label ? (
+            <div key={item.label} className="absolute end-full top-[-1px] -me-px w-72 rounded-(--menu-radius) border border-line bg-surface p-2 text-fg shadow-lg">
+              {item.panel}
+            </div>
+          ) : null,
+        )}
       </div>
     </>
   )

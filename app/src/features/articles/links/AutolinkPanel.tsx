@@ -1,25 +1,22 @@
 import type { Editor } from '@tiptap/react'
 import { DOMParser as PMDOMParser, type Node as PMNode } from '@tiptap/pm/model'
-import { useState, type ReactNode } from 'react'
-import { LuCornerDownRight, LuDownload, LuExternalLink, LuFileSymlink, LuPencil, LuPlus, LuSearch, LuTrash2, LuUserPlus, LuX } from 'react-icons/lu'
+import { useEffect, useState, type ReactNode } from 'react'
+import { LuCornerDownRight, LuCheck, LuDownload, LuExternalLink, LuFileSymlink, LuInfo, LuPencil, LuPlus, LuSearch, LuTrash2, LuUserPlus, LuX } from 'react-icons/lu'
 import Button from '../../../components/ui/buttons/Button'
 import IconButton from '../../../components/ui/buttons/IconButton'
 import LinkButton from '../../../components/ui/buttons/LinkButton'
 import CheckField from '../../../components/ui/fields/CheckField'
-import InputBox from '../../../components/ui/fields/InputBox'
-import TextField from '../../../components/ui/fields/TextField'
-import { FIELD_INPUT } from '../../../components/ui/fields/fieldStyles'
 import type { PlainIcon } from '../../../components/ui/icons/IconSlot'
 import Modal from '../../../components/ui/overlays/Modal'
 import { resourceByName } from '../../../resources/registry'
 import { fold } from '../../search/search'
 import { useWorkspace } from '../../workspace/useWorkspace'
 import { AUTOLINKERS_MAX, AUTOLINKER_PHRASES_MAX } from '@map/shared'
-import { applyRule, fromStored, longestFirst, removeRule, ruleRanges, rulesFrom, type AutoRule } from './autolink'
+import { applyRule, fromStored, longestFirst, removeRule, rulesFrom, type AutoRule } from './autolink'
 import FollowPicker from './FollowPicker'
 import JumpPicker from './JumpPicker'
-import { goTo, LINK_EDIT } from './linkExtensions'
-import { isWebUrl, LIMITS, newId, type ArticleLink } from './linkHref'
+import { LINK_EDIT } from './linkExtensions'
+import { isWebUrl, LIMITS, newId, toHref, type ArticleLink } from './linkHref'
 import { LinkTargetName, useLinkInfo } from './LinkPreview'
 import ObjectPicker from './ObjectPicker'
 
@@ -48,6 +45,46 @@ const SECTIONS: { id: SectionId; label: string; icon: PlainIcon; searchable: boo
   { id: 'follow', label: 'Follow', icon: LuUserPlus, searchable: true },
 ]
 
+/** A draft opening: its height grows from nothing (the rows below move down with it) instead of appearing at once */
+function Slide({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false)
+  useEffect(() => {
+    // Two frames: the closed size must be painted first, or there is nothing to slide from
+    let second = 0
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => setOpen(true))
+    })
+    return () => {
+      cancelAnimationFrame(first)
+      cancelAnimationFrame(second)
+    }
+  }, [])
+  return (
+    <div className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+      <div className="min-h-0 overflow-hidden">{children}</div>
+    </div>
+  )
+}
+
+/** The modal's two inputs, plain: a thin line round them, nothing else */
+const SIMPLE_INPUT = 'w-full border border-line bg-surface px-2 py-1 text-body outline-none focus:border-accent'
+
+/** A phrase as a tag (the autolinkers' rows, and the input while the phrases are written); `onRemove`: its X, in front of the text, shows while it is hovered */
+function Tag({ phrase, onRemove }: { phrase: string; onRemove?: () => void }) {
+  return (
+    <span className="group/tag relative inline-flex max-w-44 shrink-0 items-center rounded-[4px] bg-fill-strong px-1.5 py-0.5 text-body leading-snug">
+      <span className="truncate">{phrase}</span>
+      {onRemove && (
+        // At the tag's right end, in front of the text (the tag does not grow); shown while it is hovered. A button has no shape of its own
+        // (styles/buttons.css): its box is clipped to the tag's corners
+        <span className="absolute inset-y-0 end-0 inline-flex items-center overflow-hidden rounded-[4px] bg-fill-strong opacity-0 transition-opacity group-focus-within/tag:opacity-100 group-hover/tag:opacity-100">
+          <IconButton icon={LuX} label={`Remove: ${phrase}`} size="sm" className="size-5 min-h-0 min-w-0 [--btn-icon-size:0.625rem]!" onClick={onRemove} />
+        </span>
+      )}
+    </span>
+  )
+}
+
 /** Link's section: an address to choose */
 function UrlColumn({ chosen, onPick }: { chosen: ArticleLink | null; onPick: (link: ArticleLink) => void }) {
   const [url, setUrl] = useState(chosen?.kind === 'url' ? chosen.url : '')
@@ -61,8 +98,8 @@ function UrlColumn({ chosen, onPick }: { chosen: ArticleLink | null; onPick: (li
         if (valid) onPick({ kind: 'url', url: full })
       }}
     >
-      <TextField label="Link" placeholder="https://…" value={url} onChange={(e) => setUrl(e.target.value)} maxLength={LIMITS.url} />
-      <Button type="submit" variant={chosen?.kind === 'url' && chosen.url === full ? 'selected' : 'ghost'} size="sm" plain icon={LuExternalLink} disabled={!valid} className="self-start">
+      <input aria-label="Link" placeholder="https://…" value={url} onChange={(e) => setUrl(e.target.value)} maxLength={LIMITS.url} className={SIMPLE_INPUT} />
+      <Button type="submit" variant="text" size="sm" icon={LuCheck} aria-pressed={chosen?.kind === 'url' && chosen.url === full} disabled={!valid} className="self-start">
         Use this link
       </Button>
     </form>
@@ -73,10 +110,10 @@ function UrlColumn({ chosen, onPick }: { chosen: ArticleLink | null; onPick: (li
 function SectionBody({ title, icon: Icon, searchable, children }: { title: string; icon: PlainIcon; searchable: boolean; children: (searchOpen: boolean) => ReactNode }) {
   const [searching, setSearching] = useState(false)
   return (
-    <div className="flex min-w-0 flex-col gap-2">
-      <div className="flex min-h-8 items-center justify-between gap-2">
-        <h3 className="flex min-w-0 items-center gap-1.5 text-small font-medium text-fg-muted">
-          <Icon className="size-4 shrink-0" />
+    <div className="flex min-w-0 flex-1 flex-col gap-1">
+      <div className="flex min-h-6 items-center justify-between gap-2">
+        <h3 className="flex min-w-0 items-center gap-1.5 text-[0.8125rem] font-medium text-fg-muted">
+          <Icon className="size-3.5 shrink-0" />
           <span className="truncate">{title}</span>
         </h3>
         {searchable && (
@@ -84,7 +121,7 @@ function SectionBody({ title, icon: Icon, searchable, children }: { title: strin
         )}
       </div>
       {/* (closing it starts the picker again, so its search is empty the next time) */}
-      <div key={String(searching)} className="flex min-w-0 flex-col gap-2">
+      <div key={String(searching)} className="flex min-w-0 flex-1 flex-col gap-2">
         {children(searching)}
       </div>
     </div>
@@ -140,8 +177,6 @@ export default function AutolinkPanel({ editor, self, startText, rules, onRules,
   const [editing, setEditing] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
-  // Which place Go there showed last, for each tag of each autolinker
-  const [visited, setVisited] = useState<Record<string, number>>({})
   // A new target: the sections start on it (they read it once)
   const [version, setVersion] = useState(0)
 
@@ -208,59 +243,49 @@ export default function AutolinkPanel({ editor, self, startText, rules, onRules,
     setNotice(`“${rule.phrases.join('”, “')}” ${rule.phrases.length === 1 ? 'is' : 'are'} not linked any more.`)
   }
 
-  // The modal covers the text, so it closes first; then the place is shown, the next one each time
-  const goThere = (rule: AutoRule, phrase: string) => {
-    const places = ruleRanges(editor.state.doc, rule.id).filter((r) => 'rule' in r.link && r.link.rule && sameText(r.link.rule.text, phrase))
-    if (places.length === 0) return
-    const key = `${rule.id}:${phrase}`
-    const next = ((visited[key] ?? -1) + 1) % places.length
-    setVisited({ ...visited, [key]: next })
-    onClose()
-    window.setTimeout(() => goTo(editor, places[next].from, places[next].to), 60)
-  }
-
+  // Choosing what is chosen already takes it back
   const pick = (link: ArticleLink) => {
-    setTarget(link)
+    setTarget((now) => (now && toHref(now) === toHref(link) ? null : link))
     setNotice(null)
   }
 
-  return (
-    <Modal
-      open
-      onClose={onClose}
-      title="Autolinker"
-      size="xl"
-      actions={
-        <>
-          <Button variant="text" size="sm" icon={LuDownload} onClick={() => setImporting(true)}>
-            Import from other article
-          </Button>
-          <Button size="sm" icon={LuPlus} onClick={() => start(true)}>
-            Add New
-          </Button>
-        </>
-      }
-    >
-      <div className="@container flex flex-col gap-4">
-        {formOpen && (
+  // The form of a new autolinker (above the list) or of the one being edited (right under its row)
+  const editingRule = rules.find((r) => r.id === editing)
+  const form = formOpen ? (
+        <Slide>
           <div className="flex flex-col gap-3 rounded-(--card-radius) border border-line bg-surface-muted p-3">
-            {/* What it does, in big letters */}
-            <p className="rounded-(--card-radius) border border-line-strong bg-surface px-3 py-2 text-heading">
-              Write the words you want to link, then choose where they go. Every place they are written in the article becomes that link, and so do the ones you write later.
+            {/* What it does */}
+            <div className="flex items-start gap-3">
+            <p className="flex min-w-0 flex-1 items-start gap-2 text-[0.8125rem] text-fg-muted">
+              <LuInfo aria-hidden className="mt-0.5 size-4 shrink-0" />
+              <span>
+                Write the words, then choose where they link.
+                {/* What is chosen now: it appears again (a short pop) whenever the tags or the link change */}
+                {(words.length > 0 || target) && (
+                  <span key={`${words.join('|')}>${target ? toHref(target) : ''}`} className="ms-1 inline-flex animate-share-pop flex-wrap items-center gap-1 align-middle font-medium text-fg">
+                    {words.length > 0 && <span>{`“${words.join('”, “')}”`}</span>}
+                    <span aria-hidden>→</span>
+                    {target ? <LinkTargetName link={target} editor={editor} /> : <span className="font-normal text-fg-subtle">choose where they link</span>}
+                  </span>
+                )}
+              </span>
             </p>
+            {/* At the top right: Delete (this autolinker, while one is edited), and an X that closes the draft */}
+            <div className="flex shrink-0 items-center gap-1">
+              {editingRule && (
+                <Button variant="ghost" size="sm" plain icon={LuTrash2} className="text-danger" onClick={() => remove(editingRule)}>
+                  Delete
+                </Button>
+              )}
+              <IconButton icon={LuX} label="Close the draft" size="sm" onClick={() => start(false)} />
+            </div>
+            </div>
 
             {/* The phrases: tags inside one input. Write the words and press Enter, or click away, and they become a tag (an X on it takes it out;
                 Backspace on an empty input takes the last one out) */}
-            <InputBox className="h-auto min-h-(--field-h) min-w-0 flex-wrap py-1">
+            <div className="flex min-h-9 min-w-0 flex-wrap items-center gap-1 border border-line bg-surface px-1.5 py-1 focus-within:border-accent">
               {phrases.map((phrase, i) => (
-                <span key={phrase} className="group/tag inline-flex max-w-44 shrink-0 items-center rounded-[4px] bg-fill-strong ps-2.5 pe-1 text-body">
-                  <span className="truncate">{phrase}</span>
-                  {/* The X shows when the tag is hovered (or has the keyboard focus); its box is clipped to the tag's corners, since a button has no
-                      shape of its own (styles/buttons.css) */}
-                  <span className="inline-flex overflow-hidden rounded-[4px] opacity-0 transition-opacity group-focus-within/tag:opacity-100 group-hover/tag:opacity-100">
-                    <IconButton icon={LuX} label={`Remove: ${phrase}`} size="sm" className="size-5 min-h-0 min-w-0" onClick={() => removePhrase(i)} />
-                  </span>
-                </span>
+                <Tag key={phrase} phrase={phrase} onRemove={() => removePhrase(i)} />
               ))}
               <input
                 aria-label="Words to link"
@@ -275,14 +300,14 @@ export default function AutolinkPanel({ editor, self, startText, rules, onRules,
                   } else if (e.key === 'Backspace' && draft === '' && phrases.length > 0) removePhrase(phrases.length - 1)
                 }}
                 maxLength={LIMITS.ruleText}
-                className={`${FIELD_INPUT} min-w-32`}
+                className="min-w-32 flex-1 bg-transparent text-body outline-none"
                 autoFocus
               />
-            </InputBox>
+            </div>
 
             {/* The four kinds side by side, in the order of the link row's buttons (one box, a line between them): each with its name and, but Link, a
                 search button at the right of the name */}
-            <div key={version} className="flex flex-row divide-x divide-line overflow-x-auto rounded-(--card-radius) border border-line bg-surface">
+            <div key={version} className="flex flex-row divide-x divide-line overflow-x-auto rounded-(--card-radius) border border-line bg-surface [&_[role=option]]:h-7!">
               {SECTIONS.map((s) => (
                 <section key={s.id} aria-label={s.label} className="flex min-w-56 flex-1 flex-col p-2">
                   <SectionBody title={s.label} icon={s.icon} searchable={s.searchable}>
@@ -310,20 +335,48 @@ export default function AutolinkPanel({ editor, self, startText, rules, onRules,
               ))}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-small text-fg-muted">{words.length ? `“${words.join('”, “')}”` : 'No words yet'} →</span>
-              {target ? <LinkTargetName link={target} editor={editor} /> : <span className="text-small text-fg-subtle">choose where they link</span>}
-              <div className="ms-auto flex gap-2">
-                <Button variant="ghost" size="sm" plain onClick={() => start(false)}>
-                  Cancel
-                </Button>
-                <Button size="sm" disabled={words.length === 0 || !target} onClick={save}>
-                  {editing ? 'Save autolinker' : 'Save'}
-                </Button>
-              </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" size="sm" plain onClick={() => start(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" disabled={words.length === 0 || !target} onClick={save}>
+                {editing ? 'Save autolinker' : 'Save'}
+              </Button>
             </div>
           </div>
-        )}
+
+        </Slide>
+  ) : null
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="Autolinker"
+      // Narrow until a draft is open
+      size={formOpen ? 'xl' : 'lg'}
+      tightHeader
+      smoothSize
+      actions={
+        <>
+          <Button variant="text" size="sm" icon={LuDownload} className="[--btn-icon-size:0.75rem]!" onClick={() => setImporting(true)}>
+            Import from other article
+          </Button>
+          {/* Add New turns into Cancel while a new draft is open */}
+          {formOpen && !editing ? (
+            <Button size="sm" plain icon={LuX} onClick={() => start(false)}>
+              Cancel
+            </Button>
+          ) : (
+            <Button size="sm" plain icon={LuPlus} onClick={() => start(true)}>
+              Add New
+            </Button>
+          )}
+        </>
+      }
+    >
+      <div className="@container flex flex-col gap-4">
+        {formOpen && !editing && form}
         {notice && (
           <p role="status" className="text-small text-fg-muted">
             {notice}
@@ -336,21 +389,24 @@ export default function AutolinkPanel({ editor, self, startText, rules, onRules,
         ) : (
           <ul className="flex flex-col gap-2">
             {rules.map((rule) => (
+              editing === rule.id && form ? (
+                // The edit form takes the place of the row
+                <li key={rule.id} className="list-none">
+                  {form}
+                </li>
+              ) : (
               <li key={rule.id} className={`flex min-w-0 items-center gap-3 rounded-(--card-radius) border bg-surface-muted p-2 ${editing === rule.id ? 'border-accent' : 'border-line'}`}>
                 <Endpoint link={rule.link} editor={editor} onLeave={onClose} />
-                {/* The phrases as tags: each at most 11rem wide, scrolling sideways when it is longer; clicking one goes to where it is written */}
+                {/* The phrases as tags, as in the input (not clickable) */}
                 <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
                   {rule.phrases.map((phrase) => (
-                    <span key={phrase} className="inline-flex max-w-44 overflow-x-auto rounded-(--corner-sm) bg-fill whitespace-nowrap [scrollbar-width:thin]">
-                      <Button variant="ghost" size="xs" plain className="shrink-0" title="Go to where it is written" onClick={() => goThere(rule, phrase)}>
-                        {phrase}
-                      </Button>
-                    </span>
+                    <Tag key={phrase} phrase={phrase} />
                   ))}
                 </div>
                 <IconButton icon={LuPencil} label={`Edit: ${rule.phrases.join(', ')}`} size="sm" variant={editing === rule.id ? 'selected' : 'ghost'} onClick={() => edit(rule)} />
                 <IconButton icon={LuTrash2} label={`Delete: ${rule.phrases.join(', ')}`} size="sm" onClick={() => remove(rule)} />
               </li>
+              )
             ))}
           </ul>
         )}

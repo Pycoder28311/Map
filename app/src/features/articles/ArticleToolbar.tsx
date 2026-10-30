@@ -31,7 +31,7 @@ import {
 } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
-import { addSection, paragraphLookOf, setParagraphLook } from '../../components/ui/editors/articleExtensions'
+import { addSection, paragraphLookOf, setParagraphLook, showAsHtml } from '../../components/ui/editors/articleExtensions'
 import ColourField from '../../components/ui/fields/ColourField'
 import ColourPicker from '../../components/ui/fields/ColourPicker'
 import TextField from '../../components/ui/fields/TextField'
@@ -191,6 +191,8 @@ export function TextButton(props: {
   filled?: boolean
   big?: boolean
   small?: boolean
+  /** An underline button (the text variant): chosen = underlined (the link row's) */
+  underline?: boolean
 }) {
   return (
     <HoverInfo title={props.label} text={props.tip} side="top" delay={350}>
@@ -199,13 +201,16 @@ export function TextButton(props: {
         size={props.small ? 'xs' : 'sm'}
         plain
         filled={props.filled}
-        variant={props.active ? 'selected' : 'ghost'}
+        variant={props.underline ? 'text' : props.active ? 'selected' : 'ghost'}
         aria-pressed={props.active}
         disabled={props.disabled}
         title={props.title}
         // The icon close to the text, the text of a field for all of them; a plain one has the bar's icon size (1.25rem), the big one (Section) a smaller icon (`!` wins over the bar's)
-        className={`[--btn-icon-gap:0.25rem]! font-normal! [--btn-font-size:1rem]! [--btn-text:var(--fg)]! [--btn-hover-text:var(--fg)]! ${
-          props.small ? '[--btn-icon-size:0.875rem]! [--btn-font-size:0.8125rem]!' : props.big ? '[--btn-icon-size:1rem]!' : '[--btn-icon-size:1.25rem]!'
+        // (one font size only: two `!` sizes on a button, the later in the stylesheet wins, whatever order they are written in)
+        className={`[--btn-icon-gap:0.25rem]! font-normal! [--btn-text:var(--fg)]! [--btn-hover-text:var(--fg)]! ${
+          props.small
+            ? '[--btn-icon-size:0.875rem]! [--btn-font-size:0.75rem]! [--btn-pad-y:0]! [--btn-line-height:1]! [--btn-underline-offset:1px]!'
+            : `[--btn-font-size:1rem]! ${props.big ? '[--btn-icon-size:1rem]!' : '[--btn-icon-size:1.25rem]!'}`
         }`}
         onMouseDown={(e) => e.preventDefault()}
         onClick={props.onClick}
@@ -697,6 +702,8 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
         list: (LISTS.find((l) => l.value !== 'none' && e.isActive(l.value))?.value ?? 'none') as ListKind,
         align: (ALIGNS.find((a) => e.isActive({ textAlign: a.value }))?.value ?? 'left') as Align,
         link: e.isActive('link'),
+        // Words are selected (the Link button works on them)
+        selected: !e.state.selection.empty,
         href: (e.getAttributes('link').href as string | undefined) ?? '',
         canUndo: e.can().undo(),
         canRedo: e.can().redo(),
@@ -766,7 +773,7 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
   )
   // The Ω popout: Basics (the structures, superscript, subscript), SVGs, Mathematical, Others
   const omegaPopout = (trigger: ReactNode) => (
-    <BarPopover label="Structures, shapes, maths and other characters" open={more} align="end" wide onOpenChange={setMore} trigger={trigger}>
+    <BarPopover label="Structures, shapes, maths and other characters" open={more} align="end" width="w-1/2" onOpenChange={setMore} trigger={trigger}>
       <MoreFormats editor={editor} />
     </BarPopover>
   )
@@ -785,8 +792,10 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
       <div className="absolute end-0 top-0 z-20 translate-x-1/2 -translate-y-1/2 border border-line bg-surface shadow-md">
         <ToolButton icon={LuX} label="Close the edit bar" onClick={onClose} />
       </div>
-      {/* The first row: it scrolls sideways when it is too wide, until the bar is narrow enough to wrap it (level 3) */}
-      <div className={rowClass}>
+      {/* The first row: its buttons scroll sideways when they are too wide, until the bar is narrow enough to wrap them (level 3); More is outside
+          the part that scrolls, so it is always in view, and the buttons give way to it */}
+      <div className={`flex gap-base ${level >= 3 ? 'items-start' : 'items-center'}`}>
+      <div className={`${rowClass} min-w-0 flex-1`}>
         <Group>
           <ToolButton icon={LuUndo2} label="Undo" disabled={!state.canUndo} onClick={() => editor.chain().focus().undo().run()} />
           <ToolButton icon={LuRedo2} label="Redo" disabled={!state.canRedo} onClick={() => editor.chain().focus().redo().run()} />
@@ -896,6 +905,9 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
                 label="Link"
                 big
                 active={state.link}
+                // Only on selected words, or on a link to change or remove
+                disabled={!state.selected && !state.link}
+                tip={!state.selected && !state.link ? 'Select some words first.' : 'Makes the selected words a link to a web address.'}
                 onClick={() => {
                   setHref(state.href)
                   setLinking((open) => !open)
@@ -942,9 +954,10 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
             }}
           />
         </div>
+      </div>
         {/* More: shows and hides the second row. Text like Media and Link's, but muted (not white), a line before it like the row's others, the
             arrow at its right: it turns to point right while the second row is open */}
-        <div className="ms-auto flex shrink-0 items-center gap-base">
+        <div className="flex shrink-0 items-center gap-base">
           <Separator />
           <HoverInfo title={secondRow ? 'Hide the second row' : 'Show the second row'} side="top" delay={350}>
             <Button
@@ -968,14 +981,14 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
       {/* The second row: the colours when the bar is narrow (shown even with the ⋯ closed), then, while the ⋯ has it open, Code at the left,
           the paragraph's dropdowns, Section and the Ω box at the right */}
       {(secondRow || level >= 2) && (
-        <div className="flex flex-wrap items-center gap-lg">
+        <div className="flex flex-wrap items-center gap-base">
           {level >= 2 && colours}
           {level >= 2 && secondRow && <Separator />}
           {secondRow && (
             <>
               {/* Add section, then Code (both with their background, no line between them), at the left */}
               <TextButton
-                tip="Adds a new section at the end of the article: a heading and an empty paragraph."
+                tip="Adds a new section at the end of the article: a heading and an empty paragraph. With text selected, it turns that text into a section (a heading)."
                 icon={LuPlus}
                 label="Add section"
                 big
@@ -983,16 +996,16 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
                 onClick={() => addSection(editor)}
               />
               <TextButton
-                tip="Shows the selected text as code, in a fixed-width font with a background."
+                tip="Shows the selected text as its HTML code, in a fixed-width font. Click it again on that code to turn it back into text."
                 icon={LuCode}
                 label="Code"
                 big
                 filled
                 active={state.code}
-                onClick={() => editor.chain().focus().toggleCode().run()}
+                onClick={() => showAsHtml(editor)}
               />
               <Separator />
-              <Group className="gap-lg!">
+              <Group className="gap-base!">
                 <ParagraphLook editor={editor} look={state.look} />
               </Group>
               {/* The Ω box at the right end of the row */}
@@ -1020,11 +1033,13 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
                     </HoverInfo>,
                   )
                 ) : (
-                  // The examples (Word-like structures with places to fill), a line, and the square arrow that opens the popout
-                  <div role="group" aria-label="Maths structures" className="flex items-center rounded-(--field-radius) border border-line-strong">
+                  // The examples (Word-like structures with places to fill) and the square arrow that opens the popout, as Word's equation gallery
+                  // has them: one box, as tall as the font dropdown (a line of text, 1rem, and --spacing-sm above and below it, and its border), no
+                  // lines between the examples
+                  <div role="group" aria-label="Maths structures" className="flex h-[calc(1rem+2*var(--spacing-sm)+2px)] items-stretch overflow-hidden rounded-(--field-radius) border border-line-strong">
                     {BOX_STRUCTURES.map((kind) => (
                       <HoverInfo key={kind} title={STRUCTURES[kind].label} text={STRUCTURE_TIPS[kind]} side="top" delay={350}>
-                        <IconButton label={STRUCTURES[kind].label} onMouseDown={(e) => e.preventDefault()} onClick={() => insertStructure(editor, kind)}>
+                        <IconButton label={STRUCTURES[kind].label} size="xs" className="h-full! min-h-0!" onMouseDown={(e) => e.preventDefault()} onClick={() => insertStructure(editor, kind)}>
                           <StructureIcon kind={kind} />
                         </IconButton>
                       </HoverInfo>
@@ -1034,6 +1049,8 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
                       <HoverInfo key={char} title={`Insert ${char}`} text={`Puts ${char} in the text where the cursor is.`} side="top" delay={350}>
                         <IconButton
                           label={`Insert ${char}`}
+                          size="xs"
+                          className="h-full! min-h-0!"
                           onMouseDown={(e) => e.preventDefault()}
                           onClick={() => editor.chain().focus().insertContent(char).run()}
                         >
@@ -1043,12 +1060,13 @@ export default function ArticleToolbar({ editor, onUploadImage, onUploadError, s
                         </IconButton>
                       </HoverInfo>
                     ))}
-                    <span aria-hidden className="w-px self-stretch bg-line-strong" />
                     {omegaPopout(
                       <HoverInfo title="More characters" text="Opens all the structures, shapes, maths symbols and other characters." side="top" delay={350}>
                         <IconButton
                           icon={LuChevronDown}
                           label="More structures, shapes, maths and other characters"
+                          size="xs"
+                          className="aspect-square h-full! min-h-0!"
                           variant={more ? 'selected' : 'ghost'}
                           aria-expanded={more}
                           onMouseDown={(e) => e.preventDefault()}
