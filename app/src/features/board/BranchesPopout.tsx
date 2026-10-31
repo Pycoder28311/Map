@@ -10,14 +10,16 @@ import { LIST_ITEM } from '../../components/ui/rowStyles'
 
 const when = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 
-/** The branches button: the maps that are versions of this one (the current one ticked), and a name with a button to make another from it */
-export default function BranchesPopout({ mapId }: { mapId: string }) {
+/**
+ * The branches, opened from the title bar's ⋯ (it hangs under the bar): the maps that are versions of this one (the current one ticked),
+ * the current branch's name with a pencil to rename it (not the main one: that is the map, renamed by its big name), and a name with a
+ * button to make another from it
+ */
+export default function BranchesPopout({ mapId, open, onOpenChange }: { mapId: string; open: boolean; onOpenChange: (open: boolean) => void }) {
   const maps = useMaps()
   const workspace = useWorkspace()
-  const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const group = branchList(maps, mapId)
-  // What the button says: the current branch's name (the first map of the group is the main one), or the way to make the first
   const map = group.find((o) => String(o.id) === mapId)
   const main = !map || !map.branchOf || map.branchOf === map.id
   const current = main ? 'main' : map.title
@@ -33,7 +35,7 @@ export default function BranchesPopout({ mapId }: { mapId: string }) {
   }
 
   const show = (id: string) => {
-    setOpen(false)
+    onOpenChange(false)
     if (id !== mapId) workspace.replace({ type: 'map', id: mapId }, { type: 'map', id })
   }
   const create = async () => {
@@ -44,17 +46,14 @@ export default function BranchesPopout({ mapId }: { mapId: string }) {
   }
 
   return (
-    <BarPopover
-      open={open}
-      onOpenChange={setOpen}
-      label="Map branches"
-      trigger={
-        draft !== null ? (
+    <BarPopover open={open} onOpenChange={onOpenChange} label="Map branches" trigger={null}>
+      <div className="flex min-h-8 items-center gap-1 px-2 pb-1">
+        <LuGitBranch className="size-4 shrink-0 text-fg-subtle" aria-hidden />
+        {draft !== null ? (
           <input
             autoFocus
             value={draft}
             aria-label="Branch name"
-            size={Math.min(Math.max(draft.length, 4), 20)}
             onFocus={(e) => e.currentTarget.select()}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commit}
@@ -67,31 +66,15 @@ export default function BranchesPopout({ mapId }: { mapId: string }) {
                 e.currentTarget.blur()
               }
             }}
-            className="rounded-(--btn-close-radius) bg-transparent px-2 text-body outline-none focus-visible:outline-2 focus-visible:outline-accent"
+            className="min-w-0 flex-1 rounded-(--btn-close-radius) bg-transparent px-1 text-body outline-none focus-visible:outline-2 focus-visible:outline-accent"
           />
         ) : (
-          // One grid cell, no positioning (the popover hangs from the bar): the pencil shows over the name's end while hovered
-          <div className="group grid">
-            <Button
-              className="col-start-1 row-start-1"
-              variant={open ? 'secondary' : 'ghost'}
-              icon={LuGitBranch}
-              aria-expanded={open}
-              aria-label={group.length > 1 ? `Branches, now on ${current}` : 'Create branch'}
-              title={group.length > 1 ? 'Branches' : 'Create branch'}
-              onClick={() => setOpen(!open)}
-            >
-              <span className="max-w-32 truncate">{group.length > 1 ? current : 'Create branch'}</span>
-            </Button>
-            {!main && (
-              <span className="pointer-events-none col-start-1 row-start-1 self-center justify-self-end rounded-(--btn-close-radius) bg-surface/70 opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
-                <IconButton icon={LuPencil} label="Rename branch" onClick={() => setDraft(current)} />
-              </span>
-            )}
-          </div>
-        )
-      }
-    >
+          <>
+            <span className="min-w-0 flex-1 truncate text-small text-fg-subtle">{group.length > 1 ? `On ${current}` : 'No branches yet'}</span>
+            {!main && <IconButton icon={LuPencil} label="Rename branch" size="sm" onClick={() => setDraft(current)} />}
+          </>
+        )}
+      </div>
       <ul className="flex max-h-60 flex-col gap-0.5 overflow-y-auto">
         {group.map((o) => (
           <li key={o.id}>

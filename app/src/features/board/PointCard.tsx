@@ -11,19 +11,31 @@ const WIDTH = 280
 /** Room the card needs above the pin before it goes below it instead (px) */
 const ROOM = 300
 const GAP = 10
+/** The hover card: narrower, and it needs less room above the pin */
+const HOVER_WIDTH = 240
+const HOVER_ROOM = 200
 
-type Props = { point: PointObject; view: Viewport; size: Size; onMore: () => void }
+/** `onMore`: the card of a clicked pin, with "Show more". Without it, the card of a hovered pin (like Google Maps'): smaller, it lets
+ * the pointer through to the map and goes when the pointer leaves the pin */
+type Props = { point: PointObject; view: Viewport; size: Size; onMore?: () => void }
 
-/** The small card above a pin: what a visitor sees first. Below the pin when the top of the page is too close */
+/** The small card above a pin: what a visitor sees first, and what anyone sees while hovering a pin. Below the pin when the top of the page is too close */
 export default function PointCard({ point, view, size, onMore }: Props) {
   const banner = useImageUrl(point.banner)
   const top = boardToScreen(view, { x: point.anchor.x, y: point.anchor.y - PIN_HEIGHT })
   const tip = boardToScreen(view, point.anchor)
-  const above = top.y - GAP >= ROOM
-  const left = Math.max(8, Math.min(top.x - WIDTH / 2, size.w - WIDTH - 8))
-  const style = above ? { left, top: top.y - GAP, width: WIDTH, translate: '0 -100%' } : { left, top: tip.y + GAP, width: WIDTH }
+  const hover = !onMore
+  const width = hover ? HOVER_WIDTH : WIDTH
+  const above = top.y - GAP >= (hover ? HOVER_ROOM : ROOM)
+  const left = Math.max(8, Math.min(top.x - width / 2, size.w - width - 8))
+  const style = above ? { left, top: top.y - GAP, width, translate: '0 -100%' } : { left, top: tip.y + GAP, width }
   return (
-    <div role="dialog" aria-label={point.name || 'Point'} style={style} className="pointer-events-auto absolute z-10 flex max-h-72 flex-col overflow-hidden rounded-(--card-radius) border border-line bg-surface shadow-xl">
+    <div
+      role={hover ? 'tooltip' : 'dialog'}
+      aria-label={point.name || 'Point'}
+      style={style}
+      className={`absolute z-10 flex flex-col overflow-hidden rounded-(--card-radius) border border-line bg-surface shadow-xl ${hover ? 'pointer-events-none max-h-56 animate-share-pop' : 'pointer-events-auto max-h-72'}`}
+    >
       {banner && <img src={banner} alt="" className="aspect-[16/7] w-full shrink-0 object-cover" />}
       <div className="flex min-h-0 flex-col gap-2 p-3">
         <div className="flex items-center gap-2">
@@ -33,10 +45,12 @@ export default function PointCard({ point, view, size, onMore }: Props) {
             <p className="text-small text-fg-muted">{labelName(point.label)}</p>
           </div>
         </div>
-        <PointDescription text={point.description} className="line-clamp-4 overflow-hidden" />
-        <Button variant="secondary" onClick={onMore}>
-          Show more
-        </Button>
+        <PointDescription text={point.description} className={`${hover ? 'line-clamp-3' : 'line-clamp-4'} overflow-hidden`} />
+        {onMore && (
+          <Button variant="secondary" onClick={onMore}>
+            Show more
+          </Button>
+        )}
       </div>
     </div>
   )

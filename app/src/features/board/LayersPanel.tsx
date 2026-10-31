@@ -1,41 +1,31 @@
-import { useState } from 'react'
-import { LuLayers } from 'react-icons/lu'
-import Button from '../../components/ui/buttons/Button'
-import BarPopover from '../../components/ui/overlays/BarPopover'
+import { LuX } from 'react-icons/lu'
+import IconButton from '../../components/ui/buttons/IconButton'
 import { useBoard } from './boardStore'
+import { FLOAT } from './floating'
 import { layerLabel, layerList } from './layers'
 import { useSelection } from './selection'
 import { KIND_ICON } from './layerIcons'
 import { LIST_ITEM } from '../../components/ui/rowStyles'
 
-
 /**
- * The layers button of the title bar (its last one): a list of everything on the board, top first, like Figma's or Penpot's.
- * A click on a row selects that object (`onPick`: the editor switches to the Mouse tool so it shows).
+ * The layers of the left panel (the title bar's ⋯ › Layers): a list of everything on the board, top first, like Figma's or Penpot's,
+ * as tall as the editor. A click on a row selects that object (`onPick`: the editor switches to the Mouse tool so it shows).
  */
-export default function LayersButton({ mapId, onPick }: { mapId: string; onPick: (id: number) => void }) {
+export default function LayersPanel({ mapId, onPick, onClose }: { mapId: string; onPick: (id: number) => void; onClose: () => void }) {
   const board = useBoard(mapId)
   const selection = useSelection(mapId)
-  const [open, setOpen] = useState(false)
   const objects = layerList(board)
 
   return (
-    <BarPopover
-      open={open}
-      onOpenChange={setOpen}
-      wide
-      label="Everything on this map"
-      trigger={
-        <Button icon={LuLayers} variant={open ? 'secondary' : 'ghost'} aria-expanded={open} onClick={() => setOpen(!open)}>
-          Layers
-        </Button>
-      }
-    >
-      <p className="px-2 pb-1 text-small text-fg-subtle">Layers · {objects.length}</p>
+    <section aria-label="Everything on this map" className={`pointer-events-auto flex min-h-0 flex-1 flex-col p-2 ${FLOAT}`}>
+      <div className="flex items-center gap-2 ps-2">
+        <h2 className="min-w-0 flex-1 text-small text-fg-subtle">Layers · {objects.length}</h2>
+        <IconButton icon={LuX} label="Close the layers" size="sm" onClick={onClose} />
+      </div>
       {objects.length === 0 ? (
         <p className="px-2 py-6 text-center text-body text-fg-muted">Nothing on this map yet.</p>
       ) : (
-        <ul className="flex max-h-[60vh] flex-col gap-0.5 overflow-y-auto">
+        <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">
           {objects.map((o) => {
             const Icon = KIND_ICON[o.kind]
             return (
@@ -54,6 +44,6 @@ export default function LayersButton({ mapId, onPick }: { mapId: string; onPick:
           })}
         </ul>
       )}
-    </BarPopover>
+    </section>
   )
 }

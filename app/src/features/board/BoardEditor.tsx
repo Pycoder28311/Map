@@ -24,10 +24,11 @@ import { paintBoard } from './render'
 import { useFillImages } from './fillTextures'
 import { removeBackground, useBackground, useHasBackground } from './background'
 import { toolOfKey, type ToolId } from './tools'
-import { LAYER_MAIN, type BoardObject, type BorderObject, type LineObject, type Point } from './types'
+import { LAYER_MAIN, type BoardObject, type BorderObject, type LineObject, type Point, type PointObject } from './types'
 import { BOARD, boardToScreen, clampToBoard, insideBoard, screenToBoard, zoomFactorOf, type Size } from './viewport'
 import LinkPickBar from './LinkPickBar'
-import MapTitleBar from './MapTitleBar'
+import MapTitleBar, { type LeftPanel } from './MapTitleBar'
+import PointCard from './PointCard'
 import { clearSelection, select, useSelection } from './selection'
 import { buttonsFor, type BoxAction } from './selectionButtons'
 import PathEditor from './PathEditor'
@@ -62,6 +63,9 @@ const TOOL_OF = { point: 'point', line: 'line', shape: 'line', border: 'border',
 /** Whether an object of this kind is what the tool works on */
 const isOwn = (tool: string, kind: string) => (tool === 'line' ? kind === 'line' || kind === 'shape' : tool === kind)
 const asOf = (tool: 'line' | 'border', o: BoardObject | undefined) => (o?.kind === tool ? o : null)
+/** The least zoom a pin found by the search is shown at */
+const POINT_ZOOM = 1.25
+
 /** A hovered line or area that is not the one being edited and has points to show (its way is not exact) */
 const hoveredPath = (o: BoardObject | undefined, editing: number | undefined) =>
   (o?.kind === 'line' || o?.kind === 'border') && o.id !== editing && o.style.way !== 'exact' ? o : null
@@ -150,6 +154,10 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
   // The pointer is over the grey around the board's sheet (a drag there pans)
   const [offBoard, setOffBoard] = useState(false)
   const [openPin, setOpenPin] = useState<{ id: number; full: boolean } | null>(null)
+  // The pin under the pointer (its hover card shows above it); null: none
+  const [hoverPin, setHoverPin] = useState<number | null>(null)
+  // The search or the layers, under the title bar, as tall as the editor
+  const [leftPanel, setLeftPanel] = useState<LeftPanel>(null)
   // A click with the Point tool is a pin only if it did not move (a drag pans the board)
   const pinStart = useRef<Point | null>(null)
   // The same for a press on bare board with the Mouse tool
@@ -386,6 +394,10 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
     if (!visitor && tool === 'mouse' && modeRef.current === 'none') mouse.hover(e)
     if ((tool === 'border' || tool === 'line') && modeRef.current === 'none') draw.hover(pointOf(e), tool)
     if (pointMode && draw.picked && view && modeRef.current === 'none') setTailTo(screenToBoard(view, pointOf(e)))
+    // The pin under the pointer gets its hover card; none while a button is held (a drag) or a gesture runs
+    const pin = !before && view && modeRef.current === 'none' ? hitTest(board, screenToBoard(view, pointOf(e)), HIT_PX / view.scale) : null
+    const pinId = pin?.kind === 'point' ? pin.id : null
+    if (pinId !== hoverPin) setHoverPin(pinId)
     if ((tool === 'point' || tool === 'text') && modeRef.current === 'none' && view) {
       const p = screenToBoard(view, pointOf(e))
       const over = tool === 'point' ? hitTest(board, p, HIT_PX / view.scale)?.kind === 'point' : !!textAt(board, p, HIT_PX / view.scale)
@@ -633,6 +645,10 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         : tool === 'mouse' && mouse.selected.length > 0
           ? 'selection'
           : null
+  // The hover card's pin: not while text is typed, nor over a pin whose own card is open or that is selected (its box and sidebar show)
+  const hoveredFound = hoverPin === null ? undefined : shown.objects.find((o) => o.id === hoverPin)
+  const hoveredPin: PointObject | null =
+    hoveredFound?.kind === 'point' && !text.editing && openPin?.id !== hoverPin && !mouse.selected.some((o) => o.id === hoverPin) ? hoveredFound : null
   // A point's sidebar is wider
   const wideSidebar =
     sidebar === 'pen' ? tool === 'point' : sidebar === 'selection' && mouse.selected.length === 1 && mouse.selected[0].kind === 'point'
@@ -655,6 +671,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
           onPointerMove={onMove}
           onPointerUp={onUp}
           onPointerCancel={onUp}
+          onPointerLeave={() => setHoverPin(null)}
           onDoubleClick={(e) =>
             visitor
               ? undefined
@@ -768,9 +785,21 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         <MapTitleBar
           mapId={mapId}
           editorWidth={fullSize?.w}
+          panel={leftPanel}
+          onPanel={(next) => {
+            setLeftPanel(next)
+            if (!next) root.current?.focus()
+          }}
           onPickObject={(id) => {
             pickTool('mouse')
             select(mapId, [id])
+          }}
+          onShowObject={(id) => {
+            const target = board.objects.find((o) => o.id === id)
+            if (!target || !view || !size) return
+            // A pin is tiny: centred at the zoom it has (at least POINT_ZOOM), not fitted to the page
+            const scale = Math.max(view.scale, POINT_ZOOM)
+            focusOn(target.kind === 'point' ? { x: target.anchor.x - size.w / 2 / scale, y: target.anchor.y - size.h / 2 / scale, w: size.w / scale, h: size.h / scale } : boundsOf(target))
           }}
         />
         {!visitor && <ToolPanel mapId={mapId} tool={tool} onTool={pickTool} />}
@@ -814,6 +843,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
             }}
           />
         )}
+        {hoveredPin && view && size && <PointCard key={hoveredPin.id} point={hoveredPin} view={view} size={size} />}
         {view && <ZoomControls scale={view.scale} onZoom={(f) => zoom(f)} onFit={fit} />}
       </div>
       <SidebarSlot open={sidebar !== null} wide={wideSidebar}>
