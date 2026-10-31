@@ -10,7 +10,8 @@ import { csrfProtection } from './middleware/csrf'
 import { checkEnv } from './middleware/env'
 import { rateLimit } from './middleware/rate-limit'
 import imagesRoutes from './resources/images/images.routes'
-import messagesRoutes from './resources/messages/messages.routes'
+import commentsRoutes from './resources/comments/comments.routes'
+import messagesRoutes, { messageRepliesRoutes } from './resources/messages/messages.routes'
 import rightsRoutes from './resources/rights/rights.routes'
 import sharedRoutes from './resources/shared/shared.routes'
 import usersRoutes from './resources/users/users.routes'
@@ -66,6 +67,9 @@ const routes = app
   .route('/api/images', imagesRoutes)
   // Sharing and an article's messages (docs/plans/34)
   .route('/api/messages', messagesRoutes)
+  // Replies under a message, and comments below an article (docs/plans/37)
+  .route('/api/message-replies', messageRepliesRoutes)
+  .route('/api/comments', commentsRoutes)
   .route('/api/object-rights', rightsRoutes)
   .route('/api/shared', sharedRoutes)
   .route('/api/users', usersRoutes)

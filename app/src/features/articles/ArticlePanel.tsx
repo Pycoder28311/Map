@@ -58,6 +58,7 @@ import NotesPanel from './side/NotesPanel'
 import RoundTools, { type SidePart } from './side/RoundTools'
 import { SectionPicker } from './sections/SectionMenu'
 import { placeSection, type SectionType } from './sections/sectionTypes'
+import CommentsSection from './comments/CommentsSection'
 import ArticleText from './text/ArticleText'
 import { useArticleText, useTextEditor, type ArticleText as Text } from './text/articleText'
 import SectionHandles from './text/SectionHandles'
@@ -429,8 +430,15 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
               </FloatingAt>
             )}
             {message && (
-              // (the pointer on the panel keeps it open while it was opened by hovering)
-              <div className="contents" data-message-panel onPointerEnter={cancelClose} onPointerLeave={() => message.hover && hoverMessage(null)}>
+              // (the pointer on the panel keeps it open while it was opened by hovering; once something in it has the focus, a reply being
+              // written, it stays open as if clicked)
+              <div
+                className="contents"
+                data-message-panel
+                onPointerEnter={cancelClose}
+                onPointerLeave={() => message.hover && hoverMessage(null)}
+                onFocus={() => message.hover && setMessage({ ...message, hover: false })}
+              >
                 <MessagePanel
                   key={`${message.id}:${message.from}`}
                   id={message.id}
@@ -510,6 +518,8 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
             )}
           </div>
         }
+        // Below the text, in every view (docs/plans/37): read when scrolled to
+        comments={<CommentsSection articleId={articleId} />}
         footer={
           <div className="flex flex-col gap-1">
             {autosave.lost && (
@@ -574,7 +584,9 @@ type BodyProps = {
   folders: ReactNode
   /** The icon toolbar, under the title */
   toolbar: ReactNode
-  /** Under the text (the save status) */
+  /** Under the text (and Add section): the comments */
+  comments: ReactNode
+  /** At the bottom (the save status) */
   footer: ReactNode
 }
 
@@ -605,6 +617,7 @@ function ArticleBody({
   infoShown,
   folders,
   toolbar,
+  comments,
   footer,
 }: BodyProps) {
   const [title, setTitle] = useState(start.title ?? '')
@@ -712,6 +725,7 @@ function ArticleBody({
                 </BarPopover>
               </div>
             ) : null}
+            <div className="mt-4">{comments}</div>
             <div className="mt-auto">{footer}</div>
           </div>
         </div>

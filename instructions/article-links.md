@@ -77,6 +77,10 @@ rule's `id` here is that `a`. Limits: 50 autolinkers, 20 phrases each, a phrase 
 - **Read only when the words are clicked** (`GET /api/messages/:id`, one query: the message, its article's access, its author), then kept
   in `messagesStore` until the page closes. The hover card and the side list never read: they show a message only once it was read.
 - **Done**: its author, the editors and the owner (`PATCH { done }`); its text: its author only, while they can edit the article.
+  **Delete**: its author and the article's owner only (docs/plans/37); its replies go with it.
+- **Replies** (docs/plans/37, `MessageReplies.tsx`): one flat list under the message, in its panel. The newest 20 come with the message
+  (same request, same batch); "Earlier replies" reads 20 more (`GET /api/message-replies?messageId=&cursor=`). Written by the editors
+  and the owner (`can.reply`); a reply is edited by its author while they edit the article, deleted by its author or the owner.
 - **Removing the words does not delete the message.** Editors find it under Messages → "Not in the text" (read only when pressed,
   `GET /api/messages?articleId=&exclude=<ids in the text>`), to delete it or place it on selected words. Cut and paste, and Undo, keep it.
 - **A link to another article's message** opens "This message was deleted" (the panel checks `articleId`); a deleted message's link can

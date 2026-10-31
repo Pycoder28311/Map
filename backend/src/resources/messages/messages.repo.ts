@@ -1,6 +1,6 @@
-import type { ItemAccess, Message, MessageFilter, MessageImport, MessageUpdate, Role } from '@map/shared'
+import { MESSAGE_REPLIES_PAGE, type ItemAccess, type Message, type MessageFilter, type MessageImport, type MessageReply, type MessageUpdate, type Role } from '@map/shared'
 import { and, desc, eq, sql } from 'drizzle-orm'
-import { articles, messages, objectRights, user } from '../../db/schema'
+import { articles, messageReplies, messages, objectRights, user } from '../../db/schema'
 import { accessFrom, accessOf, canEdit } from '../../lib/access'
 import { userId, type Ctx, type Repo } from '../../lib/crud'
 import { forbidden, HttpError, notFound } from '../../lib/errors'
@@ -8,20 +8,26 @@ import { beforeCursor, fetchLimit, toPage, type PageParams } from '../../lib/pag
 import { inParts } from '../../lib/relations'
 
 type Row = typeof messages.$inferSelect
-type AuthorRow = { name: string | null; image: string | null }
+type ReplyRow = typeof messageReplies.$inferSelect
+export type AuthorRow = { name: string | null; image: string | null }
 type MessageCreate = { articleId: number; title: string; content: string }
 
-/** What the caller may do with a message: edit its text (its author, while they can edit the article), Done and delete (its author, the article's editors and owner) */
+/**
+ * What the caller may do with a message: edit its text (its author, while they can edit the article), Done (its author, the article's
+ * editors and owner), delete (its author and the article's owner: docs/plans/37), reply (the article's editors and owner)
+ */
 function canOf(row: Row, access: ItemAccess, me: string): Message['can'] {
   const mine = row.userId === me
-  return { edit: mine && canEdit(access), done: mine || canEdit(access), remove: mine || canEdit(access) }
+  return { edit: mine && canEdit(access), done: mine || canEdit(access), remove: mine || access === 'owner', reply: canEdit(access) }
 }
+
+const authorOf = (id: string | null, author: AuthorRow | null) => (id && author?.name != null ? { id, name: author.name, image: author.image } : null)
 
 function toMessage(row: Row, author: AuthorRow | null, access: ItemAccess, me: string): Message {
   return {
     id: row.id,
     articleId: row.articleId,
-    author: row.userId && author?.name != null ? { id: row.userId, name: author.name, image: author.image } : null,
+    author: authorOf(row.userId, author),
     title: row.title,
     content: row.content,
     done: row.doneAt !== null,
@@ -32,13 +38,42 @@ function toMessage(row: Row, author: AuthorRow | null, access: ItemAccess, me: s
   }
 }
 
+/** A reply as the app gets it: edited by its author while they can edit the article; deleted by its author or the article's owner */
+export function toReply(row: ReplyRow, author: AuthorRow | null, access: ItemAccess, me: string): MessageReply {
+  const mine = row.userId === me
+  return {
+    id: row.id,
+    messageId: row.messageId,
+    author: authorOf(row.userId, author),
+    content: row.content,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    can: { edit: mine && canEdit(access), remove: mine || access === 'owner' },
+  }
+}
+
+/** A page of a message's replies with their authors, newest first (not run: it goes in a batch). Through message_replies_message_idx */
+export const repliesQuery = (ctx: Ctx, messageId: number, page: PageParams) =>
+  ctx.db
+    .select({ reply: messageReplies, name: user.name, image: user.image })
+    .from(messageReplies)
+    .leftJoin(user, eq(user.id, messageReplies.userId))
+    .where(and(eq(messageReplies.messageId, messageId), beforeCursor(messageReplies.id, page)))
+    .orderBy(desc(messageReplies.id))
+    .limit(fetchLimit(page)!)
+
+/** The replies of repliesQuery as a page */
+export function toRepliesPage(rows: { reply: ReplyRow; name: string | null; image: string | null }[], page: PageParams, access: ItemAccess, me: string) {
+  const result = toPage(rows, page, (r) => r.reply.id)
+  return { items: result.items.map((r) => toReply(r.reply, r, access, me)), nextCursor: result.nextCursor }
+}
+
 /**
  * A message with its author and what the caller may do with it, in one query: the message (primary key), its article (primary key),
- * the caller's right on the article (unique index) and the author (primary key). null when it is gone or the caller can't read the article
+ * the caller's right on the article (unique index) and the author (primary key). Not run: messageWithAccess runs it, get() batches it
  */
-async function messageWithAccess(ctx: Ctx, id: number) {
-  const me = userId(ctx)
-  const found = await ctx.db
+const messageAccessQuery = (ctx: Ctx, id: number) =>
+  ctx.db
     .select({
       message: messages,
       owner: articles.userId,
@@ -50,13 +85,24 @@ async function messageWithAccess(ctx: Ctx, id: number) {
     })
     .from(messages)
     .innerJoin(articles, eq(articles.id, messages.articleId))
-    .leftJoin(objectRights, and(eq(objectRights.objectType, 'articles'), eq(objectRights.objectId, articles.id), eq(objectRights.userId, me)))
+    .leftJoin(objectRights, and(eq(objectRights.objectType, 'articles'), eq(objectRights.objectId, articles.id), eq(objectRights.userId, userId(ctx))))
     .leftJoin(user, eq(user.id, messages.userId))
     .where(eq(messages.id, id))
-    .get()
+    .limit(1)
+
+type AccessRow = Awaited<ReturnType<typeof messageAccessQuery>>[number]
+
+/** The row of messageAccessQuery, when the caller can read the article; null otherwise */
+function withAccess(ctx: Ctx, found: AccessRow | undefined) {
   if (!found) return null
+  const me = userId(ctx)
   const access = accessFrom({ userId: found.owner, archived: found.archived, visibility: found.visibility }, me, found.role as Role | null)
   return access ? { row: found.message, author: { name: found.name, image: found.image }, access, me } : null
+}
+
+/** A message, its author and the caller's access (one query); null when it is gone or the caller can't read the article */
+export async function messageWithAccess(ctx: Ctx, id: number) {
+  return withAccess(ctx, (await messageAccessQuery(ctx, id))[0])
 }
 
 /** The article, when the caller can edit it (they write and list its messages); 404 otherwise */
@@ -95,9 +141,14 @@ export const messagesRepo: Repo<MessageCreate, MessageUpdate, Message, MessageFi
     return { items: result.items.map((r) => toMessage(r.message, r, access, userId(ctx))), nextCursor: result.nextCursor }
   },
 
+  // With its newest replies, in the same batch (docs/plans/37): opening a message is still one request
   async get(ctx, id) {
-    const found = await messageWithAccess(ctx, id)
-    return found ? toMessage(found.row, found.author, found.access, found.me) : null
+    const page = { limit: MESSAGE_REPLIES_PAGE, cursor: null }
+    const [rows, replies] = await ctx.db.batch([messageAccessQuery(ctx, id), repliesQuery(ctx, id, page)])
+    const found = withAccess(ctx, rows[0])
+    if (!found) return null
+    const { items, nextCursor } = toRepliesPage(replies, page, found.access, found.me)
+    return { ...toMessage(found.row, found.author, found.access, found.me), replies: items, repliesCursor: nextCursor }
   },
 
   async create(ctx, input) {

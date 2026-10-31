@@ -126,3 +126,53 @@ describe('0013: articles get autolinkers', () => {
     expect(db.prepare('SELECT title, content, autolinkers FROM articles').all()[0]).toEqual({ title: 'old', content: '<p>x</p>', autolinkers: '[]' })
   })
 })
+
+describe('0014: message replies and comments', () => {
+  const db = new DatabaseSync(':memory:')
+  db.exec('PRAGMA foreign_keys = ON') // as D1
+  for (const file of files.filter((f) => f <= '0014z')) run(db, file)
+  const now = Math.floor(Date.now() / 1000)
+  for (const id of ['owner', 'other']) db.prepare('INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)').run(id, id, `${id}@x.test`, now, now)
+  db.prepare("INSERT INTO articles (user_id, title, created_at, updated_at) VALUES ('owner', 'a', ?, ?)").run(now, now)
+  const lastId = (table: string) => (db.prepare(`SELECT max(id) AS id FROM ${table}`).all()[0] as { id: number }).id
+  const count = (table: string) => (db.prepare(`SELECT count(*) AS n FROM ${table}`).all()[0] as { n: number }).n
+  const addComment = db.prepare('INSERT INTO comments (article_id, user_id, parent_id, depth, content, created_at, updated_at) VALUES (1, ?, ?, ?, ?, ?, ?)')
+
+  it('a message takes its replies with it; a deleted author becomes null; never empty', () => {
+    db.prepare("INSERT INTO messages (article_id, user_id, title, content, created_at, updated_at) VALUES (1, 'owner', 't', '', ?, ?)").run(now, now)
+    const message = lastId('messages')
+    const add = db.prepare('INSERT INTO message_replies (message_id, user_id, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)')
+    expect(() => add.run(message, 'other', '  ', now, now)).toThrow()
+    add.run(message, 'other', 'yes', now, now)
+    add.run(message, 'owner', 'no', now, now)
+    db.prepare("DELETE FROM user WHERE id = 'other'").run()
+    expect(db.prepare('SELECT user_id FROM message_replies ORDER BY id').all()).toEqual([{ user_id: null }, { user_id: 'owner' }])
+    db.prepare('DELETE FROM messages WHERE id = ?').run(message)
+    expect(count('message_replies')).toBe(0)
+  })
+
+  it('comments: a deleted comment takes every level under it; levels 1 to 5 only; never empty', () => {
+    addComment.run('owner', null, 1, 'top', now, now)
+    let parent = lastId('comments')
+    const top = parent
+    for (const depth of [2, 3, 4, 5]) {
+      addComment.run('owner', parent, depth, `level ${depth}`, now, now)
+      parent = lastId('comments')
+    }
+    expect(() => addComment.run('owner', parent, 6, 'too deep', now, now)).toThrow()
+    expect(() => addComment.run('owner', null, 1, ' ', now, now)).toThrow()
+    addComment.run('owner', null, 1, 'another', now, now)
+    db.prepare('DELETE FROM comments WHERE id = ?').run(top)
+    expect(db.prepare('SELECT content FROM comments').all()).toEqual([{ content: 'another' }])
+  })
+
+  it('an article takes its comments with it; reads them through its index', () => {
+    const plan = (db.prepare('EXPLAIN QUERY PLAN SELECT id FROM comments WHERE article_id = 1 AND parent_id IS NULL ORDER BY id DESC LIMIT 21').all() as { detail: string }[])
+      .map((p) => p.detail)
+      .join(' | ')
+    expect(plan).toContain('comments_article_idx')
+    expect(plan).not.toContain('TEMP B-TREE')
+    db.prepare('DELETE FROM articles WHERE id = 1').run()
+    expect(count('comments')).toBe(0)
+  })
+})

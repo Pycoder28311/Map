@@ -1,4 +1,4 @@
-import type { Message, MessageImport, MessageInput, MessageUpdate } from '@map/shared'
+import type { Message, MessageImport, MessageInput, MessageReply, MessageReplyInput, MessageReplyUpdate, MessageUpdate } from '@map/shared'
 import { request } from './client'
 import { createResourceApi } from './resource'
 
@@ -10,3 +10,6 @@ export const messagesApi = createResourceApi<Message, Message, MessageInput, Mes
 
 /** The article's old messages (title and text in their links) made into rows, in this order */
 export const importMessages = (body: MessageImport) => request<Message[]>('/api/messages/import', { method: 'POST', json: body })
+
+/** The replies under a message (docs/plans/37): the newest come with the message; `list` is "Earlier replies" (`{ messageId }`) */
+export const messageRepliesApi = createResourceApi<MessageReply, MessageReply, MessageReplyInput, MessageReplyUpdate, { messageId: number }>('/api/message-replies')

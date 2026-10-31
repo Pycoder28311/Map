@@ -43,6 +43,12 @@
       "name": "USER_LOOKUP",
       "namespace_id": "2003",
       "simple": { "limit": 20, "period": 60 }
+    },
+    // New comments below an article (POST /api/comments), per signed-in user (docs/plans/37)
+    {
+      "name": "COMMENTS",
+      "namespace_id": "2004",
+      "simple": { "limit": 10, "period": 60 }
     }
   ],
   // Workers Logs: CPU time per request (cpuTimeMs)

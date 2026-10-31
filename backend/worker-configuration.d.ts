@@ -7,6 +7,7 @@ interface __BaseEnv_CloudflareBindings {
 	AUTH_STRICT: RateLimit;
 	API_GENERAL: RateLimit;
 	USER_LOOKUP: RateLimit;
+	COMMENTS: RateLimit;
 	BETTER_AUTH_URL: string;
 	WEB_ORIGINS: string;
 	IMAGES_URL: string;

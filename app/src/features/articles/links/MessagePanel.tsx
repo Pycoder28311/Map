@@ -5,6 +5,7 @@ import IconButton from '../../../components/ui/buttons/IconButton'
 import TreeMenu from '../../../components/ui/tree/TreeMenu'
 import type { TreeMenuGroup } from '../../../components/ui/tree/types'
 import { loadMessage, removeMessage, updateMessage, useMessage } from '../messages/messagesStore'
+import MessageReplies from './MessageReplies'
 
 const DATE = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 
@@ -56,7 +57,7 @@ function Frame({ top, anchor, title, onClose, children, menu }: { top: number; a
 /**
  * A message of the article, opened by clicking its words: a card at the right of the text, level with them, over the text's right side
  * (like the Info box's column). It is read from the server now (once: messagesStore). Its author ("Deleted user" when their account is
- * gone), its date, Done; Edit, Done / Undo and Delete as the server allows. One at a time; ✕ or Esc closes it
+ * gone), its date, Done; Edit, Done / Undo and Delete as the server allows; its replies under it (they came with it). One at a time; ✕ or Esc closes it
  */
 export default function MessagePanel({ id, legacy, articleId, canEditArticle, top, anchor, onClose, onEdit, onRemoveLink }: Props) {
   const state = useMessage(id)
@@ -145,6 +146,7 @@ export default function MessagePanel({ id, legacy, articleId, canEditArticle, to
         {message.done && <span className="ms-1 rounded-full bg-fill px-1.5 text-fg-muted">Done</span>}
       </p>
       {message.content && <p className={`max-h-80 overflow-y-auto text-body whitespace-pre-wrap ${message.done ? 'text-fg-subtle' : 'text-fg-muted'}`}>{message.content}</p>}
+      <MessageReplies message={message} />
       {error && (
         <p role="alert" className="text-small text-danger">
           {error}

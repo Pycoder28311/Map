@@ -92,7 +92,7 @@ npx wrangler d1 create map-db               # copy the database_id into wrangler
 - **Images:** the R2 bucket `growme-images` (custom domain `images.testingggg.lol`) is shared with
   GrowMe. Map writes only under `IMAGES_FOLDER` (`map/img/<uuid>.<ext>`); keys are stored in full in
   the database. Bucket-wide settings (lifecycle rules, CORS, the domain) affect both apps.
-- **Rate limits:** `namespace_id`s are account-wide. Map uses `2001`/`2002`; GrowMe uses
+- **Rate limits:** `namespace_id`s are account-wide. Map uses `2001`–`2004` (`2004`: `COMMENTS`); GrowMe uses
   `1001`/`1002`.
 - **Logs:** `observability` is on: Workers Logs show `cpuTimeMs` per request.
 - **compatibility_date** must not be newer than the installed `workerd` supports (`wrangler dev`

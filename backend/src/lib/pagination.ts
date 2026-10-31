@@ -1,5 +1,5 @@
 import type { Page, PageQuery } from '@map/shared'
-import { lt, type SQL } from 'drizzle-orm'
+import { gt, lt, type SQL } from 'drizzle-orm'
 import type { SQLiteColumn } from 'drizzle-orm/sqlite-core'
 import { HttpError } from './errors'
 
@@ -30,6 +30,10 @@ export const toPageParams = (query: PageQuery): PageParams => ({
 /** WHERE condition for "older than the cursor"; undefined on the first page or without pagination */
 export const beforeCursor = (idColumn: SQLiteColumn, page: PageParams | null): SQL | undefined =>
   page?.cursor ? lt(idColumn, decodeCursor(page.cursor)) : undefined
+
+/** WHERE condition for "newer than the cursor" (oldest-first lists, e.g. a comment's replies); undefined on the first page */
+export const afterCursor = (idColumn: SQLiteColumn, page: PageParams | null): SQL | undefined =>
+  page?.cursor ? gt(idColumn, decodeCursor(page.cursor)) : undefined
 
 /** Rows to fetch: one extra row tells whether there is another page */
 export const fetchLimit = (page: PageParams | null) => (page ? page.limit + 1 : undefined)

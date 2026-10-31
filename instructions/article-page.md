@@ -20,7 +20,8 @@ app/src/features/articles/
 │   ├── StaticSections.tsx   sections drawn as HTML without an editor
 │   ├── staticDom.ts         a position ⇄ a point of the static HTML
 │   └── SectionHandles.tsx   the ⠿ (+ sectionDrag.ts, pure)
-└── sections/                sectionTypes.ts (THE list of section kinds, its groups, placeSection) · SectionMenu.tsx · useSectionMenu.ts
+├── sections/                sectionTypes.ts (THE list of section kinds, its groups, placeSection) · SectionMenu.tsx · useSectionMenu.ts
+└── comments/                THE COMMENTS below the text (plan 37): CommentsSection · CommentCard · CommentModal · commentsStore
 app/src/components/ui/editors/structures.ts   the Word-like structures: places, Tab / Shift+Tab, Enter ends
 app/src/components/ui/editors/blocks.ts       Card, Row / Column, Callout (`<div data-type>`; the server's sanitizer keeps exactly these)
 app/src/components/ui/editors/typeTrigger.ts  a character that opens a menu while typing (`/`, `@`)
@@ -47,6 +48,21 @@ app/src/lib/localStore.ts    the mock stores' base: a JSON value on this device 
   the button under the last row. An empty row becomes the section; otherwise it goes after the caret's section. A row of columns always goes
   at the top of the text. A new kind: one entry there (and, if it is new markup, its node in `blocks.ts` and its rule in the server's sanitizer).
 - **The hint** "Type / for sections and @ for links" shows faintly on the empty row the caret is on.
+
+## Comments (plan 37)
+
+Below the text, in every view (owner, editors, readers, public articles), like social-media posts: every reader writes them. They are
+not the messages (those are on words, in the text, written by editors).
+
+- **Read one level at a time, only when asked for:** the top comments (newest first, 20 a page) when the section comes near the screen
+  (an `IntersectionObserver`); a comment's replies (oldest first) when its "Show 3 replies" is pressed. Opening an article without
+  scrolling to them costs no request. Writes put the server's answer into `commentsStore`: nothing is read again.
+- **Nested up to 5 levels** (`COMMENT_DEPTH`). A reply to a level-5 comment goes beside it (under its parent), starting with `@name`.
+  The server keeps each comment's `depth` and `reply_count`, so neither needs a read of the chain.
+- **The modal** (`CommentModal`): opened by the "Write a comment…" box, Reply or Edit; a small underlined Post (`Button variant="text"`),
+  Ctrl / ⌘ + Enter too. What was written is kept while it is closed (per page). 2000 characters, plain text.
+- **Who:** its author edits it ("edited" shows); its author or the article's owner deletes it, with everything under it (asked first when
+  it has replies). 10 new comments a minute per person (the `COMMENTS` rate limit).
 
 ## Toolbar states
 

@@ -1,6 +1,6 @@
 import { DATA, SHAREABLE } from '@map/shared'
 import { sql } from 'drizzle-orm'
-import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { check, index, integer, sqliteTable, text, uniqueIndex, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core'
 import { createdAt, id, owner, ownedTable, updatedAt } from '../lib/ownedTable'
 import { user } from './auth-schema'
 export * from './auth-schema'
@@ -76,5 +76,56 @@ export const messages = sqliteTable(
     // An article's messages, newest first ("Not in the text")
     index('messages_article_idx').on(t.articleId, t.id),
     check('messages_not_empty', sql`${t.title} <> '' OR ${t.content} <> ''`),
+  ],
+)
+
+/* ─────────────── Replies under a message (docs/plans/37): one flat list, written by the article's editors; they go with the message ─────────────── */
+
+export const messageReplies = sqliteTable(
+  'message_replies',
+  {
+    id: id(),
+    messageId: integer('message_id')
+      .notNull()
+      .references(() => messages.id, { onDelete: 'cascade' }),
+    // The author; null once their account is deleted ("Deleted user")
+    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+    content: text('content').notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    // A message's replies, newest first, a page at a time
+    index('message_replies_message_idx').on(t.messageId, t.id),
+    check('message_replies_not_empty', sql`trim(${t.content}) <> ''`),
+  ],
+)
+
+/* ─────────────── Comments below an article (docs/plans/37): written by its readers; a reply is a comment with a parent ─────────────── */
+
+export const comments = sqliteTable(
+  'comments',
+  {
+    id: id(),
+    articleId: integer('article_id')
+      .notNull()
+      .references(() => articles.id, { onDelete: 'cascade' }),
+    // The author; null once their account is deleted ("Deleted user")
+    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+    // The comment it answers (null: a top comment). Deleting a comment deletes every level under it
+    parentId: integer('parent_id').references((): AnySQLiteColumn => comments.id, { onDelete: 'cascade' }),
+    // 1 (a top comment) to 5: kept, so a reply's level is known without reading its parents
+    depth: integer('depth').notNull().default(1),
+    content: text('content').notNull(),
+    // Its direct replies ("Show 3 replies" without reading them)
+    replyCount: integer('reply_count').notNull().default(0),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    // An article's top comments (parent_id IS NULL, newest first) and a comment's replies (parent_id = ?, oldest first)
+    index('comments_article_idx').on(t.articleId, t.parentId, t.id),
+    check('comments_depth', sql`${t.depth} BETWEEN 1 AND 5`),
+    check('comments_not_empty', sql`trim(${t.content}) <> ''`),
   ],
 )

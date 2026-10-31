@@ -30,6 +30,7 @@ const envSchema = z.object({
   AUTH_STRICT: binding,
   API_GENERAL: binding,
   USER_LOOKUP: binding,
+  COMMENTS: binding,
 })
 
 export type ValidEnv = z.infer<typeof envSchema>

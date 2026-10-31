@@ -57,6 +57,41 @@ export type Message = {
   doneAt: string | null
   createdAt: string
   updatedAt: string
-  /** What the caller may do with it (the server decides) */
-  can: { edit: boolean; done: boolean; remove: boolean }
+  /** Only in GET /api/messages/:id (docs/plans/37): its newest replies, newest first, and the cursor of the earlier ones */
+  replies?: MessageReply[]
+  repliesCursor?: string | null
+  /** What the caller may do with it (the server decides). `reply`: write a reply under it (the article's editors and owner) */
+  can: { edit: boolean; done: boolean; remove: boolean; reply: boolean }
+}
+
+/* ─────────────── Replies under a message (docs/plans/37): one flat list, written by the article's editors and owner ─────────────── */
+
+/** The longest reply */
+export const MESSAGE_REPLY_MAX = 2000
+/** Replies read at once (with the message, and each "Earlier replies") */
+export const MESSAGE_REPLIES_PAGE = 20
+
+const replyContent = z.string().trim().min(1).max(MESSAGE_REPLY_MAX)
+
+/** POST /api/message-replies */
+export const messageReplyInput = z.object({ messageId: entityId, content: replyContent })
+export type MessageReplyInput = z.input<typeof messageReplyInput>
+
+/** PATCH /api/message-replies/:id: its text (its author, while they can edit the article) */
+export const messageReplyUpdate = z.object({ content: replyContent })
+export type MessageReplyUpdate = z.infer<typeof messageReplyUpdate>
+
+/** GET /api/message-replies?messageId=&cursor=: a message's earlier replies, newest first */
+export const messageReplyFilter = z.object({ messageId: queryId })
+export type MessageReplyFilter = z.infer<typeof messageReplyFilter>
+
+export type MessageReply = {
+  id: number
+  messageId: number
+  /** null: the author's account was deleted */
+  author: Author | null
+  content: string
+  createdAt: string
+  updatedAt: string
+  can: { edit: boolean; remove: boolean }
 }
