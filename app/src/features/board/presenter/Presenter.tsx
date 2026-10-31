@@ -4,7 +4,7 @@ import Button from '../../../components/ui/buttons/Button'
 import IconButton from '../../../components/ui/buttons/IconButton'
 import { mapName, reorderMaps, useMaps } from '../../maps/maps'
 import { useWorkspace } from '../../workspace/useWorkspace'
-import { getBoard } from '../boardStore'
+import { getBoard, loadBoard, useBoardsChanged } from '../boardStore'
 import { siblingMaps } from '../branches'
 import { thumbnailOf } from '../snapshot'
 import BoardCanvas from './BoardCanvas'
@@ -44,6 +44,12 @@ export default function Presenter({ mapId, onClose }: { mapId: string; onClose: 
 
   const current = Math.max(0, maps.findIndex((m) => m.id === currentId))
   const go = (i: number) => maps[i] && setCurrentId(maps[i].id)
+  // The maps beside the current one are read from the server when they come near (once each: boardStore), not all at once
+  useBoardsChanged()
+  const nearIds = maps.filter((_, i) => Math.abs(i - current) <= 1).map((m) => m.id).join(',')
+  useEffect(() => {
+    for (const id of nearIds.split(',')) if (id) void loadBoard(id)
+  }, [nearIds])
 
   const reorder = (from: number, to: number) => {
     const ids = moveItem(maps.map((m) => m.id), from, to)

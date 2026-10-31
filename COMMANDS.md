@@ -19,6 +19,8 @@ The 5 commands you need most. Paths are relative to the repo root (`Map/`).
   `/api` request answers `500 SERVER_MISCONFIGURED`.
 - **4:** read the new SQL file in `backend/drizzle/` before the `--remote` line, and apply it
   before deploying code that uses the new table.
+- **Once, before the first deploy with maps on the server:** `npx wrangler r2 bucket create map-boards` in `Map/backend/` (the
+  private bucket of the map files; never give it a public domain).
 - **5:** pushing to GitHub does the same automatically through Workers Builds, once its settings
   point to the repo root (see `instructions/backend-setup.md` §6).
 

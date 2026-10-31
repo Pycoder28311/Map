@@ -27,7 +27,10 @@ import { toolOfKey, type ToolId } from './tools'
 import { LAYER_MAIN, type BoardObject, type BorderObject, type LineObject, type Point, type PointObject } from './types'
 import { BOARD, boardToScreen, clampToBoard, insideBoard, screenToBoard, zoomFactorOf, type Size } from './viewport'
 import LinkPickBar from './LinkPickBar'
+import MapConflictModal from './MapConflictModal'
 import MapTitleBar, { type LeftPanel } from './MapTitleBar'
+import { useMapSave } from './useMapSave'
+import { useMoveLocalNotes } from '../notes/attachedNotes'
 import PointCard from './PointCard'
 import { clearSelection, select, useSelection } from './selection'
 import { buttonsFor, type BoxAction } from './selectionButtons'
@@ -100,6 +103,10 @@ function Marquee({
  */
 export default function BoardEditor({ mapId }: { mapId: string }) {
   const board = useBoard(mapId)
+  // Save (the title bar's button, Ctrl/⌘+S): the only way the board reaches the server
+  const saver = useMapSave(mapId)
+  // Notes this device connected to the map before the server kept them: attached there now, once
+  useMoveLocalNotes('map', Number(mapId))
   const root = useRef<HTMLDivElement>(null)
   const outer = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
@@ -484,7 +491,10 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
     }
     if (tool === 'border' && draw.handleKey(key, e.altKey)) return e.preventDefault()
     if (mod) {
-      if (key === 'd' && mouse.selected.length > 0) {
+      if (key === 's' && !visitor) {
+        e.preventDefault()
+        void saver.save()
+      } else if (key === 'd' && mouse.selected.length > 0) {
         e.preventDefault()
         mouse.duplicateSelected()
       } else if (key === 'a') {
@@ -782,8 +792,10 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
             onUse={mouse.lockPrompt}
           />
         )}
+        {saver.conflict !== null && <MapConflictModal onKeepMine={saver.keepMine} onUseSaved={saver.useSaved} />}
         <MapTitleBar
           mapId={mapId}
+          save={visitor ? undefined : saver}
           editorWidth={fullSize?.w}
           panel={leftPanel}
           onPanel={(next) => {

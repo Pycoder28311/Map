@@ -1,7 +1,11 @@
-// MOCK DATA: each map's board (what is drawn on it), in memory. Nothing is saved: a reload starts empty.
-// Replaced by API calls later (same function names, async then); the UI only uses what's exported here.
-// Every change makes new objects and arrays, so an earlier board stays as it was (undo can keep it).
-import { useSyncExternalStore } from 'react'
+// Each map's board (what is drawn on it), in memory while it is edited. It is read from its file on the server once when the map
+// opens (loadBoard) and written back only when Save is pressed (saveBoard; docs/plans/38). The UI only uses what's exported here.
+// Every change makes new objects and arrays, so an earlier board stays as it was (undo can keep it), and "unsaved" is simply
+// "not the board that was saved" (a reference compare: undoing back to it is saved again).
+import { useEffect, useSyncExternalStore } from 'react'
+import { ApiError } from '../../lib/api/client'
+import { getMapFile, saveMapFile } from '../../lib/api/maps'
+import { boardFromFile, boardToFile } from '../projects/compress'
 import { applyChange, type Change, type Draft, type Patch } from './changes'
 import { emptyBoard, LAYER_BACKGROUND, LAYER_MAIN, type Board, type BoardObject, type Layer } from './types'
 
@@ -21,10 +25,131 @@ let histories = new Map<string, History>()
 
 const historyOf = (mapId: string) => histories.get(mapId) ?? NO_HISTORY
 
+const notify = () => listeners.forEach((listener) => listener())
+
 function replace(mapId: string, board: Board, history: History) {
   boards = new Map(boards).set(mapId, board)
   histories = new Map(histories).set(mapId, history)
-  listeners.forEach((listener) => listener())
+  notify()
+}
+
+/* ─────────────── The server's file (docs/plans/38) ─────────────── */
+
+/** Where a map's board is: being read, read, failed, or gone (deleted, or not the user's) */
+export type BoardLoad = { status: 'loading' } | { status: 'ready' } | { status: 'error'; error: string } | { status: 'gone' }
+const IDLE: BoardLoad = { status: 'loading' }
+let loads = new Map<string, BoardLoad>()
+/** The board the server has (the one read or last saved) and its file's version */
+let saved = new Map<string, { board: Board; version: number }>()
+/** The maps whose Save is on its way */
+let saving = new Set<string>()
+
+/** Another version of the map was saved since this one was read (another tab or device): its number */
+export class MapConflict extends Error {
+  version: number
+  constructor(version: number) {
+    super('A newer version of this map was saved')
+    this.version = version
+  }
+}
+
+function setLoad(mapId: string, load: BoardLoad) {
+  loads = new Map(loads).set(mapId, load)
+  notify()
+}
+
+/** Takes `board` as the server's, at `version`: shown with no steps back, and saved */
+export function markSaved(mapId: string, board: Board, version: number) {
+  saved = new Map(saved).set(mapId, { board, version })
+  loads = new Map(loads).set(mapId, { status: 'ready' })
+  replace(mapId, board, { past: [], future: [] })
+}
+
+/** Reads the map's file once (two calls at the same time are one request); `force`: read it again (Try again, or the saved one after a conflict) */
+export async function loadBoard(mapId: string, force = false) {
+  const known = loads.get(mapId)
+  if (known && (known.status === 'loading' || (!force && known.status !== 'error'))) return
+  setLoad(mapId, { status: 'loading' })
+  try {
+    const { file, version } = await getMapFile(mapId)
+    markSaved(mapId, file ? await boardFromFile(file) : emptyBoard(), version)
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) setLoad(mapId, { status: 'gone' })
+    else setLoad(mapId, { status: 'error', error: error instanceof Error ? error.message : 'The map could not be read' })
+  }
+}
+
+/** The map's board read from the server when it is not yet (null id: none) */
+export function useBoardLoad(mapId: string | null): BoardLoad {
+  const load = useSyncExternalStore(subscribeBoards, () => (mapId === null ? IDLE : (loads.get(mapId) ?? IDLE)))
+  useEffect(() => {
+    if (mapId !== null) void loadBoard(mapId)
+  }, [mapId])
+  return load
+}
+
+/** Changes not saved yet (a map that was never read has none) */
+export function isDirty(mapId: string) {
+  const known = saved.get(mapId)
+  return !!known && getBoard(mapId) !== known.board
+}
+
+export const isSaving = (mapId: string) => saving.has(mapId)
+
+/** Whether the map has changes not saved, and whether its Save is on its way */
+export function useSaveState(mapId: string) {
+  const dirty = useSyncExternalStore(subscribeBoards, () => isDirty(mapId))
+  const busy = useSyncExternalStore(subscribeBoards, () => isSaving(mapId))
+  return { dirty, saving: busy }
+}
+
+/**
+ * Saves the board as it is now (Save): its file over the version that was read. Changes made while it is on its way stay unsaved.
+ * Another version saved since: MapConflict (takeServers / saveOver decide)
+ */
+export async function saveBoard(mapId: string) {
+  const known = saved.get(mapId)
+  if (!known || saving.has(mapId)) return
+  const board = getBoard(mapId)
+  saving = new Set(saving).add(mapId)
+  notify()
+  try {
+    const result = await saveMapFile(mapId, await boardToFile(board), known.version)
+    saved = new Map(saved).set(mapId, { board, version: result.version })
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 409) {
+      throw new MapConflict(Number(error.details.find((d) => d.path === 'version')?.message ?? known.version))
+    }
+    throw error
+  } finally {
+    const next = new Set(saving)
+    next.delete(mapId)
+    saving = next
+    notify()
+  }
+}
+
+/** After a conflict: Save mine over the newer version (the next save replaces `version`) */
+export async function saveOver(mapId: string, version: number) {
+  const known = saved.get(mapId)
+  if (!known) return
+  saved = new Map(saved).set(mapId, { ...known, version })
+  await saveBoard(mapId)
+}
+
+/** After a conflict: take the saved one (what was not saved here is dropped) */
+export const takeServers = (mapId: string) => loadBoard(mapId, true)
+
+/** Some map has changes not saved */
+export const anyDirty = () => [...saved.keys()].some(isDirty)
+
+// Leaving the page with changes not saved asks first (Save is the only way they reach the server)
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', (e) => {
+    if (!anyDirty()) return
+    e.preventDefault()
+    e.returnValue = ''
+  })
 }
 
 // Every change is one step back, and ends the steps forward
@@ -43,6 +168,9 @@ export function subscribeBoards(listener: () => void) {
 export const getBoard = (mapId: string): Board => boards.get(mapId) ?? EMPTY
 
 export const useBoard = (mapId: string) => useSyncExternalStore(subscribeBoards, () => getBoard(mapId))
+
+/** Changes whenever any board does (a screen that shows several maps: the presenter) */
+export const useBoardsChanged = () => useSyncExternalStore(subscribeBoards, () => boards)
 
 // Only the board's images belong on the background layer, and they don't exist yet
 function checkLayer(layer: Layer) {
@@ -101,21 +229,30 @@ export function changeObjects(mapId: string, change: Change): number[] {
   return result.added
 }
 
-/** Gives `to` a copy of `from`'s board with a fresh history (boards never change, so they can share their objects) */
-export function copyBoard(from: string, to: string) {
+/** Gives `to` a copy of `from`'s board with a fresh history (boards never change, so they can share their objects); `version`: it is already the server's file at that version (a branch) */
+export function copyBoard(from: string, to: string, version?: number) {
+  if (version !== undefined) return markSaved(to, getBoard(from), version)
   replace(to, getBoard(from), { past: [], future: [] })
 }
 
 /** Forgets a deleted map's board and history */
 export function dropBoard(mapId: string) {
-  if (!boards.has(mapId)) return
+  if (!boards.has(mapId)) return forgetFile(mapId)
   const nextBoards = new Map(boards)
   nextBoards.delete(mapId)
   const nextHistories = new Map(histories)
   nextHistories.delete(mapId)
   boards = nextBoards
   histories = nextHistories
-  listeners.forEach((listener) => listener())
+  forgetFile(mapId)
+  notify()
+}
+
+function forgetFile(mapId: string) {
+  saved = new Map(saved)
+  saved.delete(mapId)
+  loads = new Map(loads)
+  loads.delete(mapId)
 }
 
 /** Goes back one step (nothing happens with none left) */
@@ -141,5 +278,8 @@ export const useCanRedo = (mapId: string) => useSyncExternalStore(subscribeBoard
 export function resetBoards() {
   histories = new Map()
   boards = new Map()
+  saved = new Map()
+  loads = new Map()
+  saving = new Set()
   listeners.forEach((listener) => listener())
 }

@@ -8,6 +8,7 @@ interface __BaseEnv_CloudflareBindings {
 	API_GENERAL: RateLimit;
 	USER_LOOKUP: RateLimit;
 	COMMENTS: RateLimit;
+	BOARDS: R2Bucket;
 	BETTER_AUTH_URL: string;
 	WEB_ORIGINS: string;
 	IMAGES_URL: string;

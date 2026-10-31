@@ -27,6 +27,7 @@ const envSchema = z.object({
   // bindings
   DB: binding,
   BUCKET: binding,
+  BOARDS: binding,
   AUTH_STRICT: binding,
   API_GENERAL: binding,
   USER_LOOKUP: binding,

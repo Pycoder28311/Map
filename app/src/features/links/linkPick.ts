@@ -1,7 +1,9 @@
-// Linking a board object to sidebar notes: while it is on, the sidebar's note rows show a link icon that links / unlinks
-// the object. A tiny store (like features/select) so the editor and the sidebar, far apart in the tree, share it.
+// Linking a board object to sidebar items: while it is on, the sidebar stays open so its rows can be picked. A tiny store (like
+// features/select) so the editor and the sidebar, far apart in the tree, share it. Other items are links in the map's file; a note
+// is attached to the node instead (one thing at a time, kept by the note: docs/plans/38).
 import { useSyncExternalStore } from 'react'
 import { getBoard, updateObject } from '../board/boardStore'
+import { attachNote, isAttachedTo, type Note } from '../notes/attachedNotes'
 
 export type LinkPick = { mapId: string; objectId: number }
 
@@ -43,4 +45,14 @@ export function toggleSidebarLink(mapId: string, objectId: number, id: string) {
   updateObject(mapId, objectId, {
     links: linked ? object.links.filter((l) => !(l.to === 'sidebar' && l.id === id)) : [...object.links, { to: 'sidebar', id }],
   })
+}
+
+/* ─────────────── Notes (docs/plans/38): a note is attached to the node itself, not linked in the file ─────────────── */
+
+/** Whether the note is attached to this node of the map */
+export const isNoteLinked = (mapId: string, objectId: number, note: Note) => isAttachedTo(note, { type: 'map', id: Number(mapId), node: objectId })
+
+/** Attaches the note to the node (it leaves wherever it was: one thing at a time), or detaches it when it was this node's. One update of the note, not an undo step of the map */
+export function toggleNoteLink(mapId: string, objectId: number, note: Note) {
+  return attachNote(note.id, isNoteLinked(mapId, objectId, note) ? null : { type: 'map', id: Number(mapId), node: objectId })
 }

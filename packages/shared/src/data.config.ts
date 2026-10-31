@@ -41,6 +41,8 @@ export const DATA = defineTables({
     preview: 'content',
     requireOneOf: ['title', 'content'],
     link: PARENT,
+    // What the note is about (docs/plans/38): one map (or a node of it) or one article at most
+    attach: { types: { map: 'maps', article: 'articles' } },
   },
   folders: {
     access: 'owner',
@@ -70,6 +72,15 @@ export const DATA = defineTables({
     preview: 'content',
     requireOneOf: ['title', 'content'],
     link: PARENT,
+  },
+  // A map (docs/plans/38): its name and its branch group here; everything drawn on it is one file in R2 (the `maps` routes), whose
+  // key and version are columns of the backend's own (not fields: no client writes them). The owner's only for now
+  maps: {
+    access: 'owner',
+    order: ORDERED,
+    // branchOf: the first map of its branch group (0: not a branch); set by the branch route (features/board/branches.ts)
+    fields: { title: field.text(200), branchOf: field.int() },
+    requireOneOf: ['title'],
   },
   // A saved pane layout (the sidebar's Layouts section): its shape, its up to four panes and its lines. Newest first. Archived = in the
   // Trash. No screen of its own: only the Trash shows it besides the Layouts section (resources.config.ts)

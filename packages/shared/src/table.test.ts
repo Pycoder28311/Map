@@ -27,7 +27,7 @@ describe('names', () => {
     expect(snakeCase('objectCards')).toBe('object_cards')
     expect(kebabCase('objectCards')).toBe('object-cards')
     expect(DATA.objectCards).toMatchObject({ name: 'objectCards', tableName: 'object_cards', path: 'object-cards' })
-    expect(TABLE_NAMES).toEqual(['projects', 'notes', 'folders', 'articles', 'objectCards', 'layouts'])
+    expect(TABLE_NAMES).toEqual(['projects', 'notes', 'folders', 'articles', 'objectCards', 'maps', 'layouts'])
   })
   it('filters by parent where the table has a link, unless it says otherwise', () => {
     expect(DATA.folders.listFilters).toEqual(['archived', 'link'])
@@ -79,6 +79,35 @@ describe('filter', () => {
     expect(DATA.folders.filter.safeParse({ objectId: '5' }).success).toBe(false)
     expect(DATA.folders.filter.safeParse({ objectType: 'none', objectId: '5' }).success).toBe(false)
     expect(DATA.folders.filter.safeParse({ objectType: 'note' }).success).toBe(false)
+  })
+})
+
+describe('attach (docs/plans/38)', () => {
+  it('a note is attached to one map (or a node of it) or one article: the three fields together', () => {
+    const ok = (v: object) => DATA.notes.update.safeParse(v).success
+    expect(ok({ attachedType: 'map', attachedId: 3, attachedNode: 7 })).toBe(true)
+    expect(ok({ attachedType: 'map', attachedId: 3, attachedNode: null })).toBe(true)
+    expect(ok({ attachedType: 'article', attachedId: 3, attachedNode: null })).toBe(true)
+    expect(ok({ attachedType: null, attachedId: null, attachedNode: null })).toBe(true)
+    expect(ok({ attachedType: 'article', attachedId: 3, attachedNode: 7 })).toBe(false)
+    expect(ok({ attachedType: 'map', attachedId: null, attachedNode: null })).toBe(false)
+    expect(ok({ attachedType: 'map', attachedId: 3 })).toBe(false)
+    expect(ok({ attachedType: 'folder', attachedId: 3, attachedNode: null })).toBe(false)
+    // Only notes have it
+    expect(DATA.articles.input.parse({ title: 't', attachedType: 'map', attachedId: 1, attachedNode: null })).toEqual({ title: 't' })
+  })
+  it('filters by what a note is attached to', () => {
+    expect(DATA.notes.filter.parse({ attachedType: 'map', attachedId: '3' })).toEqual({ archived: false, attachedType: 'map', attachedId: 3 })
+    expect(DATA.notes.filter.parse({ attachedType: 'map', attachedId: '3', attachedNode: 'none' })).toMatchObject({ attachedNode: 'none' })
+    expect(DATA.notes.filter.parse({ attachedType: 'map', attachedId: '3', attachedNode: '9' })).toMatchObject({ attachedNode: 9 })
+    expect(DATA.notes.filter.safeParse({ attachedId: '3' }).success).toBe(false)
+    expect(DATA.notes.filter.safeParse({ attachedType: 'article', attachedId: '3', attachedNode: '9' }).success).toBe(false)
+  })
+  it('matches the map itself with attachedNode none', () => {
+    const note = { archived: false, attachedType: 'map', attachedId: 3, attachedNode: null }
+    expect(matchesFilter({ attachedType: 'map', attachedId: 3, attachedNode: 'none' }, note)).toBe(true)
+    expect(matchesFilter({ attachedType: 'map', attachedId: 3, attachedNode: 'none' }, { ...note, attachedNode: 2 })).toBe(false)
+    expect(matchesFilter({ attachedType: 'map', attachedId: 3 }, { ...note, attachedNode: 2 })).toBe(true)
   })
 })
 

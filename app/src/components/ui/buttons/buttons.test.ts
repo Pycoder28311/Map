@@ -27,6 +27,7 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
   'features/board/BranchesPopout.tsx': { count: 1, why: 'list rows' },
   'features/board/ForwardLink.tsx': { count: 1, why: 'list rows' },
   'features/board/LayersPanel.tsx': { count: 1, why: 'list rows' },
+  'features/board/MapNotesPanel.tsx': { count: 1, why: 'list rows (a note)' },
   'features/board/MapPicker.tsx': { count: 2, why: "list rows, and the map's title that opens them" },
   'features/board/PinPicker.tsx': { count: 1, why: 'options of a picker' },
   'features/board/search/SearchResult.tsx': { count: 1, why: 'a result row (opens it inside the list)' },

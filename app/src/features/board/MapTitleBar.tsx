@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { LuCamera, LuGitBranch, LuLayers, LuPencil, LuSearch, LuX } from 'react-icons/lu'
+import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
 import TreeMenu from '../../components/ui/tree/TreeMenu'
 import { mapName, renameMap, useMaps } from '../maps/maps'
@@ -8,13 +9,15 @@ import { getBoard } from './boardStore'
 import BranchesPopout from './BranchesPopout'
 import { FLOAT, ROUNDER, usePeekShift } from './floating'
 import LayersPanel from './LayersPanel'
+import MapNotesPanel from './MapNotesPanel'
 import MapPicker from './MapPicker'
 import MapSearchPanel from './search/MapSearchPanel'
 import { snapshotBlob } from './snapshot'
 import { useCurrentBranch } from './useCurrentBranch'
+import type { MapSave } from './useMapSave'
 
-/** What the left panel shows under the title bar, as tall as the editor: the search, or the layers; null: the bar alone */
-export type LeftPanel = 'search' | 'layers' | null
+/** What the left panel shows under the title bar, as tall as the editor: the search, the notes or the layers; null: the bar alone */
+export type LeftPanel = 'search' | 'layers' | 'notes' | null
 
 /** How long the screenshot's error stays (ms) */
 const ERROR_MS = 6000
@@ -33,6 +36,8 @@ async function downloadScreenshot(mapId: string, name: string) {
 
 type Props = {
   mapId: string
+  /** The map's Save (none for a visitor): shown while there are changes not saved */
+  save?: MapSave
   editorWidth?: number
   panel: LeftPanel
   onPanel: (panel: LeftPanel) => void
@@ -43,11 +48,12 @@ type Props = {
 }
 
 /**
- * Top left: the search button, the map's name (a click lists the maps, MapPicker) and a ⋯ with everything that changes the map: Rename
- * (the name becomes an input: Enter or leaving it renames, Esc undoes), Branches, Layers, Screenshot. Search and Layers make the floating
+ * Top left: the map's name (a click lists the maps, MapPicker; a dot beside it while there are changes not saved), Save (while there
+ * are any), the Notes button, the search button and a ⋯ with everything that changes the map: Rename
+ * (the name becomes an input: Enter or leaving it renames, Esc undoes), Branches, Layers, Screenshot. Search, Notes and Layers make the floating
  * bar the top of a panel as tall as the editor (`panel`)
  */
-export default function MapTitleBar({ mapId, editorWidth, panel, onPanel, onPickObject, onShowObject }: Props) {
+export default function MapTitleBar({ mapId, save, editorWidth, panel, onPanel, onPickObject, onShowObject }: Props) {
   const shift = usePeekShift()
   // Never reaches the tool panel: it is right-aligned (25rem wide with its gaps) or centred (half of it, 13.5rem, plus the gaps).
   // Measured on the whole editor, sidebar included (`--editor-w`), not on the board's area: that one changes while a sidebar opens, and the bar must not
@@ -102,15 +108,10 @@ export default function MapTitleBar({ mapId, editorWidth, panel, onPanel, onPick
       className={`pointer-events-none absolute start-3 top-3 flex flex-col gap-2 ${panel ? 'bottom-16 w-96 max-w-[calc(100%-1.5rem)]' : fit} ${shift}`}
     >
       <div className={`pointer-events-auto relative flex h-12.5 shrink-0 items-center gap-0.5 self-start ps-1.5 pe-1.5 ${fit} ${FLOAT} ${ROUNDER}`}>
-        <IconButton
-          icon={panel === 'search' ? LuX : LuSearch}
-          label={panel === 'search' ? 'Close the search' : 'Search this map'}
-          aria-expanded={panel === 'search'}
-          onClick={() => toggle('search')}
-        />
         {draft === null ? (
-          <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 items-center gap-1">
             <MapPicker mapId={mapId} name={mapName(title)} />
+            {save?.dirty && <span role="status" aria-label="Changes not saved" title="Changes not saved" className="size-2 shrink-0 rounded-full bg-accent" />}
           </div>
         ) : (
           <input
@@ -133,6 +134,20 @@ export default function MapTitleBar({ mapId, editorWidth, panel, onPanel, onPick
             className="min-w-0 flex-1 rounded-(--btn-close-radius) bg-transparent px-2 text-heading outline-none focus-visible:outline-2 focus-visible:outline-accent"
           />
         )}
+        {save && (save.dirty || save.saving) && (
+          <Button variant="text" size="sm" disabled={save.saving} onClick={() => void save.save()} title="Save the map (Ctrl+S)">
+            {save.saving ? 'Saving…' : 'Save'}
+          </Button>
+        )}
+        <Button variant="text" size="sm" aria-expanded={panel === 'notes'} aria-pressed={panel === 'notes'} onClick={() => toggle('notes')}>
+          Notes
+        </Button>
+        <IconButton
+          icon={panel === 'search' ? LuX : LuSearch}
+          label={panel === 'search' ? 'Close the search' : 'Search this map'}
+          aria-expanded={panel === 'search'}
+          onClick={() => toggle('search')}
+        />
         <TreeMenu
           label={`More: ${mapName(title)}`}
           groups={[
@@ -146,9 +161,9 @@ export default function MapTitleBar({ mapId, editorWidth, panel, onPanel, onPick
         />
         <BranchesPopout mapId={mapId} open={branches} onOpenChange={setBranches} />
       </div>
-      {error && (
+      {(error || save?.error) && (
         <p role="alert" className={`pointer-events-auto px-3 py-2 text-small text-danger ${FLOAT}`}>
-          {error}
+          {error ?? save?.error}
         </p>
       )}
       {panel === 'search' && (
@@ -159,6 +174,7 @@ export default function MapTitleBar({ mapId, editorWidth, panel, onPanel, onPick
           onClose={() => onPanel(null)}
         />
       )}
+      {panel === 'notes' && <MapNotesPanel mapId={mapId} onClose={() => onPanel(null)} />}
       {panel === 'layers' && <LayersPanel mapId={mapId} onPick={onPickObject} onClose={() => onPanel(null)} />}
     </div>
   )

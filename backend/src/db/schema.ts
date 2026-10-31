@@ -12,6 +12,17 @@ export const notes = ownedTable(DATA.notes)
 export const folders = ownedTable(DATA.folders)
 export const articles = ownedTable(DATA.articles)
 export const objectCards = ownedTable(DATA.objectCards)
+// A map's board is one file in R2 (docs/plans/38): which one, its version (a save says which it replaces) and where the map was branched from
+export const maps = ownedTable(DATA.maps, {
+  // null: never saved (an empty board)
+  fileKey: text('file_key'),
+  fileVersion: integer('file_version').notNull().default(0),
+  fileSize: integer('file_size').notNull().default(0),
+  savedAt: integer('saved_at', { mode: 'timestamp' }),
+  // The map it was branched from and that map's version then (no foreign key: it may be deleted)
+  forkedFrom: integer('forked_from'),
+  forkedVersion: integer('forked_version'),
+})
 export const layouts = ownedTable(DATA.layouts)
 
 /* ─────────────── Images: files in R2 (under IMAGES_FOLDER), one row per file. Notes show them as <img> in their text (no link to this table); other tables link them with their own link tables ─────────────── */

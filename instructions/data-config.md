@@ -8,7 +8,7 @@ search, Recent) is generic code that reads them. A change to the data structure 
 |---|---|
 | `packages/shared/src/data.config.ts` | **Data:** each table's fields, who may access it, list order, list filters, parent link, preview |
 | `app/src/resources/resources.config.ts` | **Screens:** each table's names, icon, panel type, card look, field labels, which screens it is on |
-| `app/src/resources/mock.config.ts` | Tables that have no server table yet (the maps): same shape as the data config, kept in memory |
+| `app/src/resources/mock.config.ts` | Tables that have no server table yet (none now: the maps moved to the server, docs/plans/38): same shape as the data config, kept in memory |
 
 The design is in `docs/plans/26-config-driven-tables.md`. Backend rules that still apply (owner checks, errors, secrets) are in
 `adding-a-resource.md`.
@@ -168,6 +168,22 @@ each type to the table it is: `{ project: 'projects', folder: 'folders' }`.
   a parent keeps them as they are; the Dashboard shows them in the Orphans row while it is in the Trash.
 - **A new kind of parent:** add it to `PARENT.types` in `data.config.ts` (and, for a table of its own, give that table a `link` to nest it).
 
+### Attached to one thing (notes: docs/plans/38)
+
+A table with an `attach` (only `notes`: `{ map: 'maps', article: 'articles' }`) says what each row is about: `attachedType` +
+`attachedId`, and for a map `attachedNode` (a node of its board file; `null`: the map itself). It is not the sidebar parent (`link`):
+a note stays in its project or folder and is attached to one thing at most.
+
+- **Columns:** `attached_type`, `attached_id`, `attached_node`, nullable, no CHECK and no foreign key (zod checks them; they point at
+  several tables), and one partial index of the attached rows only: `notes_attached_idx (user_id, attached_type, attached_id,
+  attached_node) WHERE attached_type IS NOT NULL`.
+- **Read:** `GET /api/notes?attachedType=map&attachedId=5` (a map's own and its nodes' notes; `&attachedNode=7` one node, `=none` the
+  map itself). In the app: `useAttachedNotes(target)` (`features/notes/attachedNotes.ts`), one list per page, grouped by `byNode`.
+- **Attach, move, detach:** one update with the three fields (`attachNote(id, target | null)`); the lists on screen follow.
+- **What the server checks** (only when a write sets them): a map must be the user's, an article one they can read. A node is not checked.
+  The three fields are the owner's only (an editor of a shared note can't move it; others don't see them).
+- **Deleting the thing changes nothing** in its notes: ids are never given again, so they are simply attached to nothing that exists.
+
 ### Order (position) and reordering
 
 - **`position` is a string:** a fractional-indexing key (`a0`, `a1`, `a0V`…), compared byte by byte (never `localeCompare`). Lists are
@@ -242,7 +258,8 @@ each type to the table it is: `{ project: 'projects', folder: 'folders' }`.
   a hand-written router like `images` (see `adding-a-resource.md`, "Routes that are not plain CRUD").
 - **Its own panel:** `panel: { load: () => import('…'), fill: true }` in the UI config (the maps' board; the articles' page,
   `features/articles/ArticlePanel.tsx`, without `fill`). It then opens as a page, not in the modal.
-- **Side effects of copy / delete:** `effects: { copied(from, to), deleted(id) }` in the UI config (the maps copy and drop their board).
+- **Side effects of copy / delete:** `effects: { copied(from, to), deleted(id) }` in the UI config (a map's file is copied on the server, its board dropped).
+- **Columns no client writes:** `ownedTable(DATA.x, { …extra columns })` in `schema.ts` (a map's `file_key`, `file_version`…); `RepoOverrides.removed(ctx, row)` runs after a row is deleted for good (a map's file in R2).
 
 ### Move a mock table to the server
 

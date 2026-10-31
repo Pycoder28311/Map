@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { LuExternalLink, LuLink, LuPlus, LuStickyNote, LuTrash2, LuUnlink } from 'react-icons/lu'
 import IconButton from '../../../components/ui/buttons/IconButton'
 import LinkButton from '../../../components/ui/buttons/LinkButton'
@@ -7,17 +7,15 @@ import TextField from '../../../components/ui/fields/TextField'
 import ResourceDeleteDialog from '../../../components/ui/resource/ResourceDeleteDialog'
 import TreeMenu from '../../../components/ui/tree/TreeMenu'
 import type { TreeMenuGroup } from '../../../components/ui/tree/types'
-import { useResourceActions, useResourceItem, useResourceList } from '../../../lib/resource/hooks'
+import { useResourceActions, useResourceList } from '../../../lib/resource/hooks'
 import { resourceByName } from '../../../resources/registry'
 import type { AnyResource } from '../../../resources/types'
 import { useOptionalItemModal } from '../../items/ItemModal'
 import CardFace from '../../dashboard/cards/cardFaces'
 import { ON_HOVER } from '../../dashboard/cards/cardStyles'
 import { fold } from '../../search/search'
+import { attachFields, attachNote, useAttachedNotes, type Note } from '../../notes/attachedNotes'
 import { useWorkspace } from '../../workspace/useWorkspace'
-import { useArticleNotes } from './articleNotes'
-
-type Note = Record<string, unknown> & { id: number | string }
 type Row = { id: string; title: string }
 
 const rowOf = (notes: AnyResource, item: Note): Row => ({ id: String(item.id), title: notes.ui.row.title(item) })
@@ -47,32 +45,19 @@ function CardRow({ children }: { children: ReactNode }) {
   return <div className="flex snap-x gap-2 overflow-x-auto pb-1">{children}</div>
 }
 
-/** A connected note, read by its id; one that is gone is disconnected */
-function ConnectedNote({ notes, id, onOpen, onDisconnect, onDelete }: { notes: AnyResource; id: string; onOpen: () => void; onDisconnect: () => void; onDelete: (row: Row) => void }) {
-  const { item, notFound } = useResourceItem(notes, id)
-  useEffect(() => {
-    if (notFound) onDisconnect()
-  }, [notFound, onDisconnect])
-  if (!item) return <p className="w-48 shrink-0 px-2 py-1 text-small text-fg-subtle">{notFound ? 'Gone' : 'Loading…'}</p>
-  const row = rowOf(notes, item as Note)
-  return (
-    <NoteCard
-      notes={notes}
-      item={item as Note}
-      onOpen={onOpen}
-      menu={[[{ label: 'Open', icon: LuExternalLink, onClick: onOpen }, { label: 'Disconnect', icon: LuUnlink, onClick: onDisconnect }], [{ label: 'Delete', icon: LuTrash2, danger: true, onClick: () => onDelete(row) }]]}
-    />
-  )
-}
-
 /**
- * Notes (the round button on the body's left edge): the notes connected to this article, a way to make a new one (connected at once), then
- * all the other notes, to connect. Each opens in the note modal, where it is edited; it can be disconnected or deleted. The connections
- * are on this device for now (articleNotes.ts); the notes are the real ones
+ * Notes (the round button on the body's left edge): the notes attached to this article (docs/plans/38: the note keeps it, one thing at
+ * a time), a way to make a new one (attached at once), then all the other notes, to connect: one attached somewhere else moves here.
+ * Each opens in the note modal, where it is edited; it can be disconnected or deleted. Deleting the article leaves its notes as they are
  */
 export default function NotesPanel({ articleId }: { articleId: string }) {
   const notes = resourceByName('notes')!
-  const { ids, connect, disconnect } = useArticleNotes(articleId)
+  const target = { type: 'article' as const, id: Number(articleId) }
+  const attached = useAttachedNotes(target)
+  const connected = attached.items as Note[]
+  const ids = connected.map((note) => String(note.id))
+  const connect = (id: string) => void attachNote(id, target)
+  const disconnect = (id: string) => void attachNote(id, null)
   const actions = useResourceActions(notes)
   const others = useResourceList(notes, { limit: 20 })
   const itemModal = useOptionalItemModal()
@@ -89,8 +74,7 @@ export default function NotesPanel({ articleId }: { articleId: string }) {
     if (!name) return
     setError(null)
     try {
-      const note = (await actions.create({ title: name } as never)) as Note
-      connect(String(note.id))
+      const note = (await actions.create({ title: name, ...attachFields(target) } as never)) as Note
       setTitle('')
       open(String(note.id))
     } catch (err) {
@@ -107,13 +91,24 @@ export default function NotesPanel({ articleId }: { articleId: string }) {
         <LuStickyNote className="size-4" />
         Notes of this article ({ids.length})
       </h2>
-      {ids.length === 0 ? (
+      {attached.status === 'loading' ? (
+        <p className="px-1 text-small text-fg-subtle">Loading…</p>
+      ) : connected.length === 0 ? (
         <p className="px-1 text-small text-fg-subtle">None yet: make one, or connect one of yours below.</p>
       ) : (
         <CardRow>
-          {ids.map((id) => (
-            <ConnectedNote key={id} notes={notes} id={id} onOpen={() => open(id)} onDisconnect={() => disconnect(id)} onDelete={setDeleting} />
-          ))}
+          {connected.map((item) => {
+            const row = rowOf(notes, item)
+            return (
+              <NoteCard
+                key={row.id}
+                notes={notes}
+                item={item}
+                onOpen={() => open(row.id)}
+                menu={[[{ label: 'Open', icon: LuExternalLink, onClick: () => open(row.id) }, { label: 'Disconnect', icon: LuUnlink, onClick: () => disconnect(row.id) }], [{ label: 'Delete', icon: LuTrash2, danger: true, onClick: () => setDeleting(row) }]]}
+              />
+            )
+          })}
         </CardRow>
       )}
 
@@ -139,7 +134,14 @@ export default function NotesPanel({ articleId }: { articleId: string }) {
                 notes={notes}
                 item={item}
                 onOpen={() => open(row.id)}
-                menu={[[{ label: 'Open', icon: LuExternalLink, onClick: () => open(row.id) }, { label: 'Connect', icon: LuLink, onClick: () => connect(row.id) }], [{ label: 'Delete', icon: LuTrash2, danger: true, onClick: () => setDeleting(row) }]]}
+                menu={[
+                  [
+                    { label: 'Open', icon: LuExternalLink, onClick: () => open(row.id) },
+                    // One thing at a time: a note attached somewhere else leaves it
+                    { label: item.attachedType ? 'Connect (moves it here)' : 'Connect', icon: LuLink, onClick: () => connect(row.id) },
+                  ],
+                  [{ label: 'Delete', icon: LuTrash2, danger: true, onClick: () => setDeleting(row) }],
+                ]}
               />
             )
           })}
@@ -152,7 +154,7 @@ export default function NotesPanel({ articleId }: { articleId: string }) {
           </LinkButton>
         )}
       </div>
-      {deleting && <ResourceDeleteDialog resource={notes} item={deleting} onClose={() => setDeleting(null)} onDeleted={() => disconnect(deleting.id)} />}
+      {deleting && <ResourceDeleteDialog resource={notes} item={deleting} onClose={() => setDeleting(null)} />}
     </section>
   )
 }

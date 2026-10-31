@@ -10,16 +10,18 @@ import { csrfProtection } from './middleware/csrf'
 import { checkEnv } from './middleware/env'
 import { rateLimit } from './middleware/rate-limit'
 import imagesRoutes from './resources/images/images.routes'
+import mapsFileRoutes from './resources/maps/maps.routes'
+import { mapsOverrides } from './resources/maps/maps.repo'
 import commentsRoutes from './resources/comments/comments.routes'
 import messagesRoutes, { messageRepliesRoutes } from './resources/messages/messages.routes'
 import rightsRoutes from './resources/rights/rights.routes'
 import sharedRoutes from './resources/shared/shared.routes'
 import usersRoutes from './resources/users/users.routes'
 import { imagesBase } from './resources/images/images.repo'
-import { DATA, TABLE_NAMES } from '@map/shared'
+import { DATA, FILE_VERSION_HEADER, TABLE_NAMES, type TableName } from '@map/shared'
 import * as schema from './db/schema'
 import { crudRoutes } from './lib/crud'
-import { ownedRepo } from './lib/ownedRepo'
+import { ownedRepo, type RepoOverrides } from './lib/ownedRepo'
 
 // Only /api/* and /images/* reach this code (wrangler.jsonc run_worker_first);
 // every other path is the website from app/dist
@@ -41,7 +43,8 @@ app.use(
     credentials: true,
     allowHeaders: ['Content-Type', 'Authorization'],
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    exposeHeaders: ['set-auth-token'], // bearer plugin: lets the desktop app read its session token
+    // bearer plugin: lets the desktop app read its session token; a map file's version (docs/plans/38)
+    exposeHeaders: ['set-auth-token', FILE_VERSION_HEADER],
     maxAge: 600, // browsers reuse the OPTIONS answer for 10 minutes
   }),
 )
@@ -52,13 +55,19 @@ app.use('/api/*', rateLimit)
 
 app.on(['GET', 'POST'], '/api/auth/*', (c) => createAuth(c.env).handler(c.req.raw))
 
+// A map's board file (docs/plans/38): before the generic /api/maps routes
+app.route('/api/maps', mapsFileRoutes)
+
+// What a table of the data config does its own way (lib/ownedRepo.ts RepoOverrides)
+const OVERRIDES: Partial<Record<TableName, RepoOverrides>> = { maps: mapsOverrides }
+
 // Every table of the data config, at /api/<its path> (e.g. /api/object-cards): GET / · GET /:id · POST / · PATCH /:id · DELETE /:id
 // (instructions/data-config.md). A table with something of its own passes overrides to ownedRepo, or adds routes to its router
 for (const name of TABLE_NAMES) {
   const table = DATA[name]
   app.route(
     `/api/${table.path}`,
-    crudRoutes({ access: table.access, create: table.input, update: table.update, filter: table.filter, repo: ownedRepo(schema[name], table) }),
+    crudRoutes({ access: table.access, create: table.input, update: table.update, filter: table.filter, repo: ownedRepo(schema[name], table, OVERRIDES[name]) }),
   )
 }
 

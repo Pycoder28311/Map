@@ -46,8 +46,9 @@ describe('encodeBoard / decodeBoard', () => {
 
   it('skips a kind it does not know, and the others still read', () => {
     const w = new Writer()
-    w.byte(1)
+    w.byte(2)
     w.int(3)
+    w.int(0)
     w.int(2)
     // an image (reserved kind 6) with a body of 4 bytes
     w.byte(6)
@@ -55,8 +56,8 @@ describe('encodeBoard / decodeBoard', () => {
     w.raw([1, 2, 3, 4])
     const point: BoardObject = { ...base, id: 2, kind: 'point', anchor: { x: 1, y: 2 }, ...POINT_DEFAULT }
     const known = encodeBoard({ nextId: 3, objects: [point] })
-    // the point's record: after version, nextId, count
-    w.raw(known.subarray(3))
+    // the point's record: after version, nextId, the header's extras length, count
+    w.raw(known.subarray(4))
     expect(decodeBoard(Uint8Array.from(w.bytes))).toEqual({ nextId: 3, objects: [point] })
   })
 
@@ -70,6 +71,38 @@ describe('encodeBoard / decodeBoard', () => {
     expect(roundTrip({ nextId: 2, objects: [plain] }).objects[0]).toEqual(plain)
   })
 
+  it('version 2: keeps locked, hidden and what a node is (ref); skips header extras it does not know (docs/plans/38)', () => {
+    const point: BoardObject = { ...base, id: 1, kind: 'point', anchor: { x: 1, y: 2 }, ...POINT_DEFAULT, locked: true, hidden: true, ref: { type: 'objectCards', id: 42 } }
+    expect(roundTrip({ nextId: 2, objects: [point] }).objects[0]).toEqual(point)
+    const bytes = encodeBoard({ nextId: 2, objects: [point] })
+    const w = new Writer()
+    w.byte(2)
+    w.int(2)
+    // three bytes of a header field to come
+    w.int(3)
+    w.raw([7, 7, 7])
+    w.raw(bytes.subarray(3))
+    expect(decodeBoard(Uint8Array.from(w.bytes)).objects).toEqual([point])
+  })
+
+  it('still reads a version 1 file (no node flags)', () => {
+    const body = new Writer()
+    body.int(4)
+    body.int(1)
+    body.str('Old')
+    body.int(0)
+    body.int(10)
+    body.int(-20)
+    const w = new Writer()
+    w.byte(1)
+    w.int(5)
+    w.int(1)
+    w.byte(5)
+    w.int(body.bytes.length)
+    w.raw(body.bytes)
+    expect(decodeBoard(Uint8Array.from(w.bytes))).toEqual({ nextId: 5, objects: [{ id: 4, layer: 1, name: 'Old', links: [], kind: 'point', anchor: { x: 10, y: -20 }, ...POINT_DEFAULT }] })
+  })
+
   it('throws on another version and on truncated files', () => {
     expect(() => decodeBoard(Uint8Array.from([9, 1, 0]))).toThrow(UnsupportedBoardVersion)
     const bytes = encodeBoard({ nextId: 2, objects: [{ ...base, id: 1, kind: 'line', style: fancy, points: pts([0, 0], [9, 9]) }] })
@@ -79,7 +112,7 @@ describe('encodeBoard / decodeBoard', () => {
   it('is a few bytes more than the plain stroke', () => {
     const stroke = pts([120, 80], [124, 83], [131, 85], [139, 84], [150, 90], [150, 100])
     const line: BoardObject = { ...base, id: 1, kind: 'line', style: DEFAULT_STYLE, points: stroke }
-    expect(encodeBoard({ nextId: 2, objects: [line] }).length).toBeLessThanOrEqual(encode([stroke]).length + 20)
+    expect(encodeBoard({ nextId: 2, objects: [line] }).length).toBeLessThanOrEqual(encode([stroke]).length + 22)
   })
 })
 
@@ -119,8 +152,8 @@ describe('text extras', () => {
 
   it('a plain text takes no more bytes than before text had a style', () => {
     const bytes = encodeBoard({ nextId: 2, objects: [plain] })
-    // header 3, kind 1, length 1, id 1, layer 1, name 1, links 1, x 1, y 1, text 1 + 5
-    expect(bytes.length).toBe(3 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 5)
+    // header 4, kind 1, length 1, id 1, layer 1, name 1, links 1, node flags 1, x 1, y 1, text 1 + 5
+    expect(bytes.length).toBe(4 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 5)
     expect(roundTrip({ nextId: 2, objects: [plain] }).objects).toEqual([plain])
   })
 

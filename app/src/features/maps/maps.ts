@@ -1,9 +1,12 @@
-// The maps (a mock resource for now: resources/mock.config.ts), as the board's code reads and writes them. Every screen shares the
+// The maps (a table on the server: docs/plans/38), as the board's code reads and writes them. Every screen shares the
 // same list in the store, so the sidebar, the Dashboard, the map picker and the presenter agree.
 import { PAGE_SIZE_MAX, positionsBetween } from '@map/shared'
+import { branchMap } from '../../lib/api/maps'
+import { notifyChanged } from '../../lib/resource/changes'
 import { actionsOf, useResourceItem, useResourceList } from '../../lib/resource/hooks'
 import { resourceByName } from '../../resources/registry'
-import { copyBoard } from '../board/boardStore'
+import { copyBoard, getBoard } from '../board/boardStore'
+import { boardToFile } from '../projects/compress'
 
 export const mapsResource = resourceByName('maps')!
 
@@ -26,17 +29,18 @@ export function useMap(id: string | undefined): { map: MapItem | null; gone: boo
 export const mapName = (map: MapItem) => mapsResource.ui.row.title(map as never)
 
 /**
- * A branch of a map, like a branch of a chat: a copy of it, with everything drawn on it, next to it. They keep to one branch group
- * (`branchOf`: the group's first map). Resolves with the new map's id (undefined for anything that is not a live map)
+ * A branch of a map, like a branch of a chat: a copy of it, with everything drawn on it (as it is open now, changes not saved
+ * included), next to it. They keep to one branch group (`branchOf`: the group's first map). One request: the server makes the row and
+ * stores the file (docs/plans/38), and the lists take the new map (and the source, when it became its group's root) without reading
+ * again. Resolves with the new map's id (undefined for anything that is not a live map)
  */
 export async function createBranch(maps: MapItem[], mapId: string, name: string): Promise<string | undefined> {
   const map = maps.find((m) => String(m.id) === mapId)
   if (!map || map.archived) return undefined
-  const root = map.branchOf || map.id
-  const { create, update } = actionsOf(mapsResource)
-  const made = await create({ title: name, branchOf: root, position: map.position })
-  if (!map.branchOf) await update(map.id, { branchOf: root })
-  copyBoard(mapId, String(made.id))
+  const { map: made, root } = await branchMap<MapItem & { fileVersion: number }>(mapId, name, await boardToFile(getBoard(mapId)))
+  notifyChanged({ name: mapsResource.name, item: made })
+  if (root) notifyChanged({ name: mapsResource.name, item: root })
+  copyBoard(mapId, String(made.id), made.fileVersion)
   return String(made.id)
 }
 

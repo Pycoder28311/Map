@@ -66,12 +66,22 @@ export const SHAPE_TYPES = [
 ] as const
 export type ShapeType = (typeof SHAPE_TYPES)[number]
 
+/** What a node can be (docs/plans/38: a point made into an article or an object card). Saved as its index + 1, so only ever added to */
+export const REF_TYPES = ['articles', 'objectCards'] as const
+export type RefType = (typeof REF_TYPES)[number]
+
 export type Base = {
-  /** Unique in its board */
+  /** Unique in its board (never given again: `nextId`) */
   id: number
   layer: Layer
   name: string
   links: Link[]
+  /** Can't be picked or moved (no UI yet) */
+  locked?: boolean
+  /** Not drawn (no UI yet) */
+  hidden?: boolean
+  /** The node is this article or object card: its content lives there (the later conversion; no UI yet) */
+  ref?: { type: RefType; id: number }
 }
 
 export type LineObject = Base & { kind: 'line'; style: Style } & Path

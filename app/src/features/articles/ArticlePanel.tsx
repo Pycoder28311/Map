@@ -51,7 +51,7 @@ import type { ArticleLink } from './links/linkHref'
 import SaveButton from './save/SaveButton'
 import { useSaved } from './save/savedStore'
 import { useArticleRole } from './save/useArticleRole'
-import { useArticleNotes } from './side/articleNotes'
+import { useAttachedNotes, useMoveLocalNotes } from '../notes/attachedNotes'
 import ContentsTree from './side/ContentsTree'
 import MessagesList, { useMessages } from './side/MessagesList'
 import NotesPanel from './side/NotesPanel'
@@ -205,7 +205,9 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   const [page, setPage] = useState<HTMLDivElement | null>(null)
   const narrow = useNarrower(page, SIDE_MIN_WIDTH)
   const messages = useMessages(text)
-  const { ids: noteIds } = useArticleNotes(String(item.id))
+  // Its notes (docs/plans/38) are read when the Notes panel first opens; the ones this device connected before are moved to the server once
+  const attachedNotes = useAttachedNotes({ type: 'article', id: articleId }, side.has('notes'))
+  useMoveLocalNotes('article', articleId)
   const toggleSide = (part: SidePart) => {
     const next = new Set(side)
     if (next.has(part)) next.delete(part)
@@ -472,7 +474,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
             open={side}
             onToggle={toggleSide}
             messages={messages.length}
-            notes={noteIds.length}
+            notes={attachedNotes.items.length}
           />
         }
         actions={actions}

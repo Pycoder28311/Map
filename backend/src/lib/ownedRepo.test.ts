@@ -67,3 +67,66 @@ describe('articles: the autolinkers', () => {
     expect(DATA.articles.update.safeParse({ autolinkers: [{ ...rule('a', ['x']), link: 'javascript:alert(1)' }] }).success).toBe(false)
   })
 })
+
+describe('notes: attached to one thing (docs/plans/38)', () => {
+  const notes = ownedRepo(schema.notes, DATA.notes)
+  const maps = ownedRepo(schema.maps, DATA.maps)
+  const articles = ownedRepo(schema.articles, DATA.articles)
+  const note = async (ctx: Ctx, title: string) => (await notes.create(ctx, DATA.notes.input.parse({ title }) as never)).id as number
+  const attach = (ctx: Ctx, id: number, attachedType: string | null, attachedId: number | null, attachedNode: number | null = null) =>
+    notes.update(ctx, id, DATA.notes.update.parse({ attachedType, attachedId, attachedNode }) as never)
+  const list = async (ctx: Ctx, filter: Record<string, string>) =>
+    (await notes.list(ctx, { limit: 50, cursor: null }, DATA.notes.filter.parse(filter) as never)).items.map((n) => n.title)
+
+  it('attaches to the user\'s map, a node of it or an article they can read; the list finds them by what they are attached to', async () => {
+    const ctx = newUser()
+    const map = (await maps.create(ctx, DATA.maps.input.parse({ title: 'M' }) as never)).id as number
+    const article = (await articles.create(ctx, DATA.articles.input.parse({ title: 'A' }) as never)).id as number
+    const [a, b, c] = [await note(ctx, 'a'), await note(ctx, 'b'), await note(ctx, 'c')]
+    expect(await attach(ctx, a, 'map', map)).toMatchObject({ attachedType: 'map', attachedId: map, attachedNode: null })
+    await attach(ctx, b, 'map', map, 7)
+    await attach(ctx, c, 'article', article)
+    expect((await list(ctx, { attachedType: 'map', attachedId: String(map) })).sort()).toEqual(['a', 'b'])
+    expect(await list(ctx, { attachedType: 'map', attachedId: String(map), attachedNode: 'none' })).toEqual(['a'])
+    expect(await list(ctx, { attachedType: 'map', attachedId: String(map), attachedNode: '7' })).toEqual(['b'])
+    expect(await list(ctx, { attachedType: 'article', attachedId: String(article) })).toEqual(['c'])
+    // Moved: one thing at a time
+    await attach(ctx, b, 'article', article)
+    expect((await list(ctx, { attachedType: 'article', attachedId: String(article) })).sort()).toEqual(['b', 'c'])
+    await attach(ctx, c, null, null)
+    expect(await list(ctx, { attachedType: 'article', attachedId: String(article) })).toEqual(['b'])
+  })
+
+  it('refuses a map or article the user can\'t see, and an unknown kind', async () => {
+    const ctx = newUser()
+    const other = newUser()
+    const theirs = (await maps.create(other, DATA.maps.input.parse({ title: 'M' }) as never)).id as number
+    const theirArticle = (await articles.create(other, DATA.articles.input.parse({ title: 'A' }) as never)).id as number
+    const id = await note(ctx, 'n')
+    await expect(attach(ctx, id, 'map', theirs)).rejects.toMatchObject({ status: 400, code: 'UNKNOWN_REFERENCE' })
+    await expect(attach(ctx, id, 'article', theirArticle)).rejects.toMatchObject({ status: 400 })
+    // A shared article they can read is fine
+    await give(other, 'articles', theirArticle, ctx, 'reader')
+    expect(await attach(ctx, id, 'article', theirArticle)).toMatchObject({ attachedId: theirArticle })
+  })
+
+  it('deleting the map or article leaves its notes as they are', async () => {
+    const ctx = newUser()
+    const map = (await maps.create(ctx, DATA.maps.input.parse({ title: 'M' }) as never)).id as number
+    const id = await note(ctx, 'kept')
+    await attach(ctx, id, 'map', map, 3)
+    await maps.remove(ctx, map)
+    expect(await notes.get(ctx, id)).toMatchObject({ title: 'kept', attachedType: 'map', attachedId: map, attachedNode: 3 })
+  })
+
+  it('only the owner moves a note: an editor of a shared note can\'t, and others don\'t see where it is', async () => {
+    const owner = newUser()
+    const editor = newUser()
+    const id = await note(owner, 'n')
+    const map = (await maps.create(owner, DATA.maps.input.parse({ title: 'M' }) as never)).id as number
+    await attach(owner, id, 'map', map)
+    await give(owner, 'notes', id, editor, 'editor')
+    await expect(notes.update(editor, id, DATA.notes.update.parse({ attachedType: null, attachedId: null, attachedNode: null, baseVersion: 0 }) as never)).rejects.toMatchObject({ status: 403 })
+    expect(await notes.get(editor, id)).not.toHaveProperty('attachedType')
+  })
+})

@@ -1,6 +1,6 @@
 import type { Table } from '@map/shared'
 import { sql } from 'drizzle-orm'
-import { check, integer, sqliteTable, text, type SQLiteColumnBuilderBase, type SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
+import { check, index, integer, sqliteTable, text, type SQLiteColumnBuilderBase, type SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 import { user } from '../db/auth-schema'
 import { snakeCase } from '@map/shared'
 import { listIndex, orderColumns } from './sort'
@@ -44,19 +44,33 @@ const shareColumns = () => ({
 })
 
 /**
+ * What a row is attached to (`attach`, docs/plans/38): nullable and with no CHECK (zod checks them), so adding them is ALTER TABLE …
+ * ADD (no table rebuild); no foreign key either, since they point at several tables: deleting the thing leaves the row as it is
+ */
+const attachColumns = () => ({
+  attachedType: text('attached_type'),
+  attachedId: integer('attached_id'),
+  attachedNode: integer('attached_node'),
+})
+
+/**
  * A user-owned table from its config (shared/src/data.config.ts), in this column order: id, the owner, the config's fields,
  * `preview` (when the config has one: the first words of that rich-text field, written with it by ownedRepo), the parent pair
- * `object_type`/`object_id` (when it has a `link`; both set or both empty), the dates, `archived`,
+ * `object_type`/`object_id` (when it has a `link`; both set or both empty), `attached_type`/`attached_id`/`attached_node` (when it
+ * has an `attach`), `extra` (the backend's own columns, which no client writes: a map's file), the dates, `archived`,
  * `visibility`/`version`/`edited_by` (when it has `share`), then the order columns. Its list index: the owner, the list filters, then
- * the list order (lib/sort.ts), so a filtered list reads only its own rows.
+ * the list order (lib/sort.ts), so a filtered list reads only its own rows. An attachable table also has an index of its attached
+ * rows only (the others are not in it)
  */
-export function ownedTable(config: Table): OwnedTable {
+export function ownedTable(config: Table, extra: Record<string, SQLiteColumnBuilderBase> = {}): OwnedTable {
   const columns: Record<string, SQLiteColumnBuilderBase> = {
     id: id(),
     userId: owner(),
     ...Object.fromEntries(Object.entries(config.fields).map(([name, f]) => [name, columnOf(name, f.kind, f.default)])),
     ...(config.preview ? { preview: text('preview').notNull().default('') } : {}),
     ...(config.link ? { objectType: text('object_type'), objectId: integer('object_id') } : {}),
+    ...(config.attach ? attachColumns() : {}),
+    ...extra,
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
@@ -67,5 +81,12 @@ export function ownedTable(config: Table): OwnedTable {
   return sqliteTable(config.tableName, columns, (t) => [
     listIndex(`${config.tableName}_list_idx`, t as never, { owner: 'userId', filters: filters as never, order: config.order }),
     ...(config.link ? [check(`${config.tableName}_object_pair`, sql`(${t.objectType} IS NULL) = (${t.objectId} IS NULL)`)] : []),
+    ...(config.attach
+      ? [
+          index(`${config.tableName}_attached_idx`)
+            .on(t.userId as never, t.attachedType as never, t.attachedId as never, t.attachedNode as never)
+            .where(sql`${t.attachedType} IS NOT NULL`),
+        ]
+      : []),
   ]) as OwnedTable
 }

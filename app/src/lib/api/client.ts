@@ -18,8 +18,11 @@ export class ApiError extends Error {
   }
 }
 
-/** `json`: a body sent as JSON; `body`: files (the browser sets their content type) */
-export type RequestInitJson = Omit<RequestInit, 'body'> & { json?: unknown; body?: FormData }
+/**
+ * `json`: a body sent as JSON; `body`: files (the browser sets their content type) or bytes (a map's file); `raw`: the answer is
+ * the Response itself (a file's bytes and headers), once it is known to be no error
+ */
+export type RequestInitJson = Omit<RequestInit, 'body'> & { json?: unknown; body?: FormData | Blob; raw?: boolean }
 
 export type RequestConfig = {
   /** '' : the page's own origin (the website; in dev the Vite proxy forwards /api). The desktop app uses the live site */
@@ -36,7 +39,7 @@ const CODE_FOR_STATUS: Record<number, string> = { 400: 'VALIDATION_FAILED', 401:
 /** The `request` function for a configuration (a function so tests can give their own fetch) */
 export function createRequest(config: RequestConfig) {
   return async function request<T>(path: string, init: RequestInitJson = {}): Promise<T> {
-    const { json, headers, ...rest } = init
+    const { json, headers, raw, ...rest } = init
     const token = await config.bearer?.()
     let res: Response
     try {
@@ -57,6 +60,7 @@ export function createRequest(config: RequestConfig) {
       throw new ApiError(0, 'NETWORK', 'Could not reach the server. Check your connection and try again.')
     }
 
+    if (raw && res.ok) return res as T
     if (res.status === 204) return undefined as T
     // The body may be empty or not JSON (a proxy error page): then only the status is known
     const body: unknown = await res.json().catch(() => null)

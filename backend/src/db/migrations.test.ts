@@ -176,3 +176,31 @@ describe('0014: message replies and comments', () => {
     expect(count('comments')).toBe(0)
   })
 })
+
+describe('0015: maps, and notes attached to one thing', () => {
+  const db = new DatabaseSync(':memory:')
+  db.exec('PRAGMA foreign_keys = ON') // as D1
+  for (const file of files.filter((f) => f < '0015')) run(db, file)
+  const now = Math.floor(Date.now() / 1000)
+  db.prepare("INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES ('u', 'u', 'u@x.test', 1, ?, ?)").run(now, now)
+  db.prepare("INSERT INTO notes (user_id, title, created_at, updated_at) VALUES ('u', 'old', ?, ?)").run(now, now)
+  const before = db.prepare('SELECT id, title FROM notes').all()
+  run(db, files.find((f) => f.startsWith('0015'))!)
+
+  it('only adds the columns to notes: an old note keeps its id and data, attached to nothing', () => {
+    expect(db.prepare('SELECT id, title FROM notes').all()).toEqual(before)
+    expect(db.prepare('SELECT attached_type, attached_id, attached_node FROM notes').all()[0]).toEqual({ attached_type: null, attached_id: null, attached_node: null })
+  })
+
+  it('a map\'s notes are read through the index of attached notes only', () => {
+    const plan = (db.prepare("EXPLAIN QUERY PLAN SELECT id FROM notes WHERE user_id = 'u' AND attached_type = 'map' AND attached_id = 1 AND attached_node IS NULL").all() as { detail: string }[])
+      .map((p) => p.detail)
+      .join(' | ')
+    expect(plan).toContain('notes_attached_idx')
+  })
+
+  it('makes the maps table: a new map has no file yet (version 0)', () => {
+    db.prepare("INSERT INTO maps (user_id, title, created_at, updated_at) VALUES ('u', 'M', ?, ?)").run(now, now)
+    expect(db.prepare('SELECT title, branch_of, file_key, file_version, archived, position FROM maps').all()[0]).toEqual({ title: 'M', branch_of: 0, file_key: null, file_version: 0, archived: 0, position: 'a0' })
+  })
+})

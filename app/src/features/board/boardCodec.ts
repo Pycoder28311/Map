@@ -1,7 +1,9 @@
 // How a board is saved (before brotli, see features/projects/compress.ts). Numbers are the strokeCodec's zigzag varints.
-//   file    := version(1) nextId count record*
+//   file    := version(2) nextId extrasLength extras count record*   (extras: header fields to come; a reader skips what it doesn't know)
+//              version 1 (still read): version(1) nextId count record*, and records without `node`
 //   record  := kind length body                (a reader skips a kind it doesn't know, and the reserved image)
-//   body    := id layer name(text) linkCount link*  <the kind's part>
+//   body    := id layer name(text) linkCount link* node  <the kind's part>
+//   node    := flags(bit 0 locked, 1 hidden, 2 ref) [refType(byte: REF_TYPES index + 1) refId]   (docs/plans/38)
 //   link    := 0 id(text) | 1 id(number)
 //   line   := style path                       path := flags(bit 0: handles) then the strokeCodec's path, then 4 numbers per point
 //   border := style path [extras]              extras (only when there are any) := flags(bit 0 fill, 1 description, 2 edge runs, 3 open: the ends are not joined)
@@ -38,9 +40,13 @@ import {
   type TextObject,
   type TextRun,
   type ObjectKind,
+  REF_TYPES,
 } from './types'
 
-const VERSION = 1
+const VERSION = 2
+const LOCKED = 1
+const HIDDEN = 2
+const HAS_REF = 4
 const HANDLES = 1
 const HAS_FILL = 1
 const HAS_DESCRIPTION = 2
@@ -285,12 +291,30 @@ function readText(r: Reader): Omit<TextObject, 'id' | 'layer' | 'name' | 'links'
   }
 }
 
+/** What every node has besides its id, layer, name and links (version 2): locked, hidden and what it is (`ref`) */
+function writeNode(w: Writer, o: BoardObject) {
+  w.byte((o.locked ? LOCKED : 0) | (o.hidden ? HIDDEN : 0) | (o.ref ? HAS_REF : 0))
+  if (o.ref) {
+    w.byte(REF_TYPES.indexOf(o.ref.type) + 1)
+    w.int(o.ref.id)
+  }
+}
+
+function readNode(r: Reader): Pick<BoardObject, 'locked' | 'hidden' | 'ref'> {
+  const flags = r.byte()
+  const type = flags & HAS_REF ? REF_TYPES[r.byte() - 1] : undefined
+  const ref = flags & HAS_REF ? { type, id: r.int() } : undefined
+  if (ref && !ref.type) throw new RangeError('Unknown ref type')
+  return { ...(flags & LOCKED ? { locked: true } : {}), ...(flags & HIDDEN ? { hidden: true } : {}), ...(ref ? { ref: ref as BoardObject['ref'] } : {}) }
+}
+
 function writeRecord(o: BoardObject): Writer {
   const w = new Writer()
   w.int(o.id)
   w.int(o.layer)
   w.str(o.name)
   writeLinks(w, o.links)
+  writeNode(w, o)
   switch (o.kind) {
     case 'line':
       writeStyle(w, o.style)
@@ -344,6 +368,8 @@ export function encodeBoard(board: Board): Uint8Array {
   const w = new Writer()
   w.byte(VERSION)
   w.int(board.nextId)
+  // No header extras yet
+  w.int(0)
   w.int(board.objects.length)
   for (const object of board.objects) {
     const body = writeRecord(object)
@@ -356,8 +382,8 @@ export function encodeBoard(board: Board): Uint8Array {
 
 const KINDS = Object.fromEntries(Object.entries(KIND_NUMBER).map(([kind, n]) => [n, kind])) as Record<number, ObjectKind>
 
-function readRecord(kind: ObjectKind, r: Reader): BoardObject {
-  const base = { id: r.int(), layer: r.int(), name: r.str(), links: readLinks(r) }
+function readRecord(kind: ObjectKind, r: Reader, version: number): BoardObject {
+  const base = { id: r.int(), layer: r.int(), name: r.str(), links: readLinks(r), ...(version >= 2 ? readNode(r) : {}) }
   switch (kind) {
     case 'line':
       return { ...base, kind, style: readStyle(r), ...readPathWithHandles(r) }
@@ -398,14 +424,16 @@ function readRecord(kind: ObjectKind, r: Reader): BoardObject {
 export function decodeBoard(bytes: Uint8Array): Board {
   const r = new Reader(bytes)
   const version = r.byte()
-  if (version !== VERSION) throw new UnsupportedBoardVersion(version)
+  if (version !== 1 && version !== VERSION) throw new UnsupportedBoardVersion(version)
   const nextId = r.int()
+  // Header fields of later versions: skipped
+  if (version >= 2) r.slice(r.count())
   const objects: BoardObject[] = []
   for (let count = r.count(3); count > 0; count--) {
     const kind = KINDS[r.byte()]
     const body = r.slice(r.count())
     if (!kind) continue
-    objects.push(readRecord(kind, body))
+    objects.push(readRecord(kind, body, version))
     if (body.left !== 0) throw new RangeError('Record size mismatch')
   }
   return { nextId, objects }

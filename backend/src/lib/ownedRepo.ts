@@ -10,7 +10,7 @@ import { listSort, sortColumnsOf } from './sort'
 
 type Row = Record<string, unknown> & { id: number }
 type Fields = Record<string, unknown>
-type Filter = { archived: boolean; objectType?: string; objectId?: number }
+type Filter = { archived: boolean; objectType?: string; objectId?: number; attachedType?: string; attachedId?: number; attachedNode?: number | 'none' }
 
 /** What a table can do its own way; the rest stays the generic one */
 export type RepoOverrides = {
@@ -20,6 +20,8 @@ export type RepoOverrides = {
   beforeCreate?: (ctx: Ctx, fields: Fields) => Fields | Promise<Fields>
   /** Changes the fields of an update before it is written */
   beforeUpdate?: (ctx: Ctx, id: number, fields: Fields) => Fields | Promise<Fields>
+  /** After a row was deleted for good (not archived), with the row as it was: e.g. a map's file in R2 is deleted */
+  removed?: (ctx: Ctx, row: Row) => void | Promise<void>
 }
 
 /**
@@ -32,6 +34,8 @@ export type RepoOverrides = {
  *   user's, and does not make a cycle (a folder in itself or in its own children). Writes that do not set a parent read nothing for it
  * - a new row without a `position` goes first, before the rows of every ordered table (same pinned flag): one read per table
  * - deleting a row sets the parent of its children (rows of any table pointing at it) to none: they become orphans, not lost
+ * - an attachable table (`attach`, docs/plans/38): a write that attaches a row checks the thing once (a map: the user's; an article:
+ *   one they can read), and lists filter by it. Deleting the thing changes nothing in the rows attached to it
  * - a list leaves out `omitFromLists`' fields too; a reader's copy of a shared row has no `editorFields`
  * - a shared table (`share: true`, docs/plans/34): get and update also serve the people the row is shared with (lib/access.ts); a
  *   non-owner's JSON has no owner fields; an update of the row's own fields raises its `version`, and with `baseVersion` it is written
@@ -41,9 +45,9 @@ export type RepoOverrides = {
 const MAX_DEPTH = 20
 
 /** The fields of a shared row that are its owner's only: their sidebar, Dashboard and Trash. An editor may not send them (403) */
-const OWNER_FIELDS = ['pinned', 'position', 'objectType', 'objectId', 'archived'] as const
+const OWNER_FIELDS = ['pinned', 'position', 'objectType', 'objectId', 'archived', 'attachedType', 'attachedId', 'attachedNode'] as const
 /** What a non-owner's JSON leaves out: the owner's place for the row (their folders and projects) and who may see it */
-const HIDDEN_FROM_OTHERS = ['pinned', 'position', 'objectType', 'objectId', 'visibility'] as const
+const HIDDEN_FROM_OTHERS = ['pinned', 'position', 'objectType', 'objectId', 'visibility', 'attachedType', 'attachedId', 'attachedNode'] as const
 
 export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverrides = {}): Repo<Fields, Fields, Record<string, unknown>, Filter, Record<string, unknown>> {
   const columns = getTableColumns(table)
@@ -84,6 +88,37 @@ export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverr
     // Both columns, so the list index (… object_type, object_id …) is used; the CHECK keeps them empty together
     if (objectType === 'none') return and(isNull(columns.objectType), isNull(columns.objectId))
     return and(eq(columns.objectType, objectType), objectId === undefined ? undefined : eq(columns.objectId, objectId))
+  }
+
+  const attachFilter = ({ attachedType, attachedId, attachedNode }: Filter): SQL | undefined => {
+    if (!config.attach || attachedType === undefined) return undefined
+    // The columns in the order of the attached index (user_id, attached_type, attached_id, attached_node)
+    return and(
+      eq(columns.attachedType, attachedType),
+      attachedId === undefined ? undefined : eq(columns.attachedId, attachedId),
+      attachedNode === undefined ? undefined : attachedNode === 'none' ? isNull(columns.attachedNode) : eq(columns.attachedNode, attachedNode),
+    )
+  }
+
+  /**
+   * Checks what a write attaches the row to (only when it sets one): a map must be the user's, an article one they can read (one read
+   * by primary key). A map's node is not checked: it lives in the map's file
+   */
+  async function checkAttach(ctx: Ctx, fields: Fields) {
+    const type = fields.attachedType
+    const targetId = fields.attachedId
+    if (!config.attach || typeof type !== 'string' || typeof targetId !== 'number') return
+    const unknown = () => new HttpError(400, 'UNKNOWN_REFERENCE', 'Not found', [{ path: 'attachedId', message: 'Not found' }])
+    const targetName = config.attach.types[type]
+    const target = targetName ? (schema as unknown as Record<string, OwnedTable>)[targetName] : undefined
+    if (!target) throw unknown()
+    if (isShareable(targetName)) {
+      if (!(await accessOf(ctx, targetName, target, targetId))) throw unknown()
+      return
+    }
+    const c = getTableColumns(target)
+    const found = await ctx.db.select({ id: c.id }).from(target).where(and(eq(c.id, targetId), eq(c.userId, userId(ctx)))).get()
+    if (!found) throw unknown()
   }
 
   const bad = (message: string, code: 'UNKNOWN_REFERENCE' | 'VALIDATION_FAILED' = 'UNKNOWN_REFERENCE') =>
@@ -173,7 +208,7 @@ export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverr
       const rows = (await ctx.db
         .select(listColumns)
         .from(table)
-        .where(and(eq(columns.userId, userId(ctx)), eq(columns.archived, filter.archived), parentFilter(filter), sort.after(page)))
+        .where(and(eq(columns.userId, userId(ctx)), eq(columns.archived, filter.archived), parentFilter(filter), attachFilter(filter), sort.after(page)))
         .orderBy(...sort.orderBy)
         .limit(fetchLimit(page) ?? -1)) as Row[]
       return mapPage(toPage(rows, page, sort.cursorOf as (row: Row) => string), (row) => toJson(row, 'owner', userId(ctx)))
@@ -191,6 +226,7 @@ export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverr
     async create(ctx, input) {
       const fields = overrides.beforeCreate ? await overrides.beforeCreate(ctx, input) : input
       await checkParent(ctx, fields)
+      await checkAttach(ctx, fields)
       const placed = config.order.position && fields.position === undefined ? { ...fields, position: await firstPosition(ctx, fields) } : fields
       const row = (await ctx.db.insert(table).values({ ...withPreview(placed), userId: userId(ctx) }).returning().get()) as Row
       return toJson(row, 'owner', userId(ctx))
@@ -202,14 +238,16 @@ export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverr
       const fields = overrides.beforeUpdate ? await overrides.beforeUpdate(ctx, id, input) : input
       if (!hasChanges(fields)) return repo.get(ctx, id) // nothing to change (Drizzle rejects an empty SET): the row as it is
       await checkParent(ctx, fields, id)
+      await checkAttach(ctx, fields)
       const row = (await ctx.db.update(table).set(withPreview(fields)).where(mine(ctx, id)).returning().get()) as Row | undefined
       return row ? toJson(row, 'owner', userId(ctx)) : null
     },
 
     async remove(ctx, id) {
-      const gone = await ctx.db.delete(table).where(mine(ctx, id)).returning({ id: columns.id }).get()
+      const gone = (await ctx.db.delete(table).where(mine(ctx, id)).returning().get()) as Row | undefined
       if (gone === undefined) return false
       await orphanChildren(ctx, id)
+      await overrides.removed?.(ctx, gone)
       return true
     },
   }
@@ -224,6 +262,7 @@ export function ownedRepo(table: OwnedTable, config: Table, overrides: RepoOverr
     const fields = overrides.beforeUpdate ? await overrides.beforeUpdate(ctx, id, patch) : patch
     if (!hasChanges(fields)) return repo.get(ctx, id) // nothing to change (Drizzle rejects an empty SET): the row as it is
     await checkParent(ctx, fields, id)
+    await checkAttach(ctx, fields)
     const me = userId(ctx)
     const ownerOnly = OWNER_FIELDS.some((key) => fields[key] !== undefined)
     const ownFields = fieldNames.some((key) => fields[key] !== undefined)

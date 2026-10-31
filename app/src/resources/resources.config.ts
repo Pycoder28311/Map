@@ -120,7 +120,7 @@ export const RESOURCE_UI: Record<TableName | MockTableName, ResourceUi> = {
     ),
     surfaces: { trash: true },
   },
-  // In memory only (mock.config.ts): no table on the server yet
+  // On the server (docs/plans/38): the row in D1, everything drawn on it one file in R2 (features/board/boardStore.ts)
   maps: {
     panelType: 'map',
     label: 'Map',
@@ -132,7 +132,8 @@ export const RESOURCE_UI: Record<TableName | MockTableName, ResourceUi> = {
     surfaces: { ...EVERYWHERE, page: false },
     panel: { load: () => import('../features/maps/MapPanel'), fill: true },
     effects: {
-      copied: (fromId, toId) => void import('../features/board/boardStore').then(({ copyBoard }) => copyBoard(fromId, toId)),
+      // Duplicate: the server copies the file (the source may not be open here)
+      copied: (fromId, toId) => void import('../lib/api/maps').then(({ copyMapFile }) => copyMapFile(toId, fromId)),
       deleted: (id) => void import('../features/board/boardStore').then(({ dropBoard }) => dropBoard(id)),
     },
   },

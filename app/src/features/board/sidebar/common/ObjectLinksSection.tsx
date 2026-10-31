@@ -2,13 +2,12 @@ import { LuX } from 'react-icons/lu'
 import IconButton from '../../../../components/ui/buttons/IconButton'
 import { toggleSidebarLink } from '../../../links/linkPick'
 import { LinkName } from '../../linkName'
+import NodeNotes from './NodeNotes'
 import type { ReactNode } from 'react'
 import type { BoardObject } from '../../types'
 
-/** What the object is linked to, and the kind's own `action` under it, if it has one. (Notes are on the server and cannot be linked yet: there is no form to add one here.) */
+/** What the object is linked to, the notes attached to it (docs/plans/38), and the kind's own `action` under them, if it has one */
 export default function ObjectLinksSection({ mapId, object, board, action }: { mapId: string; object: BoardObject; board: BoardObject[]; action?: ReactNode }) {
-  // Nothing to show, no line either
-  if (object.links.length === 0 && !action) return null
   return (
     <div className="flex flex-col gap-2 border-t border-line pt-3">
       {object.links.length > 0 && (
@@ -21,6 +20,7 @@ export default function ObjectLinksSection({ mapId, object, board, action }: { m
           ))}
         </ul>
       )}
+      <NodeNotes mapId={mapId} objectId={object.id} />
       {action}
     </div>
   )
