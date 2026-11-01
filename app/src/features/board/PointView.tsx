@@ -27,7 +27,7 @@ export default function PointView({ point, board, onClose, onShowBoardObject }: 
             <PinBadge icon={point.icon} color={point.color} className="size-12" />
             <div className="min-w-0 flex-1">
               <h2 className="truncate text-heading">{point.name || 'Untitled point'}</h2>
-              <span className="text-small text-fg-muted">{labelName(point.label)}</span>
+              {point.label !== 'none' && <span className="text-small text-fg-muted">{labelName(point.label)}</span>}
             </div>
             <IconButton icon={LuX} label="Close" onClick={onClose} data-autofocus />
           </div>

@@ -3,7 +3,9 @@
 //              version 1 (still read): version(1) nextId count record*, and records without `node`
 //   record  := kind length body                (a reader skips a kind it doesn't know, and the reserved image)
 //   body    := id layer name(text) linkCount link* node  <the kind's part>
-//   node    := flags(bit 0 locked, 1 hidden, 2 ref) [refType(byte: REF_TYPES index + 1) refId]   (docs/plans/38)
+//   node    := flags(bit 0 locked, 1 hidden, 2 ref, 3 description, 4 infobox, 5 article text, 6 article type) [refType(byte: REF_TYPES index + 1) refId]
+//              [description(text)] [infobox as JSON(text)] [article text(HTML text)] [article type(text)]   (docs/plans/38; the last four are a line's, area's or shape's:
+//              an area keeps its description and a point its Info box in their own part, a text has none)
 //   link    := 0 id(text) | 1 id(number)
 //   line   := style path                       path := flags(bit 0: handles) then the strokeCodec's path, then 4 numbers per point
 //   border := style path [extras]              extras (only when there are any) := flags(bit 0 fill, 1 description, 2 edge runs, 3 open: the ends are not joined)
@@ -48,6 +50,10 @@ const VERSION = 2
 const LOCKED = 1
 const HIDDEN = 2
 const HAS_REF = 4
+const HAS_NODE_DESCRIPTION = 8
+const HAS_NODE_INFOBOX = 16
+const HAS_ARTICLE_TEXT = 32
+const HAS_ARTICLE_TYPE = 64
 const HANDLES = 1
 const HAS_FILL = 1
 const HAS_DESCRIPTION = 2
@@ -304,20 +310,54 @@ function readText(r: Reader): Omit<TextObject, 'id' | 'layer' | 'name' | 'links'
 }
 
 /** What every node has besides its id, layer, name and links (version 2): locked, hidden and what it is (`ref`) */
+// (a line's or a shape's: an area and a point keep theirs in their own part, and a text has none)
+const nodeDescription = (o: BoardObject) => (o.kind === 'line' || o.kind === 'shape' ? (o.description ?? '') : '')
+
+/** The article before it is one: a line's, area's or shape's */
+const draftOf = (o: BoardObject) =>
+  o.kind === 'line' || o.kind === 'border' || o.kind === 'shape' ? { infobox: o.infobox, text: o.articleText ?? '', type: o.articleType ?? '' } : { infobox: undefined, text: '', type: '' }
+
 function writeNode(w: Writer, o: BoardObject) {
-  w.byte((o.locked ? LOCKED : 0) | (o.hidden ? HIDDEN : 0) | (o.ref ? HAS_REF : 0))
+  const description = nodeDescription(o)
+  const draft = draftOf(o)
+  w.byte(
+    (o.locked ? LOCKED : 0) |
+      (o.hidden ? HIDDEN : 0) |
+      (o.ref ? HAS_REF : 0) |
+      (description ? HAS_NODE_DESCRIPTION : 0) |
+      (draft.infobox ? HAS_NODE_INFOBOX : 0) |
+      (draft.text ? HAS_ARTICLE_TEXT : 0) |
+      (draft.type ? HAS_ARTICLE_TYPE : 0),
+  )
   if (o.ref) {
     w.byte(REF_TYPES.indexOf(o.ref.type) + 1)
     w.int(o.ref.id)
   }
+  if (description) w.str(description)
+  if (draft.infobox) w.str(JSON.stringify(draft.infobox))
+  if (draft.text) w.str(draft.text)
+  if (draft.type) w.str(draft.type)
 }
 
-function readNode(r: Reader): Pick<BoardObject, 'locked' | 'hidden' | 'ref'> {
+function readNode(r: Reader): Pick<BoardObject, 'locked' | 'hidden' | 'ref' | 'infobox' | 'articleText' | 'articleType'> & { description?: string } {
   const flags = r.byte()
   const type = flags & HAS_REF ? REF_TYPES[r.byte() - 1] : undefined
   const ref = flags & HAS_REF ? { type, id: r.int() } : undefined
   if (ref && !ref.type) throw new RangeError('Unknown ref type')
-  return { ...(flags & LOCKED ? { locked: true } : {}), ...(flags & HIDDEN ? { hidden: true } : {}), ...(ref ? { ref: ref as BoardObject['ref'] } : {}) }
+  const description = flags & HAS_NODE_DESCRIPTION ? r.str() : ''
+  // Damaged JSON is left out (the left element starts empty again)
+  const box = flags & HAS_NODE_INFOBOX ? infobox.safeParse(safeJson(r.str())) : undefined
+  const articleText = flags & HAS_ARTICLE_TEXT ? r.str() : ''
+  const articleType = flags & HAS_ARTICLE_TYPE ? r.str() : ''
+  return {
+    ...(articleType ? { articleType } : {}),
+    ...(box?.success ? { infobox: box.data } : {}),
+    ...(articleText ? { articleText } : {}),
+    ...(flags & LOCKED ? { locked: true } : {}),
+    ...(flags & HIDDEN ? { hidden: true } : {}),
+    ...(ref ? { ref: ref as BoardObject['ref'] } : {}),
+    ...(description ? { description } : {}),
+  }
 }
 
 function writeRecord(o: BoardObject): Writer {

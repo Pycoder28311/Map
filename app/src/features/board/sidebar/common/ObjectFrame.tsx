@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import type { BoardObject } from '../../types'
 import type { Mode } from '../../useMouseTool'
+import ObjectArticleSection from './ObjectArticleSection'
 import ObjectHeaderRow, { type HeaderAction } from './ObjectHeaderRow'
 import ObjectLinksSection from './ObjectLinksSection'
 import SidePanel from './SidePanel'
@@ -16,6 +17,8 @@ export type ObjectFrameContext = {
   onErase: () => void
   onDuplicate?: () => void
   onShowBoardObject: (id: number) => void
+  /** Opens the left element of the article connected to the object */
+  onOpenArticle?: (id: number) => void
 }
 
 type Props = ObjectFrameContext & {
@@ -37,11 +40,15 @@ type Props = ObjectFrameContext & {
  * The frame of every object's sidebar: the header row, the kind's own sections (`children`) and, at the bottom, the
  * links section. Lives in the editor's right sidebar.
  */
-export default function ObjectFrame({ mapId, object, board, mode, actions, onSplit, onFocus, onErase, onDuplicate, top, header, leading, onShowBoardObject, footerAction, children }: Props) {
+export default function ObjectFrame({ mapId, object, board, mode, actions, onSplit, onFocus, onErase, onDuplicate, top, header, leading, onShowBoardObject, onOpenArticle, footerAction, children }: Props) {
   return (
     <SidePanel label={`${object.kind} options`} wide={object.kind === 'point'}>
       {top}
       {header === undefined ? <ObjectHeaderRow {...{ mapId, object, board, mode, actions, onSplit, onFocus, onErase, onDuplicate, leading, onShowBoardObject }} /> : header}
+      {/* A line and a closed area have it under their text (AttachedTextField) */}
+      {(object.kind === 'shape' || (object.kind === 'border' && object.open)) && onOpenArticle && (
+        <ObjectArticleSection mapId={mapId} object={object} board={board} onOpenArticle={onOpenArticle} />
+      )}
       {children}
       <ObjectLinksSection mapId={mapId} object={object} board={board} action={footerAction} />
     </SidePanel>

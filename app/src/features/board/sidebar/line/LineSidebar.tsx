@@ -6,7 +6,8 @@ import ObjectFrame, { type ObjectFrameContext } from '../common/ObjectFrame'
 import LineArrowsSection from './LineArrowsSection'
 import LineColourSection from './LineColourSection'
 import LineEditButtons from './LineEditButtons'
-import LineTextField from './LineTextField'
+import AttachedTextField from '../common/AttachedTextField'
+import ObjectArticleSection from '../common/ObjectArticleSection'
 import LineShadowSection from './LineShadowSection'
 import LineStrokeSection from './LineStrokeSection'
 import LineTypeSection from './LineTypeSection'
@@ -32,7 +33,13 @@ export default function LineSidebar({ object, apply, pointTool = false, onPointT
             <PointToolButton on={pointTool} onToggle={onPointTool} what="line" />
           </div>
         )}
-        <LineTextField mapId={context.mapId} line={object} board={context.board} />
+        <AttachedTextField
+          mapId={context.mapId}
+          owner={object}
+          board={context.board}
+          belowFilled={!!object.description || !!object.ref}
+          below={context.onOpenArticle && <ObjectArticleSection mapId={context.mapId} object={object} board={context.board} onOpenArticle={context.onOpenArticle} />}
+        />
         <LineColourSection
           {...section}
           title="Basic"

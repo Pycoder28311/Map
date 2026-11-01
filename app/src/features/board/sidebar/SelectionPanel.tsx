@@ -24,6 +24,8 @@ type Props = {
   onErase: () => void
   onDuplicate: () => void
   onShowBoardObject: (id: number) => void
+  /** Opens the left element of an object's article */
+  onOpenArticle: (id: number) => void
   onPreview: (preview: StylePreview | null) => void
   /** The Point tool of the Line and Border tools: on, and a way to switch it (a line's and an area's sidebars have its button) */
   pointTool?: boolean

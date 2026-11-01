@@ -8,7 +8,8 @@ describe('pointInfo', () => {
   it('every type starts with its own rows, valid in an article\'s Info box, the same on every call', () => {
     for (const label of POINT_LABELS) {
       const box = defaultInfobox(label)
-      expect(box.rows.length).toBeGreaterThan(0)
+      // (None, the first, has no rows)
+      expect(box.rows.length > 0).toBe(label !== 'none')
       expect(infobox.safeParse(box).success).toBe(true)
       expect(defaultInfobox(label)).toEqual(box)
     }

@@ -82,6 +82,17 @@ describe('encodeBoard / decodeBoard', () => {
     expect(roundTrip({ nextId: 2, objects: [damaged] }).objects[0]).toEqual(plain)
   })
 
+  it('keeps a line\'s or shape\'s description and its article (ref); an area and a point keep theirs where they were', () => {
+    const line: BoardObject = { ...base, id: 1, kind: 'line', style: fancy, points: pts([0, 0], [9, 9]), description: 'A road', ref: { type: 'articles', id: 7 } }
+    expect(roundTrip({ nextId: 2, objects: [line] }).objects[0]).toEqual(line)
+    // Its article before it is made: the Info box and the text, kept in the file
+    const infobox = { image: null, banner: null, name: '', rows: [{ id: 'a', label: 'Length', kind: 'value' as const, value: '12 km' }] }
+    const draft: BoardObject = { ...base, id: 3, kind: 'shape', style: fancy, shape: 'rect', box: { x: 0, y: 0, w: 5, h: 5 }, rotation: 0, param: 0, fill: null, infobox, articleText: '<p>Park</p>', articleType: 'landmark' }
+    expect(roundTrip({ nextId: 4, objects: [draft] }).objects[0]).toEqual(draft)
+    const area: BoardObject = { ...base, id: 2, kind: 'border', style: fancy, fill: null, description: 'Hills', points: pts([0, 0], [9, 0], [9, 9]) }
+    expect(roundTrip({ nextId: 3, objects: [area] }).objects[0]).toEqual(area)
+  })
+
   it('version 2: keeps locked, hidden and what a node is (ref); skips header extras it does not know (docs/plans/38)', () => {
     const point: BoardObject = { ...base, id: 1, kind: 'point', anchor: { x: 1, y: 2 }, ...POINT_DEFAULT, locked: true, hidden: true, ref: { type: 'objectCards', id: 42 } }
     expect(roundTrip({ nextId: 2, objects: [point] }).objects[0]).toEqual(point)

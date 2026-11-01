@@ -28,7 +28,10 @@ import { LAYER_MAIN, type BoardObject, type BorderObject, type LineObject, type 
 import { BOARD, boardToScreen, clampToBoard, insideBoard, screenToBoard, zoomFactorOf, type Size } from './viewport'
 import LinkPickBar from './LinkPickBar'
 import MapConflictModal from './MapConflictModal'
+import ObjectArticleForm from './ObjectArticleForm'
+import ObjectDraftForm from './ObjectDraftForm'
 import PointForm from './PointForm'
+import { articleIdOf } from './objectArticle'
 import MapTitleBar, { type LeftPanel } from './MapTitleBar'
 import { useMapSave } from './useMapSave'
 import { useMoveLocalNotes } from '../notes/attachedNotes'
@@ -121,6 +124,8 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
   const [pointMode, setPointMode] = useState(false)
   // What the Mouse tool picked is edited with that kind's own tool (its sidebar, its pointer); a click on bare board lets go of it and goes back to the Mouse tool
   const [toolSelected, setToolSelected] = useState(false)
+  // The object whose article is open at the left (it closes when something else is selected)
+  const [articleOpen, setArticleOpen] = useState<number | null>(null)
   // Where the pointer is (board) while a point is picked: the next side of the path follows it
   const [tailTo, setTailTo] = useState<Point | null>(null)
   const [space, setSpace] = useState(false)
@@ -658,7 +663,16 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         : tool === 'mouse' && mouse.selected.length > 0
           ? 'selection'
           : null
-  const sidebar = formPoint && sidebarFor === 'selection' ? null : sidebarFor
+  const sidebar = sidebarFor
+  // The left element of an article connected to the one selected object (a line, area, shape or text): opened from its sidebar, not by default
+  // (an object whose article is not made yet opens it as it is written in the object: ObjectDraftForm)
+  const articleObject = !visitor && !formPoint && mouse.selected.length === 1 && mouse.selected[0].id === articleOpen ? mouse.selected[0] : null
+  const openedArticle = articleObject ? articleIdOf(articleObject) : null
+  // Selecting something else (or nothing) closes it
+  const stillSelected = mouse.selected.length === 1 && mouse.selected[0].id === articleOpen
+  useEffect(() => {
+    if (articleOpen !== null && !stillSelected) setArticleOpen(null)
+  }, [articleOpen, stillSelected])
   // The hover card's pin: not while text is typed, nor over a pin whose own card is open or that is selected (its box and sidebar show)
   const hoveredFound = hoverPin === null ? undefined : shown.objects.find((o) => o.id === hoverPin)
   const hoveredPin: PointObject | null =
@@ -800,8 +814,8 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         <MapTitleBar
           mapId={mapId}
           save={visitor ? undefined : saver}
-          pointForm={
-            formPoint && (
+          form={
+            formPoint ? (
               <PointForm
                 key={formPoint.id}
                 mapId={mapId}
@@ -809,7 +823,11 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
                 apply={(patch) => updateObject(mapId, formPoint.id, patch)}
                 onClose={() => clearSelection(mapId)}
               />
-            )
+            ) : articleObject && openedArticle !== null ? (
+              <ObjectArticleForm key={openedArticle} mapId={mapId} objectId={articleObject.id} articleId={openedArticle} onClose={() => setArticleOpen(null)} />
+            ) : articleObject ? (
+              <ObjectDraftForm key={articleObject.id} mapId={mapId} object={articleObject} board={board.objects} onClose={() => setArticleOpen(null)} />
+            ) : null
           }
           editorWidth={fullSize?.w}
           panel={leftPanel}
@@ -892,6 +910,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
               const target = board.objects.find((o) => o.id === id)
               if (target) focusOn(boundsOf(target))
             }}
+            onOpenArticle={(id) => setArticleOpen(id)}
           />
         ) : tool === 'line' ? (
           <LinePenSidebar pointTool={pointMode} onPointTool={togglePointTool} />

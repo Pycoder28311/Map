@@ -14,8 +14,8 @@ describe('points', () => {
     expect(newPoint({ x: 1.4, y: 2.6 }, { label: 'city', icon: 'city', color: '#2563eb' })).toMatchObject({ kind: 'point', anchor: { x: 1, y: 3 }, label: 'city', icon: 'city' })
   })
   it('a new label brings its own icon and colour unless they were set by hand', () => {
-    expect(labelPatch(point(1, { label: 'area', icon: 'pin', color: '#dc2626' }), 'city')).toEqual({ label: 'city', icon: 'city', color: '#2563eb' })
-    expect(labelPatch(point(1, { label: 'area', icon: 'star', color: '#000000' }), 'city')).toEqual({ label: 'city' })
+    expect(labelPatch(point(1, { label: 'none', icon: 'pin', color: '#dc2626' }), 'city')).toEqual({ label: 'city', icon: 'city', color: '#2563eb' })
+    expect(labelPatch(point(1, { label: 'none', icon: 'star', color: '#000000' }), 'city')).toEqual({ label: 'city' })
   })
   it('every label has an icon that exists', () => {
     for (const l of LABELS) expect(PIN_ICONS).toContain(defaultsOf(l.id).icon)

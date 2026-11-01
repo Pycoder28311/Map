@@ -1,6 +1,6 @@
 import { useId, useRef, type ReactNode, type ToggleEvent } from 'react'
 import { closeOnOutsideScroll } from '../../../lib/popoverScroll'
-import { LuChevronLeft } from 'react-icons/lu'
+import { LuChevronLeft, LuChevronRight } from 'react-icons/lu'
 import Button from '../buttons/Button'
 import type { ButtonVariant } from '../buttons/buttonStyles'
 import type { ButtonIcon, PlainIcon } from '../icons/IconSlot'
@@ -22,6 +22,10 @@ type Props<T extends string> = {
   /** The button's text */
   children: ReactNode
   className?: string
+  /** Which side the menu opens on (default: left). When there is no room on that side it opens on the other */
+  side?: 'left' | 'right'
+  /** A › at the right end of the button instead of the arrow before the text; the text stays in the middle */
+  arrowEnd?: boolean
 }
 
 /**
@@ -29,7 +33,7 @@ type Props<T extends string> = {
  * with the button's: for a button at the bottom of a box that sits at the right of the page. A pick, a click outside, Esc, scrolling or
  * resizing closes it.
  */
-export default function SideMenu<T extends string>({ variant = 'ghost', items, onSelect, onHover, label, icon = LuChevronLeft, children, className = '' }: Props<T>) {
+export default function SideMenu<T extends string>({ variant = 'ghost', items, onSelect, onHover, label, icon = LuChevronLeft, children, className = '', side = 'left', arrowEnd = false }: Props<T>) {
   const id = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -42,7 +46,20 @@ export default function SideMenu<T extends string>({ variant = 'ghost', items, o
     const trigger = triggerRef.current
     if (e.newState !== 'open' || !trigger) return
     const rect = trigger.getBoundingClientRect()
-    e.currentTarget.style.right = `${document.documentElement.clientWidth - rect.left + 4}px`
+    const width = document.documentElement.clientWidth
+    const menu = e.currentTarget
+    // Its room on the wanted side (the menu is about as wide as its widest option, measured when it is shown: a guess before)
+    const need = menu.offsetWidth || 200
+    const roomLeft = rect.left - 4
+    const roomRight = width - rect.right - 4
+    const left = side === 'left' ? roomLeft >= need || roomLeft >= roomRight : roomRight < need && roomLeft > roomRight
+    if (left) {
+      menu.style.left = 'auto'
+      menu.style.right = `${width - rect.left + 4}px`
+    } else {
+      menu.style.right = 'auto'
+      menu.style.left = `${rect.right + 4}px`
+    }
     e.currentTarget.style.bottom = `${window.innerHeight - rect.bottom}px`
     e.currentTarget.style.maxHeight = `${rect.bottom - 8}px`
   }
@@ -58,8 +75,10 @@ export default function SideMenu<T extends string>({ variant = 'ghost', items, o
 
   return (
     <>
-      <Button ref={triggerRef} variant={variant} size="sm" plain={variant === 'ghost'} filled={variant === 'ghost'} icon={icon} popoverTarget={id} aria-haspopup="menu" className={`justify-center ${className}`}>
+      <Button ref={triggerRef} variant={variant} size="sm" plain={variant === 'ghost'} filled={variant === 'ghost'} icon={arrowEnd ? undefined : icon} popoverTarget={id} aria-haspopup="menu" className={`${arrowEnd ? 'relative justify-center' : 'justify-center'} ${className}`}>
         {children}
+        {/* (at the right end, the text stays in the middle) */}
+        {arrowEnd && <LuChevronRight aria-hidden className="absolute end-2 size-(--btn-icon-size)" />}
       </Button>
       <div ref={menuRef} id={id} popover="auto" role="menu" aria-label={label} onBeforeToggle={place} onToggle={watch} className={`${DROPDOWN_MENU} overflow-y-auto`}>
         {items.map((item) => (

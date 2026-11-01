@@ -88,6 +88,8 @@ type Props = {
   readOnly?: boolean
   /** false: a plain box with ordinary corners, without the article's cracked edge (a point's form) */
   cracked?: boolean
+  /** Which side Add info's menu opens on (default: left; the other side when there is no room) */
+  menuSide?: 'left' | 'right'
 }
 
 /**
@@ -96,7 +98,7 @@ type Props = {
  * and coordinates. A square + in the gap between two blocks (and under the picture) opens a menu of what to put there; a row's ⋯ changes its type, moves or deletes it;
  * Add info (full width, its menu opens on its left) adds one at the end, and shows a faint example of the option under the pointer. Every change is sent to `onChange`.
  */
-export default function InfoBox({ value, onChange, onUploadImage, onUploadError, readOnly = false, cracked = true }: Props) {
+export default function InfoBox({ value, onChange, onUploadImage, onUploadError, readOnly = false, cracked = true, menuSide = 'left' }: Props) {
   const rows = value.rows
   const setRows = (next: InfoRow[]) => onChange({ ...value, rows: next })
   const [preview, setPreview] = useState<RowType | null>(null)
@@ -118,8 +120,9 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError,
     // place in the text is not: a negative margin takes the extra height back, so the text beside it stays where it is
     // A reader's box is inert: shown as it is, nothing in it reacts
     <div className={cracked ? 'ui-crack' : undefined} style={{ marginBottom: -extra }} inert={readOnly || undefined}>
-      <Card variant="muted" radius={cracked ? 0 : undefined} className="flex flex-col p-base" style={cracked ? { clipPath: EDGE } : undefined}>
-        {(!readOnly || value.image) && <Picture image={value.image} onChange={(image) => onChange({ ...value, image })} onUploadImage={onUploadImage} onUploadError={onUploadError} />}
+      {/* (a point's or an object's form has no box around its sections: they stand on the form itself) */}
+      <Frame boxed={cracked}>
+        {(!readOnly || value.image) && <Picture image={value.image} onChange={(image) => onChange({ ...value, image })} onUploadImage={onUploadImage} onUploadError={onUploadError} flat={!cracked} />}
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -177,13 +180,23 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError,
         )}
         {!readOnly && (
           <div className="mt-2">
-            <SideMenu label="Add info" items={TYPES} onSelect={(type) => setRows([...rows, emptyRow(type)])} onHover={setPreview} className="w-full">
+            <SideMenu label="Add info" side={menuSide} arrowEnd={!cracked} items={TYPES} onSelect={(type) => setRows([...rows, emptyRow(type)])} onHover={setPreview} className="w-full">
               Add info
             </SideMenu>
           </div>
         )}
-      </Card>
+      </Frame>
     </div>
+  )
+}
+
+/** The article's box around the sections (muted, with the cracked edge), or nothing around them */
+function Frame({ boxed, children }: { boxed: boolean; children: ReactNode }) {
+  if (!boxed) return <div className="flex flex-col">{children}</div>
+  return (
+    <Card variant="muted" radius={0} className="flex flex-col p-base" style={{ clipPath: EDGE }}>
+      {children}
+    </Card>
   )
 }
 
@@ -193,7 +206,8 @@ function Picture({
   onChange,
   onUploadImage,
   onUploadError,
-}: { image: string | null; onChange: (image: string | null) => void } & Pick<Props, 'onUploadImage' | 'onUploadError'>) {
+  flat = false,
+}: { image: string | null; onChange: (image: string | null) => void; flat?: boolean } & Pick<Props, 'onUploadImage' | 'onUploadError'>) {
   const picker = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const upload = async (file: File | undefined) => {
@@ -217,7 +231,8 @@ function Picture({
     <div
       onDragOver={(e) => e.preventDefault()}
       onDrop={drop}
-      className="group/picture relative aspect-square overflow-hidden rounded-(--card-radius) bg-fill-strong"
+      // (flat: half as tall, a point's or an object's form)
+      className={`group/picture relative overflow-hidden rounded-(--card-radius) bg-fill-strong ${flat ? 'aspect-[2/1]' : 'aspect-square'}`}
     >
       {image ? (
         <>

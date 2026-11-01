@@ -21,7 +21,7 @@ const firstLine = (text: string) => text.trim().split('\n')[0].slice(0, 40)
 export function layerLabel(object: BoardObject, board: Board): string {
   if (object.name.trim()) return object.name.trim()
   if (object.kind === 'text' && firstLine(object.text)) return firstLine(object.text)
-  if (object.kind === 'point') return labelName(object.label)
+  if (object.kind === 'point' && object.label !== 'none') return labelName(object.label)
   if (object.kind === 'border') {
     const name = board.objects.find((o) => o.kind === 'text' && o.isName && o.attach === object.id)
     if (name?.kind === 'text' && firstLine(name.text)) return firstLine(name.text)

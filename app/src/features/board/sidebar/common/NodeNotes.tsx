@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { LuStickyNote, LuX } from 'react-icons/lu'
 import Button from '../../../../components/ui/buttons/Button'
 import IconButton from '../../../../components/ui/buttons/IconButton'
 import LinkButton from '../../../../components/ui/buttons/LinkButton'
+import HoverInfo from '../../../../components/ui/overlays/HoverInfo'
 import SearchInput from '../../../../components/ui/fields/SearchInput'
 import { useResourceList } from '../../../../lib/resource/hooks'
 import { useOptionalItemModal } from '../../../items/ItemModal'
@@ -18,7 +19,7 @@ const PICK_MAX = 8
  * The notes attached to this node (docs/plans/38): from the map's one list of notes (read once per open map), each opening in the
  * note modal, with ✕ to detach it. "Connect a note" finds one of the user's notes to attach here (it leaves wherever it was)
  */
-export default function NodeNotes({ mapId, objectId }: { mapId: string; objectId: number }) {
+export default function NodeNotes({ mapId, objectId, extra }: { mapId: string; objectId: number; extra?: ReactNode }) {
   const notes = notesResource()
   const attached = useAttachedNotes({ type: 'map', id: Number(mapId) })
   const mine = byNode(attached.items as Note[]).get(objectId) ?? []
@@ -79,9 +80,15 @@ export default function NodeNotes({ mapId, objectId }: { mapId: string; objectId
           </LinkButton>
         </div>
       ) : (
-        <LinkButton className="self-start ps-2" onClick={() => setPicking(true)}>
-          Connect a note
-        </LinkButton>
+        // A sortBy2 button with the project's hover card, and `extra` (the form's own button) right after it
+        <div className="flex items-center gap-1">
+          <HoverInfo title="Connect a note" text="Finds one of your notes and attaches it here. A note is attached to one thing: it leaves wherever it was." side="top" delay={350}>
+            <Button variant="ghost" size="md" plain onClick={() => setPicking(true)}>
+              Connect a note
+            </Button>
+          </HoverInfo>
+          {extra}
+        </div>
       )}
     </div>
   )

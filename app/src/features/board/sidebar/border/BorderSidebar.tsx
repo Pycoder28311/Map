@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { changeObjects, type Patch } from '../../boardStore'
 import type { BorderObject, Fill } from '../../types'
+import AttachedTextField from '../common/AttachedTextField'
+import ObjectArticleSection from '../common/ObjectArticleSection'
 import PointToolButton from '../common/PointToolButton'
 import ObjectFrame, { type ObjectFrameContext } from '../common/ObjectFrame'
-import BorderDescriptionSection from './BorderDescriptionSection'
 import BorderCountySection from './BorderCountySection'
 import BorderFillSection from './BorderFillSection'
 import LineEditButtons from '../line/LineEditButtons'
@@ -45,13 +46,23 @@ export default function BorderSidebar({ object, apply, pointTool = false, onPoin
     },
   }
   return (
-    <ObjectFrame object={object} actions={['focus']} {...context}>
+    // A closed area's sidebar starts like a line's: the text in it (its name), then its description and article (an open one keeps the name row)
+    <ObjectFrame object={object} actions={['focus']} header={object.open ? undefined : null} {...context}>
       <div className="flex flex-col gap-3">
         {onPointTool && (
           <div className="flex flex-col gap-2">
             <h2 className="text-heading">Border</h2>
             <PointToolButton on={pointTool} onToggle={onPointTool} what="border" />
           </div>
+        )}
+        {!object.open && (
+          <AttachedTextField
+            mapId={context.mapId}
+            owner={object}
+            board={context.board}
+            belowFilled={!!object.description || !!object.ref}
+            below={context.onOpenArticle && <ObjectArticleSection mapId={context.mapId} object={object} board={context.board} onOpenArticle={context.onOpenArticle} />}
+          />
         )}
         <BorderBasicSection
           {...section}
@@ -62,7 +73,6 @@ export default function BorderSidebar({ object, apply, pointTool = false, onPoin
         <BorderWaySection {...section} />
         {!object.open && <BorderFillSection {...section} applyAll={areas.length > 1 ? applyAll : undefined} />}
         {!object.open && <BorderCountySection {...section} />}
-        <BorderDescriptionSection text={object.description ?? ''} onSave={(description) => apply({ description }, true)} />
       </div>
     </ObjectFrame>
   )

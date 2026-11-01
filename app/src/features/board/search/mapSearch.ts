@@ -56,6 +56,8 @@ export const ALL: SearchFilter = { by: 'all' }
 export function filtersOf(entries: SearchEntry[]): { filter: SearchFilter; name: string; count: number }[] {
   const tabs: { filter: SearchFilter; name: string; count: number }[] = [{ filter: ALL, name: 'All', count: entries.length }]
   for (const l of LABELS) {
+    // (a point with no type is in All only)
+    if (l.id === 'none') continue
     const count = entries.filter((e) => e.label === l.id).length
     if (count > 0) tabs.push({ filter: { by: 'label', label: l.id }, name: l.name, count })
   }

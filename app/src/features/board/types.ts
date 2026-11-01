@@ -83,6 +83,20 @@ export type Base = {
   hidden?: boolean
   /** The node is this article or object card: its content lives there (the later conversion; no UI yet) */
   ref?: { type: RefType; id: number }
+  /**
+   * A line's or a shape's description (the sidebar's textarea under its text or name); the article made for it starts with it. An area keeps
+   * its own (`BorderObject.description`, drawn under its name on the map), a point its text in its left form; a text has none
+   */
+  description?: string
+  /**
+   * A line's, area's or shape's article before it is one: its Info box (the article's own kind) and its text (HTML, as an article's), written
+   * in its left element and kept in the map's file. "Create article" makes the article from them (with the title: objectTitle.ts) and
+   * empties them. A point keeps its Info box in its own part
+   */
+  infobox?: Infobox
+  articleText?: string
+  /** Which type of its kind it is (infoTypes.ts: a road, a river… / a country, a park… / a building…): its article starts with that type's rows. Missing: the first */
+  articleType?: string
 }
 
 export type LineObject = Base & { kind: 'line'; style: Style } & Path
@@ -192,7 +206,7 @@ export type TextObject = Base & {
 /** The runs of a text (its plain text as one run when it has none) */
 export const runsOf = (o: TextObject): TextRun[] => o.runs ?? [{ text: o.text }]
 /** The types of a point (each has its own default info rows: pointInfo.ts). Saved as the index, so new ones are only ever added at the end */
-export const POINT_LABELS = ['area', 'city', 'store', 'nature', 'structure'] as const
+export const POINT_LABELS = ['none', 'area', 'city', 'store', 'nature', 'structure'] as const
 export type PointLabel = (typeof POINT_LABELS)[number]
 export const PIN_ICONS = ['pin', 'city', 'building', 'mountain', 'water', 'flag', 'star', 'tree', 'globe', 'anchor', 'home', 'heart'] as const
 export type PinIcon = (typeof PIN_ICONS)[number]
