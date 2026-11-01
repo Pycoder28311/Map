@@ -66,7 +66,7 @@ export default function SearchResult({ entry, object, open, onToggle, onShow, on
             <dd className="min-w-0 truncate">{entry.type}</dd>
             <dt className="text-fg-muted">Links</dt>
             <dd>{links === 0 ? 'None' : links}</dd>
-            {mockDetails(entry).map((field) => (
+            {mockDetails(entry, object).map((field) => (
               <div key={field.name} className="contents">
                 <dt className="text-fg-muted">{field.name}</dt>
                 <dd className="text-fg-subtle">{field.value}</dd>

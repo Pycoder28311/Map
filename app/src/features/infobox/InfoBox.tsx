@@ -86,6 +86,8 @@ type Props = {
   onUploadError: (error: unknown) => void
   /** Only shown (a reader's page): nothing in it can be changed, and nothing is offered to add */
   readOnly?: boolean
+  /** false: a plain box with ordinary corners, without the article's cracked edge (a point's form) */
+  cracked?: boolean
 }
 
 /**
@@ -94,7 +96,7 @@ type Props = {
  * and coordinates. A square + in the gap between two blocks (and under the picture) opens a menu of what to put there; a row's ⋯ changes its type, moves or deletes it;
  * Add info (full width, its menu opens on its left) adds one at the end, and shows a faint example of the option under the pointer. Every change is sent to `onChange`.
  */
-export default function InfoBox({ value, onChange, onUploadImage, onUploadError, readOnly = false }: Props) {
+export default function InfoBox({ value, onChange, onUploadImage, onUploadError, readOnly = false, cracked = true }: Props) {
   const rows = value.rows
   const setRows = (next: InfoRow[]) => onChange({ ...value, rows: next })
   const [preview, setPreview] = useState<RowType | null>(null)
@@ -115,8 +117,8 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError,
     // The box clips itself to the cracked edge; its wrapper draws the outline along that shape. While a preview shows it is that much taller, but its
     // place in the text is not: a negative margin takes the extra height back, so the text beside it stays where it is
     // A reader's box is inert: shown as it is, nothing in it reacts
-    <div className="ui-crack" style={{ marginBottom: -extra }} inert={readOnly || undefined}>
-      <Card variant="muted" radius={0} className="flex flex-col p-base" style={{ clipPath: EDGE }}>
+    <div className={cracked ? 'ui-crack' : undefined} style={{ marginBottom: -extra }} inert={readOnly || undefined}>
+      <Card variant="muted" radius={cracked ? 0 : undefined} className="flex flex-col p-base" style={cracked ? { clipPath: EDGE } : undefined}>
         {(!readOnly || value.image) && <Picture image={value.image} onChange={(image) => onChange({ ...value, image })} onUploadImage={onUploadImage} onUploadError={onUploadError} />}
         <DndContext
           sensors={sensors}

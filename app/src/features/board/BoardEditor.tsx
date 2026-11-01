@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
-import { changeObjects, canRedo, canUndo, redo, undo, useBoard } from './boardStore'
+import { changeObjects, canRedo, canUndo, redo, undo, updateObject, useBoard } from './boardStore'
 import { applyChange } from './changes'
 import { LuGalleryHorizontal, LuTrash2, LuX } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
@@ -28,6 +28,7 @@ import { LAYER_MAIN, type BoardObject, type BorderObject, type LineObject, type 
 import { BOARD, boardToScreen, clampToBoard, insideBoard, screenToBoard, zoomFactorOf, type Size } from './viewport'
 import LinkPickBar from './LinkPickBar'
 import MapConflictModal from './MapConflictModal'
+import PointForm from './PointForm'
 import MapTitleBar, { type LeftPanel } from './MapTitleBar'
 import { useMapSave } from './useMapSave'
 import { useMoveLocalNotes } from '../notes/attachedNotes'
@@ -645,8 +646,10 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
       ? toolCursor(tool)
       : undefined
 
+  // A point that is the only thing selected (just placed, or picked) is edited in the form at the left, not in the right sidebar
+  const formPoint = !visitor && mouse.selected.length === 1 && mouse.selected[0].kind === 'point' ? mouse.selected[0] : null
   // The sidebar on the right: the options of the Line tool, or of what is selected
-  const sidebar = visitor
+  const sidebarFor = visitor
     ? null
     : toolSelected && mouse.selected.length > 0
       ? 'selection'
@@ -655,6 +658,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         : tool === 'mouse' && mouse.selected.length > 0
           ? 'selection'
           : null
+  const sidebar = formPoint && sidebarFor === 'selection' ? null : sidebarFor
   // The hover card's pin: not while text is typed, nor over a pin whose own card is open or that is selected (its box and sidebar show)
   const hoveredFound = hoverPin === null ? undefined : shown.objects.find((o) => o.id === hoverPin)
   const hoveredPin: PointObject | null =
@@ -796,6 +800,17 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         <MapTitleBar
           mapId={mapId}
           save={visitor ? undefined : saver}
+          pointForm={
+            formPoint && (
+              <PointForm
+                key={formPoint.id}
+                mapId={mapId}
+                object={formPoint}
+                apply={(patch) => updateObject(mapId, formPoint.id, patch)}
+                onClose={() => clearSelection(mapId)}
+              />
+            )
+          }
           editorWidth={fullSize?.w}
           panel={leftPanel}
           onPanel={(next) => {

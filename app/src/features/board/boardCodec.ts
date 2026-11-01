@@ -13,9 +13,10 @@
 //                                      extras (only when any differs from the defaults) := flags(bit 0 width, 1 rotation, 2 size colour opacity,
 //                                        3 align, 4 runs, 5 attach, 6 isName) then width | rotation | size colour opacity | align | runs | attach
 //                                      runs := count (text flags(bold italic underline strike hasColour hasSize) [colour] [size])*
-//   point   := x y [extras]    extras (only when any differs from the defaults) := flags(bit 0 label, 1 icon, 2 colour, 3 banner, 4 description)
-//                              [label byte] [icon byte] [colour] [banner id(text)] [description(text)]
+//   point   := x y [extras]    extras (only when any differs from the defaults) := flags(bit 0 label, 1 icon, 2 colour, 3 banner, 4 description,
+//                              5 infobox) [label byte] [icon byte] [colour] [banner id(text)] [description(text)] [infobox as JSON(text)]
 // A plain pencil line is the old path plus about 15 bytes.
+import { infobox } from '@map/shared'
 import { readPath, Reader, writePath, Writer } from '../projects/strokeCodec'
 import { hasShadow, shadowOffset } from './textShadow'
 import { readColor, readStyle, writeColor, writeStyle } from './style'
@@ -114,18 +115,26 @@ function readFillValue(r: Reader): Fill {
 const ALIGNS: TextAlign[] = ['left', 'center', 'right', 'justify']
 const RUN_FLAGS = { bold: 1, italic: 2, underline: 4, strike: 8, color: 16, size: 32 } as const
 
+function safeJson(text: string): unknown {
+  try {
+    return JSON.parse(text)
+  } catch {
+    return null
+  }
+}
+
 function writePoint(w: Writer, o: PointObject) {
   w.int(o.anchor.x)
   w.int(o.anchor.y)
   const flags =
-    (o.label !== POINT_DEFAULT.label ? 1 : 0) | (o.icon !== POINT_DEFAULT.icon ? 2 : 0) | (o.color !== POINT_DEFAULT.color ? 4 : 0) | (o.banner ? 8 : 0) | (o.description ? 16 : 0)
+    (o.label !== POINT_DEFAULT.label ? 1 : 0) | (o.icon !== POINT_DEFAULT.icon ? 2 : 0) | (o.color !== POINT_DEFAULT.color ? 4 : 0) | (o.description ? 16 : 0) | (o.infobox ? 32 : 0)
   if (flags === 0) return
   w.byte(flags)
   if (flags & 1) w.byte(Math.max(0, POINT_LABELS.indexOf(o.label)))
   if (flags & 2) w.byte(Math.max(0, PIN_ICONS.indexOf(o.icon)))
   if (flags & 4) writeColor(w, o.color)
-  if (flags & 8) w.str(o.banner!)
   if (flags & 16) w.str(o.description!)
+  if (flags & 32) w.str(JSON.stringify(o.infobox))
 }
 
 function readPoint(r: Reader): Omit<PointObject, 'id' | 'layer' | 'name' | 'links' | 'kind'> {
@@ -135,9 +144,12 @@ function readPoint(r: Reader): Omit<PointObject, 'id' | 'layer' | 'name' | 'link
   const icon = flags & 2 ? PIN_ICONS[r.byte()] : POINT_DEFAULT.icon
   if (!label || !icon) throw new RangeError('Unknown point label or icon')
   const color = flags & 4 ? readColor(r) : POINT_DEFAULT.color
-  const banner = flags & 8 ? r.str() : undefined
+  // (bit 3 was a banner picture, now the Info box's own: a file that has one still reads)
+  if (flags & 8) r.str()
   const description = flags & 16 ? r.str() : undefined
-  return { anchor, label, icon, color, ...(banner ? { banner } : {}), ...(description ? { description } : {}) }
+  // Damaged or unsafe JSON is left out: the point starts with its type's rows again
+  const parsed = flags & 32 ? infobox.safeParse(safeJson(r.str())) : undefined
+  return { anchor, label, icon, color, ...(description ? { description } : {}), ...(parsed?.success ? { infobox: parsed.data } : {}) }
 }
 
 function writeText(w: Writer, o: TextObject) {

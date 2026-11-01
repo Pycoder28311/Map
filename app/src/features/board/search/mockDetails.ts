@@ -1,19 +1,8 @@
-// MOCK DATA: the fields an opened search result shows under its description, by what it is, until each kind gets its own details.
-// Nothing is saved: every value is "—" for now. Replacing this file is the only change the result card needs.
-import type { PointLabel } from '../types'
+// The fields an opened search result shows under its description. A point's are the rows of its Info box (the ones that are a label and a
+// value); the other kinds have none of their own yet, so they show samples ("—").
+import { infoboxOf } from '../pointInfo'
+import type { BoardObject } from '../types'
 import type { SearchEntry } from './mapSearch'
-
-const BY_LABEL: Record<PointLabel, string[]> = {
-  city: ['Population', 'Country', 'Founded'],
-  country: ['Capital', 'Population', 'Area'],
-  mountain: ['Height', 'Range'],
-  sea: ['Area', 'Depth'],
-  river: ['Length', 'Flows into'],
-  lake: ['Area', 'Depth'],
-  island: ['Area', 'Population'],
-  organization: ['Founded', 'Headquarters'],
-  other: ['Notes'],
-}
 
 const BY_KIND: Record<Exclude<SearchEntry['kind'], 'point'>, string[]> = {
   border: ['Population', 'Area'],
@@ -21,8 +10,11 @@ const BY_KIND: Record<Exclude<SearchEntry['kind'], 'point'>, string[]> = {
   shape: ['Notes'],
 }
 
-/** The sample fields of a result: its name and a value ("—" until there are real details) */
-export function mockDetails(entry: SearchEntry): { name: string; value: string }[] {
-  const names = entry.kind === 'point' ? BY_LABEL[entry.label ?? 'other'] : BY_KIND[entry.kind]
-  return names.map((name) => ({ name, value: '—' }))
+/** The fields of a result: its name and a value ("—" for none) */
+export function mockDetails(entry: SearchEntry, object?: BoardObject): { name: string; value: string }[] {
+  if (entry.kind === 'point' && object?.kind === 'point') {
+    return infoboxOf(object).rows.flatMap((row) => (row.kind === 'value' || row.kind === 'date' ? [{ name: row.label || 'Info', value: row.value || '—' }] : []))
+  }
+  if (entry.kind === 'point') return []
+  return BY_KIND[entry.kind].map((name) => ({ name, value: '—' }))
 }

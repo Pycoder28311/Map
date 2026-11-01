@@ -1,5 +1,6 @@
 // What a map's board holds. Lines and borders keep the pencil's geometry (simplified whole-number points,
 // see features/projects/strokeCodec.ts); everything is saved by boardCodec.ts. In memory: boardStore.ts.
+import type { Infobox } from '@map/shared'
 import type { Point } from '../projects/strokeCodec'
 
 export type { Point }
@@ -190,7 +191,8 @@ export type TextObject = Base & {
 }
 /** The runs of a text (its plain text as one run when it has none) */
 export const runsOf = (o: TextObject): TextRun[] => o.runs ?? [{ text: o.text }]
-export const POINT_LABELS = ['city', 'country', 'mountain', 'sea', 'river', 'lake', 'island', 'organization', 'other'] as const
+/** The types of a point (each has its own default info rows: pointInfo.ts). Saved as the index, so new ones are only ever added at the end */
+export const POINT_LABELS = ['area', 'city', 'store', 'nature', 'structure'] as const
 export type PointLabel = (typeof POINT_LABELS)[number]
 export const PIN_ICONS = ['pin', 'city', 'building', 'mountain', 'water', 'flag', 'star', 'tree', 'globe', 'anchor', 'home', 'heart'] as const
 export type PinIcon = (typeof PIN_ICONS)[number]
@@ -202,10 +204,13 @@ export type PointObject = Base & {
   label: PointLabel
   icon: PinIcon
   color: string
-  /** The id of the banner picture in the image store */
-  banner?: string
   /** The description as TipTap's JSON, written out ('' or missing: none) */
   description?: string
+  /**
+   * Its info rows: the same Info box as an article's (shared/infobox.ts, the infobox/ component), so making the point an article keeps
+   * them as they are. Missing: the rows its type starts with (pointInfo.ts), not saved until something is changed
+   */
+  infobox?: Infobox
 }
 
 export type BoardObject = LineObject | BorderObject | ShapeObject | TextObject | PointObject

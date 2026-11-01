@@ -1,8 +1,8 @@
-import { useImageUrl } from '../../mocks/imageStore'
 import Button from '../../components/ui/buttons/Button'
 import PinBadge from './PinIconView'
 import { PIN_HEIGHT } from './pinIcons'
 import PointDescription from './PointDescription'
+import { infoboxOf } from './pointInfo'
 import { labelName } from './pointLabels'
 import type { PointObject } from './types'
 import { boardToScreen, type Size, type Viewport } from './viewport'
@@ -21,7 +21,8 @@ type Props = { point: PointObject; view: Viewport; size: Size; onMore?: () => vo
 
 /** The small card above a pin: what a visitor sees first, and what anyone sees while hovering a pin. Below the pin when the top of the page is too close */
 export default function PointCard({ point, view, size, onMore }: Props) {
-  const banner = useImageUrl(point.banner)
+  // The picture is the Info box's (the one an article has too)
+  const banner = infoboxOf(point).image
   const top = boardToScreen(view, { x: point.anchor.x, y: point.anchor.y - PIN_HEIGHT })
   const tip = boardToScreen(view, point.anchor)
   const hover = !onMore

@@ -62,13 +62,24 @@ describe('encodeBoard / decodeBoard', () => {
   })
 
   it('round-trips a point with every field, and a plain point keeps the old bytes', () => {
-    const full: BoardObject = { ...base, id: 1, kind: 'point', anchor: { x: -5, y: 9 }, label: 'river', icon: 'water', color: '#0284c7', banner: 'img-3', description: '{"type":"doc"}' }
+    const full: BoardObject = { ...base, id: 1, kind: 'point', anchor: { x: -5, y: 9 }, label: 'nature', icon: 'water', color: '#0284c7', description: '{"type":"doc"}' }
     expect(roundTrip({ nextId: 2, objects: [full] }).objects[0]).toEqual(full)
     const plain: BoardObject = { ...base, id: 1, kind: 'point', anchor: { x: 1, y: 2 }, ...POINT_DEFAULT }
     const a = encodeBoard({ nextId: 2, objects: [plain] })
     const b = encodeBoard({ nextId: 2, objects: [{ ...plain, label: 'city' }] })
     expect(b.length).toBe(a.length + 2)
     expect(roundTrip({ nextId: 2, objects: [plain] }).objects[0]).toEqual(plain)
+  })
+
+  it('keeps a point\'s info box (the article\'s own kind of rows); a damaged one is left out', () => {
+    const plain: BoardObject = { ...base, id: 1, kind: 'point', anchor: { x: 1, y: 2 }, ...POINT_DEFAULT }
+    const box = { image: null, banner: null, name: '', rows: [{ id: 'a', label: 'Population', kind: 'value' as const, value: '1M' }] }
+    const withBox: BoardObject = { ...plain, label: 'city', infobox: box }
+    expect(roundTrip({ nextId: 2, objects: [withBox] }).objects[0]).toEqual(withBox)
+    // A point without one keeps the bytes it had
+    expect(encodeBoard({ nextId: 2, objects: [plain] }).length).toBeLessThan(encodeBoard({ nextId: 2, objects: [withBox] }).length)
+    const damaged = { ...plain, infobox: { rows: 'x' } as never }
+    expect(roundTrip({ nextId: 2, objects: [damaged] }).objects[0]).toEqual(plain)
   })
 
   it('version 2: keeps locked, hidden and what a node is (ref); skips header extras it does not know (docs/plans/38)', () => {

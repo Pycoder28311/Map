@@ -1,10 +1,10 @@
 import { LuX } from 'react-icons/lu'
 import IconButton from '../../components/ui/buttons/IconButton'
 import Modal from '../../components/ui/overlays/Modal'
-import { useImageUrl } from '../../mocks/imageStore'
 import PinBadge from './PinIconView'
 import PointDescription from './PointDescription'
 import PointLinks from './PointLinks'
+import { infoboxOf } from './pointInfo'
 import { labelName } from './pointLabels'
 import type { BoardObject, PointObject } from './types'
 
@@ -17,7 +17,7 @@ type Props = {
 
 /** The whole of a pin, to read: what a visitor sees after "Show more" */
 export default function PointView({ point, board, onClose, onShowBoardObject }: Props) {
-  const banner = useImageUrl(point.banner)
+  const banner = infoboxOf(point).image
   return (
     <Modal open onClose={onClose} title={point.name || 'Point'} size="md" bare>
       <div className="flex max-h-[calc(100vh-4rem)] flex-col overflow-y-auto">

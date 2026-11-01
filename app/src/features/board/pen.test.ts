@@ -37,7 +37,7 @@ describe('text pen', () => {
 
 describe('point pen', () => {
   it('starts as a plain red pin and changes only what is given', () => {
-    expect(getPointPen()).toEqual({ label: 'other', icon: 'pin', color: '#dc2626' })
+    expect(getPointPen()).toEqual({ label: 'area', icon: 'pin', color: '#dc2626' })
     setPointPen({ label: 'city' })
     expect(getPointPen()).toMatchObject({ label: 'city', icon: 'pin' })
   })

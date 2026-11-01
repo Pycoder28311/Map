@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { LuCamera, LuGitBranch, LuLayers, LuPencil, LuSearch, LuX } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
@@ -38,6 +38,8 @@ type Props = {
   mapId: string
   /** The map's Save (none for a visitor): shown while there are changes not saved */
   save?: MapSave
+  /** A point's form (PointForm: one point is selected): it takes the column under the bar, in place of the search, notes or layers */
+  pointForm?: ReactNode
   editorWidth?: number
   panel: LeftPanel
   onPanel: (panel: LeftPanel) => void
@@ -51,9 +53,9 @@ type Props = {
  * Top left: the map's name (a click lists the maps, MapPicker; a dot beside it while there are changes not saved), Save (while there
  * are any), the Notes button, the search button and a ⋯ with everything that changes the map: Rename
  * (the name becomes an input: Enter or leaving it renames, Esc undoes), Branches, Layers, Screenshot. Search, Notes and Layers make the floating
- * bar the top of a panel as tall as the editor (`panel`)
+ * bar the top of a panel as tall as the editor (`panel`); a selected point's form (`pointForm`) takes that place while it is open
  */
-export default function MapTitleBar({ mapId, save, editorWidth, panel, onPanel, onPickObject, onShowObject }: Props) {
+export default function MapTitleBar({ mapId, save, pointForm, editorWidth, panel, onPanel, onPickObject, onShowObject }: Props) {
   const shift = usePeekShift()
   // Never reaches the tool panel: it is right-aligned (25rem wide with its gaps) or centred (half of it, 13.5rem, plus the gaps).
   // Measured on the whole editor, sidebar included (`--editor-w`), not on the board's area: that one changes while a sidebar opens, and the bar must not
@@ -105,7 +107,7 @@ export default function MapTitleBar({ mapId, save, editorWidth, panel, onPanel, 
       // Open, a column as tall as the editor; its own background is none: the pieces in it float, the map shows between them
       // (the panel under the bar may be wider than the bar: the tool panel is beside the bar only, never beside the panel). It stops above
       // the zoom control (bottom left)
-      className={`pointer-events-none absolute start-3 top-3 flex flex-col gap-2 ${panel ? 'bottom-16 w-96 max-w-[calc(100%-1.5rem)]' : fit} ${shift}`}
+      className={`pointer-events-none absolute start-3 top-3 flex flex-col gap-2 ${panel || pointForm ? 'bottom-16 w-96 max-w-[calc(100%-1.5rem)]' : fit} ${shift}`}
     >
       <div className={`pointer-events-auto relative flex h-12.5 shrink-0 items-center gap-0.5 self-start ps-1.5 pe-1.5 ${fit} ${FLOAT} ${ROUNDER}`}>
         {draft === null ? (
@@ -166,7 +168,8 @@ export default function MapTitleBar({ mapId, save, editorWidth, panel, onPanel, 
           {error ?? save?.error}
         </p>
       )}
-      {panel === 'search' && (
+      {pointForm}
+      {!pointForm && panel === 'search' && (
         <MapSearchPanel
           mapId={mapId}
           onShow={onShowObject}
@@ -174,8 +177,8 @@ export default function MapTitleBar({ mapId, save, editorWidth, panel, onPanel, 
           onClose={() => onPanel(null)}
         />
       )}
-      {panel === 'notes' && <MapNotesPanel mapId={mapId} onClose={() => onPanel(null)} />}
-      {panel === 'layers' && <LayersPanel mapId={mapId} onPick={onPickObject} onClose={() => onPanel(null)} />}
+      {!pointForm && panel === 'notes' && <MapNotesPanel mapId={mapId} onClose={() => onPanel(null)} />}
+      {!pointForm && panel === 'layers' && <LayersPanel mapId={mapId} onPick={onPickObject} onClose={() => onPanel(null)} />}
     </div>
   )
 }

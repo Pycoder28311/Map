@@ -4,7 +4,6 @@ import PointLinks from '../../PointLinks'
 import type { PointObject } from '../../types'
 import ObjectFrame, { type ObjectFrameContext } from '../common/ObjectFrame'
 import PinSection from './PinSection'
-import PointBannerSection from './PointBannerSection'
 
 type Props = ObjectFrameContext & {
   object: PointObject
@@ -12,7 +11,7 @@ type Props = ObjectFrameContext & {
   apply: (patch: Patch, commit: boolean) => void
 }
 
-/** A pin's sidebar: the pin (icons and colour, open; with the link to what it opens), the banner picture and what it is linked to */
+/** A pin's sidebar: the pin (icons and colour, open; with the link to what it opens), and what it is linked to */
 export default function PointSidebar({ object, apply, ...context }: Props) {
   return (
     <ObjectFrame
@@ -27,7 +26,6 @@ export default function PointSidebar({ object, apply, ...context }: Props) {
           actions={<ForwardLink object={object} board={context.board} onShowBoardObject={context.onShowBoardObject} />}
         />
       }
-      header={<PointBannerSection banner={object.banner} onChange={(banner) => apply({ banner }, true)} />}
       {...context}
     >
       <PointLinks links={object.links} board={context.board} onShowBoardObject={context.onShowBoardObject} />
