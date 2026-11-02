@@ -21,6 +21,8 @@ type Props = {
   canEditArticle: boolean
   /** How far from the text's top it opens: level with the clicked words */
   top: number
+  /** Where the text's lines end at the words' height (px from the text box's left): it opens just right of that */
+  textRight: number
   /** Where the words are in the text's box (their right edge and middle, px): a discreet line joins them to the panel */
   anchor?: { x: number; y: number }
   onClose: () => void
@@ -29,6 +31,10 @@ type Props = {
   /** Takes the link off its words (the message was deleted) */
   onRemoveLink: () => void
 }
+
+/** The card's width, and its gap after the text (px) */
+const CARD_WIDTH = 'clamp(12rem, 30%, 19rem)'
+const CARD_GAP = 12
 
 /** How far below the card's top its header's middle is (px): where the line from the words reaches the card */
 const HEADER_MIDDLE = 26
@@ -65,7 +71,7 @@ function Connector({ anchor, top, card }: { anchor: { x: number; y: number }; to
  * the words it comes from. Its header is those words (a message's title is not shown). `menu`: the ⋯ with its actions (Edit, Done,
  * Delete), centred with the ✕ on one line
  */
-function Frame({ top, anchor, words, onClose, children, menu }: { top: number; anchor?: Props['anchor']; words: string; onClose: () => void; children: ReactNode; menu?: TreeMenuGroup[] }) {
+function Frame({ top, textRight, anchor, words, onClose, children, menu }: { top: number; textRight: number; anchor?: Props['anchor']; words: string; onClose: () => void; children: ReactNode; menu?: TreeMenuGroup[] }) {
   const [card, setCard] = useState<HTMLElement | null>(null)
   return (
     <>
@@ -73,9 +79,10 @@ function Frame({ top, anchor, words, onClose, children, menu }: { top: number; a
       <aside
         ref={setCard}
         aria-label={`Message on “${words}”`}
-        style={{ top }}
-        // (the text's box is inside the body's padding: -end-4 reaches the body's border)
-        className="absolute -end-4 z-30 flex w-[clamp(12rem,30%,19rem)] animate-share-pop flex-col gap-2 rounded-s-(--card-radius) border border-e-0 border-line bg-surface p-3 shadow-xl"
+        // Just right of where the text's lines end, a small gap after them; never past the body's right border (the text's box is inside the
+        // body's padding, 1rem): with no room there, it goes over the text's right side
+        style={{ top, width: CARD_WIDTH, left: `min(${textRight + CARD_GAP}px, calc(100% + 1rem - ${CARD_WIDTH}))` }}
+        className="absolute z-30 flex animate-share-pop flex-col gap-2 rounded-(--card-radius) border border-line bg-surface p-3 shadow-xl"
       >
         <div className="flex items-start gap-2">
           <LuMessageSquareText className="mt-1 size-4 shrink-0 text-fg-subtle" />
@@ -96,7 +103,7 @@ function Frame({ top, anchor, words, onClose, children, menu }: { top: number; a
  * (like the Info box's column). It is read from the server now (once: messagesStore). Its author ("Deleted user" when their account is
  * gone), its date, Done; Edit, Done / Undo and Delete as the server allows; its replies under it (they came with it). One at a time; ✕ or Esc closes it
  */
-export default function MessagePanel({ id, legacy, words, articleId, canEditArticle, top, anchor, onClose, onEdit, onRemoveLink }: Props) {
+export default function MessagePanel({ id, legacy, words, articleId, canEditArticle, top, textRight, anchor, onClose, onEdit, onRemoveLink }: Props) {
   const state = useMessage(id)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -109,21 +116,21 @@ export default function MessagePanel({ id, legacy, words, articleId, canEditArti
   // An old message: what its link holds
   if (id === null || !state) {
     return (
-      <Frame top={top} anchor={anchor} words={words} onClose={onClose} menu={canEditArticle ? [[{ label: 'Edit', icon: LuPencil, onClick: onEdit }]] : undefined}>
+      <Frame top={top} textRight={textRight} anchor={anchor} words={words} onClose={onClose} menu={canEditArticle ? [[{ label: 'Edit', icon: LuPencil, onClick: onEdit }]] : undefined}>
         {legacy?.content && <p className="max-h-80 overflow-y-auto text-body whitespace-pre-wrap text-fg-muted">{legacy.content}</p>}
       </Frame>
     )
   }
   if (state.status === 'loading') {
     return (
-      <Frame top={top} anchor={anchor} words={words} onClose={onClose}>
+      <Frame top={top} textRight={textRight} anchor={anchor} words={words} onClose={onClose}>
         <p className="text-small text-fg-subtle">Loading…</p>
       </Frame>
     )
   }
   if (state.status === 'error') {
     return (
-      <Frame top={top} anchor={anchor} words={words} onClose={onClose}>
+      <Frame top={top} textRight={textRight} anchor={anchor} words={words} onClose={onClose}>
         <p role="alert" className="text-small text-danger">
           {state.error}
         </p>
@@ -135,7 +142,7 @@ export default function MessagePanel({ id, legacy, words, articleId, canEditArti
   }
   if (state.status === 'gone' || state.message.articleId !== articleId) {
     return (
-      <Frame top={top} anchor={anchor} words={words} onClose={onClose}>
+      <Frame top={top} textRight={textRight} anchor={anchor} words={words} onClose={onClose}>
         <p className="text-small text-fg-muted">This message was deleted.</p>
         {canEditArticle && (
           <Button variant="secondary" size="sm" className="self-start" onClick={onRemoveLink}>
@@ -168,6 +175,7 @@ export default function MessagePanel({ id, legacy, words, articleId, canEditArti
   return (
     <Frame
       top={top}
+      textRight={textRight}
       anchor={anchor}
       words={words}
       onClose={onClose}

@@ -70,6 +70,8 @@ const DATE = new Intl.DateTimeFormat(undefined, {
 })
 /** Below this page width (px) the left column (Contents, Messages, Notes) is not beside the article: its round buttons open it over the text */
 const SIDE_MIN_WIDTH = 1088
+/** The room between the text and the Info box it flows around (px: the box's ms-4) */
+const INFO_GAP = 16
 
 /** Whether an element is narrower than `width`, followed as it is resized */
 function useNarrower(el: HTMLElement | null, width: number) {
@@ -162,11 +164,13 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   const [editInfo, setEditInfo] = useState(false)
   // The message open beside the text: its id (null: an old one, its text in the link), its words and where it opens
   // (`hover`: opened by the pointer resting on its words, it closes when the pointer leaves them and its panel)
-  const [message, setMessage] = useState<{ id: number | null; legacy?: { title: string; content: string }; words: string; from: number; to: number; top: number; anchor?: { x: number; y: number }; hover?: boolean } | null>(null)
+  const [message, setMessage] = useState<{ id: number | null; legacy?: { title: string; content: string }; words: string; from: number; to: number; top: number; textRight: number; anchor?: { x: number; y: number }; hover?: boolean } | null>(null)
   const { set: laterClose, clear: cancelClose } = useTimeout()
   const [person, setPerson] = useState<Person | null>(null)
   // The box around the text: what the message, the hover card and the jump marks are placed in
   const textBox = useRef<HTMLDivElement>(null)
+  // The Info box, which the text flows around (a message's card goes right of where the text's lines end)
+  const infoAside = useRef<HTMLElement>(null)
   const panelKey = `${resource.panelType}:${item.id}`
   // Editor or reader (the server says: docs/plans/34). Only the owner has Private / Public and the ⋯ menu's actions; the others have
   // Save where Private / Public is
@@ -224,7 +228,11 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
     const start = el?.getBoundingClientRect() ?? text.rectAt(range.from + 1)
     const top = (start?.top ?? 0) - (box?.top ?? 0)
     const anchor = end && box ? { x: ('right' in end ? end.right : end.left) - box.left, y: (end.top + end.bottom) / 2 - box.top } : undefined
-    setMessage({ id: range.link.id, legacy: range.link.legacy, words: range.text, from: range.from, to: range.to, top: Math.max(0, top), anchor, hover })
+    // Where the text's lines end at the words' height: before the Info box when it is beside them (the text flows round it, ms-4), else the box's right
+    const info = infoAside.current?.getBoundingClientRect()
+    const besideInfo = !!info && !!start && !!end && start.top < info.bottom && end.bottom > info.top
+    const textRight = box ? (besideInfo ? info!.left - INFO_GAP : box.right) - box.left : 0
+    setMessage({ id: range.link.id, legacy: range.link.legacy, words: range.text, from: range.from, to: range.to, top: Math.max(0, top), textRight, anchor, hover })
   }
 
   /** The pointer rests on a message's words (`el`), or has left them (null): its panel opens, and closes shortly after the pointer left both */
@@ -405,6 +413,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         onMention={setMention}
         onSection={addSection}
         textBox={textBox}
+        infoBox={infoAside}
         textExtras={
           <>
             <LinkHoverCard text={text} onMessage={hoverMessage} />
@@ -449,6 +458,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
                   articleId={articleId}
                   canEditArticle={canEdit}
                   top={message.top}
+                  textRight={message.textRight}
                   anchor={message.anchor}
                   onClose={() => setMessage(null)}
                   onEdit={() =>
@@ -576,6 +586,8 @@ type BodyProps = {
   onSection: (type: SectionType) => void
   /** The box around the text (positioned): what is placed over the text is placed in it */
   textBox: RefObject<HTMLDivElement | null>
+  /** The Info box's own element (the text flows round it) */
+  infoBox: RefObject<HTMLElement | null>
   /** Placed in that box: the link's hover card, the jump marks and the sections' ⠿ in its left margin, an open message, the `@` links row */
   textExtras: ReactNode
   /** On the body's left line: the round buttons (Zoom, Messages, Notes) */
@@ -614,6 +626,7 @@ function ArticleBody({
   onMention,
   onSection,
   textBox,
+  infoBox,
   textExtras,
   leftTools,
   actions,
@@ -679,7 +692,7 @@ function ArticleBody({
             {/* The Info box floats at the text's top right so the text flows around it, like an encyclopedia's; it is not part of the text (saved in `infobox`) */}
             <div ref={textBox} className="relative flow-root">
               {infoShown && !(readOnly && isEmptyInfobox(infobox)) && (
-                <aside className="relative z-10 float-right mb-3 ms-4 w-[clamp(10rem,30%,16rem)]" aria-label="About this article">
+                <aside ref={infoBox} className="relative z-10 float-right mb-3 ms-4 w-[clamp(10rem,30%,16rem)]" aria-label="About this article">
                   <InfoBox
                     value={infobox}
                     onChange={(next) => {
