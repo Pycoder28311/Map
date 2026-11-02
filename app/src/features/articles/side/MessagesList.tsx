@@ -75,13 +75,10 @@ function NotInText({ editor, articleId, ranges }: { editor: Editor; articleId: n
       <ul className="flex flex-col gap-1.5 p-0.5">
         {items.map((m) => (
           <li key={m.id} className={`flex items-start gap-0.5 px-2 py-1.5 ${CARD}`}>
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-small font-medium">{m.title || 'Message'}</span>
-              {m.content && <span className="line-clamp-2 text-small text-fg-subtle">{previewOf(m.content, 90)}</span>}
-            </span>
+            <span className="line-clamp-2 min-w-0 flex-1 text-small text-fg-muted">{m.content ? previewOf(m.content, 90) : 'Message'}</span>
             {(m.can.remove || hasSelection) && (
               <TreeMenu
-                label={`More: ${m.title || 'message'}`}
+                label={`More: ${previewOf(m.content, 30) || 'message'}`}
                 groups={[
                   ...(hasSelection
                     ? [
@@ -164,15 +161,15 @@ export default function MessagesList({ text, editor, articleId, canEdit, onOpen,
           {messages.map((m) => {
             const known = knownText(m)
             return (
-              <li key={`${m.from}:${m.href}`} className={`flex items-start gap-0.5 p-1 ${CARD}`}>
-                <Button variant="ghost" size="sm" plain className="h-auto! min-w-0 flex-1 justify-start" onClick={() => onOpen(m)}>
-                  <span className="flex min-w-0 flex-col items-start gap-0.5 py-0.5 text-start whitespace-normal">
-                    <span className={`w-full truncate ${known ? 'text-small font-normal text-fg-muted italic' : ''}`}>“{m.text}”</span>
-                    {known && <span className="w-full truncate">{known.title || 'Message'}</span>}
-                    {known?.content && <span className="line-clamp-2 text-small font-normal text-fg-subtle">{previewOf(known.content, 90)}</span>}
-                  </span>
-                </Button>
-                {canEdit && <TreeMenu label={`More: ${known?.title || m.text}`} groups={[[{ label: 'Edit', icon: LuPencil, onClick: () => onEdit(m) }]]} />}
+              <li key={`${m.from}:${m.href}`} className={`flex flex-col p-1 ${CARD}`}>
+                {/* The header: the words it is on (they open it), its ⋯ at the top right */}
+                <div className="flex items-center gap-0.5">
+                  <Button variant="ghost" size="sm" plain className="min-w-0 flex-1 justify-start" onClick={() => onOpen(m)}>
+                    <span className="min-w-0 truncate">“{m.text}”</span>
+                  </Button>
+                  {canEdit && <TreeMenu label={`More: ${m.text}`} groups={[[{ label: 'Edit', icon: LuPencil, onClick: () => onEdit(m) }]]} />}
+                </div>
+                {known?.content && <p className="line-clamp-2 px-2 pb-1 text-small text-fg-subtle">{previewOf(known.content, 90)}</p>}
               </li>
             )
           })}

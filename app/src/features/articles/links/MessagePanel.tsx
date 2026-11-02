@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react'
 import { LuCheck, LuMessageSquareText, LuPencil, LuTrash2, LuUndo2, LuX } from 'react-icons/lu'
 import Button from '../../../components/ui/buttons/Button'
 import IconButton from '../../../components/ui/buttons/IconButton'
@@ -13,6 +13,8 @@ type Props = {
   /** The message's id; null for an old message, whose title and text are in its link (`legacy`) */
   id: number | null
   legacy?: { title: string; content: string }
+  /** The words of the text the message is on (its header) */
+  words: string
   /** The article it is opened in: a link to another article's message opens nothing */
   articleId: number
   /** The user can edit the article (they can then take a deleted message's link out) */
@@ -28,25 +30,61 @@ type Props = {
   onRemoveLink: () => void
 }
 
+/** How far below the card's top its header's middle is (px): where the line from the words reaches the card */
+const HEADER_MIDDLE = 26
+/** How far under the middle of the words' line the connecting line starts (px): just under the letters */
+const UNDER_WORDS = 10
+
 /**
- * The panel's frame: a card at the right of the text, level with the words, touching the body's right border (no gap) and wide; a thin dashed
- * line joins it to the words it comes from. `menu`: the ⋯ with its actions (Edit, Done, Delete)
+ * The line from the words to the card (Word's comments): a curve from a dot at the end of the words to the card's edge, level with its
+ * header. Drawn in the same box as both (the text's), measured once the card is placed; none when the words are under the card
  */
-function Frame({ top, anchor, title, onClose, children, menu }: { top: number; anchor?: Props['anchor']; title: string; onClose: () => void; children: ReactNode; menu?: TreeMenuGroup[] }) {
+function Connector({ anchor, top, card }: { anchor: { x: number; y: number }; top: number; card: HTMLElement | null }) {
+  const [edge, setEdge] = useState<number | null>(null)
+  useLayoutEffect(() => {
+    if (!card) return
+    const measure = () => setEdge(card.offsetLeft)
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [card, anchor.x, top])
+  if (edge === null || edge - anchor.x < 12) return null
+  // From just under the words' end (between two lines of text, never through the words after them)
+  const from = { x: anchor.x, y: anchor.y + UNDER_WORDS }
+  const to = { x: edge, y: top + HEADER_MIDDLE }
+  const bend = (to.x - from.x) / 2
+  return (
+    <svg aria-hidden className="pointer-events-none absolute start-0 top-0 z-20 size-full overflow-visible">
+      <path d={`M ${from.x} ${from.y} C ${from.x + bend} ${from.y}, ${to.x - bend} ${to.y}, ${to.x} ${to.y}`} fill="none" strokeWidth={1.5} className="stroke-fg-subtle" />
+      <circle cx={from.x} cy={from.y} r={3} className="fill-fg-subtle" />
+    </svg>
+  )
+}
+
+/**
+ * The panel's frame: a card at the right of the text, level with the words, touching the body's right border (no gap); a line joins it to
+ * the words it comes from. Its header is those words (a message's title is not shown). `menu`: the ⋯ with its actions (Edit, Done,
+ * Delete), centred with the ✕ on one line
+ */
+function Frame({ top, anchor, words, onClose, children, menu }: { top: number; anchor?: Props['anchor']; words: string; onClose: () => void; children: ReactNode; menu?: TreeMenuGroup[] }) {
+  const [card, setCard] = useState<HTMLElement | null>(null)
   return (
     <>
-      {anchor && <span aria-hidden style={{ top: anchor.y, left: anchor.x }} className="pointer-events-none absolute -end-4 z-20 border-t border-dashed border-line-strong opacity-70" />}
+      {anchor && <Connector anchor={anchor} top={top} card={card} />}
       <aside
-        aria-label={`Message: ${title}`}
+        ref={setCard}
+        aria-label={`Message on “${words}”`}
         style={{ top }}
         // (the text's box is inside the body's padding: -end-4 reaches the body's border)
-        className="absolute -end-4 z-30 flex w-[clamp(14rem,42%,26rem)] animate-share-pop flex-col gap-2 rounded-s-(--card-radius) border border-e-0 border-line bg-surface p-3 shadow-xl"
+        className="absolute -end-4 z-30 flex w-[clamp(12rem,30%,19rem)] animate-share-pop flex-col gap-2 rounded-s-(--card-radius) border border-e-0 border-line bg-surface p-3 shadow-xl"
       >
         <div className="flex items-start gap-2">
-          <LuMessageSquareText className="mt-0.5 size-4 shrink-0 text-fg-subtle" />
-          <h3 className="min-w-0 flex-1 text-body font-medium break-words">{title}</h3>
-          {menu && menu.length > 0 && <TreeMenu label={`More: ${title}`} groups={menu} />}
-          <IconButton icon={LuX} label="Close" size="sm" onClick={onClose} />
+          <LuMessageSquareText className="mt-1 size-4 shrink-0 text-fg-subtle" />
+          <h3 className="min-w-0 flex-1 pt-0.5 text-body break-words text-fg-muted italic">“{words}”</h3>
+          <div className="flex shrink-0 items-center gap-0.5">
+            {menu && menu.length > 0 && <TreeMenu label={`More: ${words}`} groups={menu} />}
+            <IconButton icon={LuX} label="Close" size="sm" onClick={onClose} />
+          </div>
         </div>
         {children}
       </aside>
@@ -59,7 +97,7 @@ function Frame({ top, anchor, title, onClose, children, menu }: { top: number; a
  * (like the Info box's column). It is read from the server now (once: messagesStore). Its author ("Deleted user" when their account is
  * gone), its date, Done; Edit, Done / Undo and Delete as the server allows; its replies under it (they came with it). One at a time; ✕ or Esc closes it
  */
-export default function MessagePanel({ id, legacy, articleId, canEditArticle, top, anchor, onClose, onEdit, onRemoveLink }: Props) {
+export default function MessagePanel({ id, legacy, words, articleId, canEditArticle, top, anchor, onClose, onEdit, onRemoveLink }: Props) {
   const state = useMessage(id)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -72,21 +110,21 @@ export default function MessagePanel({ id, legacy, articleId, canEditArticle, to
   // An old message: what its link holds
   if (id === null || !state) {
     return (
-      <Frame top={top} anchor={anchor} title={legacy?.title || 'Message'} onClose={onClose} menu={canEditArticle ? [[{ label: 'Edit', icon: LuPencil, onClick: onEdit }]] : undefined}>
+      <Frame top={top} anchor={anchor} words={words} onClose={onClose} menu={canEditArticle ? [[{ label: 'Edit', icon: LuPencil, onClick: onEdit }]] : undefined}>
         {legacy?.content && <p className="max-h-80 overflow-y-auto text-body whitespace-pre-wrap text-fg-muted">{legacy.content}</p>}
       </Frame>
     )
   }
   if (state.status === 'loading') {
     return (
-      <Frame top={top} anchor={anchor} title="Message" onClose={onClose}>
+      <Frame top={top} anchor={anchor} words={words} onClose={onClose}>
         <p className="text-small text-fg-subtle">Loading…</p>
       </Frame>
     )
   }
   if (state.status === 'error') {
     return (
-      <Frame top={top} anchor={anchor} title="Message" onClose={onClose}>
+      <Frame top={top} anchor={anchor} words={words} onClose={onClose}>
         <p role="alert" className="text-small text-danger">
           {state.error}
         </p>
@@ -98,7 +136,7 @@ export default function MessagePanel({ id, legacy, articleId, canEditArticle, to
   }
   if (state.status === 'gone' || state.message.articleId !== articleId) {
     return (
-      <Frame top={top} anchor={anchor} title="Message" onClose={onClose}>
+      <Frame top={top} anchor={anchor} words={words} onClose={onClose}>
         <p className="text-small text-fg-muted">This message was deleted.</p>
         {canEditArticle && (
           <Button variant="secondary" size="sm" className="self-start" onClick={onRemoveLink}>
@@ -131,7 +169,8 @@ export default function MessagePanel({ id, legacy, articleId, canEditArticle, to
   return (
     <Frame
       top={top}
-      title={message.title || 'Message'}
+      anchor={anchor}
+      words={words}
       onClose={onClose}
       menu={[
         [

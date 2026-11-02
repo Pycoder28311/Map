@@ -84,10 +84,10 @@ export function useLinkInfo(link: ArticleLink, doc: PMNode | null, words = ''): 
       }
     case 'msg': {
       // Never read for a hover: a message is read when its words are clicked (docs/plans/34). One read already shows
-      if (link.id === null) return { icon: LuMessageSquareText, title: link.legacy.title || 'Message', text: previewOf(link.legacy.content, 160) }
+      if (link.id === null) return { icon: LuMessageSquareText, title: 'Message', text: previewOf(link.legacy.content, 160) }
       const known = message?.status === 'ready' && message.message.id === link.id ? message.message : null
       return known
-        ? { icon: LuMessageSquareText, title: known.title || 'Message', text: previewOf(known.content, 160) }
+        ? { icon: LuMessageSquareText, title: 'Message', text: previewOf(known.content, 160) }
         : { icon: LuMessageSquareText, title: 'Message', text: 'Click the words to read it.' }
     }
     case 'jump': {

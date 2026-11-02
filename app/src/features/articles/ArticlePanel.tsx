@@ -162,7 +162,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   const [editInfo, setEditInfo] = useState(false)
   // The message open beside the text: its id (null: an old one, its text in the link), its words and where it opens
   // (`hover`: opened by the pointer resting on its words, it closes when the pointer leaves them and its panel)
-  const [message, setMessage] = useState<{ id: number | null; legacy?: { title: string; content: string }; from: number; to: number; top: number; anchor?: { x: number; y: number }; hover?: boolean } | null>(null)
+  const [message, setMessage] = useState<{ id: number | null; legacy?: { title: string; content: string }; words: string; from: number; to: number; top: number; anchor?: { x: number; y: number }; hover?: boolean } | null>(null)
   const { set: laterClose, clear: cancelClose } = useTimeout()
   const [person, setPerson] = useState<Person | null>(null)
   // The box around the text: what the message, the hover card and the jump marks are placed in
@@ -224,7 +224,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
     const start = el?.getBoundingClientRect() ?? text.rectAt(range.from + 1)
     const top = (start?.top ?? 0) - (box?.top ?? 0)
     const anchor = end && box ? { x: ('right' in end ? end.right : end.left) - box.left, y: (end.top + end.bottom) / 2 - box.top } : undefined
-    setMessage({ id: range.link.id, legacy: range.link.legacy, from: range.from, to: range.to, top: Math.max(0, top), anchor, hover })
+    setMessage({ id: range.link.id, legacy: range.link.legacy, words: range.text, from: range.from, to: range.to, top: Math.max(0, top), anchor, hover })
   }
 
   /** The pointer rests on a message's words (`el`), or has left them (null): its panel opens, and closes shortly after the pointer left both */
@@ -445,6 +445,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
                   key={`${message.id}:${message.from}`}
                   id={message.id}
                   legacy={message.legacy}
+                  words={message.words}
                   articleId={articleId}
                   canEditArticle={canEdit}
                   top={message.top}
