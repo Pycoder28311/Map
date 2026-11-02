@@ -36,8 +36,8 @@ const HEADER_MIDDLE = 26
 const UNDER_WORDS = 10
 
 /**
- * The line from the words to the card (Word's comments): a curve from a dot at the end of the words to the card's edge, level with its
- * header. Drawn in the same box as both (the text's), measured once the card is placed; none when the words are under the card
+ * The line from the words to the card (Word's comments): a straight blue line from a small blue dot at the end of the words to the card's
+ * edge, level with its header. Drawn in the same box as both (the text's), measured once the card is placed; none when the words are under the card
  */
 function Connector({ anchor, top, card }: { anchor: { x: number; y: number }; top: number; card: HTMLElement | null }) {
   const [edge, setEdge] = useState<number | null>(null)
@@ -52,11 +52,10 @@ function Connector({ anchor, top, card }: { anchor: { x: number; y: number }; to
   // From just under the words' end (between two lines of text, never through the words after them)
   const from = { x: anchor.x, y: anchor.y + UNDER_WORDS }
   const to = { x: edge, y: top + HEADER_MIDDLE }
-  const bend = (to.x - from.x) / 2
   return (
     <svg aria-hidden className="pointer-events-none absolute start-0 top-0 z-20 size-full overflow-visible">
-      <path d={`M ${from.x} ${from.y} C ${from.x + bend} ${from.y}, ${to.x - bend} ${to.y}, ${to.x} ${to.y}`} fill="none" strokeWidth={1.5} className="stroke-fg-subtle" />
-      <circle cx={from.x} cy={from.y} r={3} className="fill-fg-subtle" />
+      <line x1={from.x} y1={from.y} x2={to.x} y2={to.y} strokeWidth={1.5} strokeLinecap="round" className="stroke-blue-500" />
+      <circle cx={from.x} cy={from.y} r={3.5} className="fill-blue-500" />
     </svg>
   )
 }
