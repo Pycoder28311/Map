@@ -6,7 +6,7 @@ import { useFocusMode } from './FocusMode'
 
 /**
  * Zoom (the navbar's last button): focus mode hides the navbar and the sidebar, so the page fills the
- * window. The button itself stays where it was, floating with a shadow over the page; click it (or
+ * window. The button itself stays where it was, floating over the page with the same look it has in the navbar; click it (or
  * Esc) to bring them back.
  */
 export default function ZoomButton() {
@@ -29,7 +29,6 @@ export default function ZoomButton() {
             icon={LuZoomOut}
             bigIcon
             label="Leave focus: show the navbar and sidebar (Esc)"
-            variant="secondary"
             onClick={turnOff}
             style={{ left: at.left, top: at.top, width: at.width, height: at.height }}
             className="fixed z-40"

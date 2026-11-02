@@ -1,6 +1,6 @@
 import { EMPTY_INFOBOX, type Infobox, type ItemAccess, type Visibility } from '@map/shared'
 import { useEditorState, type Editor, type Extensions } from '@tiptap/react'
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { LuBookmark, LuEllipsis, LuInfo, LuLock, LuLockOpen, LuPlus, LuSearch, LuShare2 } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import { articleExtensions } from '../../components/ui/editors/articleExtensions'
@@ -68,6 +68,9 @@ const DATE = new Intl.DateTimeFormat(undefined, {
   month: 'short',
   year: 'numeric',
 })
+/** How long the left column takes to slide open or closed (ms): its transition is duration-300 */
+const SIDE_SLIDE_MS = 300
+
 /** Below this page width (px) the left column (Contents, Messages, Notes) is not beside the article: its round buttons open it over the text */
 const SIDE_MIN_WIDTH = 1088
 /** The room between the text and the Info box it flows around (px: the box's ms-4) */
@@ -206,6 +209,14 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   // the column beside it
   const [side, setSide] = useState<Set<SidePart>>(() => new Set())
   const [zoomed, setZoomed] = useState(false)
+  // The column keeps showing what it showed while it slides closed (then it is emptied)
+  const [kept, setKept] = useState<Set<SidePart>>(side)
+  if (side.size > 0 && side !== kept) setKept(side)
+  useEffect(() => {
+    if (side.size > 0) return
+    const id = window.setTimeout(() => setKept(new Set()), SIDE_SLIDE_MS)
+    return () => window.clearTimeout(id)
+  }, [side])
   const [page, setPage] = useState<HTMLDivElement | null>(null)
   const narrow = useNarrower(page, SIDE_MIN_WIDTH)
   const messages = useMessages(text)
@@ -353,19 +364,12 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   )
 
   // The left column: the one element its round button opened (Contents, Messages or Notes): beside the article on a wide page, over the text on a narrow one
-  const showContents = side.has('contents')
-  const sideColumn = (showContents || side.has('messages') || side.has('notes')) && (
-    <aside
-      aria-label="Article tools"
-      className={
-        narrow
-          ? // Over the text's left side, under the round buttons
-            'absolute start-6 top-24 z-40 flex max-h-[calc(100vh-8rem)] w-94 flex-col gap-3 overflow-y-auto rounded-(--card-radius) bg-surface p-1 shadow-xl'
-          : 'sticky top-0 flex max-h-screen w-73 shrink-0 flex-col gap-3 self-start overflow-y-auto pt-2 pb-4'
-      }
-    >
+  const open = side.size > 0
+  const showContents = kept.has('contents')
+  const parts = (
+    <>
       {showContents && <ContentsTree text={text} />}
-      {side.has('messages') && (
+      {kept.has('messages') && (
         <MessagesList
           text={text}
           editor={editor}
@@ -378,8 +382,29 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
           onEdit={(range) => void text.open({ from: range.from, to: range.to }).then(() => setLinkPopout('msg'))}
         />
       )}
-      {side.has('notes') && <NotesPanel articleId={String(item.id)} />}
-    </aside>
+      {kept.has('notes') && <NotesPanel articleId={String(item.id)} />}
+    </>
+  )
+  const sideColumn = narrow ? (
+    open && (
+      // Over the text's left side, under the round buttons
+      <aside aria-label="Article tools" className="absolute start-6 top-24 z-40 flex max-h-[calc(100vh-8rem)] w-113 animate-dropdown-in flex-col gap-3 overflow-y-auto rounded-(--card-radius) bg-surface p-1 shadow-xl motion-reduce:animate-none">
+        {parts}
+      </aside>
+    )
+  ) : (
+    // Beside the article: its place grows from nothing and the article's width follows, smoothly; the column slides in a little as it does
+    <div
+      inert={!open}
+      className={`shrink-0 overflow-x-clip transition-[width,margin] duration-300 ease-out motion-reduce:transition-none ${open ? 'me-4 w-88' : 'me-0 w-0'}`}
+    >
+      <aside
+        aria-label="Article tools"
+        className={`sticky top-0 flex max-h-screen w-88 flex-col gap-3 self-start overflow-y-auto pt-2 pb-4 transition-[translate,opacity] duration-300 ease-out motion-reduce:transition-none ${open ? 'translate-x-0 opacity-100' : '-translate-x-6 opacity-0'}`}
+      >
+        {parts}
+      </aside>
+    </div>
   )
 
   return (
@@ -387,10 +412,10 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
       ref={setPage}
       // Zoomed: in the top layer, filling the window (the article in its middle, as on the page)
       popover={zoomed ? 'manual' : undefined}
-      className={`relative mx-auto flex w-full gap-4 px-4 pb-4 ${zoomed ? 'fixed inset-0 m-0 h-full max-h-none max-w-none overflow-auto border-0 bg-surface-muted pt-0 text-fg' : 'min-h-full max-w-[88rem]'}`}
+      className={`relative mx-auto flex w-full justify-center px-4 pb-4 ${zoomed ? 'fixed inset-0 m-0 h-full max-h-none max-w-none overflow-auto border-0 bg-surface-muted pt-0 text-fg' : 'min-h-full max-w-[88rem]'}`}
     >
       {sideColumn}
-      <div className="mx-auto flex w-full max-w-6xl min-w-0 flex-1 flex-col gap-3">
+      <div className="flex w-full max-w-6xl min-w-0 flex-1 flex-col gap-3">
       {/* A kept draft (keepMine) is a new start: the fields open again on it */}
       <ArticleBody
         key={autosave.start.version}
@@ -646,7 +671,7 @@ function ArticleBody({
 
   return (
     // Positioned: the round buttons sit on the body's left line (outside the bordered box, which clips)
-    <div className="relative flex flex-1 flex-col">
+    <div className="relative flex flex-1 flex-col" style={{ '--banner-h': infobox.banner ? '11rem' : readOnly ? '3rem' : '9rem' } as CSSProperties}>
       {leftTools}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* The text's parent box: it takes all the height there is and has a border (none on top: the banner reaches the top of the page). Inside it,

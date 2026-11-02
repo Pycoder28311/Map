@@ -1,9 +1,8 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { LuExternalLink, LuLink, LuPlus, LuStickyNote, LuTrash2, LuUnlink } from 'react-icons/lu'
-import IconButton from '../../../components/ui/buttons/IconButton'
+import Button from '../../../components/ui/buttons/Button'
 import LinkButton from '../../../components/ui/buttons/LinkButton'
 import SearchInput from '../../../components/ui/fields/SearchInput'
-import TextField from '../../../components/ui/fields/TextField'
 import ResourceDeleteDialog from '../../../components/ui/resource/ResourceDeleteDialog'
 import TreeMenu from '../../../components/ui/tree/TreeMenu'
 import type { TreeMenuGroup } from '../../../components/ui/tree/types'
@@ -63,6 +62,8 @@ export default function NotesPanel({ articleId }: { articleId: string }) {
   const itemModal = useOptionalItemModal()
   const workspace = useWorkspace()
   const [title, setTitle] = useState('')
+  // The title input opens from the New button
+  const [adding, setAdding] = useState(false)
   const [query, setQuery] = useState('')
   const [deleting, setDeleting] = useState<Row | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -76,6 +77,7 @@ export default function NotesPanel({ articleId }: { articleId: string }) {
     try {
       const note = (await actions.create({ title: name, ...attachFields(target) } as never)) as Note
       setTitle('')
+      setAdding(false)
       open(String(note.id))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'The note could not be made.')
@@ -87,10 +89,15 @@ export default function NotesPanel({ articleId }: { articleId: string }) {
 
   return (
     <section aria-label="Notes" className="flex flex-col gap-2 rounded-(--card-radius) border border-line bg-surface p-2 shadow-sm">
-      <h2 className="flex items-center gap-1.5 px-1 text-small font-medium text-fg-muted">
-        <LuStickyNote className="size-4" />
-        Notes of this article ({ids.length})
-      </h2>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="flex min-w-0 items-center gap-1.5 px-1 text-heading text-fg">
+          <LuStickyNote className="size-5 shrink-0" />
+          <span className="truncate">Notes of this article ({ids.length})</span>
+        </h2>
+        <Button variant="ghost" size="sm" plain filled icon={LuPlus} aria-expanded={adding} className="shrink-0" onClick={() => setAdding(!adding)}>
+          New
+        </Button>
+      </div>
       {attached.status === 'loading' ? (
         <p className="px-1 text-small text-fg-subtle">Loading…</p>
       ) : connected.length === 0 ? (
@@ -112,10 +119,27 @@ export default function NotesPanel({ articleId }: { articleId: string }) {
         </CardRow>
       )}
 
-      <form className="flex items-end gap-1" onSubmit={(e) => void create(e)}>
-        <TextField label="New note" placeholder="Its title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} className="min-w-0 flex-1" />
-        <IconButton type="submit" icon={LuPlus} label="Make the note" variant="primary" disabled={!title.trim()} />
-      </form>
+      {adding && (
+        <form onSubmit={(e) => void create(e)}>
+          <input
+            autoFocus
+            aria-label="New note"
+            placeholder="Its title, then Enter"
+            value={title}
+            maxLength={200}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== 'Escape') return
+              e.preventDefault()
+              e.stopPropagation()
+              setAdding(false)
+              setTitle('')
+            }}
+            // The plain input: the one of the sidebar's description
+            className="w-full rounded-(--field-radius) border border-line-strong bg-surface px-2 py-1 text-body outline-none placeholder:text-fg-subtle focus-visible:border-fg-subtle"
+          />
+        </form>
+      )}
       {error && (
         <p role="alert" className="text-small text-danger">
           {error}
