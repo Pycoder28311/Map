@@ -1,0 +1,285 @@
+/* Two looks (ParchmentScroll's `look`): `bright` (default), orange paper with a black outline; `aged`, old tan paper with worn, uneven
+   edges, a speckled darker band along them and a brown outline. */
+/* The parchment scroll element type (components/ui/pixel/ParchmentScroll.tsx): a strip of paper between two rolled ends, in pixel art, with a hard
+   dark outline round the whole of it (drawn by drop-shadows on the wrapper, so it follows the pixel corners the parts are clipped to).
+   The colours and the pixel unit are here, to change them in one place. */
+:root {
+  /* one pixel of the drawing */
+  --scroll-u: 2px;
+  --scroll-paper: #f6b65a;
+  --scroll-light: #fdd99a;
+  --scroll-shade: #d58934;
+  --scroll-ink: #24160c;
+  /* the text on it */
+  --scroll-text: #3a2312;
+}
+
+@layer components {
+  .ui-scroll {
+    display: inline-flex;
+    align-items: stretch;
+    color: var(--scroll-text);
+    filter: drop-shadow(var(--scroll-u) 0 0 var(--scroll-ink)) drop-shadow(calc(-1 * var(--scroll-u)) 0 0 var(--scroll-ink))
+      drop-shadow(0 var(--scroll-u) 0 var(--scroll-ink)) drop-shadow(0 calc(-1 * var(--scroll-u)) 0 var(--scroll-ink));
+  }
+
+  /* The paper: a lighter line along its top, a darker one along its bottom; a little shorter than the rolls */
+  .ui-scroll-paper {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 auto;
+    align-items: center;
+    margin-block: calc(2 * var(--scroll-u));
+    background-color: var(--scroll-paper);
+    box-shadow:
+      inset 0 var(--scroll-u) 0 var(--scroll-light),
+      inset 0 calc(-1 * var(--scroll-u)) 0 var(--scroll-shade),
+      inset 0 calc(-2 * var(--scroll-u)) 0 color-mix(in oklab, var(--scroll-paper), var(--scroll-shade) 40%);
+  }
+
+  /* A rolled end: a narrow cylinder, light on its left, dark on its right, its corners cut by one pixel (clip-path set by the component) */
+  .ui-scroll-roll {
+    flex: none;
+    width: calc(5 * var(--scroll-u));
+    background: linear-gradient(
+      to right,
+      var(--scroll-light) 0 40%,
+      var(--scroll-paper) 40% 70%,
+      var(--scroll-shade) 70% 100%
+    );
+  }
+}
+
+@layer components {
+  /* The aged look: its own colours (the same parts read them), a dusty speckle on the paper and a worn darker band along its edges */
+  .ui-scroll-aged {
+    --scroll-paper: #ebb87a;
+    --scroll-light: #f4cd97;
+    --scroll-shade: #c4874e;
+    --scroll-ink: #7c4b27;
+    --scroll-text: #4a2b14;
+    /* the band along the paper's edges */
+    --scroll-edge: #d29a5e;
+  }
+
+  .ui-scroll-aged .ui-scroll-paper {
+    background-image:
+      radial-gradient(circle at 30% 40%, rgb(150 95 50 / 0.35) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 70% 75%, rgb(150 95 50 / 0.25) 0 1px, transparent 1.5px);
+    background-size: 11px 9px, 17px 13px;
+    box-shadow:
+      inset 0 0 0 var(--scroll-u) var(--scroll-edge),
+      inset 0 0 0 calc(2 * var(--scroll-u)) color-mix(in oklab, var(--scroll-paper), var(--scroll-edge) 45%);
+  }
+
+  .ui-scroll-aged .ui-scroll-roll {
+    background: linear-gradient(
+      to right,
+      var(--scroll-shade) 0 20%,
+      var(--scroll-light) 20% 45%,
+      var(--scroll-paper) 45% 75%,
+      var(--scroll-shade) 75% 100%
+    );
+  }
+}
+
+/* The parchment frame element type (components/ui/pixel/ParchmentFrame.tsx): a sheet of peach paper with pixel corners and a few small cuts in its
+   edges, a dark outline (thicker under it, like a shadow), a reddish band and a salmon one inside the edge, and dotted brackets in its corners */
+:root {
+  --frame-u: 2px;
+  --frame-paper: #efbf8d;
+  --frame-band: #e59c7c;
+  --frame-band-dark: #c86b5c;
+  --frame-ink: #2a1d36;
+  --frame-text: #4b2a22;
+}
+
+@layer components {
+  .ui-frame {
+    color: var(--frame-text);
+    filter: drop-shadow(var(--frame-u) 0 0 var(--frame-ink)) drop-shadow(calc(-1 * var(--frame-u)) 0 0 var(--frame-ink))
+      drop-shadow(0 calc(-1 * var(--frame-u)) 0 var(--frame-ink)) drop-shadow(0 calc(2 * var(--frame-u)) 0 var(--frame-ink));
+  }
+
+  .ui-frame-sheet {
+    position: relative;
+    background-color: var(--frame-paper);
+    box-shadow:
+      inset 0 0 0 var(--frame-u) var(--frame-band-dark),
+      inset 0 0 0 calc(2 * var(--frame-u)) var(--frame-band);
+  }
+
+  /* A corner's dotted bracket: an L of dots, one pixel each, two pixels apart */
+  .ui-frame-corner {
+    position: absolute;
+    width: calc(5 * var(--frame-u));
+    height: calc(5 * var(--frame-u));
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(to right, var(--frame-band) 0 var(--frame-u), transparent var(--frame-u) calc(2 * var(--frame-u))) top left / 100% var(--frame-u) no-repeat,
+      repeating-linear-gradient(to bottom, var(--frame-band) 0 var(--frame-u), transparent var(--frame-u) calc(2 * var(--frame-u))) top left / var(--frame-u) 100% no-repeat;
+  }
+}
+
+/* The hanging banner element type (components/ui/pixel/PixelBanner.tsx): a cloth hanging from a rod, its bottom a point, a swallowtail or straight;
+   the bright scroll's colours (--scroll-*), a black outline round the whole of it (rod included) */
+:root {
+  /* the knobs at the rod's ends */
+  --banner-knob: #8a2f2a;
+}
+
+@layer components {
+  .ui-banner {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    color: var(--scroll-text);
+    padding-top: calc(var(--scroll-u) * 1);
+    filter: drop-shadow(var(--scroll-u) 0 0 var(--scroll-ink)) drop-shadow(calc(-1 * var(--scroll-u)) 0 0 var(--scroll-ink))
+      drop-shadow(0 var(--scroll-u) 0 var(--scroll-ink)) drop-shadow(0 calc(-1 * var(--scroll-u)) 0 var(--scroll-ink));
+  }
+
+  /* The rod: across the top, a little wider than the cloth */
+  .ui-banner-rod {
+    position: absolute;
+    top: 0;
+    left: calc(-3 * var(--scroll-u));
+    right: calc(-3 * var(--scroll-u));
+    height: calc(2 * var(--scroll-u));
+    background: var(--scroll-ink);
+  }
+
+  .ui-banner-knob {
+    position: absolute;
+    top: calc(-1 * var(--scroll-u));
+    width: calc(3 * var(--scroll-u));
+    height: calc(4 * var(--scroll-u));
+    background: var(--banner-knob);
+  }
+
+  /* The cloth: lighter along its left edge, darker along its right; under the rod a darker band with a row of dots */
+  .ui-banner-cloth {
+    position: relative;
+    flex: 1 1 auto;
+    background-color: var(--scroll-paper);
+    background-image:
+      linear-gradient(var(--scroll-shade), var(--scroll-shade)),
+      repeating-linear-gradient(to right, var(--scroll-shade) 0 var(--scroll-u), transparent var(--scroll-u) calc(3 * var(--scroll-u)));
+    background-size: 100% calc(2 * var(--scroll-u)), 100% var(--scroll-u);
+    background-position: 0 var(--scroll-u), 0 calc(4 * var(--scroll-u));
+    background-repeat: no-repeat;
+    box-shadow:
+      inset var(--scroll-u) 0 0 var(--scroll-light),
+      inset calc(-1 * var(--scroll-u)) 0 0 var(--scroll-shade);
+  }
+}
+
+/* The sign element type (components/ui/pixel/PixelSign.tsx): a strip of paper held between two upright poles, red knobs at the poles' ends, small
+   cuts in the paper's top and bottom edges; the bright scroll's colours (--scroll-*) and black outline */
+@layer components {
+  .ui-sign {
+    display: inline-flex;
+    align-items: stretch;
+    color: var(--scroll-text);
+    filter: drop-shadow(var(--scroll-u) 0 0 var(--scroll-ink)) drop-shadow(calc(-1 * var(--scroll-u)) 0 0 var(--scroll-ink))
+      drop-shadow(0 var(--scroll-u) 0 var(--scroll-ink)) drop-shadow(0 calc(-1 * var(--scroll-u)) 0 var(--scroll-ink));
+  }
+
+  /* A pole: taller than the paper, light on its left and dark on its right */
+  .ui-sign-pole {
+    position: relative;
+    flex: none;
+    width: calc(3 * var(--scroll-u));
+    background: linear-gradient(to right, var(--scroll-light) 0 33%, var(--scroll-shade) 33% 100%);
+  }
+
+  .ui-sign-knob {
+    position: absolute;
+    left: calc(-1 * var(--scroll-u));
+    width: calc(5 * var(--scroll-u));
+    height: calc(4 * var(--scroll-u));
+    background: var(--banner-knob);
+  }
+
+  /* The paper: shorter than the poles; a lighter line along its top, a darker one and a dashed row along its bottom */
+  .ui-sign-paper {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 auto;
+    align-items: center;
+    margin-block: calc(3 * var(--scroll-u));
+    background-color: var(--scroll-paper);
+    background-image: repeating-linear-gradient(to right, var(--scroll-shade) 0 calc(2 * var(--scroll-u)), transparent calc(2 * var(--scroll-u)) calc(4 * var(--scroll-u)));
+    background-size: 100% var(--scroll-u);
+    background-position: 0 calc(100% - 3 * var(--scroll-u));
+    background-repeat: no-repeat;
+    box-shadow:
+      inset 0 var(--scroll-u) 0 var(--scroll-light),
+      inset 0 calc(-1 * var(--scroll-u)) 0 var(--scroll-shade);
+  }
+}
+
+/* Colour themes (components/ui/pixel/pixelThemes.ts, each element's `theme`): they set the colours every element reads, the scroll's, banner's and
+   sign's (--scroll-*, --banner-knob) and the frame's (--frame-*). Last in the file: a theme wins over an element's own colours */
+@layer components {
+  .ui-theme-stone {
+    --scroll-paper: #e4e4e1;
+    --scroll-light: #f7f7f5;
+    --scroll-shade: #b6b6b2;
+    --scroll-ink: #26262b;
+    --scroll-text: #2a2a30;
+    --scroll-edge: #c9c9c5;
+    --banner-knob: #6c6c73;
+    --frame-paper: #e4e4e1;
+    --frame-band: #c9c9c5;
+    --frame-band-dark: #9c9c98;
+    --frame-ink: #26262b;
+    --frame-text: #2a2a30;
+  }
+
+  .ui-theme-aged {
+    --scroll-paper: #ebb87a;
+    --scroll-light: #f4cd97;
+    --scroll-shade: #c4874e;
+    --scroll-ink: #7c4b27;
+    --scroll-text: #4a2b14;
+    --scroll-edge: #d29a5e;
+    --banner-knob: #7c3a22;
+    --frame-paper: #ebb87a;
+    --frame-band: #d29a5e;
+    --frame-band-dark: #b07440;
+    --frame-ink: #7c4b27;
+    --frame-text: #4a2b14;
+  }
+
+  .ui-theme-pastel {
+    --scroll-paper: #ecdcc6;
+    --scroll-light: #f7eee2;
+    --scroll-shade: #cfb79a;
+    --scroll-ink: #8a7058;
+    --scroll-text: #5c4634;
+    --scroll-edge: #dcc7aa;
+    --banner-knob: #b08a6a;
+    --frame-paper: #ecdcc6;
+    --frame-band: #dcc7aa;
+    --frame-band-dark: #c2a585;
+    --frame-ink: #8a7058;
+    --frame-text: #5c4634;
+  }
+
+  /* The app's own dark grey: the colours of its fields and of the sidebar's rows (styles/fields.css) */
+  .ui-theme-app {
+    --scroll-paper: var(--input-bg);
+    --scroll-light: var(--input-bg-focus);
+    --scroll-shade: #161618;
+    --scroll-ink: var(--row-border-color);
+    --scroll-text: var(--input-text);
+    --scroll-edge: #1d1d1f;
+    --banner-knob: #4a4a50;
+    --frame-paper: var(--input-bg);
+    --frame-band: #1d1d1f;
+    --frame-band-dark: #161618;
+    --frame-ink: var(--row-border-color);
+    --frame-text: var(--input-text);
+  }
+}

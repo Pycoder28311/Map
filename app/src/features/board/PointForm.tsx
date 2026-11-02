@@ -1,13 +1,14 @@
 import { useRef } from 'react'
 import type { Editor } from '@tiptap/react'
-import Button from '../../components/ui/buttons/Button'
 import RichTextEditor from '../../components/ui/editors/RichTextEditor'
 import TitleInput from '../../components/ui/fields/TitleInput'
 import { uploadImage } from '../../lib/api/images'
 import InfoBox from '../infobox/InfoBox'
 import type { Patch } from './changes'
 import { labelPatch } from './drawPoint'
+import FormCard from './FormCard'
 import FormHeader from './FormHeader'
+import StyleChips from './StyleChips'
 import { LABELS } from './pointLabels'
 import { infoboxOf } from './pointInfo'
 import { descriptionDoc, descriptionText } from './pointText'
@@ -38,7 +39,7 @@ export default function PointForm({ mapId, object, apply, onClose }: Props) {
   }
 
   return (
-    <section aria-label="Point" className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden rounded-(--card-radius) border border-line bg-surface shadow-lg">
+    <FormCard label="Point">
       <div className="flex min-h-0 flex-1 flex-col gap-base overflow-y-auto p-3">
         <FormHeader onClose={onClose}>
           <TitleInput
@@ -56,17 +57,7 @@ export default function PointForm({ mapId, object, apply, onClose }: Props) {
         </FormHeader>
         {/* The types and the picture under them are close together (the gap of the picture and its first section: --spacing-sm) */}
         <div className="flex flex-col">
-        {/* One line of types, never wrapped: it scrolls sideways when it is too wide */}
-        <div role="toolbar" aria-label="Type of point" className="-mx-1 flex shrink-0 gap-1.5 overflow-x-auto px-1 pb-sm">
-          {LABELS.map((l) => {
-            const on = l.id === object.label
-            return (
-              <Button key={l.id} variant={on ? 'selected' : 'ghost'} size="sm" plain filled aria-pressed={on} className="shrink-0" onClick={() => !on && apply(labelPatch(object, l.id))}>
-                {l.name}
-              </Button>
-            )
-          })}
-        </div>
+        <StyleChips label="Style of point" options={LABELS} value={object.label} onChange={(id) => apply(labelPatch(object, id))} />
         <InfoBox
           // (a new type starts with its own rows, until the box was changed)
           key={`${object.id}:${object.infobox ? 'own' : object.label}`}
@@ -95,6 +86,6 @@ export default function PointForm({ mapId, object, apply, onClose }: Props) {
           <NodeNotes centered mapId={mapId} objectId={object.id} />
         </div>
       </footer>
-    </section>
+    </FormCard>
   )
 }

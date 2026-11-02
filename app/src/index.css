@@ -8,6 +8,7 @@
 @import "./styles/valueBar.css";
 @import "./styles/cornerMarks.css";
 @import "./styles/pixelSquare.css";
+@import "./styles/parchment.css";
 @import "./styles/hoverEffects.css";
 /* Themes: each overrides the base values above; the active one is set in lib/theme.ts */
 @import "./styles/themes/arcane.css";

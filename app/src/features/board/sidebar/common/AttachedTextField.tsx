@@ -22,7 +22,7 @@ type Props = {
 
 /**
  * The text of a line or of a closed area, at the top of its sidebar: an input with the words of the text tied to it (empty while it has
- * none), and at its right the square Edit text and Remove. Typing shows a tick and a cross; the tick, Enter or leaving the input saves, the cross or Esc takes the typing back. Saving words
+ * none), and under it Edit text and Remove, side by side, with their names. Typing shows a tick and a cross; the tick, Enter or leaving the input saves, the cross or Esc takes the typing back. Saving words
  * adds the text (a line's above its middle, turned along it; an area's in its middle, as its name) or changes them; saving nothing removes
  * it. Under it, once the input is clicked, `below`
  */
@@ -53,7 +53,7 @@ export default function AttachedTextField({ mapId, owner, board, below, belowFil
 
   return (
     <div className="flex flex-col gap-2">
-      {/* (the tick, the cross and the square icons stretch to the input's height) */}
+      {/* (the tick and the cross stretch to the input's height) */}
       <div className="flex items-stretch gap-1">
         <input
           ref={input}
@@ -89,17 +89,22 @@ export default function AttachedTextField({ mapId, owner, board, below, belowFil
           </span>
         )}
         {/* Square icons at the right of the input, as tall as it, with a background only while hovered (not while typing: then the tick and the cross are there) */}
-        {text && !changed && (
-          <>
-            <HoverInfo title="Edit text" text="Selects the text, to change its font, size and colour." side="left" delay={350}>
-              <IconButton icon={LuPencil} label="Edit text" variant="ghost" size="lg" onClick={() => select(mapId, [text.id])} />
-            </HoverInfo>
-            <HoverInfo title="Remove" text={area ? 'Takes the text out of the area (and its name).' : 'Takes the text off the line.'} side="left" delay={350}>
-              <IconButton icon={LuTrash2} label="Remove the text" variant="ghost" size="lg" onClick={remove} />
-            </HoverInfo>
-          </>
-        )}
       </div>
+      {/* Under the input, the two of them side by side (a gap of --spacing-base), with their names */}
+      {text && !changed && (
+        <div className="flex gap-base">
+          <HoverInfo title="Edit text" text="Selects the text, to change its font, size and colour." side="left" delay={350}>
+            <Button variant="ghost" size="sm" plain filled icon={LuPencil} className="flex-1" onClick={() => select(mapId, [text.id])}>
+              Edit text
+            </Button>
+          </HoverInfo>
+          <HoverInfo title="Remove" text={area ? 'Takes the text out of the area (and its name).' : 'Takes the text off the line.'} side="left" delay={350}>
+            <Button variant="ghost" size="sm" plain filled icon={LuTrash2} className="flex-1" onClick={remove}>
+              Remove
+            </Button>
+          </HoverInfo>
+        </div>
+      )}
       {text && !area && side && (
         <div className="flex gap-1">
           <Button

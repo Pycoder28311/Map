@@ -69,6 +69,29 @@ export function texturePattern(ctx: CanvasRenderingContext2D, texture: number | 
   return pattern
 }
 
+const markerTiles = new Map<number, CanvasPattern>()
+
+/**
+ * A texture as a darker shade over a marker's colour (pinIcons.ts): its own patterns (an area's are shared and never scaled), each tile
+ * shrunk to a quarter of a 24-unit marker; null for none, or with no canvas to make it on
+ */
+export function markerPattern(ctx: CanvasRenderingContext2D, texture: number | undefined): CanvasPattern | null {
+  if (!texture || texture < 1 || texture >= TEXTURES.length || typeof document === 'undefined') return null
+  let pattern = markerTiles.get(texture)
+  if (!pattern) {
+    const tile = document.createElement('canvas')
+    tile.width = tile.height = TILE
+    const g = tile.getContext('2d')
+    if (!g) return null
+    drawTile(g, texture, 'rgba(0, 0, 0, 0.35)')
+    pattern = ctx.createPattern(tile, 'repeat') ?? undefined
+    if (!pattern) return null
+    pattern.setTransform?.(new DOMMatrix().scale(6 / TILE))
+    markerTiles.set(texture, pattern)
+  }
+  return pattern
+}
+
 // The pictures, loaded when first asked for; the version changes as each arrives, so what shows them paints again
 const images = new Map<string, HTMLImageElement>()
 const listeners = new Set<() => void>()

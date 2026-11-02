@@ -31,9 +31,10 @@ export function structureParts(kind: StructureKind, selected = ''): Part[] {
   })
 }
 
-type Range = { from: number; to: number }
-/** The structure being filled: its places, and where it ends */
-export type Places = { places: Range[]; end: number }
+/** A place: where it is, and the mark its words have (superscript, subscript, or none) */
+type Range = { from: number; to: number; mark?: Part['mark'] }
+/** The structure being filled: its places, where it ends, and the place being filled (what is typed goes in it, with its mark) */
+export type Places = { places: Range[]; end: number; active?: number }
 
 /** The places after a change: mapped, each kept after the one before (an emptied place must not swallow the next one's words) */
 export function mapPlaces(state: Places, mapping: Mapping): Places {
@@ -41,9 +42,32 @@ export function mapPlaces(state: Places, mapping: Mapping): Places {
   for (const p of state.places) {
     const before = places.at(-1)
     const from = Math.max(mapping.map(p.from, -1), before?.to ?? 0)
-    places.push({ from, to: Math.max(from, mapping.map(p.to, 1)) })
+    places.push({ ...p, from, to: Math.max(from, mapping.map(p.to, 1)) })
   }
-  return { places, end: Math.max(mapping.map(state.end, 1), places.at(-1)?.to ?? 0) }
+  return { ...state, places, end: Math.max(mapping.map(state.end, 1), places.at(-1)?.to ?? 0) }
+}
+
+/**
+ * The places after `length` letters were typed over `from`…`to` inside place `index`: that place grows (or shrinks) by the difference, the
+ * ones after it move, the ones before stay. Said outright, not mapped: two places can meet (an emptied one at the end of the one before), and
+ * a mapping can't tell which of them the letters went into
+ */
+export function typeInto(state: Places, index: number, from: number, to: number, length: number): Places {
+  const delta = length - (to - from)
+  const places = state.places.map((p, i) => (i < index ? p : i === index ? { ...p, to: p.to + delta } : { ...p, from: p.from + delta, to: p.to + delta }))
+  return { ...state, places, end: state.end + delta, active: index }
+}
+
+/** The place a selection is in: the active one when it is in it (two places can meet), else the last one it is in; -1: none */
+export function placeOf(state: Places, from: number, to: number): number {
+  const inside = (p: Range) => from >= p.from && to <= p.to
+  const active = state.active ?? -1
+  if (active >= 0 && state.places[active] && inside(state.places[active])) return active
+  let found = -1
+  state.places.forEach((p, i) => {
+    if (inside(p)) found = i
+  })
+  return found
 }
 
 /** The place to go to from the caret: the next one (dir 1) or the one before (-1); null: past the last (or before the first) */
@@ -68,11 +92,11 @@ export function insertStructure(editor: Editor, kind: StructureKind) {
   let pos = from
   const places: Range[] = []
   for (const p of parts) {
-    if (p.place) places.push({ from: pos, to: pos + p.text.length })
+    if (p.place) places.push({ from: pos, to: pos + p.text.length, ...(p.mark ? { mark: p.mark } : {}) })
     pos += p.text.length
   }
   const { tr } = editor.state
-  tr.setMeta(placesKey, { places, end: pos })
+  tr.setMeta(placesKey, { places, end: pos, active: 0 })
   tr.setSelection(TextSelection.create(tr.doc, places[0].from, places[0].to))
   // Typing goes on without the structure's last mark
   tr.setStoredMarks(null)
@@ -96,7 +120,7 @@ function step(editor: Editor, dir: 1 | -1) {
   const index = nextPlace(state.places, editor.state.selection.from, dir)
   if (index === null) return dir === 1 ? leave(editor, state) : true
   const place = state.places[index]
-  editor.view.dispatch(editor.state.tr.setSelection(TextSelection.create(editor.state.doc, place.from, place.to)))
+  editor.view.dispatch(editor.state.tr.setMeta(placesKey, { ...state, active: index }).setSelection(TextSelection.create(editor.state.doc, place.from, place.to)))
   return true
 }
 
@@ -118,10 +142,30 @@ export const Structures = Extension.create({
             // The caret went out of the structure: it is done
             const { from, to } = tr.selection
             const start = next.places[0]?.from ?? 0
-            return from < start || to > next.end ? null : next
+            if (from < start || to > next.end) return null
+            // A click into another place makes it the one being filled
+            const at = placeOf(next, from, to)
+            return at >= 0 && at !== next.active ? { ...next, active: at } : next
           },
         },
         props: {
+          // What is typed in a place goes into that place with the place's mark (an emptied superscript place stays superscript, and the
+          // letters never slip into the place next to it)
+          handleTextInput(view, from, to, text) {
+            const state = placesKey.getState(view.state)
+            if (!state) return false
+            const index = placeOf(state, from, to)
+            if (index < 0) return false
+            const place = state.places[index]
+            const { schema } = view.state
+            const keep = view.state.doc.resolve(from).marks().filter((m) => m.type.name !== 'superscript' && m.type.name !== 'subscript')
+            const marks = place.mark && schema.marks[place.mark] ? [...keep, schema.marks[place.mark].create()] : keep
+            const tr = view.state.tr.replaceWith(from, to, schema.text(text, marks))
+            tr.setMeta(placesKey, typeInto(state, index, from, to, text.length))
+            tr.setSelection(TextSelection.create(tr.doc, from + text.length))
+            view.dispatch(tr)
+            return true
+          },
           decorations(state) {
             const places = placesKey.getState(state)
             if (!places) return null

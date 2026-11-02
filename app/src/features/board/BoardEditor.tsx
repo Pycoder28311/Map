@@ -677,9 +677,6 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
   const hoveredFound = hoverPin === null ? undefined : shown.objects.find((o) => o.id === hoverPin)
   const hoveredPin: PointObject | null =
     hoveredFound?.kind === 'point' && !text.editing && openPin?.id !== hoverPin && !mouse.selected.some((o) => o.id === hoverPin) ? hoveredFound : null
-  // A point's sidebar is wider
-  const wideSidebar =
-    sidebar === 'pen' ? tool === 'point' : sidebar === 'selection' && mouse.selected.length === 1 && mouse.selected[0].kind === 'point'
 
   return (
     <div ref={outer} className="flex h-full min-h-48 overflow-hidden">
@@ -895,7 +892,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         {hoveredPin && view && size && <PointCard key={hoveredPin.id} point={hoveredPin} view={view} size={size} />}
         {view && <ZoomControls scale={view.scale} onZoom={(f) => zoom(f)} onFit={fit} />}
       </div>
-      <SidebarSlot open={sidebar !== null} wide={wideSidebar}>
+      <SidebarSlot open={sidebar !== null} wide={false}>
         {sidebar === 'selection' ? (
           <SelectionPanel
             mapId={mapId}

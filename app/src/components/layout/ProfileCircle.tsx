@@ -1,15 +1,7 @@
+import { LuUser } from 'react-icons/lu'
 import { authClient } from '../../lib/auth-client'
 
-/** "Ada Lovelace" → "AL" */
-const initialsOf = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]!.toUpperCase())
-    .join('')
-
-/** The signed-in user's picture (or initials) in the navbar. Nothing happens on click yet */
+/** The signed-in user's picture (or a person icon) in the navbar. Nothing happens on click yet */
 export default function ProfileCircle() {
   const { data: session } = authClient.useSession()
   const user = session?.user
@@ -17,9 +9,9 @@ export default function ProfileCircle() {
   return (
     <span
       title={user.name}
-      className="inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-(--radius-pill) bg-fill text-small font-medium text-fg-muted ring-1 ring-line"
+      className="inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-(--corner-sm) bg-fill text-small font-medium text-fg-muted shadow-(--input-outer-shadow) ring-1 ring-line"
     >
-      {user.image ? <img src={user.image} alt="" className="size-full object-cover" /> : initialsOf(user.name || user.email)}
+      {user.image ? <img src={user.image} alt="" className="size-full object-cover" /> : <LuUser aria-hidden className="size-5" />}
     </span>
   )
 }

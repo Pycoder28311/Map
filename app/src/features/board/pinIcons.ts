@@ -1,7 +1,8 @@
-// The pin's shape and the small pictures in it: 24×24 SVG paths, used by the canvas (Path2D) and by React (<svg>) alike.
+// How a point looks: 24×24 SVG paths, used by the canvas (Path2D) and by React (<svg>) alike. 'pin' is the teardrop with a white disc and a dot;
+// every other one is the whole marker on the map, in the point's colour; some have a texture over the colour (fillTextures.ts' textures).
 import type { PinIcon } from './types'
 
-export const PIN_ICON_PATHS: Record<PinIcon, { name: string; path: string }> = {
+export const PIN_ICON_PATHS: Record<PinIcon, { name: string; path: string; texture?: number }> = {
   pin: { name: 'Pin', path: 'M12 6a4 4 0 1 0 0 8 4 4 0 0 0 0-8z' },
   city: { name: 'City', path: 'M3 21V9h6v4h4V4h8v17zM6 12v2h2v-2zm0 4v2h2v-2zm10-8v2h2V8zm0 4v2h2v-2zm0 4v2h2v-2z' },
   building: { name: 'Building', path: 'M5 21V3h14v18h-4v-5H9v5zM8 6v2h2V6zm6 0v2h2V6zm-6 4v2h2v-2zm6 0v2h2v-2z' },
@@ -14,7 +15,16 @@ export const PIN_ICON_PATHS: Record<PinIcon, { name: string; path: string }> = {
   anchor: { name: 'Anchor', path: 'M11 2h2v3h3v2h-3v2.100a6 6 0 0 1 5 5.900h2l-3 4-3-4h2a4 4 0 0 0-8 0h2l-3 4-3-4h2a6 6 0 0 1 5-5.900V7H8V5h3z' },
   home: { name: 'Home', path: 'M12 3 2 12h3v9h5v-6h4v6h5v-9h3z' },
   heart: { name: 'Heart', path: 'M12 21C5 15 2 12 2 8.500A5 5 0 0 1 12 6a5 5 0 0 1 10 2.500C22 12 19 15 12 21z' },
+  // With a texture: stone, wood, leaves, rock, water
+  castle: { name: 'Castle', texture: 4, path: 'M3 22V8h3v2h2V8h3v2h2V8h3v2h2V8h3v14h-6v-5a3 3 0 0 0-6 0v5z' },
+  cabin: { name: 'Cabin', texture: 1, path: 'M12 3 2 11h2v11h16V11h2z' },
+  forest: { name: 'Forest', texture: 3, path: 'M8 3 3 12h3l-3 5h4v4h2v-4h4l-3-5h3zm8 2-4 7h2l-3 5h4v4h2v-4h4l-3-5h2z' },
+  rock: { name: 'Rock', texture: 2, path: 'M4 21 2 15l3-6 5-3 6 1 4 5 2 9z' },
+  lake: { name: 'Lake', texture: 5, path: 'M12 5C6 5 2 8.500 2 13s4 8 10 8 10-3.500 10-8-4-8-10-8z' },
 }
+
+/** A whole-shape marker on the map: its 24×24 path drawn this wide (board units), standing on the point's anchor */
+export const MARKER_SIZE = 28
 
 /** The teardrop, 28 wide and 36 tall, its tip at (14, 36) */
 export const PIN_BODY = 'M14 36C14 36 2 22 2 13.500a12 12 0 0 1 24 0C26 22 14 36 14 36z'

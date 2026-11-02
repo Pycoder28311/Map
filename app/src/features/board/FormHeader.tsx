@@ -8,9 +8,13 @@ import IconButton from '../../components/ui/buttons/IconButton'
  */
 export default function FormHeader({ onClose, children }: { onClose: () => void; children: ReactNode }) {
   return (
+    <>
     <div className="flex h-12 shrink-0 items-center gap-2">
       {children}
       <IconButton bigIcon icon={LuX} label="Close" onClick={onClose} className="size-12! shrink-0 [--btn-icon-size:2rem]!" />
     </div>
+    {/* A line under it, like the one over the form's bottom buttons */}
+    <div aria-hidden className="h-px shrink-0 bg-line" />
+    </>
   )
 }

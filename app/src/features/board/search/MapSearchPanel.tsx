@@ -1,6 +1,6 @@
+import { LuSearch } from 'react-icons/lu'
 import { useMemo, useState } from 'react'
 import Button from '../../../components/ui/buttons/Button'
-import SearchInput from '../../../components/ui/fields/SearchInput'
 import { useBoard } from '../boardStore'
 import { FLOAT } from '../floating'
 import { ALL, filtersOf, matchEntries, sameFilter, searchEntries, type SearchFilter } from './mapSearch'
@@ -41,21 +41,26 @@ export default function MapSearchPanel({ mapId, onShow, onEdit, onClose }: Props
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-sm">
       <div className="pointer-events-auto shrink-0">
-        <SearchInput
-          autoFocus
-          label="Search this map"
-          placeholder="Search points and places"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key !== 'Escape') return
-            e.preventDefault()
-            e.stopPropagation()
-            if (query) setQuery('')
-            else onClose()
-          }}
-          className="w-full"
-        />
+        {/* The plain input (as the sidebar's description), with the magnifier in it */}
+        <label className="flex h-9 items-center gap-2 rounded-(--field-radius) border border-line-strong bg-surface px-2 focus-within:border-fg-subtle">
+          <LuSearch aria-hidden className="size-4 shrink-0 text-fg-subtle" />
+          <input
+            type="search"
+            autoFocus
+            aria-label="Search this map"
+            placeholder="Search points and places"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== 'Escape') return
+              e.preventDefault()
+              e.stopPropagation()
+              if (query) setQuery('')
+              else onClose()
+            }}
+            className="min-w-0 flex-1 bg-transparent text-body text-fg outline-none placeholder:text-fg-subtle"
+          />
+        </label>
       </div>
       {tabs.length > 1 && (
         // One line of tabs, never wrapped: it scrolls sideways when it is too wide

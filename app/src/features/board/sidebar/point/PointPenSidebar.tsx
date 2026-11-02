@@ -6,7 +6,7 @@ import PinSection from './PinSection'
 export default function PointPenSidebar() {
   const pen = usePointPen()
   return (
-    <SidePanel label="Point options" wide>
+    <SidePanel label="Point options">
       <PinSection first icon={pen.icon} color={pen.color} onIcon={(icon) => setPointPen({ icon })} onColor={(color) => setPointPen({ color })} />
       <p className="text-small text-fg-muted">Click on the map to place a pin. Click a pin to edit it.</p>
     </SidePanel>

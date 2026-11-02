@@ -29,6 +29,7 @@ import PersonCard from '../people/PersonCard'
 import ShareOptions from '../share/ShareOptions'
 import type { PanelProps } from '../workspace/types'
 import { useWorkspace } from '../workspace/useWorkspace'
+import CrackedPanel from '../../components/ui/pixel/CrackedPanel'
 import ArticleBanner from './ArticleBanner'
 import ArticleToolbar from './ArticleToolbar'
 import InfoBox from '../infobox/InfoBox'
@@ -62,12 +63,17 @@ import CommentsSection from './comments/CommentsSection'
 import ArticleText from './text/ArticleText'
 import { useArticleText, useTextEditor, type ArticleText as Text } from './text/articleText'
 import SectionHandles from './text/SectionHandles'
+import TableTools from './text/TableTools'
 
 const DATE = new Intl.DateTimeFormat(undefined, {
   day: 'numeric',
   month: 'short',
   year: 'numeric',
 })
+/** One canvas for measuring text, made when first needed */
+let canvas: HTMLCanvasElement | null = null
+const measureCanvas = () => (canvas ??= document.createElement('canvas'))
+
 /** How long the left column takes to slide open or closed (ms): its transition is duration-300 */
 const SIDE_SLIDE_MS = 300
 
@@ -304,9 +310,9 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   const name = resource.ui.row.title(item)
 
   const actions = (
-    <div className="relative flex items-center justify-end gap-1">
+    <div className="relative flex items-center justify-end gap-3">
       {/* Not made yet: it will put the text of a note in the article */}
-      <Button variant="text" size="sm" disabled title="Add text from a note (soon)">
+      <Button variant="text" size="md" disabled title="Add text from a note (soon)">
         Import from Notes
       </Button>
       {/* The owner's Private / Public is in the ⋯ menu; the others have Save here */}
@@ -327,6 +333,8 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
         <ShareOptions id={`${resource.panelType}:${item.id}`} />
       </BarPopover>
       )}
+      {/* A bigger ⋯ */}
+      <span className="flex [--btn-icon-size:1.375rem]">
       <IconMenu
         label={`More: ${name}`}
         icon={LuEllipsis}
@@ -360,6 +368,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
             : []),
         ]}
       />
+      </span>
     </div>
   )
 
@@ -440,6 +449,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
             <LinkHoverCard text={text} onMessage={hoverMessage} />
             <JumpGutter text={text} box={textBox} />
             {canEdit && <SectionHandles text={text} box={textBox} />}
+            {canEdit && <TableTools text={text} box={textBox} />}
             {images.input}
             {/* `@` typed: the links row over the text, above the caret's row; a link picked is written at the `@` */}
             {mention && editor && (
@@ -658,6 +668,30 @@ function ArticleBody({
   footer,
 }: BodyProps) {
   const [title, setTitle] = useState(start.title ?? '')
+  // The title's input is as wide as its words: measured in the font it has now (it grows to a heading once there is text), a few px for the caret
+  const titleInput = useRef<HTMLInputElement>(null)
+  const [titleWidth, setTitleWidth] = useState<number | null>(null)
+  const titleText = title || (readOnly ? 'Untitled article' : 'Title')
+  useLayoutEffect(() => {
+    const el = titleInput.current
+    if (!el) return
+    const measure = () => {
+      const css = getComputedStyle(el)
+      const ctx = measureCanvas().getContext('2d')
+      if (!ctx) return
+      ctx.font = `${css.fontStyle} ${css.fontWeight} ${css.fontSize} ${css.fontFamily}`
+      setTitleWidth(Math.ceil(ctx.measureText(titleText).width) + 6)
+    }
+    measure()
+    // Again once its size has changed (it grows to a heading as it gets focus or text: a short transition) and once the fonts are in
+    const late = window.setTimeout(measure, 250)
+    void document.fonts?.ready.then(measure)
+    el.addEventListener('transitionend', measure)
+    return () => {
+      window.clearTimeout(late)
+      el.removeEventListener('transitionend', measure)
+    }
+  }, [titleText])
   const [infobox, setInfobox] = useState<Infobox>(() => JSON.parse(start.infobox ?? 'null') ?? EMPTY_INFOBOX)
   const change = onField
   const fields = Object.fromEntries(resource.ui.fields.map((f) => [f.name, f]))
@@ -693,6 +727,8 @@ function ArticleBody({
           {/* An editor's page has room at the left for the sections' ⠿ */}
           <div className={`relative flex flex-1 flex-col gap-2 p-4 pt-1 ${readOnly ? '' : 'ps-11'}`}>
             <div className="flex items-center gap-3">
+              {/* The title on the same cracked panel as the map's name (the shared CrackedPanel), as wide as its words */}
+              <CrackedPanel seed="article-title" theme="app" cuts={4} depth={6} className="flex min-w-0 max-w-full" contentClassName="flex min-w-0 items-center px-3">
               <TitleInput
                 size="xl"
                 value={title}
@@ -705,9 +741,13 @@ function ArticleBody({
                 maxLength={200}
                 readOnly={readOnly}
                 autoFocus={!readOnly && (focusField === 'title' || (focusField === undefined && !start.title))}
-                className="min-w-0 flex-1"
+                ref={titleInput}
+                // As wide as what is in it (measured in its own font; the placeholder while empty)
+                style={titleWidth ? { width: titleWidth } : undefined}
+                className="min-w-0 max-w-full"
               />
-              <div className="shrink-0">{actions}</div>
+              </CrackedPanel>
+              <div className="ms-auto shrink-0">{actions}</div>
             </div>
             {toolbar}
             {/* The Info box floats at the text's top right so the text flows around it, like an encyclopedia's; it is not part of the text (saved in `infobox`) */}

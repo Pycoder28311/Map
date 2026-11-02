@@ -13,6 +13,7 @@ import InfoBox from '../infobox/InfoBox'
 import { toHtml } from '../notes/noteHtml'
 import { useWorkspace } from '../workspace/useWorkspace'
 import { updateObject } from './boardStore'
+import FormCard from './FormCard'
 import FormHeader from './FormHeader'
 import NodeNotes from './sidebar/common/NodeNotes'
 
@@ -24,10 +25,10 @@ type Article = { id: number; title: string; content: string; infobox?: Infobox }
 /** The frame of the left element: a white card at the column's height, the content scrolling inside */
 function Frame({ children, footer }: { children: React.ReactNode; footer?: React.ReactNode }) {
   return (
-    <section aria-label="Article" className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden rounded-(--card-radius) border border-line bg-surface shadow-lg">
+    <FormCard label="Article">
       <div className="flex min-h-0 flex-1 flex-col gap-base overflow-y-auto p-3">{children}</div>
       {footer && <footer className="shrink-0 px-3 pb-3"><div className="border-t border-line pt-base">{footer}</div></footer>}
-    </section>
+    </FormCard>
   )
 }
 

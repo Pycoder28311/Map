@@ -27,7 +27,6 @@ import {
   LuList,
   LuListOrdered,
   LuMapPin,
-  LuMinus,
   LuPlus,
   LuTrash2,
   LuX,
@@ -97,7 +96,7 @@ type Props = {
   cracked?: boolean
   /** Which side Add info's menu opens on (default: left; the other side when there is no room) */
   menuSide?: 'left' | 'right'
-  /** false: the form's Add date / Add info / Add other row is not shown (a point's type other than None; the rows between the sections still add) */
+  /** false: in a form, one underlined Add info in place of the Add date / Add info / Add other row (a point's style other than None) */
   addRow?: boolean
 }
 
@@ -127,9 +126,10 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError,
 
   return (
     // The box clips itself to the cracked edge; its wrapper draws the outline along that shape. While a preview shows it is that much taller, but its
-    // place in the text is not: a negative margin takes the extra height back, so the text beside it stays where it is
+    // place in the text is not: a negative margin takes the extra height back, so the text beside it stays where it is (in a form it
+    // does push what is under it down: the description makes room for it)
     // A reader's box is inert: shown as it is, nothing in it reacts
-    <div className={cracked ? 'ui-crack' : undefined} style={{ marginBottom: -extra }} inert={readOnly || undefined}>
+    <div className={cracked ? 'ui-crack' : undefined} style={{ marginBottom: cracked ? -extra : 0 }} inert={readOnly || undefined}>
       {/* (a point's or an object's form has no box around its sections: they stand on the form itself) */}
       <Frame boxed={cracked}>
         {(!readOnly || value.image) && <Picture image={value.image} onChange={(image) => onChange({ ...value, image })} onUploadImage={onUploadImage} onUploadError={onUploadError} flat={!cracked} />}
@@ -188,9 +188,10 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError,
             />
           </div>
         )}
-        {!readOnly && (cracked || addRow) && (
-          <div className={`mt-2 flex items-center ${cracked ? 'justify-center gap-1' : 'w-full gap-sm'}`}>
-            {cracked ? (
+        {!readOnly && (
+          <div className={`mt-2 flex items-center ${cracked || !addRow ? 'justify-center gap-1' : 'w-full gap-sm'}`}>
+            {/* The article's page, and a form whose style already gave it its sections: one underlined Add info with every kind */}
+            {cracked || !addRow ? (
               <SideMenu variant="text" label="Add info" side={menuSide} items={TYPES} onSelect={add} onHover={setPreview}>
                 Add info
               </SideMenu>
@@ -206,14 +207,8 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError,
                     filled
                     icon={q.icon}
                     className="min-w-0 flex-1"
-                    onClick={() => {
-                      setPreview(null)
-                      add(q.type)
-                    }}
-                    onMouseEnter={() => setPreview(q.type)}
-                    onMouseLeave={() => setPreview(null)}
-                    onFocus={() => setPreview(q.type)}
-                    onBlur={() => setPreview(null)}
+                    // (no preview while hovered: it would push the buttons down from under the pointer, and back)
+                    onClick={() => add(q.type)}
                   >
                     {q.label}
                   </Button>
@@ -393,9 +388,9 @@ function Row({ row, grip, first, last, onChange, onMove, onRemove, onUploadImage
   // The popup menu (Dropdown's look and pop-in), not the dots of the sidebar rows
   const more = (
     <div className="flex shrink-0 items-center">
-      {/* A − left of the ⋯ removes the row at once (the menu's Delete does the same); both show while the pointer is on the row */}
-      <IconButton icon={LuMinus} label={`Remove ${name}`} size="sm" onClick={onRemove} className={ICON_SHOW.hover} />
+      {/* An ✕ right of the ⋯ removes the row at once (the menu's Delete does the same); both show while the pointer is on the row */}
       <IconMenu label={`More: ${name}`} icon={LuEllipsis} groups={menu} turn={false} show="hover" />
+      <IconButton icon={LuX} label={`Remove ${name}`} size="sm" onClick={onRemove} className={ICON_SHOW.hover} />
     </div>
   )
   const head = (

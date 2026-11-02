@@ -4,13 +4,13 @@ import { ARROW_HEADS, arrowHead, endTangents, headInset } from './arrows'
 import { colourRuns, edgeColours, labelPoint, wrapWords } from './borders'
 import { bendAbove, boxPads, textLayoutBox } from './bounds'
 import { ROADS, roadLayerColour } from './roadTextures'
-import { fillImage, texturePattern } from './fillTextures'
+import { fillImage, markerPattern, texturePattern } from './fillTextures'
 import { drawOrder } from './layers'
 import { layoutOfText, measure } from './measureText'
 import { placeOnArc } from './textCurve'
 import { fontOf, LINE_HEIGHT } from './textLayout'
 import { flattenedOf, isClosed, softened, trimEnds } from './pathGeometry'
-import { PIN_BODY, PIN_HEIGHT, PIN_ICON_PATHS, PIN_WIDTH } from './pinIcons'
+import { MARKER_SIZE, PIN_BODY, PIN_HEIGHT, PIN_ICON_PATHS, PIN_WIDTH } from './pinIcons'
 import { sizeFactor, zoomGrowth } from './zoomSize'
 import { areaOf } from './polygon'
 import { softnessOf } from './style'
@@ -232,6 +232,11 @@ export function paintPoint(ctx: CanvasRenderingContext2D, o: PointObject, hovere
   ctx.translate(o.anchor.x, o.anchor.y)
   ctx.scale(k, k)
   ctx.translate(-o.anchor.x, -o.anchor.y)
+  if (o.icon !== 'pin') {
+    paintMarker(ctx, o, hovered)
+    ctx.restore()
+    return
+  }
   ctx.translate(o.anchor.x - PIN_WIDTH / 2, o.anchor.y - PIN_HEIGHT)
   const body = pathFor(PIN_BODY)
   if (hovered) {
@@ -253,6 +258,35 @@ export function paintPoint(ctx: CanvasRenderingContext2D, o: PointObject, hovere
   ctx.fillStyle = o.color
   ctx.fill(pathFor(PIN_ICON_PATHS[o.icon].path))
   ctx.restore()
+}
+
+/** A whole-shape marker standing on the anchor: a white edge so it reads on any map, its colour, its texture (a darker shade) and a thin dark line */
+function paintMarker(ctx: CanvasRenderingContext2D, o: PointObject, hovered: boolean) {
+  const { path, texture } = PIN_ICON_PATHS[o.icon]
+  ctx.translate(o.anchor.x - MARKER_SIZE / 2, o.anchor.y - MARKER_SIZE)
+  ctx.scale(MARKER_SIZE / 24, MARKER_SIZE / 24)
+  const shape = pathFor(path)
+  ctx.lineJoin = 'round'
+  if (hovered) {
+    ctx.globalAlpha = 0.3
+    ctx.strokeStyle = o.color
+    ctx.lineWidth = 6
+    ctx.stroke(shape)
+    ctx.globalAlpha = 1
+  }
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 2.5
+  ctx.stroke(shape)
+  ctx.fillStyle = o.color
+  ctx.fill(shape)
+  const pattern = markerPattern(ctx, texture)
+  if (pattern) {
+    ctx.fillStyle = pattern
+    ctx.fill(shape)
+  }
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)'
+  ctx.lineWidth = 0.75
+  ctx.stroke(shape)
 }
 
 /** The picture over the area's whole box (cropped to the outline, never stretched) */

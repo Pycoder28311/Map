@@ -2,7 +2,7 @@ import { getSchema } from '@tiptap/core'
 import { EditorState } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
 import { describe, expect, it } from 'vitest'
-import { mapPlaces, nextPlace, structureParts } from './structures'
+import { mapPlaces, nextPlace, placeOf, structureParts, typeInto } from './structures'
 
 describe('structureParts', () => {
   it('has the placeholders, and the selection takes the first place', () => {
@@ -44,5 +44,25 @@ describe('mapPlaces', () => {
     const typed = mapPlaces(emptied, tr.insertText('q', 1).mapping.slice(1))
     expect(typed.places[0]).toEqual({ from: 1, to: 2 })
     expect(typed.places[1].from).toBe(2)
+  })
+})
+
+describe('typeInto and placeOf', () => {
+  // "x" then an emptied superscript place right after it
+  const met = { places: [{ from: 1, to: 2 }, { from: 2, to: 2, mark: 'superscript' as const }], end: 2, active: 1 }
+
+  it('what is typed in an emptied place goes into it, not into the place before', () => {
+    const typed = typeInto(met, 1, 2, 2, 3)
+    expect(typed.places).toEqual([{ from: 1, to: 2 }, { from: 2, to: 5, mark: 'superscript' }])
+    expect(typed.end).toBe(5)
+  })
+  it('typing over a whole place replaces it and moves the ones after', () => {
+    const two = { places: [{ from: 1, to: 2 }, { from: 2, to: 3, mark: 'subscript' as const }], end: 3, active: 0 }
+    expect(typeInto(two, 0, 1, 2, 4).places).toEqual([{ from: 1, to: 5 }, { from: 5, to: 6, mark: 'subscript' }])
+  })
+  it('where two places meet, the one being filled wins', () => {
+    expect(placeOf(met, 2, 2)).toBe(1)
+    expect(placeOf({ ...met, active: 0 }, 2, 2)).toBe(0)
+    expect(placeOf(met, 7, 7)).toBe(-1)
   })
 })

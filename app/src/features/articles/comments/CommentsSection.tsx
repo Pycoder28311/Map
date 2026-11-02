@@ -2,7 +2,6 @@ import type { Comment } from '@map/shared'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import Button from '../../../components/ui/buttons/Button'
 import LinkButton from '../../../components/ui/buttons/LinkButton'
-import InputBox from '../../../components/ui/fields/InputBox'
 import Modal from '../../../components/ui/overlays/Modal'
 import CommentCard from './CommentCard'
 import CommentModal, { type CommentTarget } from './CommentModal'
@@ -68,10 +67,16 @@ export default function CommentsSection({ articleId }: { articleId: number }) {
   return (
     <section ref={root} aria-label="Comments" className="flex flex-col gap-3 border-t border-line pt-4">
       <h2 className="text-body font-medium">Comments</h2>
-      {/* Looks like a field; it is the button that opens the modal */}
-      <InputBox as="div" role="button" tabIndex={0} onClick={openNew} onKeyDown={onBoxKey} className="cursor-text text-body text-fg-subtle">
+      {/* Looks like the plain field (as the sidebar's description); it is the button that opens the modal */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={openNew}
+        onKeyDown={onBoxKey}
+        className="flex h-9 cursor-text items-center rounded-(--field-radius) border border-line-strong bg-surface px-2 text-body text-fg-subtle outline-none hover:border-fg-subtle focus-visible:border-fg-subtle"
+      >
         {store.draft('new') ? <span className="truncate text-fg-muted">{store.draft('new')}</span> : 'Write a comment…'}
-      </InputBox>
+      </div>
       {error && (
         <p role="alert" className="text-small text-danger">
           {error}

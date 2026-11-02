@@ -16,7 +16,8 @@ export default function MapPicker({ name, open, onToggle }: { name: string; open
       aria-expanded={open}
       aria-haspopup="dialog"
       onClick={onToggle}
-      className="block max-w-[28ch] cursor-pointer truncate rounded-(--btn-close-radius) px-2 py-1 text-heading transition-colors hover-fill focus-visible:outline-2 focus-visible:outline-accent"
+      // Bigger than the bar's Notes; under the pointer a soft light fades in, brightest in its middle (a gradient, not a flat fill)
+      className="relative block max-w-[28ch] cursor-pointer truncate rounded-(--btn-close-radius) px-2 py-1 text-[1.375rem] leading-tight font-semibold before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(ellipse_at_center,rgb(255_255_255/0.12),transparent_72%)] before:opacity-0 before:transition-opacity before:duration-300 before:ease-out hover:before:opacity-100 focus-visible:outline-2 focus-visible:outline-accent motion-reduce:before:transition-none"
     >
       {name}
     </button>

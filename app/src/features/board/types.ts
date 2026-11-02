@@ -208,7 +208,8 @@ export const runsOf = (o: TextObject): TextRun[] => o.runs ?? [{ text: o.text }]
 /** The types of a point (each has its own default info rows: pointInfo.ts). Saved as the index, so new ones are only ever added at the end */
 export const POINT_LABELS = ['none', 'area', 'city', 'store', 'nature', 'structure'] as const
 export type PointLabel = (typeof POINT_LABELS)[number]
-export const PIN_ICONS = ['pin', 'city', 'building', 'mountain', 'water', 'flag', 'star', 'tree', 'globe', 'anchor', 'home', 'heart'] as const
+/** How a point looks on the map: 'pin' is the teardrop (Google Maps' kind); every other one is a whole shape of its own. Saved as the index: new ones only at the end */
+export const PIN_ICONS = ['pin', 'city', 'building', 'mountain', 'water', 'flag', 'star', 'tree', 'globe', 'anchor', 'home', 'heart', 'castle', 'cabin', 'forest', 'rock', 'lake'] as const
 export type PinIcon = (typeof PIN_ICONS)[number]
 
 /** A pin on the map: `anchor` is its tip */

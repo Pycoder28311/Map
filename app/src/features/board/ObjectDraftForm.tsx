@@ -8,7 +8,9 @@ import TitleInput from '../../components/ui/fields/TitleInput'
 import { uploadImage } from '../../lib/api/images'
 import InfoBox from '../infobox/InfoBox'
 import { changeObjects, updateObject } from './boardStore'
+import FormCard from './FormCard'
 import FormHeader from './FormHeader'
+import StyleChips from './StyleChips'
 import { hasTypes, OBJECT_TYPES, objectInfoboxOf, typeOfObject } from './infoTypes'
 import { createArticleFor, draftTextOf } from './objectArticle'
 import { titleChange, titleOf } from './objectTitle'
@@ -55,7 +57,7 @@ export default function ObjectDraftForm({ mapId, object, board, onClose }: Props
   }
 
   return (
-    <section aria-label="Article" className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden rounded-(--card-radius) border border-line bg-surface shadow-lg">
+    <FormCard label="Article">
       <div className="flex min-h-0 flex-1 flex-col gap-base overflow-y-auto p-3">
         <FormHeader onClose={onClose}>
           <TitleInput
@@ -72,17 +74,7 @@ export default function ObjectDraftForm({ mapId, object, board, onClose }: Props
         </FormHeader>
         <div className="flex flex-col">
         {hasTypes(object) && (
-          // One line of types, never wrapped: it scrolls sideways when it is too wide
-          <div role="toolbar" aria-label="Type" className="-mx-1 flex shrink-0 gap-1.5 overflow-x-auto px-1 pb-sm">
-            {OBJECT_TYPES[object.kind].map((t) => {
-              const on = t.id === typeOfObject(object).id
-              return (
-                <Button key={t.id} variant={on ? 'selected' : 'ghost'} size="sm" plain filled aria-pressed={on} className="shrink-0" onClick={() => !on && updateObject(mapId, object.id, { articleType: t.id })}>
-                  {t.name}
-                </Button>
-              )
-            })}
-          </div>
+          <StyleChips label="Style" options={OBJECT_TYPES[object.kind]} value={typeOfObject(object).id} onChange={(id) => updateObject(mapId, object.id, { articleType: id })} />
         )}
         <InfoBox
           // (a new type starts with its own rows, until the box was changed)
@@ -123,6 +115,6 @@ export default function ObjectDraftForm({ mapId, object, board, onClose }: Props
         <ErrorText>{error}</ErrorText>
         </div>
       </footer>
-    </section>
+    </FormCard>
   )
 }

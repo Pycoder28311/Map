@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { LuCamera, LuGitBranch, LuLayers, LuPencil, LuSearch, LuX } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
+import CrackedPanel from '../../components/ui/pixel/CrackedPanel'
 import TreeMenu from '../../components/ui/tree/TreeMenu'
 import { mapName, renameMap, useMaps } from '../maps/maps'
 import { useWorkspace } from '../workspace/useWorkspace'
@@ -147,7 +148,9 @@ export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onP
     >
       {/* Not one bar: a small floating piece for each of them, the name, Notes, and the square search and ⋯ */}
       <div ref={row} data-title-row className={`pointer-events-none relative flex h-12.5 shrink-0 items-stretch gap-xs self-start ${fit}`}>
-        <div className={`pointer-events-auto flex min-w-0 items-center ps-1.5 pe-1.5 ${PIECE}`}>
+        {/* The name on a cracked panel (the shared CrackedPanel) */}
+        <CrackedPanel seed="map-title" theme="app" cuts={4} depth={6} className="pointer-events-auto flex min-w-0" contentClassName="flex min-w-0 items-center px-2.5">
+        <div className="flex min-w-0 flex-1 items-center">
         {draft === null ? (
           <div className="flex min-w-0 flex-1 items-center gap-1">
             <MapPicker name={mapName(title)} open={panel === 'maps'} onToggle={() => toggle('maps')} />
@@ -175,13 +178,15 @@ export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onP
           />
         )}
         </div>
-        <div className={`pointer-events-auto flex shrink-0 items-center px-1 ${PIECE}`}>
-          <Button variant="ghost" plain noline className={TITLE_TEXT} aria-expanded={panel === 'notes'} aria-pressed={panel === 'notes'} onClick={() => toggle('notes')}>
+        </CrackedPanel>
+        {/* The three buttons' pieces: a little shorter than the name's, centred beside it, with less room round their buttons */}
+        <div className={`pointer-events-auto flex h-11 shrink-0 items-stretch self-center p-1 ${PIECE}`}>
+          <Button variant="ghost" plain noline className={`${TITLE_TEXT} h-full [--btn-pad-x:0.5rem]!`} aria-expanded={panel === 'notes'} aria-pressed={panel === 'notes'} onClick={() => toggle('notes')}>
             Notes
           </Button>
         </div>
         {/* Squares as tall as the pieces beside them */}
-        <div className={`pointer-events-auto aspect-square shrink-0 p-1.5 ${PIECE}`}>
+        <div className={`pointer-events-auto aspect-square h-11 shrink-0 self-center p-1 ${PIECE}`}>
           <IconButton
             bigIcon
             noline
@@ -193,7 +198,7 @@ export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onP
             onClick={() => toggle('search')}
           />
         </div>
-        <div ref={third} className={`pointer-events-auto relative aspect-square shrink-0 p-1.5 ${PIECE}`}>
+        <div ref={third} className={`pointer-events-auto relative aspect-square h-11 shrink-0 self-center p-1 ${PIECE}`}>
         <TreeMenu
           fill
           under={() => third.current}

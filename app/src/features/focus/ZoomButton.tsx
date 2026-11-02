@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { LuZoomIn, LuZoomOut } from 'react-icons/lu'
+import { LuMaximize, LuMinimize } from 'react-icons/lu'
 import IconButton from '../../components/ui/buttons/IconButton'
 import { useFocusMode } from './FocusMode'
 
@@ -17,7 +17,7 @@ export default function ZoomButton() {
     <>
       <IconButton
         ref={ref}
-        icon={LuZoomIn}
+        icon={LuMaximize}
         bigIcon
         label="Focus: hide the navbar and sidebar"
         onClick={() => ref.current && turnOn(ref.current.getBoundingClientRect())}
@@ -26,7 +26,7 @@ export default function ZoomButton() {
         at &&
         createPortal(
           <IconButton
-            icon={LuZoomOut}
+            icon={LuMinimize}
             bigIcon
             label="Leave focus: show the navbar and sidebar (Esc)"
             onClick={turnOff}
