@@ -165,6 +165,66 @@
   }
 }
 
+/* The left column's panel (search, notes, layers) above a form: it grows from nothing (its grid row from 0fr), so the form under it is pushed
+   down smoothly. The panel clips only while it plays (its shadows show after). */
+@theme {
+  --animate-panel-in: panel-in 220ms ease-out both;
+
+  @keyframes panel-in {
+    from {
+      grid-template-rows: 0fr;
+      opacity: 0;
+      overflow: hidden;
+    }
+    to {
+      grid-template-rows: 1fr;
+      opacity: 1;
+      overflow: hidden;
+    }
+  }
+}
+
+/* ...and the way out: it shrinks to nothing (slides up), the form under it follows; alone, it only slides up and fades */
+@theme {
+  --animate-panel-out: panel-out 200ms ease-in both;
+  --animate-panel-up: panel-up 200ms ease-in both;
+
+  @keyframes panel-out {
+    from {
+      grid-template-rows: 1fr;
+      opacity: 1;
+      overflow: hidden;
+    }
+    to {
+      grid-template-rows: 0fr;
+      opacity: 0;
+      overflow: hidden;
+    }
+  }
+
+  @keyframes panel-up {
+    to {
+      opacity: 0;
+      translate: 0 -0.5rem;
+    }
+  }
+}
+
+/* A list hanging under a bar (components/ui/overlays/BarPopover, the map's name list): it slides down out of the bar */
+@theme {
+  --animate-list-in: list-in 220ms ease-out both;
+
+  @keyframes list-in {
+    from {
+      clip-path: inset(0 0 100% 0);
+      translate: 0 -0.5rem;
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+}
+
 /* Bar popouts (components/ui/overlays/PopoutLayer): the bridge joining two touching popouts fades in
    once they have slid out */
 @theme {

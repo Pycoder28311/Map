@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { changeObjects, canRedo, canUndo, redo, undo, updateObject, useBoard } from './boardStore'
 import { applyChange } from './changes'
-import { LuGalleryHorizontal, LuTrash2, LuX } from 'react-icons/lu'
+import { LuGalleryHorizontal, LuTrash2 } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
 import Presenter from './presenter/Presenter'
@@ -22,7 +22,8 @@ import { boundsOf, unionBounds } from './bounds'
 import { getLinkPick, startLinkPick, stopLinkPick } from '../links/linkPick'
 import { paintBoard } from './render'
 import { useFillImages } from './fillTextures'
-import { removeBackground, useBackground, useHasBackground } from './background'
+import { useBackground } from './background'
+import BackgroundImport from './BackgroundImport'
 import { toolOfKey, type ToolId } from './tools'
 import { LAYER_MAIN, type BoardObject, type BorderObject, type LineObject, type Point, type PointObject } from './types'
 import { BOARD, boardToScreen, clampToBoard, insideBoard, screenToBoard, zoomFactorOf, type Size } from './viewport'
@@ -149,9 +150,8 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
   })
   // What is painted: the board, or while a gesture runs, the board as it would be
   // What the Line and Border tools are drawing right now (not in the board until the drawing is finished)
-  const background = useBackground(mapId)
+  const background = useBackground(mapId, board.background)
   const fillImages = useFillImages()
-  const hasBackground = useHasBackground(mapId)
   const draw = useDrawTool({
     mapId,
     board,
@@ -715,19 +715,23 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
           }}
           className={`absolute start-0 top-0 touch-none ${painted ? '' : 'size-full'} ${cursor}`}
         />
-        {!visitor && hasBackground && view && size && (
+        {!visitor && (saver.dirty || saver.saving) && (
+          // Save: its own floating piece at the bottom centre of the page, only while there are changes not saved
+          <div className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 border border-line bg-surface p-1 shadow-lg">
+            <Button variant="ghost" plain disabled={saver.saving} onClick={() => void saver.save()} title="Save the map (Ctrl+S)">
+              {saver.saving ? 'Saving…' : 'Save'}
+            </Button>
+          </div>
+        )}
+        {!visitor && view && size && (
           // At the top right of the sheet (kept inside the page when the sheet's corner is out of it)
-          <IconButton
-            variant="secondary"
-            icon={LuX}
-            label="Remove the background"
-            title="Remove the background picture"
-            onClick={() => removeBackground(mapId)}
+          <BackgroundImport
+            mapId={mapId}
+            has={!!board.background}
             style={{
-              left: Math.min(Math.max(8, view.x + BOARD.width * view.scale - 40), size.w - 40),
-              top: Math.min(Math.max(8, view.y + 8), size.h - 40),
+              left: Math.min(Math.max(8, view.x + BOARD.width * view.scale - 8), size.w - 8),
+              top: Math.min(Math.max(8, view.y + 8), size.h - 48),
             }}
-            className="absolute z-10"
           />
         )}
         {mouse.marquee && view && <Marquee rect={mouse.marquee} view={view} />}
@@ -847,7 +851,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
             focusOn(target.kind === 'point' ? { x: target.anchor.x - size.w / 2 / scale, y: target.anchor.y - size.h / 2 / scale, w: size.w / scale, h: size.h / scale } : boundsOf(target))
           }}
         />
-        {!visitor && <ToolPanel mapId={mapId} tool={tool} onTool={pickTool} />}
+        {!visitor && <ToolPanel mapId={mapId} tool={tool} onTool={pickTool} area={root} />}
         {text.editing && view && (
           <TextEditorOverlay key={text.editing.id ?? 'new'} text={text.editing.draft} view={view} onCommit={text.commit} onCancel={text.cancel} />
         )}

@@ -27,7 +27,7 @@ export default function BoardCanvas({ mapId, board, paint = true, interactive = 
     return () => observer.disconnect()
   }, [])
 
-  const background = useBackground(mapId)
+  const background = useBackground(mapId, board.background)
   useFillImages()
   const view = size ? fitView(size) : null
   useEffect(() => {

@@ -43,13 +43,42 @@ function load() {
   image.src = url
 }
 
-/** The picture to paint behind the objects of this map: null when it was taken off or has not arrived yet (the painter is asked again when it has) */
-export function useBackground(mapId: string): CanvasImageSource | null {
+// A map's own background picture (the address of an image the app stored, kept in its file: Board.background), loaded the first time it is
+// asked for. Tried with CORS first, so the map can still be made into a picture; without, when the images' server does not allow it
+const own = new Map<string, { image: HTMLImageElement; ready: boolean }>()
+function loadOwn(address: string) {
+  let known = own.get(address)
+  if (known || typeof Image === 'undefined') return known
+  const entry = { image: new Image(), ready: false }
+  own.set(address, (known = entry))
+  let withCors = true
+  entry.image.crossOrigin = 'anonymous'
+  entry.image.onload = () => {
+    entry.ready = true
+    notify()
+  }
+  entry.image.onerror = () => {
+    if (!withCors) return
+    withCors = false
+    entry.image.removeAttribute('crossorigin')
+    entry.image.src = address
+  }
+  entry.image.src = address
+  return known
+}
+
+/**
+ * The picture to paint behind the objects of this map: its own when it has one (`address`, from its board), else the default one (null when it
+ * was taken off or has not arrived yet: the painter is asked again when it has)
+ */
+export function useBackground(mapId: string, address?: string): CanvasImageSource | null {
   const loaded = useSyncExternalStore(subscribe, () => ready)
   const taken = useSyncExternalStore(subscribe, () => off.has(mapId))
+  const mine = useSyncExternalStore(subscribe, () => (address ? (own.get(address)?.ready ?? false) : false))
+  if (address) {
+    const entry = loadOwn(address)
+    return mine && entry ? entry.image : null
+  }
   load()
   return !taken && loaded ? image : null
 }
-
-/** Whether the map has its background on (the button to remove it shows) */
-export const useHasBackground = (mapId: string) => useSyncExternalStore(subscribe, () => !off.has(mapId))

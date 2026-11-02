@@ -46,7 +46,7 @@ export default function BranchesPopout({ mapId, open, onOpenChange }: { mapId: s
   }
 
   return (
-    <BarPopover open={open} onOpenChange={onOpenChange} label="Map branches" trigger={null}>
+    <BarPopover open={open} onOpenChange={onOpenChange} label="Map branches" trigger={null} align="end" overflow tight>
       <div className="flex min-h-8 items-center gap-1 px-2 pb-1">
         <LuGitBranch className="size-4 shrink-0 text-fg-subtle" aria-hidden />
         {draft !== null ? (

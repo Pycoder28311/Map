@@ -1,6 +1,7 @@
 import Button from '../../components/ui/buttons/Button'
 import PinBadge from './PinIconView'
 import { PIN_HEIGHT } from './pinIcons'
+import { sizeFactor } from './zoomSize'
 import PointDescription from './PointDescription'
 import { infoboxOf } from './pointInfo'
 import { labelName } from './pointLabels'
@@ -23,7 +24,7 @@ type Props = { point: PointObject; view: Viewport; size: Size; onMore?: () => vo
 export default function PointCard({ point, view, size, onMore }: Props) {
   // The picture is the Info box's (the one an article has too)
   const banner = infoboxOf(point).image
-  const top = boardToScreen(view, { x: point.anchor.x, y: point.anchor.y - PIN_HEIGHT })
+  const top = boardToScreen(view, { x: point.anchor.x, y: point.anchor.y - PIN_HEIGHT * sizeFactor(view.scale) })
   const tip = boardToScreen(view, point.anchor)
   const hover = !onMore
   const width = hover ? HOVER_WIDTH : WIDTH

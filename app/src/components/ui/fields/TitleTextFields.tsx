@@ -17,7 +17,7 @@ type Props = {
   onText: (text: string) => void
   /** Rich text (default) or a plain textarea */
   rich?: boolean
-  size?: Exclude<TitleSize, 'xl'>
+  size?: Exclude<TitleSize, 'xl' | '2xl'>
   titlePlaceholder?: string
   textPlaceholder?: string
   /** Screen-reader name of the text */

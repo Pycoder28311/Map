@@ -93,6 +93,19 @@ describe('encodeBoard / decodeBoard', () => {
     expect(roundTrip({ nextId: 3, objects: [area] }).objects[0]).toEqual(area)
   })
 
+  it('keeps the map\'s own background picture (a stored image\'s address) in the file header; another address is dropped', () => {
+    const address = 'https://images.example.com/map/img/0f8fad5b-d9cb-469f-a165-70867728950e.jpg'
+    expect(roundTrip({ nextId: 1, objects: [], background: address }).background).toBe(address)
+    expect(roundTrip({ nextId: 1, objects: [] }).background).toBeUndefined()
+    expect(roundTrip({ nextId: 1, objects: [], background: 'https://evil.test/x.jpg' }).background).toBeUndefined()
+  })
+
+  it('keeps the pictures of a point\'s Info box (the app stored them)', () => {
+    const image = 'https://images.example.com/map/img/0f8fad5b-d9cb-469f-a165-70867728950e.png'
+    const point: BoardObject = { ...base, id: 1, kind: 'point', anchor: { x: 1, y: 2 }, ...POINT_DEFAULT, infobox: { image, banner: null, name: '', rows: [] } }
+    expect(roundTrip({ nextId: 2, objects: [point] }).objects[0]).toEqual(point)
+  })
+
   it('version 2: keeps locked, hidden and what a node is (ref); skips header extras it does not know (docs/plans/38)', () => {
     const point: BoardObject = { ...base, id: 1, kind: 'point', anchor: { x: 1, y: 2 }, ...POINT_DEFAULT, locked: true, hidden: true, ref: { type: 'objectCards', id: 42 } }
     expect(roundTrip({ nextId: 2, objects: [point] }).objects[0]).toEqual(point)
@@ -101,8 +114,9 @@ describe('encodeBoard / decodeBoard', () => {
     w.byte(2)
     w.int(2)
     // three bytes of a header field to come
+    // (no flag set, then two bytes of a field to come)
     w.int(3)
-    w.raw([7, 7, 7])
+    w.raw([0, 7, 7])
     w.raw(bytes.subarray(3))
     expect(decodeBoard(Uint8Array.from(w.bytes)).objects).toEqual([point])
   })

@@ -237,6 +237,8 @@ export type Board = {
   nextId: number
   /** Bottom to top inside each layer */
   objects: BoardObject[]
+  /** The map's own background picture (the address of an image the app stored), shown instead of the default one. Missing: the default */
+  background?: string
 }
 
 /** The number each kind has in the file. 6 is reserved for the board's images */

@@ -185,7 +185,7 @@ export function addObject(mapId: string, draft: Draft, at?: number): number {
   const object = { ...draft, layer, id: board.nextId } as BoardObject
   const objects = [...board.objects]
   objects.splice(at === undefined ? objects.length : Math.max(0, Math.min(at, objects.length)), 0, object)
-  set(mapId, { nextId: board.nextId + 1, objects })
+  set(mapId, { ...board, nextId: board.nextId + 1, objects })
   return object.id
 }
 
@@ -217,6 +217,14 @@ export function moveObject(mapId: string, id: number, toIndex: number) {
   const [object] = objects.splice(from, 1)
   objects.splice(Math.max(0, Math.min(toIndex, objects.length)), 0, object)
   set(mapId, { ...board, objects })
+}
+
+/** Gives the map its own background picture (the address of a stored image), or takes it away (undefined: the default one again). One undo step */
+export function setBackground(mapId: string, background: string | undefined) {
+  const board = getBoard(mapId)
+  if (board.background === background) return
+  const { background: _old, ...rest } = board
+  set(mapId, background ? { ...rest, background } : rest)
 }
 
 /** Several changes at once (update, remove, add) as ONE step back; returns the ids of what was added */

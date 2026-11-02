@@ -1,5 +1,5 @@
 import { Fragment, useId, useRef, type ToggleEvent } from 'react'
-import { LuChevronRight } from 'react-icons/lu'
+import { LuChevronRight, LuEllipsis } from 'react-icons/lu'
 import {
   DOT,
   DOT_SLOT,
@@ -47,6 +47,9 @@ const SEPARATOR = 'mx-(--menu-item-px) my-(--menu-sep-space) h-px shrink-0 bg-li
 export const SUBMENU =
   'inset-auto m-0 min-w-(--menu-min-w) rounded-(--menu-radius) border-(length:--menu-border) border-line bg-surface p-(--menu-p) text-fg shadow-lg'
 
+// A trigger that fills its square piece (inside the piece's own padding), square corners (the bar's)
+const FILL = 'inline-flex size-full shrink-0 items-center justify-center rounded-(--btn-close-radius) transition-[opacity,background-color] duration-200 ease-out'
+
 /** The menu never starts closer than this to the window's left edge (px) */
 const EDGE = 8
 
@@ -61,6 +64,12 @@ type Props = {
   groups: TreeMenuGroup[]
   /** A floating bar to hang under instead of the trigger: its left edge, its width as the most, below it (not left of it) */
   anchor?: () => Element | null
+  /** The trigger fills its parent (a square piece): no padding or corners of its own, a bigger icon, the whole square clickable */
+  fill?: boolean
+  /** Hangs under this element (the trigger's square piece) instead of the trigger: its left edge, --spacing-sm below it, as wide as it needs */
+  under?: () => Element | null
+  /** No dots animation: the menu is a plain card that shows and hides at once, and the trigger's ⋯ stays a ⋯ */
+  plain?: boolean
 }
 
 /**
@@ -70,7 +79,7 @@ type Props = {
  * the trigger, moved left by the menu's corner radius (--menu-radius). Closes on a pick, a click outside, Esc, scrolling
  * or resizing (it would no longer sit under its trigger).
  */
-export default function TreeMenu({ label, show = 'always', bg, effects, groups, anchor }: Props) {
+export default function TreeMenu({ label, show = 'always', bg, effects, groups, anchor, fill = false, under, plain = false }: Props) {
   const id = useId()
   const count = groups.reduce((n, group) => n + group.length, 0)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -84,12 +93,12 @@ export default function TreeMenu({ label, show = 'always', bg, effects, groups, 
     const trigger = triggerRef.current
     if (e.newState !== 'open' || !trigger) return
     const menu = e.currentTarget
-    const rect = (anchor?.() ?? trigger).getBoundingClientRect()
+    const rect = (anchor?.() ?? under?.() ?? trigger).getBoundingClientRect()
     const style = getComputedStyle(menu)
     // Under a bar: its own left edge, not moved left of it
-    const left = anchor ? rect.left : Math.max(EDGE, rect.left - (parseFloat(style.borderTopLeftRadius) || 0))
+    const left = anchor || under ? rect.left : Math.max(EDGE, rect.left - (parseFloat(style.borderTopLeftRadius) || 0))
     if (anchor) menu.style.maxWidth = `${rect.width}px`
-    const top = rect.bottom + (parseFloat(style.getPropertyValue('--menu-offset')) || 0)
+    const top = rect.bottom + (under ? 4 : parseFloat(style.getPropertyValue('--menu-offset')) || 0)
     menu.style.left = `${left}px`
     menu.style.top = `${top}px`
     setTriggerOrigin(menu, trigger.getBoundingClientRect(), left, top)
@@ -115,22 +124,22 @@ export default function TreeMenu({ label, show = 'always', bg, effects, groups, 
         popoverTarget={id}
         aria-label={label}
         title={label}
-        className={`${ICON_EFFECT_GROUP} ${ICON_BOX} ${ICON_SHOW[show]} ${ICON_BG[bg ?? 'hover']} ${TRIGGER_WHILE_OPEN} ${ICON_BUTTON}`}
+        className={`${ICON_EFFECT_GROUP} ${fill ? FILL : ICON_BOX} ${ICON_SHOW[show]} ${ICON_BG[bg ?? 'hover']} ${plain ? '' : TRIGGER_WHILE_OPEN} ${ICON_BUTTON}`}
       >
-        <TriggerIcon className={iconEffectClass(effects)} />
+        {plain ? <LuEllipsis aria-hidden className={fill ? 'size-5' : 'size-(--btn-icon-size)'} /> : <TriggerIcon className={iconEffectClass(effects)} big={fill} />}
       </button>
 
-      <div ref={menuRef} id={id} popover="auto" role="menu" aria-label={label} onBeforeToggle={place} onToggle={watch} className={MENU}>
-        <span aria-hidden className={BACKDROP} />
+      <div ref={menuRef} id={id} popover="auto" role="menu" aria-label={label} onBeforeToggle={place} onToggle={watch} className={plain ? `${SUBMENU} origin-top-left animate-dropdown-in motion-reduce:animate-none` : MENU}>
+        {!plain && <span aria-hidden className={BACKDROP} />}
         <div className={LIST}>
           {groups.map((group, g) => {
             // Index of the group's first item among all items
             const start = groups.slice(0, g).reduce((n, prev) => n + prev.length, 0)
             return (
               <Fragment key={g}>
-                {g > 0 && <div role="separator" style={itemVars(start, g)} className={`${SEPARATOR} ${SEPARATOR_IN}`} />}
+                {g > 0 && <div role="separator" style={itemVars(start, g)} className={`${SEPARATOR} ${plain ? '' : SEPARATOR_IN}`} />}
                 {group.map((item, j) => (
-                  <MenuItem key={item.label} item={item} vars={itemVars(start + j, g)} close={close} />
+                  <MenuItem key={item.label} item={item} vars={itemVars(start + j, g)} close={close} plain={plain} />
                 ))}
               </Fragment>
             )
@@ -142,15 +151,17 @@ export default function TreeMenu({ label, show = 'always', bg, effects, groups, 
 }
 
 /** One item of the menu; with a `submenu`, it opens that beside it (the ▸) instead of acting */
-function MenuItem({ item, vars, close }: { item: TreeMenuItem; vars: React.CSSProperties; close: () => void }) {
+function MenuItem({ item, vars, close, plain = false }: { item: TreeMenuItem; vars: React.CSSProperties; close: () => void; plain?: boolean }) {
   const subId = useId()
   const content = (
     <>
-      <span aria-hidden className={BLOOM} />
-      <span aria-hidden className={DOT_SLOT}>
-        <span className={DOT} />
-      </span>
-      <span className={`${ITEM_CONTENT} ${item.submenu ? 'w-full' : ''}`}>
+      {!plain && <span aria-hidden className={BLOOM} />}
+      {!plain && (
+        <span aria-hidden className={DOT_SLOT}>
+          <span className={DOT} />
+        </span>
+      )}
+      <span className={`${plain ? 'relative flex items-center gap-(--menu-icon-gap)' : ITEM_CONTENT} ${item.submenu ? 'w-full' : ''}`}>
         {item.icon && <item.icon className="size-(--btn-icon-size) shrink-0" />}
         {item.label}
         {/* The arrow of a submenu: at the item's right edge, with a background of its own on hover */}
@@ -216,9 +227,9 @@ function MenuItem({ item, vars, close }: { item: TreeMenuItem; vars: React.CSSPr
  * The trigger: a ⋯ that hands its dots to the menu's queue when it opens, its places then joining
  * into a −; on close the − splits back into the three dots. Drawn like Lucide's icons (24×24, stroke 2).
  */
-function TriggerIcon({ className }: { className: string }) {
+function TriggerIcon({ className, big = false }: { className: string; big?: boolean }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={`size-(--btn-icon-size) ${className}`}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={`${big ? 'size-5' : 'size-(--btn-icon-size)'} ${className}`}>
       {TRIGGER_BARS.map((bar) => (
         <rect
           key={bar.x}

@@ -8,6 +8,7 @@ import { docToRuns, runsToDoc, type Doc } from './richText'
 import { LINE_HEIGHT } from './textLayout'
 import { runsOf, type TextObject, type TextRun } from './types'
 import { boardToScreen, type Viewport } from './viewport'
+import { sizeFactor } from './zoomSize'
 
 type Props = {
   text: TextObject
@@ -52,7 +53,7 @@ export default function TextEditorOverlay({ text, view, onCommit, onCancel }: Pr
   return (
     <div
       data-no-drag
-      style={{ left: at.x, top: at.y, transform: `scale(${text.fixedSize ? 1 : view.scale})`, transformOrigin: 'top left' }}
+      style={{ left: at.x, top: at.y, transform: `scale(${text.fixedSize ? 1 : view.scale * sizeFactor(view.scale)})`, transformOrigin: 'top left' }}
       className="pointer-events-auto absolute z-10"
       onKeyDown={(e) => {
         e.stopPropagation()

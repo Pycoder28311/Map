@@ -6,6 +6,7 @@ const SIZES = {
   md: { box: 'h-10 px-3', big: 'text-base' },
   lg: { box: 'h-12 px-4', big: 'text-heading' },
   xl: { box: 'h-14 px-0', big: 'text-4xl' },
+  '2xl': { box: 'h-12 px-0', big: 'text-3xl' },
 } as const
 
 export type TitleSize = keyof typeof SIZES
@@ -21,7 +22,7 @@ type Props = Omit<ComponentProps<'input'>, 'size'> & {
  */
 export default function TitleInput({ size = 'lg', className = '', value, onFocus, onBlur, ...input }: Props) {
   const [focused, setFocused] = useState(false)
-  const big = focused || (value !== undefined && String(value) !== '')
+  const big = size === '2xl' || focused || (value !== undefined && String(value) !== '')
   return (
     <input
       value={value}

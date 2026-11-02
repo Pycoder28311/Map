@@ -39,7 +39,7 @@ export default function MapSearchPanel({ mapId, onShow, onEdit, onClose }: Props
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2">
+    <div className="flex min-h-0 flex-1 flex-col gap-sm">
       <div className="pointer-events-auto shrink-0">
         <SearchInput
           autoFocus
@@ -54,7 +54,7 @@ export default function MapSearchPanel({ mapId, onShow, onEdit, onClose }: Props
             if (query) setQuery('')
             else onClose()
           }}
-          className="w-full shadow-lg"
+          className="w-full"
         />
       </div>
       {tabs.length > 1 && (

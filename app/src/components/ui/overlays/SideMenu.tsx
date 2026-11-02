@@ -2,7 +2,7 @@ import { useId, useRef, type ReactNode, type ToggleEvent } from 'react'
 import { closeOnOutsideScroll } from '../../../lib/popoverScroll'
 import { LuChevronLeft, LuChevronRight } from 'react-icons/lu'
 import Button from '../buttons/Button'
-import type { ButtonVariant } from '../buttons/buttonStyles'
+import type { ButtonSize, ButtonVariant } from '../buttons/buttonStyles'
 import type { ButtonIcon, PlainIcon } from '../icons/IconSlot'
 import { DROPDOWN_ITEM, DROPDOWN_MENU } from './Dropdown'
 
@@ -19,6 +19,10 @@ type Props<T extends string> = {
   label: string
   /** The button's icon (default: a ‹ arrow) */
   icon?: ButtonIcon
+  /** An icon before the text of a button with `arrowEnd` */
+  lead?: ButtonIcon
+  /** The button's size (default: sm) */
+  size?: ButtonSize
   /** The button's text */
   children: ReactNode
   className?: string
@@ -33,7 +37,7 @@ type Props<T extends string> = {
  * with the button's: for a button at the bottom of a box that sits at the right of the page. A pick, a click outside, Esc, scrolling or
  * resizing closes it.
  */
-export default function SideMenu<T extends string>({ variant = 'ghost', items, onSelect, onHover, label, icon = LuChevronLeft, children, className = '', side = 'left', arrowEnd = false }: Props<T>) {
+export default function SideMenu<T extends string>({ variant = 'ghost', items, onSelect, onHover, label, icon = LuChevronLeft, lead, size = 'sm', children, className = '', side = 'left', arrowEnd = false }: Props<T>) {
   const id = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -75,10 +79,10 @@ export default function SideMenu<T extends string>({ variant = 'ghost', items, o
 
   return (
     <>
-      <Button ref={triggerRef} variant={variant} size="sm" plain={variant === 'ghost'} filled={variant === 'ghost'} icon={arrowEnd ? undefined : icon} popoverTarget={id} aria-haspopup="menu" className={`${arrowEnd ? 'relative justify-center' : 'justify-center'} ${className}`}>
+      <Button ref={triggerRef} variant={variant} size={size} plain={variant === 'ghost'} filled={variant === 'ghost'} icon={arrowEnd ? lead : icon} popoverTarget={id} aria-haspopup="menu" className={`justify-center ${className}`}>
         {children}
-        {/* (at the right end, the text stays in the middle) */}
-        {arrowEnd && <LuChevronRight aria-hidden className="absolute end-2 size-(--btn-icon-size)" />}
+        {/* (after the text, a small gap from it) */}
+        {arrowEnd && <LuChevronRight aria-hidden className="ms-1" />}
       </Button>
       <div ref={menuRef} id={id} popover="auto" role="menu" aria-label={label} onBeforeToggle={place} onToggle={watch} className={`${DROPDOWN_MENU} overflow-y-auto`}>
         {items.map((item) => (

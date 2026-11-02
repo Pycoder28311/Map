@@ -11,6 +11,7 @@ import { placeOnArc } from './textCurve'
 import { fontOf, LINE_HEIGHT } from './textLayout'
 import { flattenedOf, isClosed, softened, trimEnds } from './pathGeometry'
 import { PIN_BODY, PIN_HEIGHT, PIN_ICON_PATHS, PIN_WIDTH } from './pinIcons'
+import { sizeFactor, zoomGrowth } from './zoomSize'
 import { areaOf } from './polygon'
 import { softnessOf } from './style'
 import { strokeParts, type Parts } from './strokeParts'
@@ -26,7 +27,7 @@ const MIN_WIDTH_PX = 1.5
  */
 export function screenWidth(thickness: number, scale: number): number {
   if (thickness <= 0) return 0
-  return Math.max(thickness * Math.min(Math.max(Math.sqrt(scale), 0.5), 3), Math.min(thickness, MIN_WIDTH_PX))
+  return Math.max(thickness * zoomGrowth(scale), Math.min(thickness, MIN_WIDTH_PX))
 }
 
 /** One path in the context's current transform. A single point is a dot */
@@ -121,10 +122,12 @@ function paintText(ctx: CanvasRenderingContext2D, o: TextObject, scale: number) 
   const box = textLayoutBox(o)
   const curve = o.curve ?? 0
   ctx.save()
-  // Keeping its size on the screen: drawn at its size over scale, about its corner
-  if (o.fixedSize) {
+  // About its corner: keeping its size on the screen, it is drawn at its size over scale; otherwise it grows with the zoom gently, as a road
+  // does (zoomSize.ts), not as fast as the map
+  const k = o.fixedSize ? 1 / scale : sizeFactor(scale)
+  if (k !== 1) {
     ctx.translate(o.anchor.x, o.anchor.y)
-    ctx.scale(1 / scale, 1 / scale)
+    ctx.scale(k, k)
     ctx.translate(-o.anchor.x, -o.anchor.y)
   }
   ctx.translate(box.x + box.w / 2, box.y + box.h / 2)
@@ -222,9 +225,13 @@ const pathFor = (d: string) => {
   return p
 }
 
-/** A pin: a teardrop in its colour with a white disc and its icon, the tip at the anchor */
-export function paintPoint(ctx: CanvasRenderingContext2D, o: PointObject, hovered = false) {
+/** A pin: a teardrop in its colour with a white disc and its icon, the tip at the anchor; it grows with the zoom gently, about its tip (zoomSize.ts) */
+export function paintPoint(ctx: CanvasRenderingContext2D, o: PointObject, hovered = false, scale = 1) {
   ctx.save()
+  const k = sizeFactor(scale)
+  ctx.translate(o.anchor.x, o.anchor.y)
+  ctx.scale(k, k)
+  ctx.translate(-o.anchor.x, -o.anchor.y)
   ctx.translate(o.anchor.x - PIN_WIDTH / 2, o.anchor.y - PIN_HEIGHT)
   const body = pathFor(PIN_BODY)
   if (hovered) {
@@ -269,7 +276,7 @@ function paintPicture(ctx: CanvasRenderingContext2D, picture: HTMLImageElement, 
 /** One object of any path kind (line, border, shape): fill, line type, arrows, name, and a halo when hovered */
 export function paintObject(ctx: CanvasRenderingContext2D, o: BoardObject, scale: number, hovered = false, namedByText = false) {
   if (o.kind === 'text') return paintText(ctx, o, scale)
-  if (o.kind === 'point') return paintPoint(ctx, o, hovered)
+  if (o.kind === 'point') return paintPoint(ctx, o, hovered, scale)
   if (o.kind !== 'line' && o.kind !== 'border' && o.kind !== 'shape') return
   const style = o.style
   // A line and a border are as thick on the screen as screenWidth says (their thickness is in pixels at zoom 1); a shape's outline follows its own setting

@@ -1,6 +1,7 @@
 // Where an object is, as a rectangle (board units). Pure (bounds.test.ts).
 import { flattenedOf } from './pathGeometry'
 import { PIN_HEIGHT, PIN_WIDTH } from './pinIcons'
+import { sizeFactor } from './zoomSize'
 import { layoutOfText } from './measureText'
 import { sagitta } from './textCurve'
 import type { BoardObject, Point, TextObject } from './types'
@@ -31,7 +32,7 @@ const rectOf = (points: Point[], pad = 0): Rect => {
   return { x, y, w: Math.max(...xs) + pad - x, h: Math.max(...ys) + pad - y }
 }
 
-/** The map's zoom as the editor shows it: a text that keeps its size on the screen (`fixedSize`) takes this much less of the map when zoomed in */
+/** The map's zoom as the editor shows it: texts and pins take less of the map when zoomed in (they grow gently with the zoom: zoomSize.ts; a text that keeps its size on the screen, `fixedSize`, takes even less) */
 let zoom = 1
 export const setTextZoom = (scale: number) => {
   zoom = scale > 0 ? scale : 1
@@ -56,11 +57,17 @@ export const boxPads = (o: TextObject) => {
 /** How far the straight layout sits below the top of its box (the room above a smile-shaped text) */
 export const bendAbove = (o: TextObject) => ((o.curve ?? 0) < 0 ? sagitta(o.curve ?? 0, Math.max(layoutOfText(o).width, o.width, 1)) : 0)
 
-/** A text's box as it is on the map now: the same, shrunk about its corner while zoomed in when it keeps its size on the screen */
+/** A text's box as it is on the map now: the same, shrunk about its corner while zoomed in (and grown while zoomed out) */
 export function textBox(o: TextObject): Rect {
   const box = textLayoutBox(o)
-  const k = o.fixedSize ? 1 / zoom : 1
+  const k = o.fixedSize ? 1 / zoom : sizeFactor(zoom)
   return k === 1 ? box : { ...box, w: box.w * k, h: box.h * k }
+}
+
+/** A pin's box as it is on the map now: its tip at the anchor, its size the pin's times what the zoom makes of it */
+export function pinBox(anchor: Point): Rect {
+  const k = sizeFactor(zoom)
+  return { x: anchor.x - (PIN_WIDTH * k) / 2, y: anchor.y - PIN_HEIGHT * k, w: PIN_WIDTH * k, h: PIN_HEIGHT * k }
 }
 
 /** The rectangle around an object (a path: its points and half its thickness) */
@@ -74,7 +81,7 @@ export function boundsOf(o: BoardObject): Rect {
     case 'text':
       return rectOf(shapeCorners(textBox(o), o.rotation))
     case 'point':
-      return { x: o.anchor.x - PIN_WIDTH / 2, y: o.anchor.y - PIN_HEIGHT, w: PIN_WIDTH, h: PIN_HEIGHT }
+      return pinBox(o.anchor)
   }
 }
 

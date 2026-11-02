@@ -38,5 +38,5 @@ export function applyChange(board: Board, change: Change): { board: Board; added
     })
   const added = adds.map((_, i) => board.nextId + i)
   adds.forEach((draft, i) => objects.push({ ...draft, layer: draft.layer ?? LAYER_MAIN, id: added[i] } as BoardObject))
-  return { board: followChanges(board, { nextId: board.nextId + adds.length, objects }), added }
+  return { board: followChanges(board, { ...board, nextId: board.nextId + adds.length, objects }), added }
 }

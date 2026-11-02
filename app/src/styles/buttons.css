@@ -621,6 +621,17 @@
     --_ul-w: 100%;
   }
 
+  /* Map: the editor's square bars (title bar, tool panel): a button that is on (aria-pressed / aria-expanded) has a thick light line along its
+     bottom, inside it; the others have no background until hovered (the Sort by look, ghost and plain) */
+  .ui-bar-square .ui-btn:is([aria-pressed='true'], [aria-expanded='true']) {
+    box-shadow: inset 0 -3px 0 var(--color-bone);
+  }
+
+  /* ...except the ones that say so (the title bar's Notes and search: open, they show it by their panel) */
+  .ui-bar-square .ui-btn.ui-btn-noline:is([aria-pressed='true'], [aria-expanded='true']) {
+    box-shadow: none;
+  }
+
   /* Map: a square button with only an icon (IconButton, ClosableButton's X): the vertical padding all round */
   .ui-btn.ui-btn-square {
     --btn-pad-x: var(--btn-pad-y);

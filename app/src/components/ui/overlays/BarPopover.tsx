@@ -15,6 +15,8 @@ type Props = {
   align?: 'start' | 'end' | 'center'
   /** Not held to the width of the positioned element it hangs from (a button's own wrapper): only the window limits it */
   overflow?: boolean
+  /** The gap below the bar is --spacing-sm instead of the usual 0.5rem */
+  tight?: boolean
   children: ReactNode
 }
 
@@ -23,7 +25,7 @@ type Props = {
  * A panel hanging under the bar that holds its button (the nearest positioned ancestor: the map's floating bar, the article's
  * toolbar): left edges aligned (or right ones: `align="end"`), never wider than the bar, a gap below it. A click outside it or Esc closes it
  */
-export default function BarPopover({ trigger, open, onOpenChange, label, wide, width = 'w-72', align = 'start', overflow = false, children }: Props) {
+export default function BarPopover({ trigger, open, onOpenChange, label, wide, width = 'w-72', align = 'start', overflow = false, tight = false, children }: Props) {
   const root = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!open) return
@@ -46,7 +48,7 @@ export default function BarPopover({ trigger, open, onOpenChange, label, wide, w
     <div ref={root}>
       {trigger}
       {open && (
-        <div role="dialog" aria-label={label} className={`absolute ${align === 'end' ? 'end-0' : align === 'center' ? 'left-1/2 -translate-x-1/2' : 'start-0'} top-full z-20 mt-2 ${wide ? 'w-full' : width} ${overflow ? 'max-w-[calc(100vw-2rem)]' : 'max-w-full'} rounded-(--card-radius) border border-line bg-surface p-2 shadow-xl`}>
+        <div role="dialog" aria-label={label} className={`absolute ${align === 'end' ? 'end-0' : align === 'center' ? 'left-1/2 -translate-x-1/2' : 'start-0'} top-full z-20 animate-list-in motion-reduce:animate-none ${tight ? 'mt-sm' : 'mt-2'} ${wide ? 'w-full' : width} ${overflow ? 'max-w-[calc(100vw-2rem)]' : 'max-w-full'} rounded-(--card-radius) border border-line bg-surface p-2 shadow-xl`}>
           {children}
         </div>
       )}

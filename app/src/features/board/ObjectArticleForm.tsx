@@ -13,6 +13,7 @@ import InfoBox from '../infobox/InfoBox'
 import { toHtml } from '../notes/noteHtml'
 import { useWorkspace } from '../workspace/useWorkspace'
 import { updateObject } from './boardStore'
+import FormHeader from './FormHeader'
 import NodeNotes from './sidebar/common/NodeNotes'
 
 /** How long after the last change of the Info box it is sent (it changes with every letter) */
@@ -24,8 +25,8 @@ type Article = { id: number; title: string; content: string; infobox?: Infobox }
 function Frame({ children, footer }: { children: React.ReactNode; footer?: React.ReactNode }) {
   return (
     <section aria-label="Article" className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden rounded-(--card-radius) border border-line bg-surface shadow-lg">
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">{children}</div>
-      {footer && <footer className="shrink-0 border-t border-line p-4">{footer}</footer>}
+      <div className="flex min-h-0 flex-1 flex-col gap-base overflow-y-auto p-3">{children}</div>
+      {footer && <footer className="shrink-0 px-3 pb-3"><div className="border-t border-line pt-base">{footer}</div></footer>}
     </section>
   )
 }
@@ -48,11 +49,11 @@ function ArticleFields({ article, mapId, objectId, onClose, onOpenFull }: { arti
   useEffect(() => flush, [])
 
   return (
-    <Frame footer={<NodeNotes mapId={mapId} objectId={objectId} />}>
-      <div className="flex items-start gap-2">
+    <Frame footer={<NodeNotes centered mapId={mapId} objectId={objectId} />}>
+      <FormHeader onClose={onClose}>
         <TitleInput
           key={`${article.id}:${article.title}`}
-          size="xl"
+          size="2xl"
           aria-label="Title"
           placeholder="Title"
           defaultValue={article.title}
@@ -61,8 +62,7 @@ function ArticleFields({ article, mapId, objectId, onClose, onOpenFull }: { arti
           onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
           className="min-w-0 flex-1"
         />
-        <IconButton icon={LuX} label="Close" onClick={onClose} />
-      </div>
+      </FormHeader>
       <Button variant="secondary" size="sm" icon={LuExternalLink} className="self-start" onClick={onOpenFull}>
         Open the full article
       </Button>
@@ -89,7 +89,7 @@ function ArticleFields({ article, mapId, objectId, onClose, onOpenFull }: { arti
           const html = editor.current?.getHTML()
           if (html !== undefined && html !== toHtml(article.content)) save({ content: html })
         }}
-        className="text-body [&_.ProseMirror]:min-h-32 [&_.ProseMirror]:outline-none [&_h3]:text-heading [&_ul]:list-disc [&_ul]:ps-5"
+        className="min-h-32 flex-1 cursor-text rounded-(--field-radius) border border-line-strong bg-surface p-base text-body focus-within:border-fg-subtle [&_.ProseMirror]:min-h-full [&_.ProseMirror]:outline-none [&_h3]:text-heading [&_ul]:list-disc [&_ul]:ps-5"
       />
     </Frame>
   )

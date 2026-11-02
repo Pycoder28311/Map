@@ -1,5 +1,5 @@
 // How a board is saved (before brotli, see features/projects/compress.ts). Numbers are the strokeCodec's zigzag varints.
-//   file    := version(2) nextId extrasLength extras count record*   (extras: header fields to come; a reader skips what it doesn't know)
+//   file    := version(2) nextId extrasLength extras count record*   (extras := [flags(bit 0 background)] [background address(text)]; a reader skips the rest)
 //              version 1 (still read): version(1) nextId count record*, and records without `node`
 //   record  := kind length body                (a reader skips a kind it doesn't know, and the reserved image)
 //   body    := id layer name(text) linkCount link* node  <the kind's part>
@@ -19,6 +19,7 @@
 //                              5 infobox) [label byte] [icon byte] [colour] [banner id(text)] [description(text)] [infobox as JSON(text)]
 // A plain pencil line is the old path plus about 15 bytes.
 import { infobox } from '@map/shared'
+import { isStoredImage, withStoredImages } from './storedImages'
 import { readPath, Reader, writePath, Writer } from '../projects/strokeCodec'
 import { hasShadow, shadowOffset } from './textShadow'
 import { readColor, readStyle, writeColor, writeStyle } from './style'
@@ -121,6 +122,11 @@ function readFillValue(r: Reader): Fill {
 const ALIGNS: TextAlign[] = ['left', 'center', 'right', 'justify']
 const RUN_FLAGS = { bold: 1, italic: 2, underline: 4, strike: 8, color: 16, size: 32 } as const
 
+/** An Info box from its JSON: its pictures stay when they look like the ones the app stored (storedImages.ts) */
+function readInfobox(text: string) {
+  return withStoredImages(text, () => infobox.safeParse(safeJson(text)))
+}
+
 function safeJson(text: string): unknown {
   try {
     return JSON.parse(text)
@@ -154,7 +160,7 @@ function readPoint(r: Reader): Omit<PointObject, 'id' | 'layer' | 'name' | 'link
   if (flags & 8) r.str()
   const description = flags & 16 ? r.str() : undefined
   // Damaged or unsafe JSON is left out: the point starts with its type's rows again
-  const parsed = flags & 32 ? infobox.safeParse(safeJson(r.str())) : undefined
+  const parsed = flags & 32 ? readInfobox(r.str()) : undefined
   return { anchor, label, icon, color, ...(description ? { description } : {}), ...(parsed?.success ? { infobox: parsed.data } : {}) }
 }
 
@@ -346,7 +352,7 @@ function readNode(r: Reader): Pick<BoardObject, 'locked' | 'hidden' | 'ref' | 'i
   if (ref && !ref.type) throw new RangeError('Unknown ref type')
   const description = flags & HAS_NODE_DESCRIPTION ? r.str() : ''
   // Damaged JSON is left out (the left element starts empty again)
-  const box = flags & HAS_NODE_INFOBOX ? infobox.safeParse(safeJson(r.str())) : undefined
+  const box = flags & HAS_NODE_INFOBOX ? readInfobox(r.str()) : undefined
   const articleText = flags & HAS_ARTICLE_TEXT ? r.str() : ''
   const articleType = flags & HAS_ARTICLE_TYPE ? r.str() : ''
   return {
@@ -420,8 +426,14 @@ export function encodeBoard(board: Board): Uint8Array {
   const w = new Writer()
   w.byte(VERSION)
   w.int(board.nextId)
-  // No header extras yet
-  w.int(0)
+  // Header extras: the map's own background picture, when it has one
+  const extras = new Writer()
+  if (board.background) {
+    extras.byte(1)
+    extras.str(board.background)
+  }
+  w.int(extras.bytes.length)
+  w.raw(extras.bytes)
   w.int(board.objects.length)
   for (const object of board.objects) {
     const body = writeRecord(object)
@@ -478,8 +490,15 @@ export function decodeBoard(bytes: Uint8Array): Board {
   const version = r.byte()
   if (version !== 1 && version !== VERSION) throw new UnsupportedBoardVersion(version)
   const nextId = r.int()
-  // Header fields of later versions: skipped
-  if (version >= 2) r.slice(r.count())
+  // Header extras (version 2): the background; fields of later versions are skipped. An address the app did not store is dropped
+  let background: string | undefined
+  if (version >= 2) {
+    const extras = r.slice(r.count())
+    if (extras.left > 0 && extras.byte() & 1) {
+      const address = extras.str()
+      if (isStoredImage(address)) background = address
+    }
+  }
   const objects: BoardObject[] = []
   for (let count = r.count(3); count > 0; count--) {
     const kind = KINDS[r.byte()]
@@ -488,5 +507,5 @@ export function decodeBoard(bytes: Uint8Array): Board {
     objects.push(readRecord(kind, body, version))
     if (body.left !== 0) throw new RangeError('Record size mismatch')
   }
-  return { nextId, objects }
+  return { nextId, objects, ...(background ? { background } : {}) }
 }

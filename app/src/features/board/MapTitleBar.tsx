@@ -10,14 +10,23 @@ import BranchesPopout from './BranchesPopout'
 import { FLOAT, ROUNDER, usePeekShift } from './floating'
 import LayersPanel from './LayersPanel'
 import MapNotesPanel from './MapNotesPanel'
-import MapPicker from './MapPicker'
+import MapPicker, { MapsPanel } from './MapPicker'
 import MapSearchPanel from './search/MapSearchPanel'
 import { snapshotBlob } from './snapshot'
 import { useCurrentBranch } from './useCurrentBranch'
 import type { MapSave } from './useMapSave'
 
 /** What the left panel shows under the title bar, as tall as the editor: the search, the notes or the layers; null: the bar alone */
-export type LeftPanel = 'search' | 'layers' | 'notes' | null
+export type LeftPanel = 'search' | 'layers' | 'notes' | 'maps' | null
+
+/** Each small floating piece of the top left: the floating look with square corners (floating.ts), as tall as the row */
+const PIECE = `${FLOAT} ${ROUNDER}`
+
+/** The words of Save and Notes: as big as the map's name (text-heading) */
+const TITLE_TEXT = '[--btn-font-size:1.125rem]'
+
+/** How long a closing panel takes to slide up (ms): animations.css, --animate-panel-out */
+const CLOSE_MS = 200
 
 /** How long the screenshot's error stays (ms) */
 const ERROR_MS = 6000
@@ -68,12 +77,39 @@ export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onP
   const title = maps.find((m) => object?.branchOf && m.id === object.branchOf) ?? object
   const branch = useCurrentBranch(mapId)
   const [branches, setBranches] = useState(false)
+  // A panel that is closed over an open form slides up before it goes: `shown` keeps it while that plays
+  const [shown, setShown] = useState<LeftPanel>(panel)
+  if (panel && panel !== shown) setShown(panel)
+  // (it slides up only over an open form, to give the form its place back smoothly; alone it just goes)
+  if (!panel && !form && shown !== null) setShown(null)
+  const closing = !panel && shown !== null
+  useEffect(() => {
+    if (!closing) return
+    const id = window.setTimeout(() => setShown(null), CLOSE_MS)
+    return () => window.clearTimeout(id)
+  }, [closing])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // The text while it is being edited; null: not renaming
   const [draft, setDraft] = useState<string | null>(null)
   // Esc: leaving the field must not save what was typed
   const cancelled = useRef(false)
+  // From the bar's start to the end of its fourth piece (the ⋯ button): the width of the panels and lists under it
+  const row = useRef<HTMLDivElement>(null)
+  const third = useRef<HTMLDivElement>(null)
+  const [span, setSpan] = useState<number | null>(null)
+  useEffect(() => {
+    const from = row.current
+    const to = third.current
+    if (!from || !to) return
+    const measure = () => setSpan(Math.round(to.getBoundingClientRect().right - from.getBoundingClientRect().left))
+    measure()
+    const watcher = new ResizeObserver(measure)
+    watcher.observe(from)
+    watcher.observe(to)
+    for (const piece of Array.from(from.children)) watcher.observe(piece)
+    return () => watcher.disconnect()
+  }, [draft, save?.dirty, save?.saving, object?.title])
   useEffect(() => {
     if (!error) return
     const id = window.setTimeout(() => setError(null), ERROR_MS)
@@ -103,16 +139,18 @@ export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onP
   return (
     <div
       data-board-title
-      style={editorWidth ? ({ '--editor-w': `${editorWidth}px` } as CSSProperties) : undefined}
+      style={{ ...(editorWidth ? { '--editor-w': `${editorWidth}px` } : {}), ...(span ? { '--bar-w': `${span}px` } : {}) } as CSSProperties}
       // Open, a column as tall as the editor; its own background is none: the pieces in it float, the map shows between them
       // (the panel under the bar may be wider than the bar: the tool panel is beside the bar only, never beside the panel). It stops above
       // the zoom control (bottom left)
-      className={`pointer-events-none absolute start-3 top-3 flex flex-col gap-2 ${panel || form ? 'bottom-16 w-96 max-w-[calc(100%-1.5rem)]' : fit} ${shift}`}
+      className={`pointer-events-none absolute start-3 top-3 flex flex-col gap-sm ${shown || form ? `bottom-16 max-w-[calc(100%-1.5rem)] ${span ? 'w-(--bar-w)' : 'w-96'}` : fit} ${shift}`}
     >
-      <div className={`pointer-events-auto relative flex h-12.5 shrink-0 items-center gap-0.5 self-start ps-1.5 pe-1.5 ${fit} ${FLOAT} ${ROUNDER}`}>
+      {/* Not one bar: a small floating piece for each of them, the name, Notes, and the square search and ⋯ */}
+      <div ref={row} data-title-row className={`pointer-events-none relative flex h-12.5 shrink-0 items-stretch gap-xs self-start ${fit}`}>
+        <div className={`pointer-events-auto flex min-w-0 items-center ps-1.5 pe-1.5 ${PIECE}`}>
         {draft === null ? (
           <div className="flex min-w-0 flex-1 items-center gap-1">
-            <MapPicker mapId={mapId} name={mapName(title)} />
+            <MapPicker name={mapName(title)} open={panel === 'maps'} onToggle={() => toggle('maps')} />
             {save?.dirty && <span role="status" aria-label="Changes not saved" title="Changes not saved" className="size-2 shrink-0 rounded-full bg-accent" />}
           </div>
         ) : (
@@ -136,21 +174,29 @@ export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onP
             className="min-w-0 flex-1 rounded-(--btn-close-radius) bg-transparent px-2 text-heading outline-none focus-visible:outline-2 focus-visible:outline-accent"
           />
         )}
-        {save && (save.dirty || save.saving) && (
-          <Button variant="text" size="sm" disabled={save.saving} onClick={() => void save.save()} title="Save the map (Ctrl+S)">
-            {save.saving ? 'Saving…' : 'Save'}
+        </div>
+        <div className={`pointer-events-auto flex shrink-0 items-center px-1 ${PIECE}`}>
+          <Button variant="ghost" plain className={`${TITLE_TEXT} ui-btn-noline`} aria-expanded={panel === 'notes'} aria-pressed={panel === 'notes'} onClick={() => toggle('notes')}>
+            Notes
           </Button>
-        )}
-        <Button variant="text" size="sm" aria-expanded={panel === 'notes'} aria-pressed={panel === 'notes'} onClick={() => toggle('notes')}>
-          Notes
-        </Button>
-        <IconButton
-          icon={panel === 'search' ? LuX : LuSearch}
-          label={panel === 'search' ? 'Close the search' : 'Search this map'}
-          aria-expanded={panel === 'search'}
-          onClick={() => toggle('search')}
-        />
+        </div>
+        {/* Squares as tall as the pieces beside them */}
+        <div className={`pointer-events-auto aspect-square shrink-0 p-1.5 ${PIECE}`}>
+          <IconButton
+            bigIcon
+            className="ui-btn-noline size-full! [--btn-icon-size:1.25rem]!"
+            icon={panel === 'search' ? LuX : LuSearch}
+            label={panel === 'search' ? 'Close the search' : 'Search this map'}
+            aria-expanded={panel === 'search'}
+            aria-pressed={panel === 'search'}
+            onClick={() => toggle('search')}
+          />
+        </div>
+        <div ref={third} className={`pointer-events-auto relative aspect-square shrink-0 p-1.5 ${PIECE}`}>
         <TreeMenu
+          fill
+          under={() => third.current}
+          plain
           label={`More: ${mapName(title)}`}
           groups={[
             [{ label: 'Rename', icon: LuPencil, onClick: () => setDraft(title.title) }],
@@ -162,23 +208,39 @@ export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onP
           ]}
         />
         <BranchesPopout mapId={mapId} open={branches} onOpenChange={setBranches} />
+        </div>
       </div>
       {(error || save?.error) && (
         <p role="alert" className={`pointer-events-auto px-3 py-2 text-small text-danger ${FLOAT}`}>
           {error ?? save?.error}
         </p>
       )}
-      {form}
-      {!form && panel === 'search' && (
-        <MapSearchPanel
-          mapId={mapId}
-          onShow={onShowObject}
-          onEdit={onPickObject}
-          onClose={() => onPanel(null)}
-        />
+      {/* Whatever opens under the bar pops in (a new panel, a new form: a new key, a new popup). A panel and a form are both shown: the
+          panel on top (up to half of the column), the form under it */}
+      {shown && (
+        <div
+          key="panel"
+          inert={closing || undefined}
+          className={`pointer-events-none origin-top-left motion-reduce:animate-none ${form ? `grid max-h-1/2 shrink-0 grid-rows-[1fr] ${closing ? 'animate-panel-out' : 'animate-panel-in'}` : `flex min-h-0 flex-1 flex-col ${closing ? 'animate-panel-up' : 'animate-dropdown-in'}`}`}
+        >
+          {/* (above a form: a row of the grid that can shrink to nothing while the panel opens) */}
+          <div className="flex min-h-0 flex-1 flex-col">
+            {shown === 'search' && <MapSearchPanel mapId={mapId} onShow={onShowObject} onEdit={onPickObject} onClose={() => onPanel(null)} />}
+            {shown === 'maps' && <MapsPanel mapId={mapId} onClose={() => onPanel(null)} />}
+            {shown === 'notes' && <MapNotesPanel mapId={mapId} onClose={() => onPanel(null)} />}
+            {shown === 'layers' && <LayersPanel mapId={mapId} onPick={onPickObject} onClose={() => onPanel(null)} />}
+          </div>
+        </div>
       )}
-      {!form && panel === 'notes' && <MapNotesPanel mapId={mapId} onClose={() => onPanel(null)} />}
-      {!form && panel === 'layers' && <LayersPanel mapId={mapId} onPick={onPickObject} onClose={() => onPanel(null)} />}
+      {form && (
+        <div
+          key="form"
+          // (under a panel: the gap between them is --spacing-lg: the column's own plus this margin)
+          className={`pointer-events-none flex min-h-0 flex-1 origin-top-left animate-dropdown-in flex-col motion-reduce:animate-none ${shown === 'maps' ? 'mt-3' : shown ? 'mt-2' : ''}`}
+        >
+          {form}
+        </div>
+      )}
     </div>
   )
 }

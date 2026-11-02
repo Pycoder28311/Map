@@ -70,6 +70,13 @@ const TYPES: { value: RowType; label: string; icon: PlainIcon }[] = [
   { value: 'coordinates', label: 'Coordinates', icon: LuMapPin },
 ]
 
+/** The form's own buttons (Add date, Add info), and the rest of the kinds, which Add other lists */
+const QUICK: { type: RowType; label: string; icon: PlainIcon }[] = [
+  { type: 'date', label: 'Add date', icon: LuCalendar },
+  { type: 'value', label: 'Add info', icon: LuAlignLeft },
+]
+const OTHER = TYPES.filter((t) => !QUICK.some((q) => q.type === t.value))
+
 // Full class strings so Tailwind can detect them at build time. The inputs are plain text on the box, a line under each row
 const INPUT = 'min-w-0 bg-transparent text-fg outline-none placeholder:text-fg-subtle'
 // Each row is a block of its own on the box's background, a gap (with the + in it) between two blocks
@@ -90,6 +97,8 @@ type Props = {
   cracked?: boolean
   /** Which side Add info's menu opens on (default: left; the other side when there is no room) */
   menuSide?: 'left' | 'right'
+  /** false: the form's Add date / Add info / Add other row is not shown (a point's type other than None; the rows between the sections still add) */
+  addRow?: boolean
 }
 
 /**
@@ -98,7 +107,7 @@ type Props = {
  * and coordinates. A square + in the gap between two blocks (and under the picture) opens a menu of what to put there; a row's ⋯ changes its type, moves or deletes it;
  * Add info (full width, its menu opens on its left) adds one at the end, and shows a faint example of the option under the pointer. Every change is sent to `onChange`.
  */
-export default function InfoBox({ value, onChange, onUploadImage, onUploadError, readOnly = false, cracked = true, menuSide = 'left' }: Props) {
+export default function InfoBox({ value, onChange, onUploadImage, onUploadError, readOnly = false, cracked = true, menuSide = 'left', addRow = true }: Props) {
   const rows = value.rows
   const setRows = (next: InfoRow[]) => onChange({ ...value, rows: next })
   const [preview, setPreview] = useState<RowType | null>(null)
@@ -107,6 +116,7 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError,
   const [extra, setExtra] = useState(0)
   useLayoutEffect(() => setExtra(preview ? (previewRef.current?.offsetHeight ?? 0) : 0), [preview])
   // A section is dragged from anywhere on it that is not a field or a button (BackgroundPointerSensor), or from its 6-dot grip
+  const add = (type: RowType) => setRows([...rows, emptyRow(type)])
   const sensors = useSensors(useSensor(BackgroundPointerSensor, { activationConstraint: { distance: 6 } }))
   const [dragged, setDragged] = useState<string | null>(null)
   const dragEnd = (e: DragEndEvent) => {
@@ -178,11 +188,41 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError,
             />
           </div>
         )}
-        {!readOnly && (
-          <div className="mt-2">
-            <SideMenu label="Add info" side={menuSide} arrowEnd={!cracked} items={TYPES} onSelect={(type) => setRows([...rows, emptyRow(type)])} onHover={setPreview} className="w-full">
-              Add info
-            </SideMenu>
+        {!readOnly && (cracked || addRow) && (
+          <div className={`mt-2 flex items-center ${cracked ? 'justify-center gap-1' : 'w-full gap-sm'}`}>
+            {cracked ? (
+              <SideMenu variant="text" label="Add info" side={menuSide} items={TYPES} onSelect={add} onHover={setPreview}>
+                Add info
+              </SideMenu>
+            ) : (
+              // A point's or an object's form: the two usual rows each with a button, the rest in a menu (its arrow after the text)
+              <>
+                {QUICK.map((q) => (
+                  <Button
+                    key={q.type}
+                    variant="ghost"
+                    size="md"
+                    plain
+                    filled
+                    icon={q.icon}
+                    className="min-w-0 flex-1"
+                    onClick={() => {
+                      setPreview(null)
+                      add(q.type)
+                    }}
+                    onMouseEnter={() => setPreview(q.type)}
+                    onMouseLeave={() => setPreview(null)}
+                    onFocus={() => setPreview(q.type)}
+                    onBlur={() => setPreview(null)}
+                  >
+                    {q.label}
+                  </Button>
+                ))}
+                <SideMenu variant="ghost" size="md" className="min-w-0 flex-1" label="Add other" side={menuSide} arrowEnd items={OTHER} onSelect={add} onHover={setPreview}>
+                  Add other
+                </SideMenu>
+              </>
+            )}
           </div>
         )}
       </Frame>

@@ -76,7 +76,7 @@ export default function MapNotesPanel({ mapId, onClose }: { mapId: string; onClo
   )
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2">
+    <div className="flex min-h-0 flex-1 flex-col gap-sm">
       <div className="pointer-events-auto shrink-0">
         <SearchInput
           autoFocus
@@ -91,7 +91,7 @@ export default function MapNotesPanel({ mapId, onClose }: { mapId: string; onClo
             if (query) setQuery('')
             else onClose()
           }}
-          className="w-full shadow-lg"
+          className="w-full"
         />
       </div>
       <ul aria-label="Notes of this map" className="pointer-events-auto -mx-1 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-1 pb-1">
