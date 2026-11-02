@@ -176,7 +176,7 @@ export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onP
         )}
         </div>
         <div className={`pointer-events-auto flex shrink-0 items-center px-1 ${PIECE}`}>
-          <Button variant="ghost" plain className={`${TITLE_TEXT} ui-btn-noline`} aria-expanded={panel === 'notes'} aria-pressed={panel === 'notes'} onClick={() => toggle('notes')}>
+          <Button variant="ghost" plain noline className={TITLE_TEXT} aria-expanded={panel === 'notes'} aria-pressed={panel === 'notes'} onClick={() => toggle('notes')}>
             Notes
           </Button>
         </div>
@@ -184,7 +184,8 @@ export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onP
         <div className={`pointer-events-auto aspect-square shrink-0 p-1.5 ${PIECE}`}>
           <IconButton
             bigIcon
-            className="ui-btn-noline size-full! [--btn-icon-size:1.25rem]!"
+            noline
+            className="size-full! [--btn-icon-size:1.25rem]!"
             icon={panel === 'search' ? LuX : LuSearch}
             label={panel === 'search' ? 'Close the search' : 'Search this map'}
             aria-expanded={panel === 'search'}

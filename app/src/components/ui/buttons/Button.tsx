@@ -15,6 +15,8 @@ type Props = ComponentProps<'button'> & {
   filled?: boolean
   /** Venom in red: an action that destroys something (Delete) */
   danger?: boolean
+  /** In a square bar (the map's title bar), no light line along its bottom while it is on: it shows that by its panel (.ui-btn-noline) */
+  noline?: boolean
 }
 
 /** Themed button. type="button" unless set, so only the intended button submits a form. For links: ButtonLink */
@@ -26,13 +28,14 @@ export default function Button({
   plain,
   filled,
   danger,
+  noline,
   type = 'button',
   className,
   children,
   ...button
 }: Props) {
   return (
-    <button type={type} className={buttonClass(variant, `${plain ? 'ui-btn-plain' : ''} ${filled ? 'ui-btn-filled' : ''} ${danger ? 'ui-btn-danger' : ''} ${className ?? ''}`, size)} {...button}>
+    <button type={type} className={buttonClass(variant, `${plain ? 'ui-btn-plain' : ''} ${filled ? 'ui-btn-filled' : ''} ${danger ? 'ui-btn-danger' : ''} ${noline ? 'ui-btn-noline' : ''} ${className ?? ''}`, size)} {...button}>
       <ButtonContent variant={variant} icon={icon} iconAnimation={iconAnimation}>
         {children}
       </ButtonContent>
