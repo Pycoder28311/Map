@@ -25,14 +25,14 @@ function Count({ n }: { n: number }) {
 }
 
 /**
- * The round buttons on the article body's left edge, centred on its line and in the middle of the view while it scrolls: Zoom (first: the
+ * The round buttons on the article body's left edge, centred on its line, near the body's top and staying near the view's top while it scrolls: Zoom (first: the
  * article fills the window), Contents, Messages and Notes (their elements open in the left column)
  */
 export default function RoundTools({ zoomed, onZoom, open, onToggle, messages, notes }: Props) {
   return (
-    // As tall as the body, on its left line; the column inside stays in the middle of the view
+    // As tall as the body, on its left line; the column inside stays near the view's top
     <div className="pointer-events-none absolute inset-y-0 start-0 z-30 -translate-x-1/2">
-      <div className="pointer-events-auto sticky top-[calc(50vh-4.5rem)] mt-24 flex flex-col gap-2">
+      <div className="pointer-events-auto sticky top-20 mt-6 flex flex-col gap-2">
         <IconButton round icon={zoomed ? LuMinimize2 : LuMaximize2} label={zoomed ? 'Leave the zoom (Esc)' : 'Zoom: the article fills the window'} aria-pressed={zoomed} onClick={onZoom} />
         <IconButton round icon={LuListTree} label="Contents" aria-pressed={open.has('contents')} onClick={() => onToggle('contents')} />
         <span className="relative">
