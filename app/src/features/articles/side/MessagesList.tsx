@@ -18,6 +18,9 @@ export function useMessages(text: ArticleText): LinkRange[] {
 /** The ids of the messages whose words are in the text */
 const idsIn = (ranges: LinkRange[]) => [...new Set(ranges.flatMap((r) => (r.link.kind === 'msg' && r.link.id !== null ? [r.link.id] : [])))]
 
+/** The look of a message's card in the lists: a background and a border of its own */
+const CARD = 'rounded-(--card-radius) border border-line bg-fill shadow-sm'
+
 /** A message's title and the start of its text, when it was read already (nothing is read for the list), or what its old link holds */
 function knownText(range: LinkRange): { title: string; content: string } | null {
   if (range.link.kind !== 'msg') return null
@@ -69,9 +72,9 @@ function NotInText({ editor, articleId, ranges }: { editor: Editor; articleId: n
     <div className="flex flex-col gap-1 border-t border-line pt-1">
       <h3 className="px-1 text-small font-medium text-fg-muted">Not in the text ({items.length}{cursor ? '+' : ''})</h3>
       {items.length === 0 && <p className="px-1 text-small text-fg-subtle">Every message is on its words.</p>}
-      <ul className="flex flex-col">
+      <ul className="flex flex-col gap-1.5 p-0.5">
         {items.map((m) => (
-          <li key={m.id} className="flex items-start gap-0.5 px-1 py-0.5">
+          <li key={m.id} className={`flex items-start gap-0.5 px-2 py-1.5 ${CARD}`}>
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="truncate text-small font-medium">{m.title || 'Message'}</span>
               {m.content && <span className="line-clamp-2 text-small text-fg-subtle">{previewOf(m.content, 90)}</span>}
@@ -156,15 +159,16 @@ export default function MessagesList({ text, editor, articleId, canEdit, onOpen,
       {messages.length === 0 ? (
         <p className="px-1 text-small text-fg-subtle">{canEdit ? 'None yet. Select some words and use Message in the links row.' : 'None yet.'}</p>
       ) : (
-        <ul className="flex max-h-80 flex-col overflow-y-auto">
+        // Each message a card of its own (like Word's comments): its words, then its title and the start of its text once it was read
+        <ul className="flex max-h-[28rem] flex-col gap-1.5 overflow-y-auto p-0.5">
           {messages.map((m) => {
             const known = knownText(m)
             return (
-              <li key={`${m.from}:${m.href}`} className="flex items-start gap-0.5">
+              <li key={`${m.from}:${m.href}`} className={`flex items-start gap-0.5 p-1 ${CARD}`}>
                 <Button variant="ghost" size="sm" plain className="h-auto! min-w-0 flex-1 justify-start" onClick={() => onOpen(m)}>
-                  <span className="flex min-w-0 flex-col items-start py-0.5 text-start">
-                    <span className="w-full truncate">“{m.text}”</span>
-                    {known && <span className="w-full truncate text-small font-normal text-fg-muted">{known.title || 'Message'}</span>}
+                  <span className="flex min-w-0 flex-col items-start gap-0.5 py-0.5 text-start whitespace-normal">
+                    <span className={`w-full truncate ${known ? 'text-small font-normal text-fg-muted italic' : ''}`}>“{m.text}”</span>
+                    {known && <span className="w-full truncate">{known.title || 'Message'}</span>}
                     {known?.content && <span className="line-clamp-2 text-small font-normal text-fg-subtle">{previewOf(known.content, 90)}</span>}
                   </span>
                 </Button>

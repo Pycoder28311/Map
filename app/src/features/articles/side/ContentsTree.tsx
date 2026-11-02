@@ -48,13 +48,15 @@ export default function ContentsTree({ text }: { text: ArticleText }) {
   const nodes = useTextState(text, (doc) => contentsTree(jumpTargets(doc)), sameJson)
   const current = useCurrentHeading(text)
   const [folded, setFolded] = useState<Set<number>>(new Set())
+  // A section without subsections keeps room for the fold arrow only when some section has one (so the names line up); else no room at all
+  const folds = nodes.some((n) => n.children.length > 0)
 
   const row = (node: ContentsNode, depth: number) => {
     const { heading } = node
     const isFolded = folded.has(heading.index)
     return (
       <li key={heading.index}>
-        <div className="flex items-center" style={{ paddingInlineStart: `${depth * 0.75}rem` }}>
+        <div className="flex items-center" style={{ paddingInlineStart: `${depth * 0.5}rem` }}>
           {node.children.length > 0 ? (
             <IconButton
               icon={isFolded ? LuChevronRight : LuChevronDown}
@@ -69,7 +71,7 @@ export default function ContentsTree({ text }: { text: ArticleText }) {
               }}
             />
           ) : (
-            <span aria-hidden className="w-7 shrink-0" />
+            folds && <span aria-hidden className="w-7 shrink-0" />
           )}
           <Button
             variant={current === heading.index ? 'selected' : 'ghost'}

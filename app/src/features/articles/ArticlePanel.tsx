@@ -69,7 +69,7 @@ const DATE = new Intl.DateTimeFormat(undefined, {
   year: 'numeric',
 })
 /** Below this page width (px) the left column (Contents, Messages, Notes) is not beside the article: its round buttons open it over the text */
-const SIDE_MIN_WIDTH = 1024
+const SIDE_MIN_WIDTH = 1088
 
 /** Whether an element is narrower than `width`, followed as it is resized */
 function useNarrower(el: HTMLElement | null, width: number) {
@@ -356,8 +356,8 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
       className={
         narrow
           ? // Over the text's left side, under the round buttons
-            'absolute start-6 top-24 z-40 flex max-h-[calc(100vh-8rem)] w-72 flex-col gap-3 overflow-y-auto rounded-(--card-radius) bg-surface p-1 shadow-xl'
-          : 'sticky top-0 flex max-h-screen w-56 shrink-0 flex-col gap-3 self-start overflow-y-auto pt-2 pb-4'
+            'absolute start-6 top-24 z-40 flex max-h-[calc(100vh-8rem)] w-94 flex-col gap-3 overflow-y-auto rounded-(--card-radius) bg-surface p-1 shadow-xl'
+          : 'sticky top-0 flex max-h-screen w-73 shrink-0 flex-col gap-3 self-start overflow-y-auto pt-2 pb-4'
       }
     >
       {showContents && <ContentsTree text={text} />}
