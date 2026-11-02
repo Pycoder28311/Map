@@ -26,7 +26,7 @@ function Count({ n }: { n: number }) {
 
 /**
  * The round buttons on the article body's left edge, centred on its line, under the banner (its tallest, with a picture: 11rem) and staying near the view's top while it scrolls: Zoom (first: the
- * article fills the window), Contents, Messages and Notes (their elements open in the left column)
+ * article fills the window), Contents, Messages and Notes (their elements open in the left column) one at a time
  */
 export default function RoundTools({ zoomed, onZoom, open, onToggle, messages, notes }: Props) {
   return (

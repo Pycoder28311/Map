@@ -202,9 +202,9 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
     setLinkPopout(null)
   }
   const [saved, setSaved] = useSaved(panelKey)
-  // The left column's elements the round buttons opened, the zoom, and whether the page is too narrow to have the column beside it
-  // (Contents starts open when the page is wide enough to have it beside the article)
-  const [side, setSide] = useState<Set<SidePart>>(() => new Set(window.innerWidth >= SIDE_MIN_WIDTH ? ['contents'] : []))
+  // The left column's element the round buttons opened (one at a time; none at first), the zoom, and whether the page is too narrow to have
+  // the column beside it
+  const [side, setSide] = useState<Set<SidePart>>(() => new Set())
   const [zoomed, setZoomed] = useState(false)
   const [page, setPage] = useState<HTMLDivElement | null>(null)
   const narrow = useNarrower(page, SIDE_MIN_WIDTH)
@@ -212,12 +212,8 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   // Its notes (docs/plans/38) are read when the Notes panel first opens; the ones this device connected before are moved to the server once
   const attachedNotes = useAttachedNotes({ type: 'article', id: articleId }, side.has('notes'))
   useMoveLocalNotes('article', articleId)
-  const toggleSide = (part: SidePart) => {
-    const next = new Set(side)
-    if (next.has(part)) next.delete(part)
-    else next.add(part)
-    setSide(next)
-  }
+  /** A round button: opens its element and closes the one that was open, or closes its own */
+  const toggleSide = (part: SidePart) => setSide(side.has(part) ? new Set() : new Set([part]))
 
   /** Opens a message beside the text, level with its words (`el`: the link's element, found from the text when not given) */
   const openMessage = (range: LinkRange, el?: HTMLElement | null, hover = false) => {
@@ -356,7 +352,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
     </div>
   )
 
-  // The left column: Contents (beside the article on a wide page; on a narrow one only when its round button opened it), then Messages and Notes
+  // The left column: the one element its round button opened (Contents, Messages or Notes): beside the article on a wide page, over the text on a narrow one
   const showContents = side.has('contents')
   const sideColumn = (showContents || side.has('messages') || side.has('notes')) && (
     <aside
