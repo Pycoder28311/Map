@@ -1,25 +1,17 @@
-import { DOMParser as PMDOMParser, type Node as PMNode, type Schema } from '@tiptap/pm/model'
-import { useEffect, useState, type ReactNode } from 'react'
-import { LuCornerDownRight, LuCheck, LuDownload, LuExternalLink, LuFileSymlink, LuInfo, LuPencil, LuPlus, LuSearch, LuTrash2, LuUserPlus, LuX } from 'react-icons/lu'
+import { AUTOLINKERS_MAX, AUTOLINKER_PHRASES_MAX } from '@map/shared'
+import { useState } from 'react'
+import { LuDownload, LuPencil, LuPlus, LuTrash2, LuX } from 'react-icons/lu'
 import Button from '../../../components/ui/buttons/Button'
 import IconButton from '../../../components/ui/buttons/IconButton'
-import LinkButton from '../../../components/ui/buttons/LinkButton'
-import CheckField from '../../../components/ui/fields/CheckField'
-import type { PlainIcon } from '../../../components/ui/icons/IconSlot'
 import Modal from '../../../components/ui/overlays/Modal'
-import { resourceByName } from '../../../resources/registry'
-import { fold } from '../../search/search'
-import { useWorkspace } from '../../workspace/useWorkspace'
-import { AUTOLINKERS_MAX, AUTOLINKER_PHRASES_MAX } from '@map/shared'
-import { applyRule, fromStored, longestFirst, removeRule, rulesFrom, type AutoRule } from './autolink'
-import FollowPicker from './FollowPicker'
-import JumpPicker from './JumpPicker'
-import { LINK_EDIT } from './linkExtensions'
-import { isWebUrl, LIMITS, newId, toHref, type ArticleLink } from './linkHref'
-import { LinkTargetName, useLinkInfo } from './LinkPreview'
-import ObjectPicker from './ObjectPicker'
 import type { ArticleText } from '../text/articleText'
-import { openInNewTab, withScheme } from '../../../lib/urls'
+import { applyRule, longestFirst, removeRule, type AutoRule } from './autolink'
+import AutolinkForm from './autolinker/AutolinkForm'
+import { Endpoint, Tag } from './autolinker/AutolinkParts'
+import ImportModal from './autolinker/ImportModal'
+import { sameText } from './autolinker/sameText'
+import { LINK_EDIT } from './linkExtensions'
+import { LIMITS, newId, toHref, type ArticleLink } from './linkHref'
 
 type Props = {
   /** The article's text: the autolinkers link all of it, whatever the editor holds */
@@ -34,133 +26,6 @@ type Props = {
   userId: string
   /** Closes the Autolinker (Go there and the endpoints leave it, to show the place) */
   onClose: () => void
-}
-
-const sameText = (a: string, b: string) => fold(a.trim()) === fold(b.trim())
-
-/** The four kinds of link the sections choose (the order of the link row's buttons, but Message) */
-type SectionId = 'url' | 'object' | 'jump' | 'follow'
-const SECTIONS: { id: SectionId; label: string; icon: PlainIcon; searchable: boolean }[] = [
-  { id: 'url', label: 'Link', icon: LuExternalLink, searchable: false },
-  { id: 'object', label: 'Attach Content', icon: LuFileSymlink, searchable: true },
-  { id: 'jump', label: 'Jump link', icon: LuCornerDownRight, searchable: true },
-  { id: 'follow', label: 'Follow', icon: LuUserPlus, searchable: true },
-]
-
-/** A draft opening: its height grows from nothing (the rows below move down with it) instead of appearing at once */
-function Slide({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false)
-  useEffect(() => {
-    // Two frames: the closed size must be painted first, or there is nothing to slide from
-    let second = 0
-    const first = requestAnimationFrame(() => {
-      second = requestAnimationFrame(() => setOpen(true))
-    })
-    return () => {
-      cancelAnimationFrame(first)
-      cancelAnimationFrame(second)
-    }
-  }, [])
-  return (
-    <div className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
-      <div className="min-h-0 overflow-hidden">{children}</div>
-    </div>
-  )
-}
-
-/** The modal's two inputs, plain: a thin line round them, nothing else */
-const SIMPLE_INPUT = 'w-full border border-line bg-surface px-2 py-1 text-body outline-none focus:border-accent'
-
-/** A phrase as a tag (the autolinkers' rows, and the input while the phrases are written); `onRemove`: its X, in front of the text, shows while it is hovered */
-function Tag({ phrase, onRemove }: { phrase: string; onRemove?: () => void }) {
-  return (
-    <span className="group/tag relative inline-flex max-w-44 shrink-0 items-center rounded-[4px] bg-fill-strong px-1.5 py-0.5 text-body leading-snug">
-      <span className="truncate">{phrase}</span>
-      {onRemove && (
-        // At the tag's right end, in front of the text (the tag does not grow); shown while it is hovered. A button has no shape of its own
-        // (styles/buttons.css): its box is clipped to the tag's corners
-        <span className="absolute inset-y-0 end-0 inline-flex items-center overflow-hidden rounded-[4px] bg-fill-strong opacity-0 transition-opacity group-focus-within/tag:opacity-100 group-hover/tag:opacity-100">
-          <IconButton icon={LuX} label={`Remove: ${phrase}`} size="sm" className="size-5 min-h-0 min-w-0 [--btn-icon-size:0.625rem]!" onClick={onRemove} />
-        </span>
-      )}
-    </span>
-  )
-}
-
-/** Link's section: an address to choose */
-function UrlColumn({ chosen, onPick }: { chosen: ArticleLink | null; onPick: (link: ArticleLink) => void }) {
-  const [url, setUrl] = useState(chosen?.kind === 'url' ? chosen.url : '')
-  const full = withScheme(url)
-  const valid = url.trim() !== '' && isWebUrl(full)
-  return (
-    <form
-      className="flex flex-col gap-2"
-      onSubmit={(e) => {
-        e.preventDefault()
-        if (valid) onPick({ kind: 'url', url: full })
-      }}
-    >
-      <input aria-label="Link" placeholder="https://…" value={url} onChange={(e) => setUrl(e.target.value)} maxLength={LIMITS.url} className={SIMPLE_INPUT} />
-      <Button type="submit" variant="text" size="sm" icon={LuCheck} aria-pressed={chosen?.kind === 'url' && chosen.url === full} disabled={!valid} className="self-start">
-        Use this link
-      </Button>
-    </form>
-  )
-}
-
-/** A section: its name with its icon and, at the right of the name, a search button (it opens the search field below it and becomes an X that closes it), then its picker */
-function SectionBody({ title, icon: Icon, searchable, children }: { title: string; icon: PlainIcon; searchable: boolean; children: (searchOpen: boolean) => ReactNode }) {
-  const [searching, setSearching] = useState(false)
-  return (
-    <div className="flex min-w-0 flex-1 flex-col gap-1">
-      <div className="flex min-h-6 items-center justify-between gap-2">
-        <h3 className="flex min-w-0 items-center gap-1.5 text-[0.8125rem] font-medium text-fg-muted">
-          <Icon className="size-3.5 shrink-0" />
-          <span className="truncate">{title}</span>
-        </h3>
-        {searchable && (
-          <IconButton icon={searching ? LuX : LuSearch} label={searching ? `Close the search of ${title}` : `Search in ${title}`} size="sm" aria-expanded={searching} onClick={() => setSearching(!searching)} />
-        )}
-      </div>
-      {/* (closing it starts the picker again, so its search is empty the next time) */}
-      <div key={String(searching)} className="flex min-w-0 flex-1 flex-col gap-2">
-        {children(searching)}
-      </div>
-    </div>
-  )
-}
-
-/**
- * "Link: <where it goes>" of a list row. The endpoint is clickable (an address opens in a new tab, an object opens beside the article) except
- * for a Jump link and Follow, which are only named
- */
-function Endpoint({ link, doc, onLeave }: { link: ArticleLink; doc: PMNode; onLeave: () => void }) {
-  const workspace = useWorkspace()
-  const info = useLinkInfo(link, doc)
-  const text = link.kind === 'url' || link.kind === 'project-url' ? link.url : info.title
-  const open =
-    link.kind === 'url'
-      ? () => openInNewTab(link.url)
-      : link.kind === 'object'
-        ? () => {
-            onLeave()
-            workspace.open({ type: link.type, id: link.id })
-          }
-        : null
-  return (
-    <span className="flex max-w-[45%] min-w-0 shrink-0 items-center gap-1 text-small">
-      <span className="shrink-0 text-fg-subtle">Link:</span>
-      {open ? (
-        <LinkButton onClick={open} className="min-w-0 truncate" title={text}>
-          {text}
-        </LinkButton>
-      ) : (
-        <span className="min-w-0 truncate text-fg-muted" title={text}>
-          {text}
-        </span>
-      )}
-    </span>
-  )
 }
 
 /**
@@ -256,100 +121,24 @@ export default function AutolinkPanel({ text, self, startText, rules, onRules, u
   // The form of a new autolinker (above the list) or of the one being edited (right under its row)
   const editingRule = rules.find((r) => r.id === editing)
   const form = formOpen ? (
-        <Slide>
-          <div className="flex flex-col gap-3 rounded-(--card-radius) border border-line bg-surface-muted p-3">
-            {/* What it does */}
-            <div className="flex items-start gap-3">
-            <p className="flex min-w-0 flex-1 items-start gap-2 text-[0.8125rem] text-fg-muted">
-              <LuInfo aria-hidden className="mt-0.5 size-4 shrink-0" />
-              <span>
-                Write the words, then choose where they link.
-                {/* What is chosen now: it appears again (a short pop) whenever the tags or the link change */}
-                {(words.length > 0 || target) && (
-                  <span key={`${words.join('|')}>${target ? toHref(target) : ''}`} className="ms-1 inline-flex animate-share-pop flex-wrap items-center gap-1 align-middle font-medium text-fg">
-                    {words.length > 0 && <span>{`“${words.join('”, “')}”`}</span>}
-                    <span aria-hidden>→</span>
-                    {target ? <LinkTargetName link={target} doc={text.doc()} /> : <span className="font-normal text-fg-subtle">choose where they link</span>}
-                  </span>
-                )}
-              </span>
-            </p>
-            {/* At the top right: Delete (this autolinker, while one is edited), and an X that closes the draft */}
-            <div className="flex shrink-0 items-center gap-1">
-              {editingRule && (
-                <Button variant="ghost" size="sm" plain icon={LuTrash2} className="text-danger" onClick={() => remove(editingRule)}>
-                  Delete
-                </Button>
-              )}
-              <IconButton icon={LuX} label="Close the draft" size="sm" onClick={() => start(false)} />
-            </div>
-            </div>
-
-            {/* The phrases: tags inside one input. Write the words and press Enter, or click away, and they become a tag (an X on it takes it out;
-                Backspace on an empty input takes the last one out) */}
-            <div className="flex min-h-9 min-w-0 flex-wrap items-center gap-1 border border-line bg-surface px-1.5 py-1 focus-within:border-accent">
-              {phrases.map((phrase, i) => (
-                <Tag key={phrase} phrase={phrase} onRemove={() => removePhrase(i)} />
-              ))}
-              <input
-                aria-label="Words to link"
-                placeholder={phrases.length === 0 ? 'The words to link… (Enter makes a tag)' : 'Another phrase…'}
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onBlur={commitDraft}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    commitDraft()
-                  } else if (e.key === 'Backspace' && draft === '' && phrases.length > 0) removePhrase(phrases.length - 1)
-                }}
-                maxLength={LIMITS.ruleText}
-                className="min-w-32 flex-1 bg-transparent text-body outline-none"
-                autoFocus
-              />
-            </div>
-
-            {/* The four kinds side by side, in the order of the link row's buttons (one box, a line between them): each with its name and, but Link, a
-                search button at the right of the name */}
-            <div key={version} className="flex flex-row divide-x divide-line overflow-x-auto rounded-(--card-radius) border border-line bg-surface [&_[role=option]]:h-7!">
-              {SECTIONS.map((s) => (
-                <section key={s.id} aria-label={s.label} className="flex min-w-56 flex-1 flex-col p-2">
-                  <SectionBody title={s.label} icon={s.icon} searchable={s.searchable}>
-                    {(searching) =>
-                      s.id === 'url' ? (
-                        <UrlColumn chosen={target} onPick={pick} />
-                      ) : s.id === 'object' ? (
-                        <ObjectPicker
-                          exclude={self}
-                          chosen={target?.kind === 'object' ? target : null}
-                          onPick={(hit) => pick({ kind: 'object', type: hit.type, id: hit.id })}
-                          listHeight="max-h-48"
-                          autoFocus={searching}
-                          showSearch={searching}
-                          archive
-                        />
-                      ) : s.id === 'jump' ? (
-                        <JumpPicker text={text} chosen={target?.kind === 'jump' ? target.to : null} onPick={(to) => pick({ kind: 'jump', to })} autoFocus={searching} showSearch={searching} />
-                      ) : (
-                        <FollowPicker chosen={target} onPick={pick} autoFocus={searching} showSearch={searching} />
-                      )
-                    }
-                  </SectionBody>
-                </section>
-              ))}
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" plain onClick={() => start(false)}>
-                Cancel
-              </Button>
-              <Button size="sm" disabled={words.length === 0 || !target} onClick={save}>
-                {editing ? 'Save autolinker' : 'Save'}
-              </Button>
-            </div>
-          </div>
-
-        </Slide>
+    <AutolinkForm
+      text={text}
+      self={self}
+      phrases={phrases}
+      draft={draft}
+      words={words}
+      onDraft={setDraft}
+      onCommitDraft={commitDraft}
+      onRemovePhrase={removePhrase}
+      target={target}
+      onPick={pick}
+      version={version}
+      editingRule={editingRule}
+      editing={!!editing}
+      onDelete={remove}
+      onCancel={() => start(false)}
+      onSave={save}
+    />
   ) : null
 
   return (
@@ -432,93 +221,4 @@ export default function AutolinkPanel({ text, self, startText, rules, onRules, u
       )}
     </Modal>
   )
-}
-
-/** Import from other article: pick an article, then which of the phrases of its autolinkers to add here; they link to the place chosen here */
-function ImportModal({ schema, self, have, onClose, onImport }: { schema: Schema; self: string; have: string[]; onClose: () => void; onImport: (phrases: string[]) => void }) {
-  const [from, setFrom] = useState<{ title: string; phrases: string[] } | null>(null)
-  const [ticked, setTicked] = useState<Set<string>>(new Set())
-  const [state, setState] = useState<'pick' | 'loading' | 'error'>('pick')
-  const here = (phrase: string) => have.some((p) => sameText(p, phrase))
-
-  const open = async (id: string, title: string) => {
-    const articles = resourceByName('articles')
-    if (!articles) return
-    setState('loading')
-    try {
-      const article = (await articles.api.get(id)) as { content?: string; autolinkers?: unknown }
-      // Its autolinkers; an article not opened since they became a field has none yet: its text then
-      const own = fromStored(article.autolinkers as never)
-      const found = (own.length > 0 ? own : rulesFrom(parse(schema, article.content ?? ''))).flatMap((r) => r.phrases)
-      const unique = found.filter((p, i) => found.findIndex((x) => sameText(x, p)) === i)
-      setFrom({ title, phrases: unique })
-      setTicked(new Set(unique.filter((p) => !here(p))))
-      setState('pick')
-    } catch {
-      setState('error')
-    }
-  }
-
-  return (
-    <Modal
-      open
-      onClose={onClose}
-      title={from ? `Link phrases of “${from.title}”` : 'Import from other article'}
-      footer={
-        from && (
-          <>
-            <Button variant="ghost" onClick={() => setFrom(null)}>
-              Another article
-            </Button>
-            <Button
-              disabled={ticked.size === 0}
-              onClick={() => {
-                onImport(from.phrases.filter((p) => ticked.has(p)))
-                onClose()
-              }}
-            >
-              Add
-            </Button>
-          </>
-        )
-      }
-    >
-      {state === 'loading' ? (
-        <p className="text-body text-fg-subtle">Loading…</p>
-      ) : state === 'error' ? (
-        <p className="text-body text-danger">The article could not be read.</p>
-      ) : from ? (
-        from.phrases.length === 0 ? (
-          <p className="text-body text-fg-subtle">That article has no autolinkers to import phrases from.</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {from.phrases.map((phrase) => (
-              <li key={phrase} className="flex items-center gap-2">
-                <CheckField
-                  label={<span className="font-medium">{phrase}</span>}
-                  checked={ticked.has(phrase) && !here(phrase)}
-                  disabled={here(phrase)}
-                  onChange={(on) => {
-                    const next = new Set(ticked)
-                    if (on) next.add(phrase)
-                    else next.delete(phrase)
-                    setTicked(next)
-                  }}
-                />
-                {here(phrase) && <span className="ms-auto text-small text-fg-subtle">already here</span>}
-              </li>
-            ))}
-          </ul>
-        )
-      ) : (
-        <ObjectPicker only={['article']} exclude={self} onPick={(hit) => void open(hit.id, hit.title)} />
-      )}
-    </Modal>
-  )
-}
-
-/** Another article's text as a document of this article's kind (to read its links) */
-function parse(schema: Schema, html: string): PMNode {
-  const body = new window.DOMParser().parseFromString(html, 'text/html').body
-  return PMDOMParser.fromSchema(schema).parse(body)
 }

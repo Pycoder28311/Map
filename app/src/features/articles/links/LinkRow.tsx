@@ -1,10 +1,9 @@
 import { useEditorState, type Editor } from '@tiptap/react'
 import { useState } from 'react'
-import { LuCornerDownRight, LuExternalLink, LuFileSymlink, LuMessageSquareText, LuUserPlus, LuX } from 'react-icons/lu'
+import { LuX } from 'react-icons/lu'
 import Button from '../../../components/ui/buttons/Button'
 import IconButton from '../../../components/ui/buttons/IconButton'
 import HoverInfo, { TIP_DELAY } from '../../../components/ui/overlays/HoverInfo'
-import type { PlainIcon } from '../../../components/ui/icons/IconSlot'
 import BarPopover from '../../../components/ui/overlays/BarPopover'
 import { TextButton } from '../toolbar/parts'
 import AutolinkPanel from './AutolinkPanel'
@@ -17,25 +16,12 @@ import { resolveJump } from './jumpTargets'
 import { currentLink, insertArticleLink, LINK_EDIT, removeArticleLink, setArticleLink } from './linkExtensions'
 import MessageLinkForm from '../messages/MessageLinkForm'
 import { RealLinkForm } from './LinkForms'
-import { newId, toHref, type ArticleLink, type LinkKind } from './linkHref'
+import { LINK_KINDS, type LinkKindId, type LinkPopout } from './linkKinds'
+import { newId, toHref, type ArticleLink } from './linkHref'
 import ObjectPicker from './ObjectPicker'
 import { keepFocus } from '../../../lib/keepFocus'
 
-/** The popouts of the link row: one per kind of link, and the Autolinker's */
-export type LinkPopout = 'url' | 'object' | 'msg' | 'jump' | 'follow' | 'auto'
-type Kind = Exclude<LinkPopout, 'auto'>
-
-/** In this order, then the Autolinker. The Autolinker's panel has the same ones, in the same order, but Message */
-const BUTTONS: { id: Kind; label: string; icon: PlainIcon; kinds: LinkKind[]; title: string }[] = [
-  { id: 'url', label: 'Link', icon: LuExternalLink, kinds: ['url'], title: 'Link to a web page' },
-  { id: 'object', label: 'Attach Content', icon: LuFileSymlink, kinds: ['object'], title: 'Link to an article, map, object card, folder or project' },
-  { id: 'jump', label: 'Jump link', icon: LuCornerDownRight, kinds: ['jump'], title: 'Jump to a section or a marked place of this article' },
-  { id: 'follow', label: 'Follow', icon: LuUserPlus, kinds: ['person', 'project-url'], title: "Send the reader to a person, or to someone's project" },
-  { id: 'msg', label: 'Message', icon: LuMessageSquareText, kinds: ['msg'], title: 'A message that opens beside the text' },
-]
-
-/** Popouts wider than the default */
-const WIDTH: Partial<Record<Kind, string>> = { object: 'w-[28rem]', follow: 'w-96', jump: 'w-80' }
+export type { LinkPopout } from './linkKinds'
 
 type Props = {
   editor: Editor | null
@@ -88,7 +74,7 @@ export default function LinkRow({ editor, text, self, articleId, expanded, place
 
   const auto = open === 'auto'
   const close = () => onOpenChange(null)
-  const current = (id: Kind) => (state.link && BUTTONS.find((b) => b.id === id)!.kinds.includes(state.link.kind) ? state.link : null)
+  const current = (id: LinkKindId) => (state.link && LINK_KINDS.find((b) => b.id === id)!.kinds.includes(state.link.kind) ? state.link : null)
   const toggle = (id: LinkPopout) => {
     // On a link with no selection: the whole link is selected first, so its words show and change together
     if (id !== 'auto' && state.empty && current(id)) editor.chain().extendMarkRange('link').run()
@@ -131,7 +117,7 @@ export default function LinkRow({ editor, text, self, articleId, expanded, place
     setMarking(null)
   }
 
-  const form = (id: Kind) => {
+  const form = (id: LinkKindId) => {
     const link = current(id)
     const onRemove = link ? remove : undefined
     switch (id) {
@@ -191,7 +177,7 @@ export default function LinkRow({ editor, text, self, articleId, expanded, place
         <span className="justify-self-start text-[0.75rem] leading-none font-medium text-fg-muted">Types of Links</span>
         {/* The five kinds, underline buttons: the chosen one is underlined (all but Message while the Autolinker is open, which it can't make) */}
         <div role="group" aria-label="Links" className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-          {BUTTONS.map((b) => {
+          {LINK_KINDS.map((b) => {
             // At an `@` there are no words yet: every kind but Message (it needs words already written)
             const enabled = !state.empty || !!current(b.id) || (!!insertAt && b.id !== 'msg')
             const skipped = auto && b.id === 'msg'
@@ -201,7 +187,7 @@ export default function LinkRow({ editor, text, self, articleId, expanded, place
                 label={b.label}
                 open={open === b.id}
                 onOpenChange={(next) => onOpenChange(next ? b.id : null)}
-                width={WIDTH[b.id]}
+                width={b.width}
                 align="center"
                 trigger={
                   <TextButton
@@ -211,7 +197,7 @@ export default function LinkRow({ editor, text, self, articleId, expanded, place
                     underline
                     active={open === b.id || (auto && !skipped) || !!current(b.id)}
                     disabled={!enabled || skipped}
-                    tip={skipped ? 'The Autolinker does not make messages.' : enabled ? b.title : insertAt ? 'Select words you wrote to make them a message.' : 'Select some words first.'}
+                    tip={skipped ? 'The Autolinker does not make messages.' : enabled ? b.tip : insertAt ? 'Select words you wrote to make them a message.' : 'Select some words first.'}
                     onClick={() => toggle(b.id)}
                   />
                 }
