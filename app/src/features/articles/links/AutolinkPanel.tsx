@@ -19,6 +19,7 @@ import { isWebUrl, LIMITS, newId, toHref, type ArticleLink } from './linkHref'
 import { LinkTargetName, useLinkInfo } from './LinkPreview'
 import ObjectPicker from './ObjectPicker'
 import type { ArticleText } from '../text/articleText'
+import { openInNewTab, withScheme } from '../../../lib/urls'
 
 type Props = {
   /** The article's text: the autolinkers link all of it, whatever the editor holds */
@@ -89,7 +90,7 @@ function Tag({ phrase, onRemove }: { phrase: string; onRemove?: () => void }) {
 /** Link's section: an address to choose */
 function UrlColumn({ chosen, onPick }: { chosen: ArticleLink | null; onPick: (link: ArticleLink) => void }) {
   const [url, setUrl] = useState(chosen?.kind === 'url' ? chosen.url : '')
-  const full = /^[a-z][a-z0-9+.-]*:/i.test(url.trim()) ? url.trim() : `https://${url.trim()}`
+  const full = withScheme(url)
   const valid = url.trim() !== '' && isWebUrl(full)
   return (
     <form
@@ -139,7 +140,7 @@ function Endpoint({ link, doc, onLeave }: { link: ArticleLink; doc: PMNode; onLe
   const text = link.kind === 'url' || link.kind === 'project-url' ? link.url : info.title
   const open =
     link.kind === 'url'
-      ? () => window.open(link.url, '_blank', 'noopener,noreferrer')
+      ? () => openInNewTab(link.url)
       : link.kind === 'object'
         ? () => {
             onLeave()

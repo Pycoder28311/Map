@@ -16,6 +16,9 @@ type Props = {
 
 const ARROW = 10
 
+/** How long the pointer rests on a toolbar's or a panel's control before its HoverInfo opens (ms): `delay={TIP_DELAY}` */
+export const TIP_DELAY = 350
+
 /**
  * A card that says what a button does: opens after the pointer rests on it (or on keyboard focus), closes on leave, blur, Esc
  * or scroll. In the top layer (never clipped), never takes the pointer, flips to the other side when it doesn't fit.

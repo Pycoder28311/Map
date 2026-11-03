@@ -4,6 +4,7 @@ import { LuChevronDown } from 'react-icons/lu'
 import Button from '../buttons/Button'
 import IconButton from '../buttons/IconButton'
 import { DROPDOWN_ITEM, DROPDOWN_MENU } from '../overlays/Dropdown'
+import { keepFocus } from '../../../lib/keepFocus'
 
 /**
  * A bordered field's list: the field's own border and corners at its bottom, no popup animation and no shadow: it looks like the field grown
@@ -234,7 +235,7 @@ export default function DropdownField({
           aria-haspopup="menu"
           aria-label={`${label}: ${current?.label ?? ''}`}
           title={label}
-          onMouseDown={(e) => e.preventDefault()}
+          onMouseDown={keepFocus}
           style={current?.style}
           className="ui-dropfield-display"
         >
@@ -246,7 +247,7 @@ export default function DropdownField({
         label={label}
         popoverTarget={id}
         aria-haspopup="menu"
-        onMouseDown={(e) => e.preventDefault()}
+        onMouseDown={keepFocus}
         className="ui-dropfield-arrow"
         // The arrow turns over, anticlockwise, while the list is open
         iconClassName={`transition-transform duration-200 ease-out motion-reduce:transition-none ${open ? '-rotate-180' : ''}`}

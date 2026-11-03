@@ -10,8 +10,8 @@ import ResourceItemGate from './ResourceItemGate'
 import SaveStatus from './SaveStatus'
 import { useItemAutosave, type EditedItem } from './useItemAutosave'
 import type { AnyResource } from '../../../resources/types'
+import { DAY_MONTH_YEAR } from '../../../lib/dates'
 
-const DATE = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 
 type Props = {
   resource: AnyResource
@@ -72,7 +72,7 @@ function ItemForm({ resource, note, onClose, focusField = 'title', showClose = t
           <PrivacyButton objectType={resource.name} objectId={Number(note.id)} visibility={(note.visibility as Visibility | undefined) ?? 'private'} what={what} />
         )}
         {!readOnly && <SaveStatus status={autosave.status} />}
-        <span className="ms-auto text-small text-fg-subtle">Created {DATE.format(new Date(note.createdAt))}</span>
+        <span className="ms-auto text-small text-fg-subtle">Created {DAY_MONTH_YEAR.format(new Date(note.createdAt))}</span>
         {onClose && showClose && (
           <Button
             variant="ghost"

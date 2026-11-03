@@ -9,6 +9,7 @@ import { CRACK_DEPTH, CRACK_REACH, crackedPolygons } from './crack'
 import { paperEdgePolygon } from './paperEdge'
 import FolderFace from './FolderFace'
 import MapPreview from './MapPreview'
+import { DAY_MONTH } from '../../../lib/dates'
 
 /** The first picture of an item's text (its `content`, when the item has it: a list gives only the preview, so then none), if any */
 function firstImage(item: CardItem): string | null {
@@ -16,7 +17,6 @@ function firstImage(item: CardItem): string | null {
   return /<img\b[^>]*\bsrc="([^"]+)"/i.exec(html)?.[1] ?? null
 }
 
-const DATE = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' })
 
 export type CardItem = Record<string, unknown> & { id: number | string; createdAt?: string }
 
@@ -51,7 +51,7 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
   const Icon = resource.ui.icon
   const created = item.createdAt ? new Date(item.createdAt) : null
   const look = resource.ui.card ?? 'plain'
-  const date = created && <span className="shrink-0 text-small text-fg-subtle">{DATE.format(created)}</span>
+  const date = created && <span className="shrink-0 text-small text-fg-subtle">{DAY_MONTH.format(created)}</span>
   const subtitle = resource.ui.row.subtitle?.(item) || 'Empty'
 
   if (look === 'map') {
@@ -108,7 +108,7 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
             <p data-card-body className="line-clamp-2 min-w-0 flex-1 text-small text-fg-muted">
               {subtitle}
             </p>
-            {date && <span data-card-body className="shrink-0 text-small text-fg-subtle">{DATE.format(created!)}</span>}
+            {date && <span data-card-body className="shrink-0 text-small text-fg-subtle">{DAY_MONTH.format(created!)}</span>}
           </div>
         </div>
         <ButtonLook

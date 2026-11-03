@@ -3,6 +3,7 @@ import IconButton from '../../../components/ui/buttons/IconButton'
 import type { ArticleText } from '../text/articleText'
 import { linkedTargets, type JumpTarget } from './jumpTargets'
 import { targetIcon } from './JumpPicker'
+import { keepFocus } from '../../../lib/keepFocus'
 
 type Mark = { target: JumpTarget; count: number; top: number }
 
@@ -46,7 +47,7 @@ export default function JumpGutter({ text, box }: { text: ArticleText; box: RefO
             label={`${target.text || 'Untitled section'} · ${count} ${count === 1 ? 'link goes' : 'links go'} here`}
             size="sm"
             className="size-4 min-h-0 min-w-0 [&>svg]:size-3!"
-            onMouseDown={(e) => e.preventDefault()}
+            onMouseDown={keepFocus}
             onClick={() => text.goTo(target.kind === 'heading' ? target.from + 1 : target.from, target.kind === 'heading' ? target.end - 1 : target.end)}
           />
         </div>

@@ -1,9 +1,10 @@
 // The edit bar's building blocks, defined once: separators, groups, the hover tip, icon and text buttons, the toggle with an arrow.
-import type { MouseEvent, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import Button from '../../../components/ui/buttons/Button'
 import IconButton from '../../../components/ui/buttons/IconButton'
 import type { PlainIcon } from '../../../components/ui/icons/IconSlot'
-import HoverInfo from '../../../components/ui/overlays/HoverInfo'
+import HoverInfo, { TIP_DELAY } from '../../../components/ui/overlays/HoverInfo'
+import { keepFocus } from '../../../lib/keepFocus'
 
 /** Its children disabled while the bar has no editor (a fieldset without a box of its own: the rows' layout stays) */
 export function Idle({ idle, children }: { idle: boolean; children: ReactNode }) {
@@ -30,7 +31,7 @@ export function Group({ children, className = '' }: { children: ReactNode; class
  */
 export function Tip({ name, text, children }: { name: string; text?: string; children: ReactNode }) {
   return (
-    <HoverInfo title={name} text={text} side="top" delay={350}>
+    <HoverInfo title={name} text={text} side="top" delay={TIP_DELAY}>
       <span className="inline-flex">{children}</span>
     </HoverInfo>
   )
@@ -48,7 +49,7 @@ export function ToolButton(props: {
   iconClassName?: string
 }) {
   return (
-    <HoverInfo title={props.label} text={props.tip} side="top" delay={350}>
+    <HoverInfo title={props.label} text={props.tip} side="top" delay={TIP_DELAY}>
       <IconButton
         icon={props.icon}
         label={props.label}
@@ -60,7 +61,7 @@ export function ToolButton(props: {
         // List and Text align buttons have
         className={props.bigIcon ? '[&>svg]:size-6!' : '[&>svg]:size-5!'}
         iconClassName={props.iconClassName}
-        onMouseDown={(e) => e.preventDefault()}
+        onMouseDown={keepFocus}
         onClick={props.onClick}
       />
     </HoverInfo>
@@ -84,7 +85,7 @@ export function TextButton(props: {
   underline?: boolean
 }) {
   return (
-    <HoverInfo title={props.label} text={props.tip} side="top" delay={350}>
+    <HoverInfo title={props.label} text={props.tip} side="top" delay={TIP_DELAY}>
       <Button
         icon={props.icon}
         size={props.small ? 'xs' : 'sm'}
@@ -101,7 +102,7 @@ export function TextButton(props: {
             ? '[--btn-icon-size:0.875rem]! [--btn-font-size:0.75rem]! [--btn-pad-y:0]! [--btn-line-height:1]! [--btn-underline-offset:1px]!'
             : `[--btn-font-size:1rem]! ${props.big ? '[--btn-icon-size:1rem]!' : '[--btn-icon-size:1.25rem]!'}`
         }`}
-        onMouseDown={(e) => e.preventDefault()}
+        onMouseDown={keepFocus}
         onClick={props.onClick}
       >
         {props.label}
@@ -120,7 +121,7 @@ export function FormatToggle({ icon, label, on, onClick, children }: { icon?: Pl
     size: 'sm',
     variant: on ? 'selected' : 'ghost',
     'aria-pressed': on,
-    onMouseDown: (e: MouseEvent) => e.preventDefault(),
+    onMouseDown: keepFocus,
     onClick,
     className: 'ui-dropfield-icon [&>svg]:size-5!',
   } as const

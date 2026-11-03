@@ -3,6 +3,7 @@ import type { Node as PMNode } from '@tiptap/pm/model'
 import { LuGripHorizontal, LuGripVertical, LuMinus, LuPlus } from 'react-icons/lu'
 import type { ArticleText } from './articleText'
 import { deleteColumn, deleteRow, insertColumn, insertRow, moveColumn, moveRow } from './tableOps'
+import { keepFocus } from '../../../lib/keepFocus'
 
 /** How near a grid line the pointer must be for it to light up (px) */
 const NEAR = 6
@@ -36,7 +37,7 @@ function Tool({ label, onClick, onPointerDown, children, grab }: { label: string
       type="button"
       aria-label={label}
       title={label}
-      onMouseDown={(e) => e.preventDefault()}
+      onMouseDown={keepFocus}
       onClick={onClick}
       onPointerDown={onPointerDown}
       className={`flex size-4 items-center justify-center rounded-[3px] text-fg-muted hover:bg-fill-strong hover:text-fg ${grab ? 'cursor-grab touch-none active:cursor-grabbing' : 'cursor-pointer'}`}
@@ -189,7 +190,7 @@ export default function TableTools({ text, box }: { text: ArticleText; box: RefO
         <button
           type="button"
           aria-label={line.kind === 'col' ? 'Add a column here' : 'Add a row here'}
-          onMouseDown={(e) => e.preventDefault()}
+          onMouseDown={keepFocus}
           onClick={() => !drag && add(line.kind, line.at)}
           style={
             line.kind === 'col'
@@ -262,7 +263,7 @@ function PlusAt({ left, top, label, onHover, onClick }: { left: number; top: num
       type="button"
       aria-label={label}
       title={label}
-      onMouseDown={(e) => e.preventDefault()}
+      onMouseDown={keepFocus}
       onPointerEnter={() => onHover(true)}
       onPointerLeave={() => onHover(false)}
       onClick={onClick}

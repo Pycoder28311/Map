@@ -44,11 +44,12 @@ import MoreFormats from './MoreFormats'
 import { SectionPicker } from './sections/SectionMenu'
 import type { SectionType } from './sections/sectionTypes'
 import StructureIcon from './StructureIcon'
-import HoverInfo from '../../components/ui/overlays/HoverInfo'
+import HoverInfo, { TIP_DELAY } from '../../components/ui/overlays/HoverInfo'
 import { FormatToggle, Group, Idle, Separator, TextButton, Tip, ToolButton } from './toolbar/parts'
 import ToolbarDropdown from './toolbar/ToolbarDropdown'
 import { GROUP_EXAMPLES } from './symbols'
 import { useToolbarLevel } from './toolbarLevel'
+import { keepFocus } from '../../lib/keepFocus'
 
 /** The colours a picker starts on when the text has none of its own */
 const TEXT_COLOUR = '#e5e5e5'
@@ -807,13 +808,13 @@ export default function ArticleToolbar({ editor: own, onUploadImage, onUploadErr
             arrow at its right: it turns to point right while the second row is open */}
         <div className="flex shrink-0 items-center gap-base">
           <Separator />
-          <HoverInfo title={secondRow ? 'Hide the second row' : 'Show the second row'} side="top" delay={350}>
+          <HoverInfo title={secondRow ? 'Hide the second row' : 'Show the second row'} side="top" delay={TIP_DELAY}>
             <Button
               variant="ghost"
               size="sm"
               plain
               aria-expanded={secondRow}
-              onMouseDown={(e) => e.preventDefault()}
+              onMouseDown={keepFocus}
               onClick={() => onSecondRowChange(!secondRow)}
               className="font-normal! [--btn-font-size:1rem]! [--btn-hover-text:var(--fg)]! [--btn-text:var(--fg-muted)]!"
             >
@@ -883,7 +884,7 @@ export default function ArticleToolbar({ editor: own, onUploadImage, onUploadErr
                       title="Characters"
                       text="Opens the structures, shapes, maths symbols and other characters to put in the text."
                       side="top"
-                      delay={350}
+                      delay={TIP_DELAY}
                     >
                       <IconButton
                         icon={LuOmega}
@@ -891,7 +892,7 @@ export default function ArticleToolbar({ editor: own, onUploadImage, onUploadErr
                         size="sm"
                         variant={more ? 'selected' : 'ghost'}
                         aria-expanded={more}
-                        onMouseDown={(e) => e.preventDefault()}
+                        onMouseDown={keepFocus}
                         onClick={() => setMore((open) => !open)}
                         className="[&>svg]:size-5!"
                       />
@@ -903,20 +904,20 @@ export default function ArticleToolbar({ editor: own, onUploadImage, onUploadErr
                   // lines between the examples
                   <div role="group" aria-label="Maths structures" className="flex h-[calc(1rem+2*var(--spacing-sm)+2px)] items-stretch overflow-hidden rounded-(--field-radius) border border-line-strong">
                     {BOX_STRUCTURES.map((kind) => (
-                      <HoverInfo key={kind} title={STRUCTURES[kind].label} text={STRUCTURE_TIPS[kind]} side="top" delay={350}>
-                        <IconButton label={STRUCTURES[kind].label} size="xs" className="h-full! min-h-0!" onMouseDown={(e) => e.preventDefault()} onClick={() => insertStructure(editor, kind)}>
+                      <HoverInfo key={kind} title={STRUCTURES[kind].label} text={STRUCTURE_TIPS[kind]} side="top" delay={TIP_DELAY}>
+                        <IconButton label={STRUCTURES[kind].label} size="xs" className="h-full! min-h-0!" onMouseDown={keepFocus} onClick={() => insertStructure(editor, kind)}>
                           <StructureIcon kind={kind} />
                         </IconButton>
                       </HoverInfo>
                     ))}
                     {/* The first character of each other group (SVGs, Mathematical, Others) */}
                     {GROUP_EXAMPLES.map((char) => (
-                      <HoverInfo key={char} title={`Insert ${char}`} text={`Puts ${char} in the text where the cursor is.`} side="top" delay={350}>
+                      <HoverInfo key={char} title={`Insert ${char}`} text={`Puts ${char} in the text where the cursor is.`} side="top" delay={TIP_DELAY}>
                         <IconButton
                           label={`Insert ${char}`}
                           size="xs"
                           className="h-full! min-h-0!"
-                          onMouseDown={(e) => e.preventDefault()}
+                          onMouseDown={keepFocus}
                           onClick={() => editor.chain().focus().insertContent(char).run()}
                         >
                           <span aria-hidden className="text-[1.1rem] leading-none">
@@ -926,7 +927,7 @@ export default function ArticleToolbar({ editor: own, onUploadImage, onUploadErr
                       </HoverInfo>
                     ))}
                     {omegaPopout(
-                      <HoverInfo title="More characters" text="Opens all the structures, shapes, maths symbols and other characters." side="top" delay={350}>
+                      <HoverInfo title="More characters" text="Opens all the structures, shapes, maths symbols and other characters." side="top" delay={TIP_DELAY}>
                         <IconButton
                           icon={LuChevronDown}
                           label="More structures, shapes, maths and other characters"
@@ -934,7 +935,7 @@ export default function ArticleToolbar({ editor: own, onUploadImage, onUploadErr
                           className="aspect-square h-full! min-h-0!"
                           variant={more ? 'selected' : 'ghost'}
                           aria-expanded={more}
-                          onMouseDown={(e) => e.preventDefault()}
+                          onMouseDown={keepFocus}
                           onClick={() => setMore((open) => !open)}
                         />
                       </HoverInfo>,
@@ -943,14 +944,14 @@ export default function ArticleToolbar({ editor: own, onUploadImage, onUploadErr
                 )}
                 {/* Link types: shows the links row while nothing is selected (with words selected it shows by itself). Shade: a background only when hovered */}
                 {!state.selected && (
-                  <HoverInfo title="Link types" text="Shows the row of links: a web page, an article or object, a jump, a person, a message, the Autolinker. Typing @ in the text opens it there." side="top" delay={350}>
+                  <HoverInfo title="Link types" text="Shows the row of links: a web page, an article or object, a jump, a person, a message, the Autolinker. Typing @ in the text opens it there." side="top" delay={TIP_DELAY}>
                     <Button
                       variant={linkTypes.shown ? 'selected' : 'ghost'}
                       size="sm"
                       plain
                       icon={LuLink}
                       aria-pressed={linkTypes.shown}
-                      onMouseDown={(e) => e.preventDefault()}
+                      onMouseDown={keepFocus}
                       onClick={linkTypes.onToggle}
                       className="font-normal! [--btn-font-size:1rem]! [--btn-icon-size:1rem]!"
                     >

@@ -4,6 +4,7 @@ import InputBox from '../../../components/ui/fields/InputBox'
 import TextAreaField from '../../../components/ui/fields/TextAreaField'
 import TextField from '../../../components/ui/fields/TextField'
 import { isWebUrl, LIMITS } from './linkHref'
+import { withScheme } from '../../../lib/urls'
 
 /** Apply, and Remove when the text is already this kind of link */
 export function FormActions({ onRemove, canApply = true }: { onRemove?: () => void; canApply?: boolean }) {
@@ -25,9 +26,6 @@ const submit = (run: () => void) => (e: FormEvent) => {
   e.preventDefault()
   run()
 }
-
-/** "https://" in front of an address typed without it */
-const withScheme = (url: string) => (/^[a-z][a-z0-9+.-]*:/i.test(url.trim()) ? url.trim() : `https://${url.trim()}`)
 
 /** Real link: an outside address and the words it shows (by default the selected ones) */
 export function RealLinkForm({ url: startUrl = '', name: startName, onApply, onRemove }: { url?: string; name: string; onApply: (url: string, name: string) => void; onRemove?: () => void }) {

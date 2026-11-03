@@ -3,7 +3,7 @@ import { LuStickyNote, LuX } from 'react-icons/lu'
 import Button from '../../../../components/ui/buttons/Button'
 import IconButton from '../../../../components/ui/buttons/IconButton'
 import LinkButton from '../../../../components/ui/buttons/LinkButton'
-import HoverInfo from '../../../../components/ui/overlays/HoverInfo'
+import HoverInfo, { TIP_DELAY } from '../../../../components/ui/overlays/HoverInfo'
 import SearchInput from '../../../../components/ui/fields/SearchInput'
 import { useResourceList } from '../../../../lib/resource/hooks'
 import { useOptionalItemModal } from '../../../items/ItemModal'
@@ -82,7 +82,7 @@ export default function NodeNotes({ mapId, objectId, extra, centered = false }: 
       ) : (
         // A sortBy2 button with the project's hover card, and `extra` (the form's own button) right after it
         <div className={`flex items-center gap-1 ${centered ? 'justify-center' : ''}`}>
-          <HoverInfo title="Connect a note" text="Finds one of your notes and attaches it here. A note is attached to one thing: it leaves wherever it was." side="top" delay={350}>
+          <HoverInfo title="Connect a note" text="Finds one of your notes and attaches it here. A note is attached to one thing: it leaves wherever it was." side="top" delay={TIP_DELAY}>
             <Button
               variant="ghost"
               size="md"

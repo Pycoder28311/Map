@@ -23,6 +23,12 @@ export function rgbToHex({ r, g, b }: Rgb): string {
   return `#${part(r)}${part(g)}${part(b)}`
 }
 
+/** '#rrggbb' from a colour as the browser computes it ("rgb(12, 34, 56)", or rgba); null when it is not one */
+export function cssRgbToHex(css: string): string | null {
+  const m = /rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(css)
+  return m ? rgbToHex({ r: Number(m[1]), g: Number(m[2]), b: Number(m[3]) }) : null
+}
+
 export function rgbToHsv({ r, g, b }: Rgb): Hsv {
   const R = r / 255
   const G = g / 255

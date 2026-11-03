@@ -2,6 +2,7 @@ import { LuExternalLink, LuUserCheck, LuUserPlus } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import { placeholderArt } from '../objects/placeholderArt'
 import { initialsOf, useFollowing, type Person } from './mockPeople'
+import { openInNewTab } from '../../lib/urls'
 
 /** A person's round picture: their initials on a colour made from their id */
 export function PersonAvatar({ person, size = 'size-8' }: { person: Person; size?: string }) {
@@ -46,7 +47,7 @@ export default function PersonCard({ person }: { person: Person }) {
       {person.projects.length > 0 && (
         <div className="flex flex-col items-start">
           {person.projects.map((p) => (
-            <Button key={p.url} variant="text" size="sm" icon={LuExternalLink} onClick={() => window.open(p.url, '_blank', 'noopener,noreferrer')}>
+            <Button key={p.url} variant="text" size="sm" icon={LuExternalLink} onClick={() => openInNewTab(p.url)}>
               {p.title}
             </Button>
           ))}

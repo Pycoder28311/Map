@@ -3,7 +3,7 @@ import type { Editor } from '@tiptap/react'
 import Button from '../../components/ui/buttons/Button'
 import RichTextEditor from '../../components/ui/editors/RichTextEditor'
 import ErrorText from '../../components/ui/fields/ErrorText'
-import HoverInfo from '../../components/ui/overlays/HoverInfo'
+import HoverInfo, { TIP_DELAY } from '../../components/ui/overlays/HoverInfo'
 import TitleInput from '../../components/ui/fields/TitleInput'
 import { uploadImage } from '../../lib/api/images'
 import InfoBox from '../infobox/InfoBox'
@@ -105,7 +105,7 @@ export default function ObjectDraftForm({ mapId, object, board, onClose }: Props
           mapId={mapId}
           objectId={object.id}
           extra={
-            <HoverInfo title="Create article" text="Makes the real article from this title, Info box and text; this element then edits it." side="top" delay={350}>
+            <HoverInfo title="Create article" text="Makes the real article from this title, Info box and text; this element then edits it." side="top" delay={TIP_DELAY}>
               <Button variant="ghost" size="md" plain filled disabled={busy} onClick={() => void create()}>
                 {busy ? 'Making the article…' : 'Create article'}
               </Button>

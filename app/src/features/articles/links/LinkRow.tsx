@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { LuCornerDownRight, LuExternalLink, LuFileSymlink, LuMessageSquareText, LuUserPlus, LuX } from 'react-icons/lu'
 import Button from '../../../components/ui/buttons/Button'
 import IconButton from '../../../components/ui/buttons/IconButton'
-import HoverInfo from '../../../components/ui/overlays/HoverInfo'
+import HoverInfo, { TIP_DELAY } from '../../../components/ui/overlays/HoverInfo'
 import type { PlainIcon } from '../../../components/ui/icons/IconSlot'
 import BarPopover from '../../../components/ui/overlays/BarPopover'
 import { TextButton } from '../toolbar/parts'
@@ -19,6 +19,7 @@ import MessageLinkForm from '../messages/MessageLinkForm'
 import { RealLinkForm } from './LinkForms'
 import { newId, toHref, type ArticleLink, type LinkKind } from './linkHref'
 import ObjectPicker from './ObjectPicker'
+import { keepFocus } from '../../../lib/keepFocus'
 
 /** The popouts of the link row: one per kind of link, and the Autolinker's */
 export type LinkPopout = 'url' | 'object' | 'msg' | 'jump' | 'follow' | 'auto'
@@ -182,7 +183,7 @@ export default function LinkRow({ editor, text, self, articleId, expanded, place
       {placement === 'floating' && onClose && (
         // Its X: on the box's top right corner, as the edit bar's was
         <div className="absolute end-0 top-0 z-20 translate-x-1/2 -translate-y-1/2 border border-line bg-surface shadow-md">
-          <IconButton icon={LuX} label="Close the links" size="xs" onMouseDown={(e) => e.preventDefault()} onClick={onClose} />
+          <IconButton icon={LuX} label="Close the links" size="xs" onMouseDown={keepFocus} onClick={onClose} />
         </div>
       )}
       <div className="grid animate-share-pop -mb-0.5 max-w-full grid-cols-[1fr_auto_1fr] items-center gap-x-3 px-1">
@@ -223,13 +224,13 @@ export default function LinkRow({ editor, text, self, articleId, expanded, place
         {/* At the row's right end */}
         <div className="justify-self-end">
           {/* sortBy2: a Shade button with its text only, without the white corner elements and without an arrow */}
-          <HoverInfo title="Autolinker" text="Links the words you choose everywhere they are written in the article." side="top" delay={350}>
+          <HoverInfo title="Autolinker" text="Links the words you choose everywhere they are written in the article." side="top" delay={TIP_DELAY}>
             <Button
               variant="ghost"
               size="sm"
               plain
               aria-pressed={auto}
-              onMouseDown={(e) => e.preventDefault()}
+              onMouseDown={keepFocus}
               onClick={() => toggle('auto')}
               className="[--btn-font-size:0.875rem]!"
             >
@@ -246,7 +247,7 @@ export default function LinkRow({ editor, text, self, articleId, expanded, place
           className="mt-1 inline-flex flex-wrap items-center gap-2 rounded-(--card-radius) border border-accent bg-surface px-2 py-1 text-small shadow-sm"
         >
           <span>Select the place to jump to, then</span>
-          <Button size="sm" disabled={!canMark} onMouseDown={(e) => e.preventDefault()} onClick={mark}>
+          <Button size="sm" disabled={!canMark} onMouseDown={keepFocus} onClick={mark}>
             Mark it
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setMarking(null)}>

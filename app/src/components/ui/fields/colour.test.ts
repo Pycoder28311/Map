@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hexToHsv, hexToRgb, hsvToHex, parseHex, rgbToHex, rgbToHsv, hsvToRgb } from './colour'
+import { cssRgbToHex, hexToHsv, hexToRgb, hsvToHex, parseHex, rgbToHex, rgbToHsv, hsvToRgb } from './colour'
 
 describe('parseHex', () => {
   it('takes three or six digits, with or without #', () => {
@@ -33,5 +33,14 @@ describe('hsv', () => {
   it('round-trips colours', () => {
     for (const hex of ['#ff8800', '#123456', '#abcdef', '#808080', '#000001']) expect(hsvToHex(hexToHsv(hex))).toBe(hex)
     expect(hsvToRgb({ h: 60, s: 1, v: 1 })).toEqual({ r: 255, g: 255, b: 0 })
+  })
+})
+
+describe('cssRgbToHex', () => {
+  it('reads a computed colour, as the article toolbar did by hand', () => {
+    expect(cssRgbToHex('rgb(12, 34, 56)')).toBe('#0c2238')
+    expect(cssRgbToHex('rgba(255, 136, 0, 0.5)')).toBe('#ff8800')
+    expect(cssRgbToHex('rgb(0 0 0)')).toBe('#000000')
+    expect(cssRgbToHex('transparent')).toBeNull()
   })
 })

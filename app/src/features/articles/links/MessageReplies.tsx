@@ -6,8 +6,8 @@ import LinkButton from '../../../components/ui/buttons/LinkButton'
 import TextAreaField from '../../../components/ui/fields/TextAreaField'
 import TreeMenu from '../../../components/ui/tree/TreeMenu'
 import { addReply, loadEarlierReplies, removeReply, updateReply } from '../messages/messagesStore'
+import { DAY_MONTH_TIME } from '../../../lib/dates'
 
-const DATE = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
 
 /** Ctrl / ⌘ + Enter sends the field's form */
 const sendOnCtrlEnter = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -85,7 +85,7 @@ export default function MessageReplies({ message }: { message: Message }) {
               <li key={reply.id} className="flex flex-col gap-0.5">
                 <div className="flex items-center gap-1">
                   <p className="min-w-0 flex-1 truncate text-small text-fg-subtle">
-                    <span className="font-medium text-fg-muted">{reply.author?.name ?? 'Deleted user'}</span> · {DATE.format(new Date(reply.createdAt))}
+                    <span className="font-medium text-fg-muted">{reply.author?.name ?? 'Deleted user'}</span> · {DAY_MONTH_TIME.format(new Date(reply.createdAt))}
                   </p>
                   {menu.length > 0 && editing?.id !== reply.id && <TreeMenu label={`More: reply of ${reply.author?.name ?? 'Deleted user'}`} groups={menu} />}
                 </div>

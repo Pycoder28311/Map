@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Button from '../../../../components/ui/buttons/Button'
 import SearchInput from '../../../../components/ui/fields/SearchInput'
-import HoverInfo from '../../../../components/ui/overlays/HoverInfo'
+import HoverInfo, { TIP_DELAY } from '../../../../components/ui/overlays/HoverInfo'
 import { useResourceList } from '../../../../lib/resource/hooks'
 import { resourceByName } from '../../../../resources/registry'
 import { fold } from '../../../search/search'
@@ -57,7 +57,7 @@ export default function ObjectArticleSection({ mapId, object, onOpenArticle }: {
       {/* sortBy2 buttons with the same card as the article page's toolbar buttons (HoverInfo) */}
       <div className="flex items-center gap-1">
         {!made && (
-          <HoverInfo title="Import article" text="Connects one of your articles to it, instead of making a new one." side="left" delay={350}>
+          <HoverInfo title="Import article" text="Connects one of your articles to it, instead of making a new one." side="left" delay={TIP_DELAY}>
             <Button variant="ghost" size="sm" plain aria-expanded={importing} onClick={() => setImporting(!importing)}>
               Import article
             </Button>
@@ -67,7 +67,7 @@ export default function ObjectArticleSection({ mapId, object, onOpenArticle }: {
           title={made ? 'Open article' : 'Create article'}
           text={made ? 'Opens its article at the left of the map.' : 'Opens an article for it at the left: its title, an Info box and a text, kept in the map. Its own Create article makes the real article.'}
           side="left"
-          delay={350}
+          delay={TIP_DELAY}
         >
           <Button variant="ghost" size="sm" plain filled onClick={() => onOpenArticle(object.id)}>
             {made ? 'Open article' : 'Create article'}

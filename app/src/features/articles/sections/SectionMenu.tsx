@@ -3,6 +3,7 @@ import SearchInput from '../../../components/ui/fields/SearchInput'
 import { DROPDOWN_ITEM } from '../../../components/ui/overlays/Dropdown'
 import { groupSections, type SectionType } from './sectionTypes'
 import { useSectionMenu } from './useSectionMenu'
+import { keepFocus } from '../../../lib/keepFocus'
 
 type Props = {
   types: SectionType[]
@@ -36,7 +37,7 @@ export default function SectionMenu({ types, active, onActive, onPick }: Props) 
                 role="menuitem"
                 data-active={at === active ? '' : undefined}
                 className={`${DROPDOWN_ITEM} data-active:bg-fill`}
-                onMouseDown={(e) => e.preventDefault()}
+                onMouseDown={keepFocus}
                 onMouseEnter={() => onActive(at)}
                 onClick={() => onPick(type)}
               >

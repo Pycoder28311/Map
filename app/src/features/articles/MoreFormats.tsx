@@ -7,6 +7,7 @@ import { insertStructure, STRUCTURE_KINDS, STRUCTURES } from '../../components/u
 import StructureIcon from './StructureIcon'
 import SymbolSections from './SymbolPanel'
 import { SYMBOL_GROUPS } from './symbols'
+import { keepFocus } from '../../lib/keepFocus'
 
 type Format = { label: string; icon: PlainIcon; mark: string; run: (editor: Editor) => void }
 
@@ -43,7 +44,7 @@ export default function MoreFormats({ editor }: { editor: Editor }) {
       <Group title="Basics">
         <div className="flex flex-wrap gap-0.5">
           {STRUCTURE_KINDS.map((kind) => (
-            <IconButton key={kind} label={STRUCTURES[kind].label} onMouseDown={(e) => e.preventDefault()} onClick={() => insertStructure(editor, kind)}>
+            <IconButton key={kind} label={STRUCTURES[kind].label} onMouseDown={keepFocus} onClick={() => insertStructure(editor, kind)}>
               <StructureIcon kind={kind} />
             </IconButton>
           ))}
@@ -57,7 +58,7 @@ export default function MoreFormats({ editor }: { editor: Editor }) {
                 label={f.label}
                 variant={active ? 'selected' : 'ghost'}
                 aria-pressed={active}
-                onMouseDown={(e) => e.preventDefault()}
+                onMouseDown={keepFocus}
                 onClick={() => f.run(editor)}
               />
             )

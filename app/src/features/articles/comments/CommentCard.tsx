@@ -4,8 +4,8 @@ import LinkButton from '../../../components/ui/buttons/LinkButton'
 import TreeMenu from '../../../components/ui/tree/TreeMenu'
 import { Avatar } from '../../sharing/PrivacyPanel'
 import { EMPTY_THREAD, type CommentsState, type CommentsStore } from './commentsStore'
+import { DAY_MONTH_YEAR_TIME } from '../../../lib/dates'
 
-const DATE = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })
 
 type Props = {
   comment: Comment
@@ -44,8 +44,8 @@ export default function CommentCard({ comment, store, state, onReply, onEdit, on
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <header className="flex items-center gap-1">
           <p className="min-w-0 flex-1 truncate text-small text-fg-subtle">
-            <span className="font-medium text-fg">{name}</span> · <time dateTime={comment.createdAt}>{DATE.format(new Date(comment.createdAt))}</time>
-            {comment.edited && <span title={`Edited ${DATE.format(new Date(comment.updatedAt))}`}> · edited</span>}
+            <span className="font-medium text-fg">{name}</span> · <time dateTime={comment.createdAt}>{DAY_MONTH_YEAR_TIME.format(new Date(comment.createdAt))}</time>
+            {comment.edited && <span title={`Edited ${DAY_MONTH_YEAR_TIME.format(new Date(comment.updatedAt))}`}> · edited</span>}
           </p>
           {menu.length > 0 && <TreeMenu label={`More: comment of ${name}`} groups={menu} />}
         </header>

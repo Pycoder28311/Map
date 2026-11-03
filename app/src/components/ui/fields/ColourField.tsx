@@ -3,6 +3,7 @@ import { LuPaintbrush } from 'react-icons/lu'
 import IconButton from '../buttons/IconButton'
 import type { PlainIcon } from '../icons/IconSlot'
 import ColourPicker from './ColourPicker'
+import { keepFocus } from '../../../lib/keepFocus'
 
 type Props = {
   label: string
@@ -59,7 +60,7 @@ export default function ColourField({ label, value, onLive, onCommit, className 
   return (
     <div className={`flex items-center ${bare ? 'h-full' : 'gap-3'} ${className}`}>
       {letter !== undefined ? (
-        <IconButton label={label} size="sm" popoverTarget={id} data-colour-anchor={id} aria-haspopup="dialog" onMouseDown={(e) => e.preventDefault()} className="ui-dropfield-icon">
+        <IconButton label={label} size="sm" popoverTarget={id} data-colour-anchor={id} aria-haspopup="dialog" onMouseDown={keepFocus} className="ui-dropfield-icon">
           {/* One icon of painting a colour: the letter in the colour, a small paintbrush at its lower right, in the colour too */}
           <span aria-hidden className="relative flex">
             <span className="text-[1.25rem] leading-none font-bold" style={{ color: drawn }}>
@@ -69,7 +70,7 @@ export default function ColourField({ label, value, onLive, onCommit, className 
           </span>
         </IconButton>
       ) : Icon ? (
-        <IconButton label={label} size="sm" popoverTarget={id} data-colour-anchor={id} aria-haspopup="dialog" onMouseDown={(e) => e.preventDefault()} className="ui-dropfield-icon">
+        <IconButton label={label} size="sm" popoverTarget={id} data-colour-anchor={id} aria-haspopup="dialog" onMouseDown={keepFocus} className="ui-dropfield-icon">
           {/* The colour's bar is drawn over the icon's lower edge, so the button is as big as an icon button without one */}
           <span className="relative flex">
             <Icon className="size-(--btn-icon-size)" />
@@ -84,7 +85,7 @@ export default function ColourField({ label, value, onLive, onCommit, className 
           aria-label={hidden ? label : undefined}
           aria-haspopup="dialog"
           // The text being edited keeps its selection while the picker is used
-          onMouseDown={(e) => e.preventDefault()}
+          onMouseDown={keepFocus}
           className={
             bare
               ? 'h-full w-6 cursor-pointer border-0 bg-transparent p-0.5'

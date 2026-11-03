@@ -6,8 +6,8 @@ import TreeMenu from '../../../components/ui/tree/TreeMenu'
 import type { TreeMenuGroup } from '../../../components/ui/tree/types'
 import { loadMessage, removeMessage, updateMessage, useMessage } from '../messages/messagesStore'
 import MessageReplies from './MessageReplies'
+import { DAY_MONTH_YEAR } from '../../../lib/dates'
 
-const DATE = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 
 type Props = {
   /** The message's id; null for an old message, whose title and text are in its link (`legacy`) */
@@ -188,7 +188,7 @@ export default function MessagePanel({ id, legacy, words, articleId, canEditArti
       ].filter((group) => group.length > 0)}
     >
       <p className="text-small text-fg-subtle">
-        {message.author?.name ?? 'Deleted user'} · {DATE.format(new Date(message.createdAt))}
+        {message.author?.name ?? 'Deleted user'} · {DAY_MONTH_YEAR.format(new Date(message.createdAt))}
         {message.done && <span className="ms-1 rounded-full bg-fill px-1.5 text-fg-muted">Done</span>}
       </p>
       {message.content && <p className={`max-h-80 overflow-y-auto text-body whitespace-pre-wrap ${message.done ? 'text-fg-subtle' : 'text-fg-muted'}`}>{message.content}</p>}

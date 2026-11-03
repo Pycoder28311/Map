@@ -2,6 +2,7 @@ import { useEditorState, type Editor } from '@tiptap/react'
 import { LuBold, LuImage, LuItalic, LuList, LuListChecks, LuListOrdered, LuStrikethrough, LuUnderline } from 'react-icons/lu'
 import IconButton from '../buttons/IconButton'
 import type { PlainIcon } from '../icons/IconSlot'
+import { keepFocus } from '../../../lib/keepFocus'
 
 export type Format = { label: string; icon: PlainIcon; mark: string; run: (editor: Editor) => void }
 
@@ -54,11 +55,11 @@ export default function RichTextToolbar({ editor, only, onImage, className = '' 
           variant={active?.includes(f.mark) ? 'selected' : 'ghost'}
           aria-pressed={active?.includes(f.mark)}
           // Keeps the caret in the text while a button is pressed
-          onMouseDown={(e) => e.preventDefault()}
+          onMouseDown={keepFocus}
           onClick={() => f.run(editor)}
         />
       ))}
-      {onImage && <IconButton icon={LuImage} label="Insert image" onMouseDown={(e) => e.preventDefault()} onClick={onImage} />}
+      {onImage && <IconButton icon={LuImage} label="Insert image" onMouseDown={keepFocus} onClick={onImage} />}
       {offers('size') && (
         <select
           aria-label="Text size"

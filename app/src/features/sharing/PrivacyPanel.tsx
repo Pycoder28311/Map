@@ -6,7 +6,7 @@ import IconButton from '../../components/ui/buttons/IconButton'
 import CheckField from '../../components/ui/fields/CheckField'
 import SwitchField from '../../components/ui/fields/SwitchField'
 import TextField from '../../components/ui/fields/TextField'
-import HoverInfo from '../../components/ui/overlays/HoverInfo'
+import HoverInfo, { TIP_DELAY } from '../../components/ui/overlays/HoverInfo'
 import Modal from '../../components/ui/overlays/Modal'
 import { ApiError } from '../../lib/api/client'
 import { lookupUser } from '../../lib/api/users'
@@ -60,7 +60,7 @@ function PersonRow({ person, what, permission, onPermission }: { person: Author;
           {switches.map((s) => (
             <li key={s.key}>
               <SwitchField label={s.label} checked={permission[s.key]} onChange={(on) => onPermission({ [s.key]: on })}>
-                <HoverInfo title={s.label} text={s.what} side="top" delay={350}>
+                <HoverInfo title={s.label} text={s.what} side="top" delay={TIP_DELAY}>
                   <Button variant="ghost" size="xs" plain className="font-normal! [--btn-text:var(--fg-subtle)]!">
                     What it is
                   </Button>

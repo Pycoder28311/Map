@@ -1,6 +1,7 @@
 import type { Editor } from '@tiptap/react'
 import IconButton from '../../components/ui/buttons/IconButton'
 import type { SymbolSection } from './symbols'
+import { keepFocus } from '../../lib/keepFocus'
 
 /**
  * Sections of characters, each section a title and a grid of small buttons: a press puts that character in the text (the editor keeps its
@@ -19,7 +20,7 @@ export default function SymbolSections({ editor, sections, big = false }: { edit
                 key={char}
                 label={`Insert ${char}`}
                 size={big ? undefined : 'sm'}
-                onMouseDown={(e) => e.preventDefault()}
+                onMouseDown={keepFocus}
                 onClick={() => editor.chain().focus().insertContent(char).run()}
               >
                 <span aria-hidden className={big ? 'text-[1.4rem] leading-none' : 'text-body leading-none'}>

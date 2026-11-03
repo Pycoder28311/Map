@@ -2,12 +2,13 @@ import { useRef, useState, type ReactNode } from 'react'
 import { LuArrowDownToLine, LuArrowUpToLine, LuCheck, LuPencil, LuTrash2, LuX } from 'react-icons/lu'
 import Button from '../../../../components/ui/buttons/Button'
 import IconButton from '../../../../components/ui/buttons/IconButton'
-import HoverInfo from '../../../../components/ui/overlays/HoverInfo'
+import HoverInfo, { TIP_DELAY } from '../../../../components/ui/overlays/HoverInfo'
 import { changeObjects, updateObject } from '../../boardStore'
 import { placeOnSide, sideOf } from '../../lineName'
 import { titleChange, titleTextOf } from '../../objectTitle'
 import { select } from '../../selection'
 import type { BoardObject, BorderObject, LineObject } from '../../types'
+import { keepFocus } from '../../../../lib/keepFocus'
 
 type Props = {
   mapId: string
@@ -76,7 +77,7 @@ export default function AttachedTextField({ mapId, owner, board, below, belowFil
         />
         {changed && (
           // Mouse down on them must not take the focus from the input: leaving it would save before the cross could take the typing back
-          <span onMouseDown={(e) => e.preventDefault()} className="contents">
+          <span onMouseDown={keepFocus} className="contents">
             <IconButton icon={LuCheck} label="Save the text" onClick={() => input.current?.blur()} />
             <IconButton
               icon={LuX}
@@ -93,12 +94,12 @@ export default function AttachedTextField({ mapId, owner, board, below, belowFil
       {/* Under the input, the two of them side by side (a gap of --spacing-base), with their names */}
       {text && !changed && (
         <div className="flex gap-base">
-          <HoverInfo title="Edit text" text="Selects the text, to change its font, size and colour." side="left" delay={350}>
+          <HoverInfo title="Edit text" text="Selects the text, to change its font, size and colour." side="left" delay={TIP_DELAY}>
             <Button variant="ghost" size="sm" plain filled icon={LuPencil} className="flex-1" onClick={() => select(mapId, [text.id])}>
               Edit text
             </Button>
           </HoverInfo>
-          <HoverInfo title="Remove" text={area ? 'Takes the text out of the area (and its name).' : 'Takes the text off the line.'} side="left" delay={350}>
+          <HoverInfo title="Remove" text={area ? 'Takes the text out of the area (and its name).' : 'Takes the text off the line.'} side="left" delay={TIP_DELAY}>
             <Button variant="ghost" size="sm" plain filled icon={LuTrash2} className="flex-1" onClick={remove}>
               Remove
             </Button>

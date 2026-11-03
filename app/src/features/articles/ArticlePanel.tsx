@@ -64,12 +64,11 @@ import ArticleText from './text/ArticleText'
 import { useArticleText, useTextEditor, type ArticleText as Text } from './text/articleText'
 import SectionHandles from './text/SectionHandles'
 import TableTools from './text/TableTools'
+import { keepFocus } from '../../lib/keepFocus'
+import { DAY_MONTH_YEAR } from '../../lib/dates'
+import { openInNewTab } from '../../lib/urls'
+import { useNarrower } from '../../lib/useNarrower'
 
-const DATE = new Intl.DateTimeFormat(undefined, {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-})
 /** One canvas for measuring text, made when first needed */
 let canvas: HTMLCanvasElement | null = null
 const measureCanvas = () => (canvas ??= document.createElement('canvas'))
@@ -81,18 +80,6 @@ const SIDE_SLIDE_MS = 300
 const SIDE_MIN_WIDTH = 1088
 /** The room between the text and the Info box it flows around (px: the box's ms-4) */
 const INFO_GAP = 16
-
-/** Whether an element is narrower than `width`, followed as it is resized */
-function useNarrower(el: HTMLElement | null, width: number) {
-  const [narrow, setNarrow] = useState(false)
-  useLayoutEffect(() => {
-    if (!el) return
-    const watcher = new ResizeObserver(([entry]) => setNarrow(entry.contentRect.width < width))
-    watcher.observe(el)
-    return () => watcher.disconnect()
-  }, [el, width])
-  return narrow
-}
 
 /** The article's values for autosave: its form fields, and the Info box and the autolinkers as JSON text */
 const articleValues =
@@ -290,7 +277,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
   useEffect(() => {
     handlers.current = {
       onOpen: (link) => {
-        if (link.kind === 'url' || link.kind === 'project-url') window.open(link.url, '_blank', 'noopener,noreferrer')
+        if (link.kind === 'url' || link.kind === 'project-url') openInNewTab(link.url)
         else if (link.kind === 'object') workspace.open({ type: link.type, id: link.id })
         else if (link.kind === 'person') setPerson(personById(link.personId))
         else if (link.kind === 'jump') {
@@ -573,7 +560,7 @@ function ArticlePage({ resource, item, focusField }: { resource: AnyResource; it
             )}
             <div className="flex items-center gap-2">
               {canEdit && <SaveStatus status={autosave.status} />}
-              <span className="ms-auto text-small text-fg-subtle">Created {DATE.format(new Date(item.createdAt))}</span>
+              <span className="ms-auto text-small text-fg-subtle">Created {DAY_MONTH_YEAR.format(new Date(item.createdAt))}</span>
             </div>
           </div>
         }
@@ -788,7 +775,7 @@ function ArticleBody({
                   open={adding}
                   onOpenChange={setAdding}
                   trigger={
-                    <Button variant="ghost" size="sm" plain filled icon={LuPlus} aria-expanded={adding} onMouseDown={(e) => e.preventDefault()} onClick={() => setAdding(!adding)}>
+                    <Button variant="ghost" size="sm" plain filled icon={LuPlus} aria-expanded={adding} onMouseDown={keepFocus} onClick={() => setAdding(!adding)}>
                       Add section
                     </Button>
                   }
