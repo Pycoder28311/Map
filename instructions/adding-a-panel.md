@@ -4,7 +4,7 @@ Any content can be shown as a **panel**: next to the current page or other panel
 (`/workspace`), up to 4 at a time, resizable by edges and corners. This file shows how to make
 something a panel. The design is in `docs/plans/03-workspace-panels.md`.
 
-## How it fits together
+## How it fits together 
 
 ```
 app/src/
