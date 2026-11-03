@@ -11,10 +11,12 @@ import FolderFace from './FolderFace'
 import MapPreview from './MapPreview'
 import { DAY_MONTH } from '../../../lib/dates'
 
-/** The first picture of an item's text (its `content`, when the item has it: a list gives only the preview, so then none), if any */
+/** The picture of an item's card: the first one of its text (when the item has its `content`: a list gives only the preview), else its Info box's picture or its banner (an article) */
 function firstImage(item: CardItem): string | null {
   const html = typeof item.content === 'string' ? item.content : ''
-  return /<img\b[^>]*\bsrc="([^"]+)"/i.exec(html)?.[1] ?? null
+  // Else an article's Info box picture, or its banner (a list item has its Info box, not its text)
+  const infobox = item.infobox as { banner?: string | null; image?: string | null } | undefined
+  return /<img\b[^>]*\bsrc="([^"]+)"/i.exec(html)?.[1] ?? infobox?.image ?? infobox?.banner ?? null
 }
 
 

@@ -7,7 +7,6 @@ import { useDragSurface } from '../drag/surfaces'
 import type { PanelDragData } from '../workspace/types'
 import { useBlockFlip } from './blockFlip'
 import ColumnBody from './ColumnBodies'
-import { DASHBOARD_COLUMNS_FADE_START, DASHBOARD_COLUMNS_OVERLAY_OPACITY } from './DashboardBackground'
 import { columnLabel, menuEntries, type ColumnId } from './columns'
 import { useColumnDrag } from './useColumnDrag'
 import type { useDashboardColumns } from './useDashboardColumns'
@@ -38,10 +37,7 @@ export default function DashboardColumns({ columns, pick, move }: Columns) {
     <div
       ref={rootRef}
       data-flip-root="columns"
-      // Their own background: the page's dark layer made smoothly darker around them, fading out towards the edges of this box, which reaches
-      // 5rem past the columns on each side (the padding, taken back by the negative margins: nothing moves)
-      style={{ backgroundImage: `radial-gradient(ellipse at center, rgb(0 0 0 / ${DASHBOARD_COLUMNS_OVERLAY_OPACITY}) ${DASHBOARD_COLUMNS_FADE_START}%, rgb(0 0 0 / 0) 100%)` }}
-      className="-mx-20 -my-16 grid gap-lg px-20 py-16 md:grid-cols-3"
+      className="grid gap-lg md:grid-cols-3"
     >
       {shown.map((id, slot) => (
         // Keyed by column, so a dragged one stays the same element while the others make room;

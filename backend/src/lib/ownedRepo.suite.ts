@@ -16,7 +16,10 @@ import { D1_MAX_PARAMS } from './relations'
 export const sqlite = new DatabaseSync(':memory:')
 sqlite.exec('PRAGMA foreign_keys = ON')
 for (const statement of await generateSQLiteMigration(await generateSQLiteDrizzleJson({}), await generateSQLiteDrizzleJson(schema))) sqlite.exec(statement)
-for (const statement of readFileSync('drizzle/0012_object_rights_triggers.sql', 'utf8').split('--> statement-breakpoint')) sqlite.exec(statement)
+// (but the one of object_cards, a table 0016 dropped)
+for (const statement of readFileSync('drizzle/0012_object_rights_triggers.sql', 'utf8').split('--> statement-breakpoint')) {
+  if (!statement.includes('`object_cards`')) sqlite.exec(statement)
+}
 
 type Method = 'run' | 'all' | 'values' | 'get'
 // D1 binds at most 100 values in one statement: a query with more works here but fails there, so it fails here too

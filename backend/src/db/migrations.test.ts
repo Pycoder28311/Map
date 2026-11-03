@@ -12,6 +12,7 @@ const run = (db: DatabaseSync, file: string) => {
   for (const statement of readFileSync(folder + file, 'utf8').split('--> statement-breakpoint')) db.exec(statement)
 }
 
+// The shared tables as they were up to 0015 (0016 drops object_cards)
 const TABLES = ['projects', 'notes', 'folders', 'articles', 'object_cards']
 
 describe('0008: positions become keys', () => {
@@ -69,7 +70,7 @@ describe('0011 + 0012: sharing and messages', () => {
   addUser('other')
   // A row of each table written before the migrations
   for (const table of TABLES) db.prepare(`INSERT INTO ${table} (user_id, title, created_at, updated_at) VALUES ('owner', 'old', ?, ?)`).run(now, now)
-  for (const file of files.filter((f) => f >= '0011')) run(db, file)
+  for (const file of files.filter((f) => f >= '0011' && f < '0016')) run(db, file)
   const NAMES: Record<string, string> = { projects: 'projects', notes: 'notes', folders: 'folders', articles: 'articles', object_cards: 'objectCards' }
 
   it('only adds columns: the old rows keep their data and get private, version 0', () => {
@@ -202,5 +203,30 @@ describe('0015: maps, and notes attached to one thing', () => {
   it('makes the maps table: a new map has no file yet (version 0)', () => {
     db.prepare("INSERT INTO maps (user_id, title, created_at, updated_at) VALUES ('u', 'M', ?, ?)").run(now, now)
     expect(db.prepare('SELECT title, branch_of, file_key, file_version, archived, position FROM maps').all()[0]).toEqual({ title: 'M', branch_of: 0, file_key: null, file_version: 0, archived: 0, position: 'a0' })
+  })
+})
+
+describe('0016: object cards are gone', () => {
+  const db = new DatabaseSync(':memory:')
+  db.exec('PRAGMA foreign_keys = ON') // as D1
+  for (const file of files.filter((f) => f < '0016')) run(db, file)
+  const now = Math.floor(Date.now() / 1000)
+  db.prepare("INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES ('owner', 'o', 'o@x.test', 1, ?, ?)").run(now, now)
+  db.prepare("INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES ('other', 'x', 'x@x.test', 1, ?, ?)").run(now, now)
+  for (const table of ['notes', 'object_cards']) db.prepare(`INSERT INTO ${table} (user_id, title, created_at, updated_at) VALUES ('owner', 'old', ?, ?)`).run(now, now)
+  const give = db.prepare("INSERT INTO object_rights (object_type, object_id, user_id, role, created_at) VALUES (?, 1, 'other', 'reader', ?)")
+  give.run('notes', now)
+  give.run('objectCards', now)
+  run(db, files.find((f) => f.startsWith('0016'))!)
+
+  it('drops the table and the rights given on its rows, and keeps the others', () => {
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE name = 'object_cards'").all()).toEqual([])
+    expect(db.prepare('SELECT object_type FROM object_rights').all()).toEqual([{ object_type: 'notes' }])
+  })
+
+  it('no longer takes a right on an object card, and still cleans up after the other tables', () => {
+    expect(() => give.run('objectCards', now)).toThrow()
+    db.prepare('DELETE FROM notes WHERE id = 1').run()
+    expect(db.prepare('SELECT count(*) AS n FROM object_rights').all()[0]).toEqual({ n: 0 })
   })
 })

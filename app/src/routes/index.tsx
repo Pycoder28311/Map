@@ -26,7 +26,7 @@ export default function AppRoutes() {
             <Route element={<RequireAuth />}>
                 <Route element={<AppLayout />}>
                     <Route path="/dashboard" element={<DashboardPage />} />
-                    {/* Each resource's list page (/projects, /notes, /object-cards…) */}
+                    {/* Each resource's list page (/projects, /notes, /folders…) */}
                     {resourcesWith('page').map((resource) => (
                         <Route key={resource.name} path={resource.surfaces.page} element={<ResourceListPage resource={resource} />} />
                     ))}

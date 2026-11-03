@@ -64,15 +64,6 @@ export const DATA = defineTables({
     requireOneOf: ['title', 'content'],
     link: PARENT,
   },
-  objectCards: {
-    access: 'owner',
-    share: true,
-    order: ORDERED,
-    fields: { title: field.text(200), content: field.richText() },
-    preview: 'content',
-    requireOneOf: ['title', 'content'],
-    link: PARENT,
-  },
   // A map (docs/plans/38): its name and its branch group here; everything drawn on it is one file in R2 (the `maps` routes), whose
   // key and version are columns of the backend's own (not fields: no client writes them). The owner's only for now
   maps: {
@@ -107,7 +98,7 @@ export type TableName = keyof typeof DATA
 export const TABLE_NAMES = Object.keys(DATA) as TableName[]
 
 /** The tables whose rows can be shared (`share: true`), by name: object_rights.object_type is one of them */
-export const SHAREABLE = ['projects', 'notes', 'folders', 'articles', 'objectCards'] as const satisfies readonly TableName[]
+export const SHAREABLE = ['projects', 'notes', 'folders', 'articles'] as const satisfies readonly TableName[]
 export type ShareableName = (typeof SHAREABLE)[number]
 export const isShareable = (name: string): name is ShareableName => (SHAREABLE as readonly string[]).includes(name)
 

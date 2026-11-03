@@ -9,14 +9,16 @@ type Autosave = ReturnType<typeof useItemAutosave>
  * The values the page saves, all of them in one object: a change of one field (the text, the title, the Info box, the autolinkers) goes
  * into it and the autosave gets them all, so two fields changed together (the text and its autolinkers) are one save. It starts again
  * with every new start (a draft kept, the server's version taken). Also the article's autolinkers (docs/plans/35): held here, read by the
- * Autolinker while typing and shown by its panel; a change is saved with the text
+ * Autolinker while typing and shown by its panel; a change is saved with the text. `onChange`: a starter's page, whose changes go there
  */
-export function useArticleFields(autosave: Autosave) {
+export function useArticleFields(autosave: Autosave, onChange?: (values: Record<string, string>) => void) {
   const values = useRef({ start: autosave.start.version, all: autosave.start.values })
   const field = (name: string, value: string) => {
     if (values.current.start !== autosave.start.version) values.current = { start: autosave.start.version, all: autosave.start.values }
     values.current.all = { ...values.current.all, [name]: value }
-    autosave.change(values.current.all)
+    // A starter is made instead (it has nothing to save over)
+    if (onChange) onChange(values.current.all)
+    else autosave.change(values.current.all)
   }
   const [rules, setRulesState] = useState(() => ({ start: autosave.start.version, list: fromStored(autosave.start.values.autolinkers) }))
   if (rules.start !== autosave.start.version) setRulesState({ start: autosave.start.version, list: fromStored(autosave.start.values.autolinkers) })

@@ -65,9 +65,9 @@ articles: {
 ```
 
 Every table also gets, without listing them: `id`, `user_id` (the owner), `created_at`, `updated_at`, `archived`, and the
-`order` columns (`pinned`, `position`). Names: the config key is camelCase (`objectCards`); the database uses snake_case
-(`object_cards`, `created_at`); the API path is kebab-case (`/api/object-cards`); the JSON and TypeScript use camelCase
-(`objectCards`, `createdAt`).
+`order` columns (`pinned`, `position`). Names: the config key is camelCase (`myThings`); the database uses snake_case
+(`my_things`, `created_at`); the API path is kebab-case (`/api/my-things`); the JSON and TypeScript use camelCase
+(`myThings`, `createdAt`).
 
 ### Field kinds
 
@@ -146,7 +146,8 @@ code first, then apply it. Saved Recent entries and layouts that point at it are
 ### Show a table in the sidebar or only on the Dashboard
 
 `resources.config.ts`: `sidebar: { limit: 5 }` gives it a sidebar section; without `sidebar` its items show only on the Dashboard (in
-the row of their project, or in the Orphans row), in the columns (⋯ on a column), on its list page and in search.
+the row of their project, or in the Orphans row), in the columns (⋯ on a column), on its list page and in search. A new user's Orphans
+row also has three starter cards that are not in the database yet: `starters.md`.
 
 ### Parent / child (projects and their folders, articles, cards, notes)
 
@@ -200,8 +201,9 @@ a note stays in its project or folder and is attached to one thing at most.
   Dashboard cards (before/after: left/right half), Dashboard rows (the end), sidebar rows (before/after: top/bottom; into a project or
   folder: the middle). The rules are one pure function, `resolvePlace` (tested). Pinned items stay among the pinned; a row sorted by date
   takes no drops on its cards.
-- **Orphans in the sidebar:** the Projects section also lists the orphans (no parent) of the resources that can have a parent but no section
-  of their own (folders, articles, object cards), among the projects by `position` (keys compare across tables). An item of those let go
+- **Orphans in the sidebar:** the Projects section also lists the orphans (no parent) of the resources with no section of their own
+  (folders, articles, and maps, which never have a parent), among the projects by `position` (keys compare across tables).
+  When there is only one project, it starts open. The closed sidebar leaves out an empty section (Notes, Shared with me), line and all. An item of those let go
   by a project row's edge loses its parent and takes the place where it was let go. Turn it off with `ORPHANS_IN_SIDEBAR` in
   `components/layout/sidebar/ResourceRows.tsx` (they stay on the Dashboard's Orphans row).
 - **Leaving a parent:** an item that is inside a parent and is let go by the top or bottom edge of a project row in the sidebar (between two
@@ -228,7 +230,7 @@ a note stays in its project or folder and is attached to one thing at most.
 
 ### Share a table's rows (`share: true`)
 
-`share: true` in a table's config (projects, notes, folders, articles and object cards have it; docs/plans/34) makes its rows shareable:
+`share: true` in a table's config (projects, notes, folders and articles have it; docs/plans/34) makes its rows shareable:
 
 - **Columns** (`ownedTable`): `visibility` (`private` | `public`), `version` (+1 with each change of one of the config's `fields`; not
   pin, position, parent, archive or visibility) and `edited_by` (who saved last). Only added columns: the migration is `ALTER TABLE … ADD`.
@@ -242,6 +244,8 @@ a note stays in its project or folder and is attached to one thing at most.
   /api/shared` (Shared with me, newest first), `GET /api/users/lookup?email=` (exact email, `USER_LOOKUP` rate limit). A row's rights
   go with it: a trigger on each shared table (migration `0012`) deletes them, also when an account's rows go by cascade. A new shared
   table needs its trigger in a new migration (`drizzle-kit generate --custom`) and its name in `SHAREABLE` (`data.config.ts`).
+  Changing `SHAREABLE` changes the CHECK of `object_rights`, so drizzle-kit rebuilds that table: the triggers that name it must be
+  dropped before and made again after (renaming a table checks every trigger), as migration `0016` does (object cards removed).
 - **App**: `useItemAutosave` sends `baseVersion`; a 409 stops saving and asks (Keep mine / Use the saved version); a 404 or 403 says the
   item can no longer be edited and keeps the draft. `listStore` never puts someone else's row into the user's lists. `ResourceEditor`
   is read-only for a reader and has `PrivacyButton` (`features/sharing/`) for the owner.

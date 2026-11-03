@@ -29,7 +29,7 @@ type MenuOptions = {
   onTrashed?: () => void
   /** The key that puts a new item first among its children (the sidebar shows them all; none: the server puts it first among all) */
   firstPosition?: () => string
-  /** Add ▸ a folder or an object card inside it: the owner shows a draft (the sidebar's draft row). Without it, every kind opens its Create modal */
+  /** Add ▸ a folder inside it: the owner shows a draft (the sidebar's draft row). Without it, every kind opens its Create modal */
   onDraft?: (kind: AnyResource) => void
 }
 
@@ -65,7 +65,7 @@ export function useResourceMenu(resource: AnyResource) {
     return { type, kinds: type ? RESOURCES.filter((r) => r.parents?.some((p) => p.type === type)) : [] }
   }
 
-  /** The + menu of a card (a folder's): a list of what to create inside it, each opening its Create modal (a folder or an object card: `onDraft`, a draft card beside it). Empty when nothing can be made inside it */
+  /** The + menu of a card (a folder's): a list of what to create inside it, each opening its Create modal (a folder: `onDraft`, a draft card beside it). Empty when nothing can be made inside it */
   const addMenuOf = (item: MenuItem, onDraft?: (kind: AnyResource) => void): TreeMenuGroup[] => {
     const { type, kinds } = kindsIn()
     if (!type || kinds.length === 0) return []
@@ -81,7 +81,7 @@ export function useResourceMenu(resource: AnyResource) {
     }
     const panel = resource.surfaces.panel ? { type: resource.panelType, id: String(item.id) } : undefined
     const canPin = resource.ui.row.pinned !== undefined
-    // An item that can be a parent (project, folder): Add ▸ what can be made inside it (notes and articles in their modal; folders and object cards as a draft)
+    // An item that can be a parent (project, folder): Add ▸ what can be made inside it (notes and articles in their modal; folders as a draft)
     const { type: parentType, kinds } = kindsIn()
     const create = {
       label: 'Add',

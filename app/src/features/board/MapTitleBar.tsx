@@ -4,7 +4,7 @@ import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
 import CrackedPanel from '../../components/ui/pixel/CrackedPanel'
 import TreeMenu from '../../components/ui/tree/TreeMenu'
-import { mapName, renameMap, useMaps } from '../maps/maps'
+import { mapName, renameMap, useMaps, type MapItem } from '../maps/maps'
 import { useWorkspace } from '../workspace/useWorkspace'
 import { getBoard } from './boardStore'
 import BranchesPopout from './BranchesPopout'
@@ -57,6 +57,8 @@ type Props = {
   onPickObject: (id: number) => void
   /** Moves the map to an object (a result opened) */
   onShowObject: (id: number) => void
+  /** The starter map (features/starters): not in the lists yet; a rename makes it */
+  starter?: { item: MapItem; onRename: (name: string) => void }
 }
 
 /**
@@ -65,7 +67,7 @@ type Props = {
  * (the name becomes an input: Enter or leaving it renames, Esc undoes), Branches, Layers, Screenshot. Search, Notes and Layers make the floating
  * bar the top of a panel as tall as the editor (`panel`); a selected point's form or an object's article (`form`) takes that place while it is open
  */
-export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onPanel, onPickObject, onShowObject }: Props) {
+export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onPanel, onPickObject, onShowObject, starter }: Props) {
   const shift = usePeekShift()
   // Never reaches the tool panel: it is right-aligned (25rem wide with its gaps) or centred (half of it, 13.5rem, plus the gaps).
   // Measured on the whole editor, sidebar included (`--editor-w`), not on the board's area: that one changes while a sidebar opens, and the bar must not
@@ -73,7 +75,7 @@ export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onP
     ? 'max-w-[calc(var(--editor-w,100%)-25rem)] @5xl:max-w-[calc(var(--editor-w,100%)/2-13.5rem)]'
     : 'max-w-[calc(var(--editor-w,100%)-25rem)] xl:max-w-[calc(var(--editor-w,100%)/2-13.5rem)]'
   const maps = useMaps()
-  const object = maps.find((m) => String(m.id) === mapId)
+  const object = maps.find((m) => String(m.id) === mapId) ?? starter?.item
   // The big name is the map's own (the first map of its branch group), whichever branch is open; the branch has its own item
   const title = maps.find((m) => object?.branchOf && m.id === object.branchOf) ?? object
   const branch = useCurrentBranch(mapId)
@@ -120,7 +122,10 @@ export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onP
 
   const commit = () => {
     const name = (draft ?? '').trim()
-    if (!cancelled.current && name && name !== title.title) void renameMap(title.id, name)
+    if (!cancelled.current && name && name !== title.title) {
+      if (starter) starter.onRename(name)
+      else void renameMap(title.id, name)
+    }
     cancelled.current = false
     setDraft(null)
   }

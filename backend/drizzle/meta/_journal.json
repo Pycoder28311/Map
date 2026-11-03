@@ -113,6 +113,13 @@
       "when": 1793487489051,
       "tag": "0015_maps_and_note_attachments",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1793735515931,
+      "tag": "0016_remove_object_cards",
+      "breakpoints": true
     }
   ]
 }

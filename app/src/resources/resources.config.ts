@@ -5,7 +5,7 @@ import type { TableName } from '@map/shared'
 import type { ComponentType } from 'react'
 import type { PanelProps } from '../features/workspace/types'
 import type { MockTableName } from './mock.config'
-import { LuBox, LuFileText, LuFolder, LuFolderClosed, LuLayoutTemplate, LuMap, LuStickyNote } from 'react-icons/lu'
+import { LuFileText, LuFolder, LuFolderClosed, LuLayoutTemplate, LuMap, LuStickyNote } from 'react-icons/lu'
 import type { PlainIcon } from '../components/ui/icons/IconSlot'
 import type { FieldWidget } from './types'
 
@@ -97,16 +97,6 @@ export const RESOURCE_UI: Record<TableName | MockTableName, ResourceUi> = {
     surfaces: { ...EVERYWHERE, quickCreate: true },
     // Its page: toolbar, text and Info box (features/articles)
     panel: { load: () => import('../features/articles/ArticlePanel') },
-  },
-  objectCards: {
-    panelType: 'object',
-    label: 'Object card',
-    plural: 'Object cards',
-    icon: LuBox,
-    untitled: 'Untitled object card',
-    card: 'image',
-    fields: { title: { placeholder: 'Title' }, content: { label: 'Text', placeholder: 'Describe it (pictures too)…' } },
-    surfaces: { ...EVERYWHERE },
   },
   // Saved pane layouts: shown by the sidebar's Layouts section (features/layouts), and in the Trash when archived. No other screen
   layouts: {

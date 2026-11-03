@@ -29,7 +29,7 @@ type Props = {
 }
 
 /**
- * A list of the app's objects to pick one: kind buttons on top (All, Article, Map, Object card, Folder, Project), a search, and the
+ * A list of the app's objects to pick one: kind buttons on top (All, Article, Map, Folder, Project), a search, and the
  * rows, read a page at a time (useObjectSearch) as the list is scrolled
  */
 export default function ObjectPicker({ onPick, only, exclude, chosen, listHeight = 'max-h-64', autoFocus = true, showSearch = true, archive = false }: Props) {

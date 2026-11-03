@@ -4,7 +4,7 @@
 import { isSafeLink } from './rich-text-policy'
 
 /** The kinds of object an Article link can point to: the resources' panel types */
-export const OBJECT_TYPES = ['article', 'map', 'object', 'folder', 'project'] as const
+export const OBJECT_TYPES = ['article', 'map', 'folder', 'project'] as const
 export type ObjectType = (typeof OBJECT_TYPES)[number]
 
 /** The autolinker that made a link: its id and the text it links */

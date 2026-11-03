@@ -15,7 +15,7 @@ app/src/components/ui/buttons/
 ├── IconButton.tsx                    square, only an icon (needs `label`)
 ├── SplitButton.tsx                   Venom in two pieces: an icon piece and a label piece (Add, Create)
 ├── ClosableButton.tsx                a button with an ✕ button beside it
-├── PanelButton.tsx                   the big gold one: ONLY the floating Create button
+├── PanelFrame.tsx                    the big gold square (Venom in gold, `.ui-btn-gold`, with a soft shadow; only its +): ONLY the floating Create button, which grows into the Create modal
 ├── ButtonLook.tsx                    looks like Button, isn't one (a dragged label)
 ├── ButtonContent.tsx                 (inside Button, ButtonLink, NavButton: icon + label, Stone's face)
 └── buttons.test.ts                   fails when a button is made any other way
@@ -67,7 +67,7 @@ veil) and its brackets, in `buttons.css`. The menu items' hover uses the same co
   rows, options of a picker, swatches, tree icons, tiles, drag handles, menu items. They are listed in `ALLOWED` in the
   test, with how many each file has and why. A new one goes there too, with its reason.
 - **No `ui-btn…` classes outside the buttons** (and ExtendMenu's box).
-- **`PanelButton` only in `features/create/CreateFab.tsx`.**
+- **`PanelFrame` only in `features/create/CreateFab.tsx`.**
 - **No look in `className`** on Button, ButtonLink, NavButton, IconButton, SplitButton: no `bg-`, `text-[`, padding,
   `rounded`, `shadow`, `border`. Layout classes are fine (`ms-auto`, `w-full`, `justify-start`, `absolute`, `opacity-0`).
   A look that is needed in several places becomes a modifier in `buttons.css` (like `.ui-btn-sm`).

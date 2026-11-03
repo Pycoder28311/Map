@@ -67,7 +67,10 @@ export const SHAPE_TYPES = [
 ] as const
 export type ShapeType = (typeof SHAPE_TYPES)[number]
 
-/** What a node can be (docs/plans/38: a point made into an article or an object card). Saved as its index + 1, so only ever added to */
+/**
+ * What a node can be (docs/plans/38: a point made into an article). Saved as its index + 1, so only ever added to: the second one was
+ * object cards, which the app no longer has (kept so that a saved index keeps its meaning; nothing makes one)
+ */
 export const REF_TYPES = ['articles', 'objectCards'] as const
 export type RefType = (typeof REF_TYPES)[number]
 
@@ -81,7 +84,7 @@ export type Base = {
   locked?: boolean
   /** Not drawn (no UI yet) */
   hidden?: boolean
-  /** The node is this article or object card: its content lives there (the later conversion; no UI yet) */
+  /** The node is this article: its content lives there (the later conversion; no UI yet) */
   ref?: { type: RefType; id: number }
   /**
    * A line's or a shape's description (the sidebar's textarea under its text or name); the article made for it starts with it. An area keeps

@@ -61,7 +61,7 @@ app.route('/api/maps', mapsFileRoutes)
 // What a table of the data config does its own way (lib/ownedRepo.ts RepoOverrides)
 const OVERRIDES: Partial<Record<TableName, RepoOverrides>> = { maps: mapsOverrides }
 
-// Every table of the data config, at /api/<its path> (e.g. /api/object-cards): GET / · GET /:id · POST / · PATCH /:id · DELETE /:id
+// Every table of the data config, at /api/<its path> (e.g. /api/folders): GET / · GET /:id · POST / · PATCH /:id · DELETE /:id
 // (instructions/data-config.md). A table with something of its own passes overrides to ownedRepo, or adds routes to its router
 for (const name of TABLE_NAMES) {
   const table = DATA[name]

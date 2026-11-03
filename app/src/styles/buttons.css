@@ -130,61 +130,11 @@
     transition: margin 0.18s ease-out;
   }
 
-  /* C1. Panel: big gold double frame, stepped corners, hard drop shadow;
-     pressing slides it into the shadow */
+  /* C1. Panel: the floating Create button, a square. It is a Venom button in gold (.ui-btn-venom.ui-btn-gold below: the brackets, the
+     bevels, the inner shadow and the press), with a soft shadow under it too; open (the Create modal it grows into) it is the page's
+     surface at once, with none of Venom's look */
   .ui-btn-panel {
-    --btn-font: var(--font-display);
-    --btn-font-size: 28.8px;
-    --btn-font-weight: 400;
-    --btn-line-height: 1;
-    --btn-pad-x: calc(var(--px) * 16);
-    --btn-pad-y: calc(var(--px) * 6);
-    --btn-text: var(--color-gold);
-    --btn-text-shadow: var(--px) var(--px) 0 var(--color-void);
-    --btn-bg: var(--color-crypt-800);
-    --btn-bg-top: var(--color-crypt-700);
-    --btn-border-line: var(--color-crypt-900);
-    --btn-border-inner: var(--color-gold-dark);
-    --btn-border-color: var(--color-gold);
-    --btn-border-halo: var(--color-void);
-    --btn-shadow-offset: calc(var(--px) * 3);
-    --btn-shadow-color: rgba(0, 0, 0, 0.6);
-    --btn-hover-text: var(--color-gold-hover);
-    --btn-hover-bg: var(--color-crypt-800-hover);
-    --btn-hover-bg-top: var(--color-crypt-700-hover);
-    --btn-hover-border-color: var(--color-gold-hover);
-    --btn-hover-border-inner: var(--color-gold-dark-hover);
-    --btn-press-shift: calc(var(--px) * 2);
-    --btn-press-shadow-offset: var(--px);
-    --_bg-top: var(--btn-bg-top);
-    --_border-color: var(--btn-border-color);
-    --_border-inner: var(--btn-border-inner);
-    --_shadow-offset: var(--btn-shadow-offset);
-    text-shadow: var(--btn-text-shadow);
-    background: linear-gradient(180deg, var(--_bg-top) 0 calc(var(--px) * 2), transparent 0), var(--_bg);
-    box-shadow:
-      inset 0 0 0 var(--px) var(--btn-border-line),
-      inset 0 0 0 calc(var(--px) * 2) var(--_border-inner),
-      0 var(--px-neg) 0 0 var(--_border-color),
-      0 var(--px) 0 0 var(--_border-color),
-      var(--px-neg) 0 0 0 var(--_border-color),
-      var(--px) 0 0 0 var(--_border-color),
-      0 calc(var(--px) * -2) 0 0 var(--btn-border-halo),
-      0 calc(var(--px) * 2) 0 0 var(--btn-border-halo),
-      calc(var(--px) * -2) 0 0 0 var(--btn-border-halo),
-      calc(var(--px) * 2) 0 0 0 var(--btn-border-halo),
-      var(--_shadow-offset) var(--_shadow-offset) 0 0 var(--btn-shadow-color);
-  }
-
-  .ui-btn-panel:hover:not(:disabled) {
-    --_bg-top: var(--btn-hover-bg-top);
-    --_border-color: var(--btn-hover-border-color);
-    --_border-inner: var(--btn-hover-border-inner);
-  }
-
-  .ui-btn-panel:active:not(:disabled) {
-    --_shadow-offset: var(--btn-press-shadow-offset);
-    transform: translate(var(--btn-press-shift), var(--btn-press-shift));
+    --btn-soft-shadow: 0 8px 20px rgba(0, 0, 0, 0.28), 0 2px 5px rgba(0, 0, 0, 0.2);
   }
 
   /* ---- bracket buttons: Venom, Shade, Venom split. Padding and the white
@@ -250,7 +200,7 @@
     --btn-bg: var(--color-venom);
     --btn-bevel-top: var(--color-venom-light);
     --btn-bevel-bottom: var(--color-venom-dark);
-    --btn-inner-shadow: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent 50%);
+    --btn-inner-shadow: linear-gradient(to top, rgba(0, 0, 0, 0.2), transparent 50%);
     --btn-shadow-y: var(--px);
     --btn-shadow-color: rgba(0, 0, 0, 0.6);
     --btn-split-text-edge: var(--btn-pad-x);
@@ -305,6 +255,42 @@
     --btn-press-bg: #7e2622;
     --btn-press-bevel-top: #5e1815;
     --btn-press-bevel-bottom: #c24d46;
+  }
+
+  /* Map: Venom in gold (the floating Create button): the same face, bevels, brackets and press, gold colours and a dark gray icon, and a soft
+     shadow under it besides Venom's own */
+  .ui-btn-venom.ui-btn-gold {
+    /* its + dark gray */
+    --btn-text: #2a2a2a;
+    --btn-hover-text: #222222;
+    --btn-press-text: #2a2a2a;
+    --btn-bg: var(--color-gold);
+    --btn-bevel-top: #ffe28f;
+    --btn-bevel-bottom: var(--color-gold-dark);
+    --btn-hover-bg: #f3c85a;
+    --btn-hover-bevel-top: #fff0b8;
+    --btn-hover-bevel-bottom: #a8791f;
+    --btn-press-bg: #c99a33;
+    --btn-press-bevel-top: #8a621c;
+    --btn-press-bevel-bottom: #e6c063;
+  }
+
+  .ui-btn-venom.ui-btn-gold.ui-btn-panel {
+    box-shadow:
+      inset 0 var(--px) 0 0 var(--_bevel-top),
+      inset 0 var(--px-neg) 0 0 var(--_bevel-bottom),
+      0 var(--_shadow-y) 0 0 var(--btn-shadow-color),
+      var(--btn-soft-shadow);
+  }
+
+  /* Open: the page's surface the moment it starts to grow, and nothing of Venom (no brackets, bevels or press: a click in the modal
+     presses it too) */
+  .ui-btn-venom.ui-btn-gold.ui-btn-panel[data-open],
+  .ui-btn-venom.ui-btn-gold.ui-btn-panel[data-open]:is(:hover, :active) {
+    background: var(--surface);
+    box-shadow: var(--btn-soft-shadow);
+    transform: none;
+    transition: none;
   }
 
   /* Venom split: two pieces (icon / label, iconPosition left or right) with a

@@ -52,22 +52,21 @@ describe('the resource registry', () => {
 
   it('finds a resource by name and by panel type', () => {
     expect(resourceByName('notes')?.panelType).toBe('note')
-    expect(resourceByPanelType('object')?.name).toBe('objectCards')
+    expect(resourceByPanelType('object')).toBeUndefined()
     expect(resourceByPanelType('map')?.name).toBe('maps')
     expect(resourceByPanelType('dashboard')).toBeUndefined()
     expect(resourceByPanelType(undefined)).toBeUndefined()
   })
 
   it('lists the resources that turned a screen on, and knows which can have a parent', () => {
-    expect(resourcesWith('trash').map((r) => r.name)).toEqual(['projects', 'notes', 'folders', 'articles', 'objectCards', 'layouts', 'maps'])
+    expect(resourcesWith('trash').map((r) => r.name)).toEqual(['projects', 'notes', 'folders', 'articles', 'layouts', 'maps'])
     expect(resourcesWith('quickCreate').map((r) => r.name)).toEqual(['notes', 'articles'])
-    expect(RESOURCES.filter((r) => r.linked).map((r) => r.name)).toEqual(['notes', 'folders', 'articles', 'objectCards'])
+    expect(RESOURCES.filter((r) => r.linked).map((r) => r.name)).toEqual(['notes', 'folders', 'articles'])
     expect(resourcesWith('sidebar').map((r) => r.name)).toEqual(['projects', 'notes'])
     expect(RESOURCES.filter((r) => r.parents?.length).map((r) => [r.name, r.parents!.map((p) => `${p.type}:${p.resource}`)])).toEqual([
       ['notes', ['project:projects', 'folder:folders']],
       ['folders', ['project:projects', 'folder:folders']],
       ['articles', ['project:projects', 'folder:folders']],
-      ['objectCards', ['project:projects', 'folder:folders']],
     ])
   })
 
@@ -80,14 +79,14 @@ describe('the resource registry', () => {
 
   it('makes a list page per resource with one, at its API path', () => {
     const pages = resourcePages()
-    expect(Object.keys(pages)).toEqual(['projects', 'notes', 'folders', 'articles', 'objectCards'])
-    expect(pages.objectCards.route!()).toBe('/object-cards')
+    expect(Object.keys(pages)).toEqual(['projects', 'notes', 'folders', 'articles'])
+    expect(pages.folders.route!()).toBe('/folders')
     expect(pages.notes.title()).toBe('Notes')
   })
 
   it('makes the workspace panel of each resource that can be one; a map\'s fills its pane', () => {
     const panels = resourcePanels()
-    expect(Object.keys(panels)).toEqual(['project', 'note', 'folder', 'article', 'object', 'map'])
+    expect(Object.keys(panels)).toEqual(['project', 'note', 'folder', 'article', 'map'])
     expect(panels.note.title()).toBe('Note')
     expect(panels.map.fill).toBe(true)
     expect(panels.note.fill).toBeFalsy()

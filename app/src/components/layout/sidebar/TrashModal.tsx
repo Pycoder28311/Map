@@ -128,11 +128,13 @@ export default function TrashModal({ trashed, onClose }: { trashed: ReturnType<t
           size="sm"
           footer={
             <>
-              <Button variant="secondary" onClick={() => setDeletingLayout(null)}>
+              <Button variant="ghost" plain filled onClick={() => setDeletingLayout(null)}>
                 Cancel
               </Button>
               <Button
-                variant="secondary"
+                variant="ghost"
+                plain
+                filled
                 className="text-danger"
                 onClick={() => {
                   setLayoutError(null)

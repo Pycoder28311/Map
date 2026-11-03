@@ -73,8 +73,8 @@ export default function CreateFab() {
       <div
         style={{
           insetInlineEnd: `calc(1.5rem + ${inset}px)`,
-          width: open ? `min(28rem, calc(100% - 3rem - ${inset}px))` : '12rem',
-          height: open ? 'min(44rem, calc(100% - 3rem))' : '3.5rem',
+          width: open ? `min(28rem, calc(100% - 3rem - ${inset}px))` : '4rem',
+          height: open ? 'min(44rem, calc(100% - 3rem))' : '4rem',
         }}
         className="absolute bottom-6 z-[21] transition-[inset-inline-end,width,height] duration-300 ease-in-out motion-reduce:transition-none"
       >

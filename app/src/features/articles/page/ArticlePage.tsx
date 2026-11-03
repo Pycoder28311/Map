@@ -10,6 +10,7 @@ import { useItemAutosave, type EditedItem } from '../../../components/ui/resourc
 import { uploadImage } from '../../../lib/api/images'
 import { authClient } from '../../../lib/auth-client'
 import { useResourceMenu } from '../../../lib/resource/actions'
+import type { FormValues } from '../../../lib/resource/changed'
 import { useNarrower } from '../../../lib/useNarrower'
 import type { AnyResource } from '../../../resources/types'
 import { useAttachedNotes, useMoveLocalNotes } from '../../notes/attachedNotes'
@@ -52,15 +53,19 @@ import { useZoom } from './useZoom'
  * floating at its top right (the text flows around it). Saved as it is edited, like every item (useItemAutosave). Its parts are in this
  * folder; this file holds the page's state and puts them together
  */
-export default function ArticlePage({ resource, item, focusField }: { resource: AnyResource; item: EditedItem; focusField?: string }) {
+export default function ArticlePage({ resource, item, focusField, onStarterChange }: { resource: AnyResource; item: EditedItem; focusField?: string; onStarterChange?: (values: FormValues) => void }) {
+  // A starter (features/starters): not on the server yet. It shows as an article, without what needs one there (sharing, its menu,
+  // where it is, notes, comments, the save status); its first change makes it (onStarterChange)
+  const starter = onStarterChange !== undefined
   const autosave = useItemAutosave(resource, item, {
     values: articleValues(resource),
     toPatch: articlePatch,
+    unsaved: starter,
   })
   const { menuOf, dialogs } = useResourceMenu(resource)
   const { data: session } = authClient.useSession()
   // The values the page saves (a change of one field saves them all) and the article's autolinkers
-  const { field, rules, setRules } = useArticleFields(autosave)
+  const { field, rules, setRules } = useArticleFields(autosave, onStarterChange)
   // The Info box always shows (it had a switch in the ⋯ menu once)
   const infoShown = true
   // Who can see the article (its owner's: the ⋯ menu's Private / Public); the people are read only when its panel opens
@@ -201,9 +206,9 @@ export default function ArticlePage({ resource, item, focusField }: { resource: 
               <OpenMessage panel={messagePanel} text={text} articleId={articleId} canEdit={canEdit} onEditLink={() => setLinkPopout('msg')} />
             </>
           }
-          leftTools={<RoundTools zoomed={zoomed} onZoom={() => setZoomed(!zoomed)} open={side} onToggle={toggleSide} messages={messages.length} notes={attachedNotes.items.length} />}
+          leftTools={starter ? null : <RoundTools zoomed={zoomed} onZoom={() => setZoomed(!zoomed)} open={side} onToggle={toggleSide} messages={messages.length} notes={attachedNotes.items.length} />}
           actions={
-            <ArticleActions
+            starter ? null : <ArticleActions
               name={name}
               panelKey={panelKey}
               isPublic={item.visibility === 'public'}
@@ -221,7 +226,7 @@ export default function ArticlePage({ resource, item, focusField }: { resource: 
           }
           infoShown={infoShown}
           // Where it is in its owner's projects: theirs only
-          folders={isOwner ? <ProjectFolders resource={resource} item={item} /> : null}
+          folders={isOwner && !starter ? <ProjectFolders resource={resource} item={item} /> : null}
           toolbar={
             // Always there for an editor (its buttons wait for the text to be opened), so opening the text never pushes it down
             <div className="sticky top-0 z-20 flex flex-col gap-1 bg-surface py-1 empty:hidden">
@@ -247,8 +252,8 @@ export default function ArticlePage({ resource, item, focusField }: { resource: 
             </div>
           }
           // Below the text, in every view (docs/plans/37): read when scrolled to
-          comments={<CommentsSection articleId={articleId} />}
-          footer={<ArticleFooter autosave={autosave} canEdit={canEdit} createdAt={item.createdAt} />}
+          comments={starter ? null : <CommentsSection articleId={articleId} />}
+          footer={starter ? null : <ArticleFooter autosave={autosave} canEdit={canEdit} createdAt={item.createdAt} />}
         />
         {dialogs}
         <Modal open={editInfo} onClose={() => setEditInfo(false)} title="Editing this article" size="sm">

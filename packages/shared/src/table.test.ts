@@ -26,8 +26,8 @@ describe('names', () => {
   it('derives the database and API names from the config key', () => {
     expect(snakeCase('objectCards')).toBe('object_cards')
     expect(kebabCase('objectCards')).toBe('object-cards')
-    expect(DATA.objectCards).toMatchObject({ name: 'objectCards', tableName: 'object_cards', path: 'object-cards' })
-    expect(TABLE_NAMES).toEqual(['projects', 'notes', 'folders', 'articles', 'objectCards', 'maps', 'layouts'])
+    expect(DATA.articles).toMatchObject({ name: 'articles', tableName: 'articles', path: 'articles' })
+    expect(TABLE_NAMES).toEqual(['projects', 'notes', 'folders', 'articles', 'maps', 'layouts'])
   })
   it('filters by parent where the table has a link, unless it says otherwise', () => {
     expect(DATA.folders.listFilters).toEqual(['archived', 'link'])

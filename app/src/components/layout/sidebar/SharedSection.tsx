@@ -48,6 +48,9 @@ export default function SharedSection({ compact }: { compact: boolean }) {
   const shared = useSyncExternalStore(subscribe, () => state)
   const workspace = useWorkspace()
 
+  // The closed sidebar leaves it out, line and all, unless it is known to hold something (its list is read only when it is opened)
+  if (compact && !(shared.status === 'ready' && shared.items.length > 0)) return null
+
   const toggle = () => {
     if (!open && shared.status === 'idle') void load(false)
     setOpen(!open)

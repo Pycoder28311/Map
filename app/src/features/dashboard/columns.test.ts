@@ -8,9 +8,9 @@ const lists = resourcesWith('dashboard').map((r) => r.name)
 describe('the lists', () => {
   it('are Recent and every resource with a Dashboard surface, in the UI config\'s order', () => {
     expect(menuEntries(cols, 0).map((e) => e.id)).toEqual(['recent', ...lists])
-    expect(lists).toEqual(['projects', 'notes', 'folders', 'articles', 'objectCards', 'maps'])
+    expect(lists).toEqual(['projects', 'notes', 'folders', 'articles', 'maps'])
     expect(DEFAULT_COLUMNS).toEqual(['recent', 'notes', 'maps'])
-    expect(columnLabel('objectCards')).toBe('Object cards')
+    expect(columnLabel('folders')).toBe('Folders')
   })
 })
 

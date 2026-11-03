@@ -30,7 +30,7 @@ type Props = {
 }
 
 /**
- * A draft of a folder or an object card, at the start of a Dashboard row, whatever the card looks like: the resource's own face
+ * A draft of a folder, at the start of a Dashboard row, whatever the card looks like: the resource's own face
  * (CardFace) with its body blurred (its box and outline stay sharp), with its title input and its Cancel / Create buttons floating over it. It is not in the database until Create. Then the blur
  * goes, the input moves onto the face's own title and the buttons slide away (all smoothly). A click outside decides (draftOutcome):
  * nothing typed discards it, a title creates it. Esc and Cancel discard.

@@ -9,7 +9,6 @@ import type { ObjectType } from './linkHref'
 export const PICKER_KINDS: { type: ObjectType; resource: string }[] = [
   { type: 'article', resource: 'articles' },
   { type: 'map', resource: 'maps' },
-  { type: 'object', resource: 'objectCards' },
   { type: 'folder', resource: 'folders' },
   { type: 'project', resource: 'projects' },
 ]

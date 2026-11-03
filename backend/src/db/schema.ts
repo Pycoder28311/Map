@@ -11,7 +11,6 @@ export const projects = ownedTable(DATA.projects)
 export const notes = ownedTable(DATA.notes)
 export const folders = ownedTable(DATA.folders)
 export const articles = ownedTable(DATA.articles)
-export const objectCards = ownedTable(DATA.objectCards)
 // A map's board is one file in R2 (docs/plans/38): which one, its version (a save says which it replaces) and where the map was branched from
 export const maps = ownedTable(DATA.maps, {
   // null: never saved (an empty board)
@@ -45,7 +44,7 @@ export const objectRights = sqliteTable(
   'object_rights',
   {
     id: id(),
-    // The config name of the row's table (`notes`, `objectCards`…) and its id. No foreign key can point at five tables: a trigger on
+    // The config name of the row's table (`notes`, `articles`…) and its id. No foreign key can point at four tables: a trigger on
     // each of them deletes the row's rights with it (migration 0012)
     objectType: text('object_type').notNull(),
     objectId: integer('object_id').notNull(),

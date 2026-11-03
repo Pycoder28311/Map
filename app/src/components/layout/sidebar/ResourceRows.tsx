@@ -1,12 +1,15 @@
 import { PAGE_SIZE_DEFAULT } from '@map/shared/page-size'
 import { Fragment, useEffect, useMemo, useState, type ComponentProps } from 'react'
-import { LuChevronsDown, LuChevronsUp, LuLoaderCircle, LuPin, LuSave, LuUnlink, LuX } from 'react-icons/lu'
+import { LuChevronsDown, LuChevronsUp, LuLoaderCircle, LuPin, LuSave, LuTrash2, LuUnlink, LuX } from 'react-icons/lu'
 import { CHILDREN, ROOTS } from '../../../features/dashboard/childResources'
 import { DRAFTED } from '../../../features/dashboard/draftKinds'
 import { groupByParent, parentTypeOf, type Entry } from '../../../features/dashboard/tree'
 import { placeDropData, type PlaceParent, type PlaceTarget } from '../../../features/drag/placeDrop'
 import { compareEntries, positionAtStart } from '../../../lib/resource/reorder'
-import { RESOURCES } from '../../../resources/registry'
+import { RESOURCES, resourceByName } from '../../../resources/registry'
+import { starterId } from '../../../features/starters/starterItems'
+import { dropStarter, useStarters } from '../../../features/starters/startersStore'
+import { authClient } from '../../../lib/auth-client'
 import PanelDragLink from '../../../features/workspace/PanelDragLink'
 import { useWorkspace } from '../../../features/workspace/useWorkspace'
 import { useResourceMenu } from '../../../lib/resource/actions'
@@ -100,7 +103,8 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
     const own = items.map((item) => ({ resource, item }) as Entry)
     if (!withKids || !ORPHANS_IN_SIDEBAR) return own
     const orphans = kids.lists.flatMap(({ resource: r, items: rows }) =>
-      r.parents?.length && !r.surfaces.sidebar ? rows.filter((row) => row.objectType == null).map((item) => ({ resource: r, item }) as Entry) : [],
+      // (a map has no parent: every map is one)
+      !r.surfaces.sidebar ? rows.filter((row) => row.objectType == null).map((item) => ({ resource: r, item }) as Entry) : [],
     )
     return [...own, ...orphans].sort(compareEntries)
   }, [items, resource, withKids, kids.lists])
@@ -122,7 +126,7 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
     }, 60)
   }
 
-  /** The + menu of an empty parent's row: what can be added in it (a note and an article in their modal, a folder and an object card as a draft row) */
+  /** The + menu of an empty parent's row: what can be added in it (a note and an article in their modal, a folder as a draft row) */
   const addMenuIn = (r: AnyResource, item: Item, parentNodeId: string) => {
     const menu = r === resource ? addMenuOf : childMenus.get(r.name)?.addMenuOf
     const groups = menu?.(menuItem(r, item), (kind) => startDraft(kind, r, item, parentNodeId))
@@ -188,6 +192,18 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
       addMenu: withKids && ownType && !ownChildren ? addMenuIn(resource, item, nodeId(item)) : undefined,
     }
   })
+  // A new user's starters (features/starters), after the orphans: rows that open their page, with only Delete in their ⋯
+  const { data: session } = authClient.useSession()
+  const nothing = items.length === 0 && kids.lists.every((l) => l.items.length === 0)
+  const starters = useStarters(withKids && ORPHANS_IN_SIDEBAR && list.status === 'ready' && kids.ready, nothing)
+  const starterNodes = new Map(
+    (withKids && ORPHANS_IN_SIDEBAR ? starters : []).map((starter) => {
+      const r = resourceByName(starter.resource)!
+      const node: TreeNode = { id: starterId(starter.key), label: starter.title, icon: r.ui.icon, panel: { type: r.panelType, id: starterId(starter.key) }, locked: true }
+      return [node.id, { node, starter }] as const
+    }),
+  )
+  nodes.push(...[...starterNodes.values()].map((s) => s.node))
   const hidden = nodes.length - limit
   const shown = showAll || hidden <= 0 ? nodes : nodes.slice(0, limit)
 
@@ -221,6 +237,8 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
         { icon: LuSave, label: 'Save', whileEditing: true, onClick: () => {} },
       ]
     }
+    const starter = starterNodes.get(node.id)?.starter
+    if (starter) return [{ label: `More: ${node.label}`, show: 'hover', menu: [[{ label: 'Delete', icon: LuTrash2, danger: true, onClick: () => session && dropStarter(session.user.id, starter.key) }]] }]
     const row = rowOf(node.id)
     const undrag: TreeRightIcon[] =
       node.panel && workspace.isPane(node.panel)
@@ -240,12 +258,17 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
         },
         // A new one goes first among the children it has here
         firstPosition: withKids ? () => positionAtStart(kidsOf.get(`${row.resource.name}:${row.item.id}`) ?? []) : undefined,
-        // Add ▸ a folder or an object card: a draft row in this row's rows (a Pinned copy's draft shows in the project's own rows)
+        // Add ▸ a folder: a draft row in this row's rows (a Pinned copy's draft shows in the project's own rows)
         onDraft: (kind) => startDraft(kind, row.resource, row.item, node.id.slice(prefix.length)),
       }),
     }
     return [...undrag, ...pin, more]
   }
+
+  // The only project is open from the start (its rows show); it can still be closed
+  // (once it has rows: an empty one has nothing to open, and would be closed again at once)
+  const onlyProject = withKids && items.length === 1 && nodes.find((n) => n.id === nodeId(items[0]))?.children?.length ? nodeId(items[0]) : null
+  const openFirst = useMemo(() => (onlyProject ? { id: onlyProject } : undefined), [onlyProject])
 
   const settings: SidebarTreeSettings = {
     ...tree,
@@ -265,7 +288,7 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
         {...props}
       />
     ),
-    reveal: draft?.reveal,
+    reveal: draft?.reveal ?? openFirst,
     onRename: (node, name) => {
       // The draft row: its name was typed, it is made now, in its parent. It stays (with a spinner) until the item is there
       if (draft && node.id === draft.nodeId) {

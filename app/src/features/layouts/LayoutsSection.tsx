@@ -36,6 +36,11 @@ import { positions, visibleCount } from './tileGrid'
 // Full class strings so Tailwind can detect them at build time.
 // Compact: the button narrows to a rail row (its icon's box + the row padding), like the tree's rows
 const BUTTON_COMPACT = 'max-w-[calc(2*var(--btn-px)+var(--btn-icon-size)+2*var(--btn-close-p))]'
+// The Create layout button is as tall as the rail is wide, open or closed (closed: a square), so nothing below it moves as the sidebar
+// opens or closes
+const BUTTON_TALL = 'min-h-[calc(2*var(--btn-px)+var(--btn-icon-size)+2*var(--btn-close-p))]'
+// Closed, its icon in the middle of the square
+const BUTTON_SQUARE = '[&>svg]:ml-0! pe-[calc(var(--btn-pad-x)-2px)]'
 // A tile slides between its grid place and its rail place with the sidebar
 const TILE = 'absolute transition-[left,top,width,height] duration-(--sidebar-duration) ease-out motion-reduce:transition-none'
 
@@ -47,7 +52,7 @@ type Hint = { kind: 'drag' | 'swap' | 'empty'; key?: string }
 const HINTS: Record<Hint['kind'], string> = {
   drag: 'Drag an object from the sidebar onto the panes to add it.',
   swap: 'Drag a pane by its grip onto the other one to swap them.',
-  empty: 'Create a map or an object card first: use the + next to Objects.',
+  empty: 'Create a map or an article first: use the + next to Objects.',
 }
 
 /** A CSS variable's length in px, as laid out: a variable made with calc() reads back as that text, so a probe element measures it */
@@ -332,11 +337,13 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
           size="sm"
           footer={
             <>
-              <Button variant="secondary" onClick={() => setDeleting(null)}>
+              <Button variant="ghost" plain filled onClick={() => setDeleting(null)}>
                 Cancel
               </Button>
               <Button
-                variant="secondary"
+                variant="ghost"
+                plain
+                filled
                 className="text-danger"
                 onClick={() => {
                   attempt('delete the layout', () => deleteLayout(deleting.id))
@@ -359,11 +366,12 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
 function CreateButton({ compact, onClick, className = '' }: { compact: boolean; onClick: () => void; className?: string }) {
   return (
     <Button
-      variant="secondary"
+      variant="ghost"
+      plain
       icon={LuLayoutTemplate}
       onClick={onClick}
       title="Create layout"
-      className={`w-full justify-start overflow-hidden whitespace-nowrap transition-[max-width] duration-(--sidebar-duration) ease-out motion-reduce:transition-none ${compact ? BUTTON_COMPACT : 'max-w-full'} ${className}`}
+      className={`w-full justify-start overflow-hidden whitespace-nowrap transition-[max-width] duration-(--sidebar-duration) ease-out motion-reduce:transition-none ${BUTTON_TALL} ${compact ? `${BUTTON_COMPACT} ${BUTTON_SQUARE}` : 'max-w-full'} ${className}`}
     >
       <span
         className={`overflow-hidden transition-[max-width,opacity] duration-(--sidebar-duration) ease-out motion-reduce:transition-none ${compact ? 'max-w-0 opacity-0' : 'max-w-40'}`}

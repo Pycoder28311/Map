@@ -30,7 +30,7 @@ export const LINK_KINDS: LinkKindInfo[] = [
     label: 'Attach Content',
     icon: LuFileSymlink,
     kinds: ['object'],
-    tip: 'Link to an article, map, object card, folder or project',
+    tip: 'Link to an article, map, folder or project',
     width: 'w-[28rem]',
     inAutolinker: true,
     searchable: true,

@@ -31,7 +31,7 @@ export default function DashboardPage() {
 
     return (
         <div className="relative min-h-full">
-            {/* The picture behind everything, under a dark layer */}
+            {/* The grid of triangles behind everything (it stays still, and darkens the further down the page is scrolled) */}
             <DashboardBackground />
             <div style={{ filter: DASHBOARD_SHADE }} className="relative mx-auto flex max-w-[65rem] flex-col gap-12 px-4 pt-8 pb-24">
                 <div className="flex justify-end">

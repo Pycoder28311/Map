@@ -26,6 +26,12 @@ import { sortByDate } from './sortByDate'
 import { CHILDREN, ROOTS } from './childResources'
 import { groupByParent, groupByRoot, parentTypeOf, type Entry } from './tree'
 import { useRowSort } from './useRowSort'
+import { LuPlus, LuTrash2 } from 'react-icons/lu'
+import { authClient } from '../../lib/auth-client'
+import { resourceByName } from '../../resources/registry'
+import { starterId, starterItem, type Starter } from '../starters/starterItems'
+import { dropStarter, useStarters } from '../starters/startersStore'
+import ResourceCard from './ResourceCard'
 import Button from '../../components/ui/buttons/Button'
 
 /** The Orphans row (what is in no project) comes before the project rows; false leaves it out */
@@ -41,7 +47,7 @@ type Creating = { resource: AnyResource; initial?: Record<string, unknown> }
 type Draft = { key: number; rowId: string; resource: AnyResource; initial: Record<string, unknown> }
 
 /**
- * Under the columns: a row per project, with its items in it (its folders, articles, object cards, notes…; what is inside a folder shows in the folder's card), then an Orphans row with what is in no project. A row is a strip of cards that scrolls sideways; its header sorts the
+ * Under the columns: a row per project, with its items in it (its folders, articles, maps, notes…; what is inside a folder shows in the folder's card), then an Orphans row with what is in no project. A row is a strip of cards that scrolls sideways; its header sorts the
  * cards and adds an item to the row (a child of the project). A card opens in its modal (the item's editor), or as a page when its
  * resource has a panel of its own (a map's board). All the lists are the ones the sidebar and the columns already hold: one request
  * each, shared (useResourceLists).
@@ -59,6 +65,7 @@ export default function DashboardSections() {
   const [drafts, setDrafts] = useState<Draft[]>([])
   const draftKey = useRef(0)
 
+  const projectResource = ROOTS.find((r) => r.panelType === 'project')
   const roots = useResourceLists(ROOTS, { limit: PAGE_SIZE_DEFAULT })
   const kids = useResourceLists(CHILDREN, { limit: PAGE_SIZE_DEFAULT })
 
@@ -69,6 +76,11 @@ export default function DashboardSections() {
   }, [kids.lists])
   // The cards a draft is settling onto: hidden until it has landed on them (`<resource>:<id>`)
   const [settling, setSettling] = useState<Set<string>>(new Set())
+
+  // A new user (nothing at all yet) finds three starters in the Orphans row: cards only, made when first edited (features/starters)
+  const { data: session } = authClient.useSession()
+  const nothing = roots.lists.every((l) => l.items.length === 0) && kids.lists.every((l) => l.items.length === 0)
+  const starters = useStarters(roots.ready && kids.ready, nothing)
 
   const { byRoot, orphans } = useMemo(
     () =>
@@ -186,7 +198,7 @@ export default function DashboardSections() {
               {!kids.ready ? (
                 <Placeholder>Loading…</Placeholder>
               ) : cards.length === 0 ? (
-                rowDrafts.length === 0 && <Placeholder>{row.root ? 'Nothing in this project yet' : 'Nothing here'}</Placeholder>
+                rowDrafts.length === 0 && !(row.id === ORPHANS && starters.length > 0) && <Placeholder>{row.root ? 'Nothing in this project yet' : 'Nothing here'}</Placeholder>
               ) : (
                 cards.map((item) => {
                   const entry = entryOf.get(item)!
@@ -219,10 +231,23 @@ export default function DashboardSections() {
                   )
                 })
               )}
+              {kids.ready &&
+                row.id === ORPHANS &&
+                starters.map((starter) => (
+                  <div key={starter.key} className="shrink-0">
+                    <StarterCard starter={starter} onOpen={() => open(single({ type: resourceByName(starter.resource)!.panelType, id: starterId(starter.key) }))} onDelete={() => session && dropStarter(session.user.id, starter.key)} />
+                  </div>
+                ))}
             </div>
           </RowSection>
         )
       })}
+      {/* Below the last project: a new project (it is a root, so it comes in no row's parent) */}
+      {projectResource && (
+        <Button variant="ghost" icon={LuPlus} onClick={() => setCreating({ resource: projectResource })} className="self-start">
+          Create project
+        </Button>
+      )}
       {kids.hasMore && (
         <Button variant="text" onClick={kids.loadMore} className="self-start">
           Load more items
@@ -259,6 +284,13 @@ export default function DashboardSections() {
       {creating && <ResourceCreateDialog resource={creating.resource} initial={creating.initial} onClose={() => setCreating(null)} />}
     </div>
   )
+}
+
+/** A starter's card: its resource's look, from the starter's values; its ⋯ has only Delete (it is not on the server: it just goes) */
+function StarterCard({ starter, onOpen, onDelete }: { starter: Starter; onOpen: () => void; onDelete: () => void }) {
+  const resource = resourceByName(starter.resource)!
+  const [item] = useState(() => starterItem(starter))
+  return <ResourceCard resource={resource} item={item} onOpen={onOpen} menu={[[{ label: 'Delete', icon: LuTrash2, danger: true, onClick: onDelete }]]} />
 }
 
 /** A row: an object dropped on it (not on a card) goes at its end, into its project (the Orphans row: out of its project) */

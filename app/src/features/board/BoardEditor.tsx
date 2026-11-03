@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ComponentProps, type KeyboardEvent, type PointerEvent } from 'react'
 import { changeObjects, canRedo, canUndo, redo, undo, updateObject, useBoard } from './boardStore'
 import { applyChange } from './changes'
 import { LuGalleryHorizontal, LuTrash2 } from 'react-icons/lu'
@@ -106,7 +106,7 @@ function Marquee({
  * and the zoom control floating over it. The Line tool is the pencil; the Mouse tool selects (features/board/useMouseTool);
  * Space or the middle button pans.
  */
-export default function BoardEditor({ mapId }: { mapId: string }) {
+export default function BoardEditor({ mapId, starter }: { mapId: string; starter?: ComponentProps<typeof MapTitleBar>['starter'] }) {
   const board = useBoard(mapId)
   // Save (the title bar's button, Ctrl/⌘+S): the only way the board reaches the server
   const saver = useMapSave(mapId)
@@ -814,6 +814,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
         {saver.conflict !== null && <MapConflictModal onKeepMine={saver.keepMine} onUseSaved={saver.useSaved} />}
         <MapTitleBar
           mapId={mapId}
+          starter={starter}
           save={visitor ? undefined : saver}
           form={
             formPoint ? (

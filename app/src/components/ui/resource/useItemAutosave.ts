@@ -16,6 +16,8 @@ type Options = {
   values?: (item: Record<string, unknown>) => FormValues
   /** The changed values as the update sends them (default: as they are), e.g. a JSON field parsed back */
   toPatch?: (changed: FormValues) => Record<string, unknown>
+  /** Not on the server (a starter, features/starters): it is never read, saved or kept as a draft; its page makes it instead */
+  unsaved?: boolean
 }
 
 /**
@@ -39,9 +41,9 @@ const isFinal = (error: Error) => error instanceof ApiError && [403, 404, 409].i
  * current version, asked about if the item changed since, dropped if it holds nothing new. `lost`: the item can no longer be saved
  * (deleted, or the user's right was taken away): the draft stays on this device
  */
-export function useItemAutosave(resource: AnyResource, item: EditedItem, { values = (i) => valuesOf(resource, i), toPatch = (c) => c }: Options = {}) {
+export function useItemAutosave(resource: AnyResource, item: EditedItem, { values = (i) => valuesOf(resource, i), toPatch = (c) => c, unsaved = false }: Options = {}) {
   const { update } = useResourceActions(resource)
-  const { refresh } = useResourceItem(resource, item.id)
+  const { refresh } = useResourceItem(resource, unsaved ? undefined : item.id)
   const { data: session } = authClient.useSession()
   const userId = session?.user.id
   const shared = typeof item.version === 'number'
@@ -52,7 +54,7 @@ export function useItemAutosave(resource: AnyResource, item: EditedItem, { value
 
   const [boot] = useState(() => {
     const storage = browserStorage()
-    const key = userId ? draftKey(userId, resource.name, item.id) : null
+    const key = userId && !unsaved ? draftKey(userId, resource.name, item.id) : null
     const draft = key ? readDraft<FormValues>(storage, key) : null
     // A save that landed on the server but was never answered (the page was reloaded while it was on its way) is the only change since
     // the draft's version when the server is exactly one version ahead and the user saved it: the draft is theirs on top of it
