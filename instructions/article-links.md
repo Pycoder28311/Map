@@ -27,9 +27,11 @@ app/src/features/articles/links/
 ├── objectSearch.ts      the Article link picker's pages (ObjectPages, nextToLoad)   ← server search goes here
 ├── useObjectSearch.ts   the picker's hook (one shared ObjectPages, fresh after 5 min)
 ├── linkExtensions.ts    editor: clicks, the autolinker while typing, find highlights, Ctrl/⌘+F; setArticleLink / removeArticleLink / goTo
+├── linkKinds.ts         ★ THE kinds of link (label, icon, tip, popout width, in the Autolinker or not): LinkRow and the Autolinker read it
 ├── LinkRow.tsx          the links row and its popouts (docked under the bar, or floating at an `@`: insertAt)
 ├── LinkForms.tsx        Real link and Message forms
-├── ObjectPicker.tsx · JumpPicker.tsx · FollowPicker.tsx · AutolinkPanel.tsx
+├── ObjectPicker.tsx · JumpPicker.tsx · FollowPicker.tsx
+├── AutolinkPanel.tsx    the Autolinker's modal; its form, parts and Import modal in autolinker/ (AutolinkForm · AutolinkParts · ImportModal)
 ├── LinkPreview.tsx      what a link shows of its target (useLinkInfo)                ← URL previews go here
 ├── LinkHoverCard.tsx · MessagePanel.tsx · JumpGutter.tsx · FindBar.tsx
 app/src/features/articles/messages/  messagesStore.ts (messages read on click, kept for the page) · MessageLinkForm.tsx · useLegacyMessages.ts
@@ -60,7 +62,7 @@ survives `sanitizeRichText` unchanged: a new key or kind needs a case there.
 
 The article's autolinkers are its `autolinkers` field (JSON, `packages/shared/src/autolinkers.ts`): `{ id, phrases, link, by }`, the link as an `#mapl:`
 href without its rule. They come with the article (an editor's and owner's copy; a reader's has none, and lists leave the field out) and are saved
-**with the text in the same request**: the page keeps all the values in one object (`field(name, value)` in `ArticlePanel`), so a rule and the links it
+**with the text in the same request**: the page keeps all the values in one object (`field(name, value)`, `page/useArticleFields.ts`), so a rule and the links it
 made change together. A link in the text still carries its rule's id and phrase (`a`, `t`): they are what "Go there" and the hover card read, and the
 rule's `id` here is that `a`. Limits: 50 autolinkers, 20 phrases each, a phrase in one autolinker only (the server refuses otherwise).
 

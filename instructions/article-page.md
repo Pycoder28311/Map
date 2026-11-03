@@ -7,12 +7,29 @@ article page. The links (the links row, `@`, Autolinker, Private / Public) are i
 
 ```
 app/src/features/articles/
-├── toolbarLevel.ts          the toolbar's narrow states, from its own width (LEVEL_WIDTHS: tune them here)
-├── ArticleToolbar.tsx       uses the level: 1 aligns → a dropdown, Ω box → Ω; 2 colours → row 2 (even with the ⋯ closed); 3 rows wrap
-├── StructureIcon.tsx        a structure drawn with dotted places (the Ω box's examples)
-├── MoreFormats.tsx          the Ω popout: Basics · SVGs · Mathematical · Others (symbols.ts SYMBOL_GROUPS)
+├── ArticlePanel.tsx         the panel (resources.config.ts loads it): not found / a new item / the page once the item is read
+├── page/                    THE PAGE SHELL (plan 39): state in hooks, one component per part
+│   ├── ArticlePage.tsx      the page's state, putting the parts together
+│   ├── pageConfig.ts        its sizes and timings (SIDE_MIN_WIDTH, BANNER_HEIGHT, TITLE_MAX…: tune them here)
+│   ├── articleValues.ts     the article's values for autosave (Info box, autolinkers as JSON)
+│   ├── useArticleFields.ts  field(name, value): every value saved together; the autolinker rules (+ useAdoptRules)
+│   ├── useSidePanel.ts · useZoom.ts · useMessagePanel.ts · useLinkHandlers.ts
+│   ├── ArticleBody.tsx      the bordered box: banner, folders, title row, toolbar slot, text + Info box, Add section, comments, footer
+│   ├── ArticleTitle.tsx · ArticleActions.tsx (Share, the ⋯) · SideColumn.tsx · OpenMessage.tsx · ArticleFooter.tsx
+│   └── ArticleBanner.tsx · ProjectFolders.tsx
+├── toolbar/                 THE EDIT BAR (one file per control; ArticleToolbar.tsx only lays out the rows)
+│   ├── toolbarConfig.ts     ★ every option list: sizes, weights, slants, underline kinds, paddings / gaps / borders (each value with its tag), lists, aligns, Media
+│   ├── toolbarTexts.ts      the hover tips' sentences
+│   ├── toolbarCommands.ts   what the controls do to the editor · useToolbarState.ts (what the bar shows)
+│   ├── toolbarLevel.ts      the toolbar's narrow states, from its own width (LEVEL_WIDTHS: tune them here)
+│   ├── ArticleToolbar.tsx   uses the level: 1 aligns → a dropdown, Ω box → Ω; 2 colours → row 2 (even with the ⋯ closed); 3 rows wrap
+│   ├── parts.tsx · ToolbarDropdown.tsx   the bar's building blocks (Tip, ToolButton, TextButton, FormatToggle; the dropdown in its three shapes)
+│   ├── TextControls.tsx (font, size) · StyleSplit.tsx (Bold, Italic: one control) · UnderlineControl.tsx · ColourButtons.tsx
+│   ├── ParagraphLook.tsx    padding, letter gap, row gap from one list, and the border
+│   ├── InsertMenu.tsx (Media) · LinkPopover.tsx (Link)
+│   └── omega/               OmegaBox.tsx (the Ω box) · MoreFormats.tsx (its popout: symbols.ts SYMBOL_GROUPS) · SymbolPanel.tsx · StructureIcon.tsx
 ├── save/                    useArticleRole (editor / reader) · savedStore (the saved list) · SaveButton
-├── side/                    ContentsTree (+ contentsTree.ts) · RoundTools · MessagesList · NotesPanel · articleNotes.ts
+├── side/                    ContentsTree (+ contentsTree.ts) · RoundTools · MessagesList · NotesPanel
 ├── text/                    THE TEXT (plan 36):
 │   ├── articleDoc.ts        pure: sections, windows (WINDOW: tune them here), moving a section
 │   ├── articleText.ts       ArticleText: the whole document, the window, the editor; useArticleText · useTextState · useTextEditor
@@ -20,7 +37,7 @@ app/src/features/articles/
 │   ├── StaticSections.tsx   sections drawn as HTML without an editor
 │   ├── staticDom.ts         a position ⇄ a point of the static HTML
 │   └── SectionHandles.tsx   the ⠿ (+ sectionDrag.ts, pure)
-├── sections/                sectionTypes.ts (THE list of section kinds, its groups, placeSection) · SectionMenu.tsx · useSectionMenu.ts
+├── sections/                sectionTypes.ts (THE list of section kinds, its groups, placeSection) · SectionMenu.tsx · useSectionMenu.ts · AddSectionPopover.tsx (the toolbar's and the bottom one)
 └── comments/                THE COMMENTS below the text (plan 37): CommentsSection · CommentCard · CommentModal · commentsStore
 app/src/components/ui/editors/structures.ts   the Word-like structures: places, Tab / Shift+Tab, Enter ends
 app/src/components/ui/editors/blocks.ts       Card, Row / Column, Callout (`<div data-type>`; the server's sanitizer keeps exactly these)
@@ -29,6 +46,10 @@ app/src/components/ui/overlays/FloatingAt.tsx a box floating above or below a li
 app/src/styles/articleBlocks.css              the look of cards, rows and callouts (editor and static text alike)
 app/src/lib/localStore.ts    the mock stores' base: a JSON value on this device that screens watch
 ```
+
+Shared with the whole app (plan 39): `lib/dates.ts` (the date formats), `lib/keepFocus.ts` (`onMouseDown={keepFocus}`: a control that leaves
+the caret in the text), `lib/urls.ts` (`withScheme`, `openInNewTab`), `lib/useNarrower.ts`, `lib/measureText.ts`, `TIP_DELAY` (HoverInfo.tsx:
+`delay={TIP_DELAY}` for a toolbar's or a panel's tips).
 
 ## The text (plan 36)
 

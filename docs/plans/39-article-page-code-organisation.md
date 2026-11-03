@@ -95,7 +95,7 @@ features/articles/
 ├── links/
 │   ├── linkKinds.ts              NEW: THE list of link kinds (label, icon, kinds, tip, popout width), read by LinkRow and AutolinkPanel
 │   ├── AutolinkPanel.tsx         the modal only (~250)
-│   ├── autolink/                 NEW: ImportModal.tsx, AutolinkForm.tsx, AutolinkParts.tsx (Slide, Tag, UrlColumn, SectionBody, Endpoint)
+│   ├── autolinker/                 NEW: ImportModal.tsx, AutolinkForm.tsx, AutolinkParts.tsx (Slide, Tag, UrlColumn, SectionBody, Endpoint)
 │   └── … (the rest unchanged)
 └── side/, text/, save/, comments/, messages/   unchanged (but the shared helpers of §3)
 
@@ -182,10 +182,10 @@ the links row slot, made from the components above. Same element tree, same clas
 - **`links/linkKinds.ts`**: `LinkRow`'s `BUTTONS` + `WIDTH` and `AutolinkPanel`'s `SECTIONS` describe the same five kinds (same labels, icons and
   order). One list: `{ id, label, icon, kinds, tip, width?, searchable, inAutolinker }`. `LinkRow` maps all of it; `AutolinkPanel` maps the ones
   with `inAutolinker` (all but Message: the same four, in the same order).
-- `AutolinkPanel.tsx` keeps the modal and its state; `links/autolink/` gets `ImportModal.tsx` (moved), `AutolinkForm.tsx` (the draft form:
+- `AutolinkPanel.tsx` keeps the modal and its state; `links/autolinker/` gets `ImportModal.tsx` (moved), `AutolinkForm.tsx` (the draft form:
   sentence, tags input, the four sections) and `AutolinkParts.tsx` (`Slide`, `Tag`, `UrlColumn`, `SectionBody`, `Endpoint`, `SIMPLE_INPUT`).
   `UrlColumn` uses `withScheme`, `Endpoint` uses `openInNewTab`.
-- The `autolink.ts` logic file (and its test) stays where it is: `links/autolink/` holds components only.
+- The `autolink.ts` logic file (and its test) stays where it is: `links/autolinker/` holds components only.
 
 ## 7 — Testing (that nothing changed)
 
@@ -224,7 +224,7 @@ the links row slot, made from the components above. Same element tree, same clas
 | 8 | `page/pageConfig.ts`, `articleValues.ts` and the hooks (`useArticleFields`, `useSidePanel`, `useZoom`, `useMessagePanel`, `useLinkHandlers`); `ArticlePage` moves to `page/` | `ArticlePanel.tsx`, `page/` |
 | 9 | Page components: `ArticleActions`, `SideColumn`, `OpenMessage`, `ArticleFooter`, `ArticleBody`, `ArticleTitle`; `linkRowProps`, `panelKey` everywhere | `page/` |
 | 10 | `links/linkKinds.ts`, used by `LinkRow` and `AutolinkPanel` + test | `links/` |
-| 11 | Split `AutolinkPanel` into `links/autolink/` (`ImportModal`, `AutolinkForm`, `AutolinkParts`) | `links/` |
+| 11 | Split `AutolinkPanel` into `links/autolinker/` (`ImportModal`, `AutolinkForm`, `AutolinkParts`) | `links/` |
 | 12 | Line count check (`wc -l`: nothing over ~250 but `articleText.ts`), the inventory diff, build, lint, tests | — |
 | 13 | Update `instructions/article-page.md` and `instructions/article-links.md` (Where things are) to the new paths | `instructions/` |
 | 14 | Manual pass (§7.4) | — |
