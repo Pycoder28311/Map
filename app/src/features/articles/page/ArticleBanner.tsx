@@ -1,8 +1,8 @@
 import { useRef, useState, type DragEvent } from 'react'
 import { LuImagePlus, LuX } from 'react-icons/lu'
-import Button from '../../components/ui/buttons/Button'
-import IconButton from '../../components/ui/buttons/IconButton'
-import { crackedPolygons } from '../dashboard/cards/crack'
+import Button from '../../../components/ui/buttons/Button'
+import IconButton from '../../../components/ui/buttons/IconButton'
+import { crackedPolygons } from '../../dashboard/cards/crack'
 
 /** How far (px) the crack wanders up and down along the banner's bottom edge, in all */
 const CRACK_DEPTH = 5

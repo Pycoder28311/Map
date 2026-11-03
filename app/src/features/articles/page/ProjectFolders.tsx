@@ -1,14 +1,14 @@
 import { PAGE_SIZE_DEFAULT } from '@map/shared/page-size'
 import { useState } from 'react'
 import { LuChevronDown } from 'react-icons/lu'
-import Button from '../../components/ui/buttons/Button'
-import BarPopover from '../../components/ui/overlays/BarPopover'
-import { useResourceList, useResourceLists } from '../../lib/resource/hooks'
-import { RESOURCES } from '../../resources/registry'
-import type { AnyResource } from '../../resources/types'
-import { CHILDREN, ROOTS } from '../dashboard/childResources'
-import { groupByParent, groupByRoot, parentChain, type Entry } from '../dashboard/tree'
-import { useWorkspace } from '../workspace/useWorkspace'
+import Button from '../../../components/ui/buttons/Button'
+import BarPopover from '../../../components/ui/overlays/BarPopover'
+import { useResourceList, useResourceLists } from '../../../lib/resource/hooks'
+import { RESOURCES } from '../../../resources/registry'
+import type { AnyResource } from '../../../resources/types'
+import { CHILDREN, ROOTS } from '../../dashboard/childResources'
+import { groupByParent, groupByRoot, parentChain, type Entry } from '../../dashboard/tree'
+import { useWorkspace } from '../../workspace/useWorkspace'
 
 type Item = Entry['item']
 /** An item of a folder was picked: it opens in this pane */

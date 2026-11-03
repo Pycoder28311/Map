@@ -1,13 +1,13 @@
 import { useEditorState, type Editor } from '@tiptap/react'
 import type { ReactNode } from 'react'
 import { LuSubscript, LuSuperscript } from 'react-icons/lu'
-import IconButton from '../../components/ui/buttons/IconButton'
-import type { PlainIcon } from '../../components/ui/icons/IconSlot'
-import { insertStructure, STRUCTURE_KINDS, STRUCTURES } from '../../components/ui/editors/structures'
+import IconButton from '../../../../components/ui/buttons/IconButton'
+import type { PlainIcon } from '../../../../components/ui/icons/IconSlot'
+import { insertStructure, STRUCTURE_KINDS, STRUCTURES } from '../../../../components/ui/editors/structures'
 import StructureIcon from './StructureIcon'
 import SymbolSections from './SymbolPanel'
 import { SYMBOL_GROUPS } from './symbols'
-import { keepFocus } from '../../lib/keepFocus'
+import { keepFocus } from '../../../../lib/keepFocus'
 
 type Format = { label: string; icon: PlainIcon; mark: string; run: (editor: Editor) => void }
 

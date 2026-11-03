@@ -1,4 +1,4 @@
-import { STRUCTURES, type StructureKind } from '../../components/ui/editors/structures'
+import { STRUCTURES, type StructureKind } from '../../../../components/ui/editors/structures'
 
 /** A structure as its button shows it: its parts, each place in a dotted box (like Word's equation buttons) */
 export default function StructureIcon({ kind }: { kind: StructureKind }) {
