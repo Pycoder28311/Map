@@ -1,30 +1,25 @@
 import { POINT_DEFAULT } from './pointLabels'
 import { describe, expect, it } from 'vitest'
-import { buttonCentre, buttonsFor } from './selectionButtons'
-import { border as border_, line, pts, shape, text } from './testing'
+import { buttonCentre, buttonsFor, handlePlace, handlesFor, sidebarButtonsFor } from './selectionButtons'
+import { border, line, pts, shape, text } from './testing'
 import type { PointObject } from './types'
 
-const actions = (objects: Parameters<typeof buttonsFor>[0]) => buttonsFor(objects).map((b) => b.action).sort()
+const point: PointObject = { id: 1, kind: 'point', layer: 1, name: '', links: [], anchor: { x: 0, y: 0 }, ...POINT_DEFAULT }
+const one = [line(1, pts([0, 0])), border(1, pts([0, 0])), shape(1), text(1), point]
+const several = [line(1, pts([0, 0])), shape(2)]
+const floating = (objects: Parameters<typeof buttonsFor>[0]) => buttonsFor(objects).map((b) => b.action).sort()
+const inSidebar = (objects: Parameters<typeof sidebarButtonsFor>[0]) => sidebarButtonsFor(objects).map((b) => b.action)
 
 describe('buttonsFor', () => {
-  it('gives a line the full set', () => {
-    expect(actions([line(1, pts([0, 0]))])).toEqual(['duplicate', 'flipH', 'flipV', 'link', 'remove', 'resize', 'split'])
+  it('floats only Link and Remove on one object, Link always at the bottom left', () => {
+    for (const o of one) {
+      expect(floating([o])).toEqual(['link', 'remove'])
+      expect(buttonsFor([o]).find((b) => b.action === 'link')!.corner).toBe('bl')
+    }
   })
 
-  it('gives a border no flips and no duplicate, and puts its link above the top-right button', () => {
-    const border = border_(1, pts([0, 0]))
-    expect(actions([border])).toEqual(['description', 'link', 'remove', 'resize', 'split'])
-    expect(buttonsFor([border]).find((b) => b.action === 'link')!.corner).toBe('tru')
-  })
-
-  it('gives several objects no split and no link', () => {
-    expect(actions([line(1, pts([0, 0])), shape(2)])).toEqual(['duplicate', 'flipH', 'flipV', 'remove', 'resize'])
-  })
-
-  it('gives a shape no split, and a point only the basics', () => {
-    expect(actions([shape(1)])).not.toContain('split')
-    const point: PointObject = { id: 1, kind: 'point', layer: 1, name: '', links: [], anchor: { x: 0, y: 0 }, ...POINT_DEFAULT }
-    expect(actions([point])).toEqual(['duplicate', 'link', 'remove'])
+  it('floats only Remove on several objects', () => {
+    expect(floating(several)).toEqual(['remove'])
   })
 
   it('has nothing for nothing', () => {
@@ -32,15 +27,43 @@ describe('buttonsFor', () => {
   })
 
   it('never puts two buttons on the same spot', () => {
-    for (const objects of [[line(1, pts([0, 0]))], [line(1, pts([0, 0])), shape(2)]]) {
-      const spots = buttonsFor(objects).map((b) => JSON.stringify(buttonCentre(b.corner, b.order, 100, 60)))
-      expect(new Set(spots).size).toBe(spots.length)
-    }
+    const spots = buttonsFor([line(1, pts([0, 0]))]).map((b) => JSON.stringify(buttonCentre(b.corner, 100, 60)))
+    expect(new Set(spots).size).toBe(spots.length)
   })
 })
 
-describe('text buttons', () => {
-  it('can resize and turn, copy, remove and link, but not flip or split', () => {
-    expect(actions([text(1)])).toEqual(['duplicate', 'link', 'remove', 'resize'])
+describe('sidebarButtonsFor', () => {
+  it('gives each kind what it can do', () => {
+    expect(inSidebar([line(1, pts([0, 0]))])).toEqual(['flipH', 'flipV', 'split', 'duplicate'])
+    expect(inSidebar([border(1, pts([0, 0]))])).toEqual(['split'])
+    expect(inSidebar([shape(1)])).toEqual(['flipH', 'flipV', 'duplicate'])
+    expect(inSidebar([text(1)])).toEqual(['duplicate'])
+    expect(inSidebar([point])).toEqual(['duplicate'])
+  })
+
+  it('gives several objects no split', () => {
+    expect(inSidebar(several)).toEqual(['flipH', 'flipV', 'duplicate'])
+  })
+
+  it('has nothing for nothing', () => {
+    expect(sidebarButtonsFor([])).toEqual([])
+  })
+})
+
+describe('handlesFor', () => {
+  it('gives a line, a border, a shape and several objects four corners and four edges', () => {
+    for (const objects of [[line(1, pts([0, 0]))], [border(1, pts([0, 0]))], [shape(1)], several]) expect(handlesFor(objects)).toHaveLength(8)
+  })
+
+  it('gives a pin alone none, and a text alone no top or bottom edge', () => {
+    expect(handlesFor([point])).toEqual([])
+    expect(handlesFor([text(1)])).toEqual(['tl', 'tr', 'bl', 'br', 'l', 'r'])
+  })
+
+  it('puts them at the corners and the middles of the edges', () => {
+    expect(handlePlace('tl')).toEqual({ x: 0, y: 0 })
+    expect(handlePlace('br')).toEqual({ x: 1, y: 1 })
+    expect(handlePlace('t')).toEqual({ x: 0.5, y: 0 })
+    expect(handlePlace('l')).toEqual({ x: 0, y: 0.5 })
   })
 })

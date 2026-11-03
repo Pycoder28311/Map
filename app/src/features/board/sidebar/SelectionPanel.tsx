@@ -1,5 +1,6 @@
 import { updateObject } from '../boardStore'
 import type { Patch } from '../boardStore'
+import type { SidebarAction } from '../selectionButtons'
 import type { BoardObject } from '../types'
 import type { Mode } from '../useMouseTool'
 import BorderSidebar from './border/BorderSidebar'
@@ -23,6 +24,8 @@ type Props = {
   onFocus: () => void
   onErase: () => void
   onDuplicate: () => void
+  /** The row of buttons under the sidebar's title */
+  onAction: (action: SidebarAction) => void
   onShowBoardObject: (id: number) => void
   /** Opens the left element of an object's article */
   onOpenArticle: (id: number) => void
@@ -35,7 +38,7 @@ type Props = {
 /** The panel at the top right: the sidebar of the object's kind for one object, the colours for several, nothing for none */
 export default function SelectionPanel({ selected, onPreview, pointTool, onPointTool, ...context }: Props) {
   if (selected.length === 0) return null
-  if (selected.length > 1) return <SelectionColoursSidebar mapId={context.mapId} selected={selected} />
+  if (selected.length > 1) return <SelectionColoursSidebar mapId={context.mapId} selected={selected} mode={context.mode} onAction={context.onAction} />
   const object = selected[0]
   // A held slider previews; a finished change is one undo step
   const apply = (patch: Patch, commit: boolean) => {

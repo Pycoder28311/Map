@@ -1,7 +1,7 @@
 // What the Line tool and the Border tool draw with: the style, the shape (or none) and the fill. Held while the app runs;
 // not part of any map, not undoable (the tool's sidebar edits it when nothing is selected).
 import { useSyncExternalStore } from 'react'
-import { PENCIL_STYLE } from './style'
+import { BORDER_PEN_STYLE, LINE_PEN_STYLE } from './style'
 import { POINT_DEFAULT } from './pointLabels'
 import { TEXT_DEFAULT } from './textDefaults'
 import type { BoxShape, Fill, PinIcon, PointLabel, ShapeType, Style, TextAlign } from './types'
@@ -39,9 +39,9 @@ function penStore<T>(start: T) {
   }
 }
 
-const line = penStore<Pen>({ style: PENCIL_STYLE, shape: null, param: 0, fill: null })
+const line = penStore<Pen>({ style: LINE_PEN_STYLE, shape: null, param: 0, fill: null })
 /** An area: mouse-like way, its inside lightly in the border's colour */
-const border = penStore<Pen>({ style: PENCIL_STYLE, shape: null, param: 0, fill: null })
+const border = penStore<Pen>({ style: BORDER_PEN_STYLE, shape: null, param: 0, fill: null })
 
 export const getPen = line.get
 export const setPen = line.set

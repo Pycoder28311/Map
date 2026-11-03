@@ -114,6 +114,8 @@ To change either, change the `--input-*` values at the top of `fields.css` (one 
 Stone's face (`.ui-btn-stone-face`) is cut to a polygon with points a little in from a straight edge, so its border is rough, not straight
 (`clip-path: var(--btn-rock)` in `buttons.css`). The polygon is made by `components/ui/buttons/rockEdge.ts` and set once in `main.tsx`; its
 two numbers are there: `ROCK_POINTS` (how many points along the long sides) and `ROCK_INTENSITY` (how far in a point can be, px; 0 is straight).
+While a Venom button (primary, create, the red Delete) is held it has no inner shadow, only one flat, darker colour (`--btn-press-bg`).
+
 Every Stone button has the same border. Its face has soft inner shadows (no light line on top, no dark band under it): `--stone-shade-sides`, `--stone-shade-bottom` (strength, 0 to 1) and `--stone-shade-spread` (px) at the top of the Map block of `.ui-btn-stone` in `buttons.css`, in the colour of the fields' inner shadow (`--input-inner-rgb`).
 
 ## Shade without brackets

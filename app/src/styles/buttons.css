@@ -36,7 +36,7 @@
   --color-venom-hover: #4cb946;
   --color-venom-light-hover: #8bfe71;
   --color-venom-dark-hover: #256c29;
-  --color-venom-face-press: #378a33;
+  --color-venom-face-press: #2d742a;
   --color-venom-light-press: #5cb84c;
   --color-venom-dark-press: #2b7330;
   --color-bone-hover: #fffff0;
@@ -285,6 +285,8 @@
 
   .ui-btn-venom:active:not(:disabled) {
     --_text: var(--btn-press-text);
+    /* held: one flat, darker colour, without the inner shadow (darker than the shadowed face, or pressing would seem to light it) */
+    --btn-inner-shadow: none;
     --_bg: var(--btn-press-bg);
     --_bevel-top: var(--btn-press-bevel-top);
     --_bevel-bottom: var(--btn-press-bevel-bottom);
@@ -300,7 +302,7 @@
     --btn-hover-bg: #bf3b35;
     --btn-hover-bevel-top: #f07a71;
     --btn-hover-bevel-bottom: #6e1c18;
-    --btn-press-bg: #952b27;
+    --btn-press-bg: #7e2622;
     --btn-press-bevel-top: #5e1815;
     --btn-press-bevel-bottom: #c24d46;
   }
@@ -785,6 +787,7 @@
     transition:
       width 0.2s ease-out,
       height 0.2s ease-out,
+      margin-left 0.2s ease-out,
       color 0.2s ease-out,
       background-color 0.2s ease-out,
       var(--br-transition);
@@ -925,6 +928,7 @@
     transition:
       width 0.2s ease-out,
       height 0.2s ease-out,
+      margin-left 0.2s ease-out,
       color 0s 0.2s,
       background-color 0s 0.2s,
       background-position 0s 0.2s,

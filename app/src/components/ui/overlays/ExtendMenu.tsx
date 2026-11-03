@@ -6,6 +6,7 @@ import ButtonLook from '../buttons/ButtonLook'
 import { splitButtonClass } from '../buttons/buttonStyles'
 import SplitButton, { SplitContent } from '../buttons/SplitButton'
 import type { ButtonIcon } from '../icons/IconSlot'
+import { extendShift, roomOf } from './extendShift'
 
 // The box that grows is a button of the same look (styles/buttons.css, "ExtendMenu"): closed, its button shows; open,
 // it is the button's face, with the options in it
@@ -37,8 +38,6 @@ type Props<T extends string> = {
   iconPosition?: 'left' | 'right'
   /** Which way it extends: down from the button (default), or up (for a button at the bottom of its container) */
   direction?: 'down' | 'up'
-  /** center (default): it grows the same on both sides of the button; end: its right edge stays on the button's, it grows to the left (a button at the right end of a row) */
-  align?: 'center' | 'end'
   className?: string
 }
 
@@ -72,7 +71,6 @@ export default function ExtendMenu<T extends string>({
   openLabel = 'None',
   iconPosition = 'left',
   direction = 'down',
-  align = 'center',
   className = '',
 }: Props<T>) {
   const id = useId()
@@ -81,11 +79,16 @@ export default function ExtendMenu<T extends string>({
   const sizerRef = useRef<HTMLDivElement>(null)
   const optionsRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
+  const [button, setButton] = useState<Size | null>(null)
+  const [options, setOptions] = useState<Size>({ width: 0, height: 0 })
   // While it folds back (CLOSE_MS): it keeps its open look and only shrinks (styles/buttons.css, data-closing)
   const [closing, setClosing] = useState(false)
   const { set: setClosingTimer, clear: clearClosingTimer } = useTimeout()
+  // How far the open box is moved so that it stays in view, next to an edge (extendShift.ts); 0 almost always
+  const [shift, setShift] = useState(0)
   const close = useCallback(() => {
     setOpen(false)
+    setShift(0)
     setClosing(true)
     setClosingTimer(() => setClosing(false), CLOSE_MS)
   }, [setClosingTimer])
@@ -94,9 +97,9 @@ export default function ExtendMenu<T extends string>({
     clearClosingTimer()
     setClosing(false)
     setOpen(true)
+    const wrap = wrapRef.current
+    if (wrap && button) setShift(extendShift(wrap.getBoundingClientRect(), Math.max(button.width, options.width), roomOf(wrap)))
   }
-  const [button, setButton] = useState<Size | null>(null)
-  const [options, setOptions] = useState<Size>({ width: 0, height: 0 })
   // Only what the button doesn't already show
   const items = allItems.filter((item) => item.value !== value)
 
@@ -193,16 +196,16 @@ export default function ExtendMenu<T extends string>({
       {/* The box: it grows (and wider) over what's beside it, down from the button or up. Its brackets are drawn on this
           box, so they move out to the corners of the dropdown as it grows */}
       <div
-        style={grown}
+        style={grown && { ...grown, marginLeft: shift }}
         data-open={open}
         data-closing={closing}
         // Anchored at the button's centre: growing wider, it extends the same on both sides, and the
-        // button's own content (centred) stays where it is
-        className={`${BOX[variant]} absolute ${direction === 'up' ? 'bottom-0 flex-col-reverse' : 'top-0 flex-col'} flex ${align === 'end' ? 'right-0' : 'left-1/2 -translate-x-1/2'} z-20`}
+        // button's own content (centred) stays where it is (next to an edge the whole box moves over a little: `shift`)
+        className={`${BOX[variant]} absolute ${direction === 'up' ? 'bottom-0 flex-col-reverse' : 'top-0 flex-col'} flex left-1/2 -translate-x-1/2 z-20`}
       >
         {variant === 'create' ? (
           // Its own size, centred: the box grows around it, and it stays where it was
-          <SplitButton {...toggle} {...split(open)} className={`shrink-0 ${align === 'end' ? 'self-end' : 'self-center'}`} />
+          <SplitButton {...toggle} {...split(open)} className="shrink-0 self-center" />
         ) : (
           <Button variant="ghost" {...toggle}>
             {render(children, open)}

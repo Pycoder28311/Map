@@ -53,6 +53,9 @@ export function applyView(ctx: CanvasRenderingContext2D, view: Viewport, dpr: nu
 
 /** How much wider (screen px) the halo of a hovered object is */
 const HALO_PX = 6
+/** How strong the halo is (0 to 1, of the object's own opacity): a border's is lighter */
+const HALO_OPACITY = 0.25
+const BORDER_HALO_OPACITY = 0.12
 
 function pathOf(ctx: CanvasRenderingContext2D, line: Point[], closed: boolean) {
   ctx.beginPath()
@@ -368,7 +371,7 @@ export function paintObject(ctx: CanvasRenderingContext2D, o: BoardObject, scale
       }
     }
   }
-  if (hovered) strokeAll(HALO_PX, (style.opacity / 100) * 0.25)
+  if (hovered) strokeAll(HALO_PX, (style.opacity / 100) * (o.kind === 'border' ? BORDER_HALO_OPACITY : HALO_OPACITY))
   // The shadow is made by the outermost thing painted: the stroke round the line, else the line itself
   const shadow = style.shadow
   if (shadow) {

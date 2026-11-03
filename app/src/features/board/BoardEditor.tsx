@@ -38,7 +38,7 @@ import { useMapSave } from './useMapSave'
 import { useMoveLocalNotes } from '../notes/attachedNotes'
 import PointCard from './PointCard'
 import { clearSelection, select, useSelection } from './selection'
-import { buttonsFor, type BoxAction } from './selectionButtons'
+import { buttonsFor, handlesFor, type BoxAction, type SidebarAction } from './selectionButtons'
 import PathEditor from './PathEditor'
 import SelectionBox from './SelectionBox'
 import SelectionPanel, { type StylePreview } from './sidebar/SelectionPanel'
@@ -608,16 +608,16 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
 
   const onBoxAction = (action: BoxAction) => {
     const one = mouse.selected.length === 1 ? mouse.selected[0] : null
+    if (action === 'remove') mouse.removeSelected()
+    else if (one) startLinkPick({ mapId, objectId: one.id })
+  }
+  const onSidebarAction = (action: SidebarAction) => {
     if (action === 'flipH') mouse.flip('h')
     else if (action === 'flipV') mouse.flip('v')
     else if (action === 'duplicate') mouse.duplicateSelected()
-    else if (action === 'remove') mouse.removeSelected()
-    else if (action === 'split') mouse.setMode(mouse.mode === 'split' ? 'select' : 'split')
-    else if (action === 'description') document.getElementById('area-description')?.focus()
-    else if (action === 'link' && one) startLinkPick({ mapId, objectId: one.id })
+    else mouse.setMode(mouse.mode === 'split' ? 'select' : 'split')
   }
   const focusSelected = () => boxBounds && focusOn(boxBounds)
-  const onlyPaths = mouse.selected.length > 0 && mouse.selected.every((o) => o.kind === 'line' || o.kind === 'border')
   // With the Text tool a selected text shows its box with all its buttons and its own sidebar, just as with the Mouse tool
   const textSelected = tool === 'text' && mouse.selected.length > 0 && mouse.selected.every((o) => o.kind === 'text')
   const showBox = !visitor && (tool === 'mouse' || ((toolSelected || textSelected) && !pointMode)) && boxBounds && view && !text.editing
@@ -749,10 +749,10 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
             bounds={boxBounds}
             view={view}
             buttons={buttonsFor(boxObjects)}
-            splitting={mouse.mode === 'split'}
-            disabled={onlyPaths ? [] : ['split']}
+            handles={handlesFor(boxObjects)}
             onAction={onBoxAction}
-            onHandle={() => mouse.beginResize()}
+            onHandle={(handle) => mouse.beginResize(handle)}
+            onRotate={(e) => mouse.beginRotate(e)}
           />
         )}
         {tool === 'mouse' && view && (
@@ -905,6 +905,7 @@ export default function BoardEditor({ mapId }: { mapId: string }) {
             onFocus={focusSelected}
             onErase={() => mouse.setMode(mouse.mode === 'erase' ? 'select' : 'erase')}
             onDuplicate={mouse.duplicateSelected}
+            onAction={onSidebarAction}
             onPreview={setStylePreview}
             onShowBoardObject={(id) => {
               select(mapId, [id])

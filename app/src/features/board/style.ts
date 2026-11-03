@@ -19,6 +19,12 @@ export const DEFAULT_STYLE: Style = {
 /** What the pencil draws with */
 export const PENCIL_STYLE: Style = { ...DEFAULT_STYLE, softness: undefined }
 
+/** What the Line tool starts with */
+export const LINE_PEN_STYLE: Style = { ...PENCIL_STYLE, thickness: 4 }
+
+/** What the Border tool starts with: thinner and lighter than a line, so areas stay quiet on the map (an area's inside takes this colour too: drawBorder.ts) */
+export const BORDER_PEN_STYLE: Style = { ...PENCIL_STYLE, thickness: 2, color: '#6b7280' }
+
 const FIXED_WIDTH = 1
 const ARROW_START = 2
 const ARROW_END = 4

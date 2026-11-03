@@ -21,6 +21,8 @@ type Props = {
   icon?: PlainIcon
   /** With `icon`'s kind of button: a letter (as a square button of a DropdownField, the arrow beside it) drawn in the colour with a small paintbrush (in the colour too) at its lower right, instead of the icon and its bar (a text colour: a coloured capital A that is being painted) */
   letter?: string
+  /** With `wide`: there is no colour yet, so the swatch says this instead of showing `value` (`value` is only where the picker starts) */
+  empty?: string
 }
 
 // The picker opens by the swatch: a native popover (top layer: never cut by the sidebar's scroll area; closes on a click outside or Esc).
@@ -32,7 +34,7 @@ const EDGE = 8
 const GAP = 6
 
 /** A labelled colour input: live while the picker moves, committed once when it is let go. Its picker opens next to the swatch */
-export default function ColourField({ label, value, onLive, onCommit, className = '', shown, bare, wide, icon: Icon, letter }: Props) {
+export default function ColourField({ label, value, onLive, onCommit, className = '', shown, bare, wide, icon: Icon, letter, empty }: Props) {
   const id = useId()
   // The colour while the picker moves; null: the saved one
   const [held, setHeld] = useState<string | null>(null)
@@ -92,7 +94,11 @@ export default function ColourField({ label, value, onLive, onCommit, className 
               : `${wide ? 'h-9 w-full' : 'size-9'} cursor-pointer rounded-(--btn-close-radius) border border-line bg-transparent p-0.5`
           }
         >
-          <span className="block size-full rounded-(--corner-xs)" style={{ backgroundColor: held ?? value }} />
+          {empty !== undefined && held === null ? (
+            <span className="flex size-full items-center justify-center text-small text-fg-muted">{empty}</span>
+          ) : (
+            <span className="block size-full rounded-(--corner-xs)" style={{ backgroundColor: held ?? value }} />
+          )}
         </button>
       )}
       <div id={id} popover="auto" role="dialog" aria-label={`${label} picker`} onBeforeToggle={place} onToggle={(e) => e.newState === 'closed' && setHeld(null)} className={PANEL}>

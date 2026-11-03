@@ -5,6 +5,7 @@ import AttachedTextField from '../common/AttachedTextField'
 import ObjectArticleSection from '../common/ObjectArticleSection'
 import PointToolButton from '../common/PointToolButton'
 import ObjectFrame, { type ObjectFrameContext } from '../common/ObjectFrame'
+import SelectionActions from '../common/SelectionActions'
 import BorderCountySection from './BorderCountySection'
 import BorderFillSection from './BorderFillSection'
 import LineEditButtons from '../line/LineEditButtons'
@@ -49,12 +50,14 @@ export default function BorderSidebar({ object, apply, pointTool = false, onPoin
     // A closed area's sidebar starts like a line's: the text in it (its name), then its description and article (an open one keeps the name row)
     <ObjectFrame object={object} actions={['focus']} header={object.open ? undefined : null} {...context}>
       <div className="flex flex-col gap-3">
-        {onPointTool && (
-          <div className="flex flex-col gap-2">
-            <h2 className="text-heading">Border</h2>
-            <PointToolButton on={pointTool} onToggle={onPointTool} what="border" />
+        <div className="flex flex-col gap-2">
+          {/* The title, and its buttons at the right end of its line */}
+          <div className="flex items-center justify-between gap-2">
+            {onPointTool && <h2 className="text-heading">Border</h2>}
+            <SelectionActions selected={[object]} mode={context.mode} onAction={context.onAction} />
           </div>
-        )}
+          {onPointTool && <PointToolButton on={pointTool} onToggle={onPointTool} what="border" />}
+        </div>
         {!object.open && (
           <AttachedTextField
             mapId={context.mapId}

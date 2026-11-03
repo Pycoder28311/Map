@@ -10,7 +10,7 @@ import { densify, eraseObject } from './erase'
 import { hitTestPart, objectsInRect } from './hit'
 import { findJunction, joinLines, type Junction } from './join'
 import { hitPathPoint, moveHandle, movePoint } from './pathEdit'
-import { duplicate, flip as flipObjects, moveBy, remove, resizeAndTurn, resizeTo } from './operations'
+import { duplicate, flip as flipObjects, isEdgeHandle, moveBy, remove, resizeAndTurn, resizeEdge, resizeTo, rotateBy, type BoxHandle } from './operations'
 import { clearSelection, getSelection, select, toggleSelected, useSelection } from './selection'
 import { splitBorder, splitLine, splitOpenBorder } from './split'
 import type { Board, BoardObject, BorderObject, LineObject, Point } from './types'
@@ -31,7 +31,8 @@ type Gesture =
   | { type: 'press'; id: number | null; start: Point; startBoard: Point; wasSelected: boolean; base: number[]; /** A plain click on bare board (no drag) lets go of the selection */ clearOnClick?: boolean }
   | { type: 'move'; startBoard: Point; snapshot: BoardObject[] }
   | { type: 'marquee'; startBoard: Point; base: number[] }
-  | { type: 'resize'; start: Rect; snapshot: BoardObject[] }
+  | { type: 'resize'; handle: BoxHandle; start: Rect; snapshot: BoardObject[] }
+  | { type: 'rotate'; centre: Point; from: number; snapshot: BoardObject[] }
   | { type: 'erase'; centres: Point[]; snapshot: (LineObject | BorderObject)[] }
   | { type: 'vertex'; index: number; line: LineObject | BorderObject; startBoard: Point }
   | { type: 'handle'; index: number; side: 'in' | 'out'; line: LineObject | BorderObject; alt: boolean }
@@ -148,8 +149,12 @@ export function useMouseTool({ mapId, board, view, toLocal }: Props) {
       setMarquee(rect)
       select(latest.current.mapId, [...g.base, ...objectsInRect(board, rect).map((o) => o.id)])
     } else if (g.type === 'resize') {
-      // Dragging the handle sizes and turns about the opposite corner; Alt sizes to any ratio without turning
-      show(e.altKey ? resizeTo(g.snapshot, g.start, p, false) : resizeAndTurn(g.snapshot, g.start, p, e.shiftKey))
+      // An edge's point changes only the width or the height. A corner's sizes and turns about the opposite corner; Alt sizes to any ratio without turning
+      if (isEdgeHandle(g.handle)) show(resizeEdge(g.snapshot, g.start, p, g.handle))
+      else show(e.altKey ? resizeTo(g.snapshot, g.start, p, false, g.handle) : resizeAndTurn(g.snapshot, g.start, p, e.shiftKey, g.handle))
+    } else if (g.type === 'rotate') {
+      // Round the middle of the box, as far as the pointer has gone round it; Shift turns in steps
+      show(rotateBy(g.snapshot, g.centre, Math.atan2(p.y - g.centre.y, p.x - g.centre.x) - g.from, e.shiftKey))
     } else if (g.type === 'erase') {
       const radius = ERASER_PX / view.scale
       const last = g.centres[g.centres.length - 1]
@@ -281,11 +286,21 @@ export function useMouseTool({ mapId, board, view, toLocal }: Props) {
     if (hit?.kind === 'line') splitAt(hit, p)
   }
 
-  /** The box's resize handle was pressed */
-  const beginResize = () => {
+  /** One of the points on the box was pressed */
+  const beginResize = (handle: BoxHandle) => {
     const start = unionBounds(latest.current.selected)
     if (!start || gesture.current) return
-    gesture.current = { type: 'resize', start, snapshot: latest.current.selected }
+    gesture.current = { type: 'resize', handle, start, snapshot: latest.current.selected }
+    listen()
+  }
+
+  /** Pressed just outside the box: it turns round its middle, as far as the pointer goes round it */
+  const beginRotate = (e: { clientX: number; clientY: number }) => {
+    const start = unionBounds(latest.current.selected)
+    if (!start || gesture.current) return
+    const centre = { x: start.x + start.w / 2, y: start.y + start.h / 2 }
+    const p = boardPoint(e)
+    gesture.current = { type: 'rotate', centre, from: Math.atan2(p.y - centre.y, p.x - centre.x), snapshot: latest.current.selected }
     listen()
   }
 
@@ -322,6 +337,7 @@ export function useMouseTool({ mapId, board, view, toLocal }: Props) {
     hover,
     doubleClick,
     beginResize,
+    beginRotate,
     cancel,
     flip: (axis: 'h' | 'v') => void changeObjects(mapId, flipObjects(latest.current.selected, axis)),
     duplicateSelected: () => select(mapId, changeObjects(mapId, duplicate(latest.current.selected))),

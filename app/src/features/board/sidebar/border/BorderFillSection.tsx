@@ -22,6 +22,7 @@ export default function BorderFillSection({
     <SidebarSection id="border-fill" title="Fill">
       <ColourOpacityRow
         colour={colour}
+        none={!fill}
         onColourLive={(color) => withColour(color, false)}
         onColourCommit={(color) => withColour(color, true)}
         opacity={fill?.opacity ?? 0}

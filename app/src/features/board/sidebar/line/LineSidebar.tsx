@@ -2,6 +2,7 @@ import type { Patch } from '../../boardStore'
 import { lineStylePatch } from '../../drawLine'
 import type { LineObject } from '../../types'
 import PointToolButton from '../common/PointToolButton'
+import SelectionActions from '../common/SelectionActions'
 import ObjectFrame, { type ObjectFrameContext } from '../common/ObjectFrame'
 import LineArrowsSection from './LineArrowsSection'
 import LineColourSection from './LineColourSection'
@@ -27,12 +28,14 @@ export default function LineSidebar({ object, apply, pointTool = false, onPointT
   return (
     <ObjectFrame object={object} header={null} {...context}>
       <div className="flex flex-col gap-3">
-        {onPointTool && (
-          <div className="flex flex-col gap-2">
-            <h2 className="text-heading">Line</h2>
-            <PointToolButton on={pointTool} onToggle={onPointTool} what="line" />
+        <div className="flex flex-col gap-2">
+          {/* The title, and its buttons at the right end of its line */}
+          <div className="flex items-center justify-between gap-2">
+            {onPointTool && <h2 className="text-heading">Line</h2>}
+            <SelectionActions selected={[object]} mode={context.mode} onAction={context.onAction} />
           </div>
-        )}
+          {onPointTool && <PointToolButton on={pointTool} onToggle={onPointTool} what="line" />}
+        </div>
         <AttachedTextField
           mapId={context.mapId}
           owner={object}

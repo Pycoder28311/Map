@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import ValueBar from '../../../../components/ui/fields/ValueBar'
-import { DEFAULT_STYLE } from '../../style'
+import { DEFAULT_STYLE, LINE_PEN_STYLE } from '../../style'
 import ColourField from '../../../../components/ui/fields/ColourField'
 import SidebarSection from '../common/SidebarSection'
 import LineTexturePicker from './LineTexturePicker'
@@ -16,6 +16,8 @@ type Props = StyleSectionProps & {
   title?: string
   /** A shape's outline may have no thickness (0) */
   minThickness?: number
+  /** What the thickness's turn-back icon goes back to: where its tool starts */
+  defaultThickness?: number
   /** The line's Texture dropdown (road textures): for the Line tool */
   roads?: boolean
   /** At the top of the section, above the colour */
@@ -25,7 +27,7 @@ type Props = StyleSectionProps & {
 }
 
 /** The line's colour (a swatch half the row wide, the opacity as a number beside it) and thickness, with room above and below for the kind's own things */
-export default function LineColourSection({ title = 'Colour', minThickness = 1, roads, before, after, ...props }: Props) {
+export default function LineColourSection({ title = 'Colour', minThickness = 1, defaultThickness = LINE_PEN_STYLE.thickness, roads, before, after, ...props }: Props) {
   const { style } = props
   const set = styleSetter(props)
   return (
@@ -56,7 +58,7 @@ export default function LineColourSection({ title = 'Colour', minThickness = 1, 
         value={style.thickness}
         min={minThickness}
         max={40}
-        defaultValue={DEFAULT_STYLE.thickness}
+        defaultValue={defaultThickness}
         presets={THICKNESS_PRESETS}
         grid={{ rows: 2, columns: 3 }}
         onLive={(thickness) => set({ thickness }, false)}

@@ -16,6 +16,8 @@ type Props = Omit<ComponentProps<'button'>, 'children'> & IconEffects & {
   round?: boolean
   /** In a square bar (the map's title bar), no light line along its bottom while it is on: it shows that by its panel (.ui-btn-noline) */
   noline?: boolean
+  /** Its Shade background shows all the time, so it reads over a picture (the buttons around a map's selection: .ui-btn-filled) */
+  filled?: boolean
 } & (
     | { icon: PlainIcon; /** Extra classes of the icon (e.g. its own animation) */ iconClassName?: string; children?: never }
     /** An icon of its own (e.g. one that changes with a state): sized by the button */
@@ -33,6 +35,7 @@ export default function IconButton({
   bigIcon,
   round,
   noline,
+  filled,
   type = 'button',
   className = '',
   hoverEffect,
@@ -46,7 +49,7 @@ export default function IconButton({
       type={type}
       aria-label={label}
       title={label}
-      className={iconButtonClass(variant, `${ICON_EFFECT_GROUP} ${bright ? 'ui-btn-bright' : ''} ${bigIcon ? 'ui-btn-big-icon' : ''} ${round ? 'ui-btn-round' : ''} ${noline ? 'ui-btn-noline' : ''} ${className}`, size)}
+      className={iconButtonClass(variant, `${ICON_EFFECT_GROUP} ${bright ? 'ui-btn-bright' : ''} ${bigIcon ? 'ui-btn-big-icon' : ''} ${round ? 'ui-btn-round' : ''} ${noline ? 'ui-btn-noline' : ''} ${filled ? 'ui-btn-filled' : ''} ${className}`, size)}
       {...button}
     >
       {variant === 'secondary' ? <span className="ui-btn-stone-face">{icon}</span> : icon}

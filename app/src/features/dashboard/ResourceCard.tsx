@@ -16,6 +16,9 @@ import CardFace from './cards/cardFaces'
 import { ON_HOVER } from './cards/cardStyles'
 import MapPreview from './cards/MapPreview'
 
+/** A map card's zoom and ⋯: the same square, so they line up and their hover backgrounds are the same shape */
+const CARD_BUTTON = 'flex size-8 shrink-0'
+
 type Props = {
   resource: AnyResource
   item: Record<string, unknown> & { id: number | string; createdAt?: string }
@@ -79,9 +82,19 @@ export default function ResourceCard({ resource, item, menu, onOpen, place, cont
   const more = (
     // Its own button: clicking it doesn't open the card
     <div onClick={(e) => e.stopPropagation()} className={`absolute end-2 top-2 flex ${ON_HOVER}`}>
-      {look === 'map' && <IconButton icon={LuMaximize2} label={`Zoom ${title}`} onClick={() => setZoomed(true)} />}
+      {look === 'map' && (
+        <span className={CARD_BUTTON}>
+          <IconButton icon={LuMaximize2} label={`Zoom ${title}`} onClick={() => setZoomed(true)} className="size-full! min-h-0!" />
+        </span>
+      )}
       {addMenu && addMenu.length > 0 && <IconMenu label={`Add to ${title}`} icon={LuPlus} groups={addMenu} />}
-      <TreeMenu label={`More: ${title}`} groups={menu} />
+      {look === 'map' ? (
+        <span className={CARD_BUTTON}>
+          <TreeMenu label={`More: ${title}`} groups={menu} fill />
+        </span>
+      ) : (
+        <TreeMenu label={`More: ${title}`} groups={menu} />
+      )}
     </div>
   )
   const marks = (
