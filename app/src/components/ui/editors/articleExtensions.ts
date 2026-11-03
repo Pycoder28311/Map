@@ -2,7 +2,7 @@ import { DOMSerializer } from '@tiptap/pm/model'
 import { Extension, type Editor, type Extensions, type JSONContent } from '@tiptap/react'
 import Subscript from '@tiptap/extension-subscript'
 import Superscript from '@tiptap/extension-superscript'
-import { TableKit } from '@tiptap/extension-table'
+import { TableKit, TableRow } from '@tiptap/extension-table'
 import TextAlign from '@tiptap/extension-text-align'
 import { BackgroundColor, FontFamily } from '@tiptap/extension-text-style'
 import { blockExtensions } from './blocks'
@@ -60,6 +60,23 @@ const ParagraphStyle = Extension.create({
   },
 })
 
+/** A table row that can be made taller (dragging its lower border, TableTools): `height` in px, written as the row's style (the server keeps exactly this) */
+const TableRowWithHeight = TableRow.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      height: {
+        default: null,
+        parseHTML: (element: HTMLElement) => {
+          const px = parseInt(element.style.height, 10)
+          return px > 0 ? px : null
+        },
+        renderHTML: (attributes: { height?: number | null }) => (attributes.height ? { style: `height: ${attributes.height}px` } : {}),
+      },
+    }
+  },
+})
+
 export const articleExtensions: Extensions = [
   FontFamily,
   BackgroundColor,
@@ -68,7 +85,8 @@ export const articleExtensions: Extensions = [
   TextAlign.configure({ types: ['heading', 'paragraph'] }),
   Subscript,
   Superscript,
-  TableKit.configure({ table: { resizable: false } }),
+  TableKit.configure({ table: { resizable: false }, tableRow: false }),
+  TableRowWithHeight,
   ParagraphStyle,
   // Maths structures with places to fill (the Ω box)
   Structures,

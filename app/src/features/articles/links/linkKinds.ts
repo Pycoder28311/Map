@@ -1,6 +1,6 @@
 // THE kinds of link an article's words can be, in the order the links row shows them: LinkRow draws all of them, the Autolinker's
 // panel the ones it can make (all but Message). A new kind is one entry here (and its form in LinkRow, its picker in the Autolinker).
-import { LuCornerDownRight, LuExternalLink, LuFileSymlink, LuMessageSquareText, LuUserPlus } from 'react-icons/lu'
+import { LuCornerDownRight, LuFileSymlink, LuLink, LuMessageSquareText, LuUserPlus } from 'react-icons/lu'
 import type { PlainIcon } from '../../../components/ui/icons/IconSlot'
 import type { LinkKind } from './linkHref'
 
@@ -24,7 +24,7 @@ export type LinkKindInfo = {
 }
 
 export const LINK_KINDS: LinkKindInfo[] = [
-  { id: 'url', label: 'Link', icon: LuExternalLink, kinds: ['url'], tip: 'Link to a web page', inAutolinker: true, searchable: false },
+  { id: 'url', label: 'Link', icon: LuLink, kinds: ['url'], tip: 'Link to a web page', inAutolinker: true, searchable: false },
   {
     id: 'object',
     label: 'Attach Content',

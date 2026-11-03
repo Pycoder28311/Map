@@ -2,11 +2,13 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, ty
 import type { Node as PMNode } from '@tiptap/pm/model'
 import { LuGripHorizontal, LuGripVertical, LuMinus, LuPlus } from 'react-icons/lu'
 import type { ArticleText } from './articleText'
-import { deleteColumn, deleteRow, insertColumn, insertRow, moveColumn, moveRow } from './tableOps'
+import { COLUMN_WIDTH, clampSize, deleteColumn, deleteRow, insertColumn, insertRow, moveColumn, moveRow, ROW_HEIGHT, setColumnWidths, setRowHeight } from './tableOps'
 import { keepFocus } from '../../../lib/keepFocus'
 
 /** How near a grid line the pointer must be for it to light up (px) */
 const NEAR = 6
+/** How near a grid line the pointer must be for its + to show at once (px): the +s go to the border the pointer is close to, without waiting (SWITCH_MS) */
+const REACH = 14
 /** How far outside the table the pointer can go and its tools stay (they are out there) */
 const KEEP = 64
 /** How long the pointer stays on another row or column before the tools go to it (ms): on its way out to them it crosses others */
@@ -17,6 +19,8 @@ const OUT = 14
 /** The table under the pointer, its row and column there (-1: none yet), the edge of each nearest to the pointer, and the grid line it is on (if any) */
 type Hover = { table: HTMLTableElement; row: number; col: number; colEdge: number; rowEdge: number; line: { kind: 'col' | 'row'; at: number } | null }
 type Drag = { kind: 'col' | 'row'; from: number; to: number }
+/** A border being dragged to resize: the grid line it is (`at`: the column or row before it is resized) and where the pointer is (screen px) */
+type Resize = { kind: 'col' | 'row'; at: number; to: number }
 
 /** The table's grid lines in screen px: its columns' edges (from its first row) and its rows' edges */
 function gridOf(table: HTMLTableElement) {
@@ -51,7 +55,9 @@ function Tool({ label, onClick, onPointerDown, children, grab }: { label: string
  * The tools of a table of the text, on an editor's page, while the pointer is over it:
  * - one + for the column under the pointer, above the table at the column's edge nearer to the pointer, and one for its row, at the table's left
  *   at the row's nearer edge: it adds a column or a row
- *   there; the line lights up along the whole table while the + or the line itself is under the pointer (a click on the line adds too);
+ *   there (close to a border, its + shows at once); the line lights up along the whole table while the + or the line itself is under the pointer. Only the + adds: a click on the line does nothing;
+ * - on a border: the double arrow, and dragging it moves the border (the column before it wider and the next narrower, or the row taller); the
+ *   sizes are saved in the table (a cell's `colwidth`, a row's `height`);
  * - above the column under the pointer, and at the left of its row: a ⠿ to drag the column (or row) to another place (a line shows where it
  *   goes) and a − to take it away.
  * The changes are made on the whole text, so a table that is not open for editing changes as it is. `box`: the element around the text (positioned)
@@ -59,6 +65,7 @@ function Tool({ label, onClick, onPointerDown, children, grab }: { label: string
 export default function TableTools({ text, box }: { text: ArticleText; box: RefObject<HTMLElement | null> }) {
   const [hover, setHover] = useState<Hover | null>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
+  const [resize, setResize] = useState<Resize | null>(null)
   // The + under the pointer lights its line
   const [lit, setLit] = useState<{ kind: 'col' | 'row'; at: number } | null>(null)
   // A move to another row or column, waiting (SWITCH_MS)
@@ -94,11 +101,14 @@ export default function TableTools({ text, box }: { text: ArticleText; box: RefO
       const dx = col < 0 ? Infinity : Math.abs(xs[col] - e.clientX)
       const dy = row < 0 ? Infinity : Math.abs(ys[row] - e.clientY)
       const line = Math.min(dx, dy) > NEAR ? null : dx <= dy ? { kind: 'col' as const, at: col } : { kind: 'row' as const, at: row }
+      // Close to a border: its + shows at once, on that border
+      const nearCol = dx <= REACH ? col : -1
+      const nearRow = dy <= REACH ? row : -1
       const old = shown.current
       const r = cell ? (cell.parentElement as HTMLTableRowElement).rowIndex : old?.table === table ? old.row : -1
       const c = cell ? cell.cellIndex : old?.table === table ? old.col : -1
       // Another row or column of a table whose tools show: they go to it only once the pointer has stayed there a moment
-      const elsewhere = old && old.table === table && (old.row !== r || old.col !== c)
+      const elsewhere = old && old.table === table && (old.row !== r || old.col !== c) && nearCol < 0 && nearRow < 0
       window.clearTimeout(pending.current)
       if (elsewhere) {
         pending.current = window.setTimeout(() => apply(r, c), SWITCH_MS)
@@ -108,8 +118,8 @@ export default function TableTools({ text, box }: { text: ArticleText; box: RefO
       function apply(r: number, c: number) {
       setHover((old) => {
         // The hovered column's edge (left or right) and row's edge (top or bottom) nearer to the pointer: where their + is
-        const colEdge = c < 0 ? -1 : Math.abs(xs[c] - e.clientX) <= Math.abs(xs[c + 1] - e.clientX) ? c : c + 1
-        const rowEdge = r < 0 ? -1 : Math.abs(ys[r] - e.clientY) <= Math.abs(ys[r + 1] - e.clientY) ? r : r + 1
+        const colEdge = nearCol >= 0 ? nearCol : c < 0 ? -1 : Math.abs(xs[c] - e.clientX) <= Math.abs(xs[c + 1] - e.clientX) ? c : c + 1
+        const rowEdge = nearRow >= 0 ? nearRow : r < 0 ? -1 : Math.abs(ys[r] - e.clientY) <= Math.abs(ys[r + 1] - e.clientY) ? r : r + 1
         const same = old && old.table === table && old.row === r && old.col === c && old.colEdge === colEdge && old.rowEdge === rowEdge && old.line?.kind === line?.kind && old.line?.at === line?.at
         return same ? old : { table: table as HTMLTableElement, row: r, col: c, colEdge, rowEdge, line }
       })
@@ -178,29 +188,91 @@ export default function TableTools({ text, box }: { text: ArticleText; box: RefO
     window.addEventListener('pointerup', onUp)
   }
 
+  /**
+   * A border dragged: it moves. A column border makes the column before it wider and the one after it narrower by as much (the table keeps
+   * its width; the table's right edge makes the last column wider, up to the text's width); a row border makes the row before it taller. A line
+   * shows where it will end. A click without a drag changes nothing
+   */
+  const startResize = (kind: 'col' | 'row', at: number) => (e: ReactPointerEvent) => {
+    if (e.button !== 0 || at < 1) return
+    e.preventDefault()
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    const g = gridOf(table)
+    // Every column's width now: all are saved together, so only the dragged border's two columns change
+    const widths = g.xs.slice(1).map((right, i) => right - g.xs[i])
+    const edge = kind === 'col' ? g.xs[at - 1] : g.ys[at - 1]
+    const was = kind === 'col' ? widths[at - 1] : g.ys[at] - g.ys[at - 1]
+    const next = kind === 'col' ? widths[at] : undefined
+    const room = Math.max(g.rect.width, table.parentElement?.getBoundingClientRect().width ?? 0) - (g.rect.width - was)
+    const base = kind === 'col' ? COLUMN_WIDTH : ROW_HEIGHT
+    const most = kind === 'col' ? (next !== undefined ? was + next - COLUMN_WIDTH.min : room) : base.max
+    const limits = { min: base.min, max: Math.max(base.min, Math.min(base.max, most)) }
+    const start = kind === 'col' ? e.clientX : e.clientY
+    const sizeAt = (m: { clientX: number; clientY: number }) => clampSize(was + (kind === 'col' ? m.clientX : m.clientY) - start, limits)
+    setResize({ kind, at, to: kind === 'col' ? g.xs[at] : g.ys[at] })
+    const onMove = (m: PointerEvent) => setResize((r) => (r ? { ...r, to: edge + sizeAt(m) } : r))
+    const onUp = (u: PointerEvent) => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      setResize(null)
+      const size = sizeAt(u)
+      if (Math.abs(size - was) < 2) return
+      if (kind === 'row') return change((t) => setRowHeight(t, at - 1, size))
+      widths[at - 1] = size
+      if (next !== undefined) widths[at] = next - (size - was)
+      change((t) => setColumnWidths(t, widths))
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+
   const x = (v: number) => v - origin.left
   const y = (v: number) => v - origin.top
   const line = drag ? { kind: drag.kind, at: drag.to } : (lit ?? hover.line)
+  const sizing = !drag && !resize && !lit ? hover.line : null
   const add = (kind: 'col' | 'row', at: number) => change((t) => (kind === 'col' ? insertColumn(t, at) : insertRow(t, at)))
 
   return (
     <div data-table-tools className="contents">
-      {/* The lit grid line, along the whole table: a click on it adds there (while dragging: where the column or row goes) */}
-      {line && (
-        <button
-          type="button"
-          aria-label={line.kind === 'col' ? 'Add a column here' : 'Add a row here'}
-          onMouseDown={keepFocus}
-          onClick={() => !drag && add(line.kind, line.at)}
+      {/* The lit grid line, along the whole table: only a mark of where the + adds (a click on the line itself does nothing); while dragging: where the column or row goes */}
+      {line && !resize && (
+        <div
+          aria-hidden
           style={
             line.kind === 'col'
               ? { left: x(xs[line.at]) - 2, top: y(rect.top), width: 4, height: rect.height }
               : { left: x(rect.left), top: y(ys[line.at]) - 2, width: rect.width, height: 4 }
           }
-          className={`absolute z-20 cursor-pointer bg-accent ${drag ? 'pointer-events-none' : 'opacity-70 hover:opacity-100'}`}
+          className={`pointer-events-none absolute z-20 bg-accent ${drag ? '' : 'opacity-70'}`}
         />
       )}
-      {!drag && (
+      {/* On a border (not the table's first): the double arrow, and dragging it resizes the column before it (or the row) */}
+      {sizing && sizing.at >= 1 && (
+        <div
+          aria-hidden
+          onMouseDown={keepFocus}
+          onPointerDown={startResize(sizing.kind, sizing.at)}
+          style={
+            sizing.kind === 'col'
+              ? { left: x(xs[sizing.at]) - NEAR, top: y(rect.top), width: NEAR * 2, height: rect.height }
+              : { left: x(rect.left), top: y(ys[sizing.at]) - NEAR, width: rect.width, height: NEAR * 2 }
+          }
+          className={`absolute z-20 touch-none ${sizing.kind === 'col' ? 'cursor-col-resize' : 'cursor-row-resize'}`}
+        />
+      )}
+      {/* While resizing: a line where the border will be */}
+      {resize && (
+        <div
+          aria-hidden
+          style={
+            resize.kind === 'col'
+              ? { left: x(resize.to) - 2, top: y(rect.top), width: 4, height: rect.height }
+              : { left: x(rect.left), top: y(resize.to) - 2, width: rect.width, height: 4 }
+          }
+          className="pointer-events-none absolute z-20 bg-accent"
+        />
+      )}
+      {!drag && !resize && (
         <>
           {/* One + for the column under the pointer (above the table, at its edge nearer the pointer) and one for its row (at the table's left) */}
           {hover.colEdge >= 0 && (

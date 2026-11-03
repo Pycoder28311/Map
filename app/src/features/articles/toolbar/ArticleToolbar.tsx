@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/react'
-import { useState, type ReactNode } from 'react'
-import { LuAlignLeft, LuChevronDown, LuCode, LuLink, LuList, LuPlus, LuRedo2, LuUndo2 } from 'react-icons/lu'
+import { useRef, useState, type ReactNode } from 'react'
+import { LuAlignLeft, LuChevronDown, LuCode, LuExternalLink, LuList, LuPlus, LuRedo2, LuUndo2 } from 'react-icons/lu'
 import Button from '../../../components/ui/buttons/Button'
 import { showAsHtml } from '../../../components/ui/editors/articleExtensions'
 import { idleEditor } from '../../../components/ui/editors/idleEditor'
@@ -23,6 +23,7 @@ import ToolbarDropdown from './ToolbarDropdown'
 import { useToolbarLevel } from './toolbarLevel'
 import { TOOLBAR_TIPS } from './toolbarTexts'
 import UnderlineControl from './UnderlineControl'
+import { useLinkRowAbove } from './useLinkRowAbove'
 import { useToolbarState } from './useToolbarState'
 
 type Props = {
@@ -53,6 +54,9 @@ export default function ArticleToolbar({ editor: own, onUploadImage, onUploadErr
   const idle = !own
   const editor = own ?? idleEditor()
   const state = useToolbarState(editor)
+  // The links row: under the bar, or above it when the selected words are so near the bar that it would hide them
+  const linkSlot = useRef<HTMLDivElement>(null)
+  const linkRowAbove = useLinkRowAbove(own, linkSlot)
   // The Ω popout and the Add section menu (both in row 2)
   const [more, setMore] = useState(false)
   const [adding, setAdding] = useState(false)
@@ -186,7 +190,7 @@ export default function ArticleToolbar({ editor: own, onUploadImage, onUploadErr
                         variant={linkTypes.shown ? 'selected' : 'ghost'}
                         size="sm"
                         plain
-                        icon={LuLink}
+                        icon={LuExternalLink}
                         aria-pressed={linkTypes.shown}
                         onMouseDown={keepFocus}
                         onClick={linkTypes.onToggle}
@@ -202,8 +206,12 @@ export default function ArticleToolbar({ editor: own, onUploadImage, onUploadErr
           )}
         </div>
       )}
-      {/* The links row: its own box a small gap (--spacing-sm) under the bar, over the text */}
-      {linkRow && <div className="absolute inset-x-0 top-full z-20 mt-sm">{linkRow}</div>}
+      {/* The links row: its own box a small gap (--spacing-sm) under the bar, over the text (above the bar when the selected words are right under it) */}
+      {linkRow && (
+        <div ref={linkSlot} className={`absolute inset-x-0 z-20 ${linkRowAbove ? 'bottom-full mb-sm' : 'top-full mt-sm'}`}>
+          {linkRow}
+        </div>
+      )}
     </div>
   )
 }

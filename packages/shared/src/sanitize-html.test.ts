@@ -99,6 +99,11 @@ describe('sanitizeRichText', () => {
         sanitizeRichText('<table style="min-width: 50px"><colgroup><col style="min-width: 25px"></colgroup><tbody><tr><th colspan="2" rowspan="1" style="x"><p>h</p></th></tr><tr><td colspan="999"><p>c</p></td></tr></tbody></table>'),
       ).toBe('<table><colgroup><col></colgroup><tbody><tr><th colspan="2" rowspan="1"><p>h</p></th></tr><tr><td><p>c</p></td></tr></tbody></table>')
     })
+    it('keeps the width of a column and the height of a row, nothing else', () => {
+      expect(sanitizeRichText('<table><tbody><tr style="height: 80px; color: red"><td colwidth="120"><p>a</p></td><td colwidth="1,x"><p>b</p></td></tr><tr style="height: 9999px"><td colwidth="40000"><p>c</p></td></tr></tbody></table>')).toBe(
+        '<table><tbody><tr style="height: 80px"><td colwidth="120"><p>a</p></td><td><p>b</p></td></tr><tr><td><p>c</p></td></tr></tbody></table>',
+      )
+    })
     it('counts an empty table as content', () => {
       expect(sanitizeRichText('<table><tbody><tr><td><p></p></td></tr></tbody></table>')).not.toBe('')
     })

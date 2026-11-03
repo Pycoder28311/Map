@@ -99,7 +99,7 @@ export function TextButton(props: {
         // (one font size only: two `!` sizes on a button, the later in the stylesheet wins, whatever order they are written in)
         className={`[--btn-icon-gap:0.25rem]! font-normal! [--btn-text:var(--fg)]! [--btn-hover-text:var(--fg)]! ${
           props.small
-            ? '[--btn-icon-size:0.875rem]! [--btn-font-size:0.75rem]! [--btn-pad-y:0]! [--btn-line-height:1]! [--btn-underline-offset:1px]!'
+            ? '[--btn-icon-size:1rem]! [--btn-font-size:0.875rem]! [--btn-pad-y:0]! [--btn-line-height:1]! [--btn-underline-offset:1px]!'
             : `[--btn-font-size:1rem]! ${props.big ? '[--btn-icon-size:1rem]!' : '[--btn-icon-size:1.25rem]!'}`
         }`}
         onMouseDown={keepFocus}

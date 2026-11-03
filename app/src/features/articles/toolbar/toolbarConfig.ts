@@ -12,7 +12,6 @@ import {
   LuPilcrow,
   LuTable,
 } from 'react-icons/lu'
-import { STRUCTURE_KINDS } from '../../../components/ui/editors/structures'
 import type { PlainIcon } from '../../../components/ui/icons/IconSlot'
 
 /** The colours a picker starts on when the text has none of its own, and a paragraph border's colour until one is picked */
@@ -163,5 +162,5 @@ export const INSERTS: { value: Insert; label: string; icon: PlainIcon }[] = [
   { value: 'divider', label: 'Divider', icon: LuMinus },
 ]
 
-/** The structures the Ω box shows as examples: the first two (power and index); all four are in its popout's Basics */
-export const BOX_STRUCTURES = STRUCTURE_KINDS.slice(0, 2)
+/** The room (px) the links row takes under the bar (its height and the gap): selected words nearer than this to the bar's bottom edge would be hidden by it, so it goes above the bar */
+export const LINK_ROW_ROOM = 48

@@ -1,5 +1,4 @@
 // The sentences the edit bar's floating elements say (HoverInfo), in one place.
-import type { StructureKind } from '../../../components/ui/editors/structures'
 
 export const TOOLBAR_TIPS = {
   textColour: 'Changes the colour of the selected text.',
@@ -18,12 +17,4 @@ export const TOOLBAR_TIPS = {
   characters: 'Opens the structures, shapes, maths symbols and other characters to put in the text.',
   moreCharacters: 'Opens all the structures, shapes, maths symbols and other characters.',
   linkTypes: 'Shows the row of links: a web page, an article or object, a jump, a person, a message, the Autolinker. Typing @ in the text opens it there.',
-}
-
-/** The sentence each structure's floating element says */
-export const STRUCTURE_TIPS: Record<StructureKind, string> = {
-  power: 'Writes a base with a small raised power. Type the base, press Tab, then type the power.',
-  index: 'Writes a base with a small lowered index. Type the base, press Tab, then type the index.',
-  absolute: 'Writes a value between two bars, like |x|. Type the value between them.',
-  factorial: 'Writes a value followed by an exclamation mark, like n!. Type the value before it.',
 }

@@ -39,6 +39,9 @@ const UNDERLINE_STYLE: StyleRules = { 'text-decoration-color': COLOUR, 'text-dec
 const BLOCK_STYLE: StyleRules = { 'text-align': ALIGN, padding: SIZE, 'letter-spacing': GAP, 'line-height': LINE_HEIGHT, border: BORDER }
 /** How many columns or rows a table cell spans */
 const CELL_SPAN = /^[1-9]\d?$/
+/** A table cell's column width(s) in px (`colwidth`, one per column it spans), and a row's height (its style) */
+const COLUMN_WIDTH = /^\d{2,4}(?:,\d{2,4})*$/
+const ROW_STYLE: StyleRules = { height: /^\d{2,3}px$/ }
 
 const escapeText = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const escapeAttr = (s: string) => escapeText(s).replace(/"/g, '&quot;')
@@ -151,6 +154,10 @@ export function sanitizeRichText(text: string): string {
         if (style) attrs = ` style="${escapeAttr(style)}"`
       } else if (tag === 'td' || tag === 'th') {
         for (const name of ['colspan', 'rowspan']) if (CELL_SPAN.test(attribs[name] ?? '')) attrs += ` ${name}="${attribs[name]}"`
+        if (COLUMN_WIDTH.test(attribs.colwidth ?? '')) attrs += ` colwidth="${attribs.colwidth}"`
+      } else if (tag === 'tr') {
+        const style = safeStyle(attribs.style, ROW_STYLE)
+        if (style) attrs = ` style="${escapeAttr(style)}"`
       }
       out += `<${tag}${attrs}>`
     },

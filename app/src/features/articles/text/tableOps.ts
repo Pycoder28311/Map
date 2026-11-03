@@ -1,4 +1,4 @@
-// Changes to a table of the article's text (TableTools.tsx): a row or a column added, taken away or moved. Each takes the table node and answers
+// Changes to a table of the article's text (TableTools.tsx): a row or a column added, taken away, moved or resized. Each takes the table node and answers
 // the new one (null: nothing left of it). Columns are counted by cells (the article's tables have no merged cells). Pure (tableOps.test.ts).
 import { Fragment, type Node as PMNode } from '@tiptap/pm/model'
 
@@ -65,5 +65,25 @@ export function moveRow(table: PMNode, from: number, to: number): PMNode {
 /** Column `from` moved before column `to`, in every row */
 export function moveColumn(table: PMNode, from: number, to: number): PMNode {
   const rows = children(table).map((row) => row.type.create(row.attrs, Fragment.from(reorder(children(row), from, to))))
+  return table.type.create(table.attrs, Fragment.from(rows))
+}
+
+/** The least and most a column's width and a row's height can be dragged to (px) */
+export const COLUMN_WIDTH = { min: 40, max: 1200 }
+export const ROW_HEIGHT = { min: 28, max: 800 }
+export const clampSize = (px: number, { min, max }: { min: number; max: number }) => Math.round(Math.max(min, Math.min(max, px)))
+
+/** Every column given its width in px (`widths[i]` for column i: all together, so the table is as wide as they add up to) */
+export function setColumnWidths(table: PMNode, widths: readonly number[]): PMNode {
+  const rows = children(table).map((row) => {
+    const cells = children(row).map((cell, i) => (widths[i] ? cell.type.create({ ...cell.attrs, colwidth: [clampSize(widths[i], COLUMN_WIDTH)] }, cell.content, cell.marks) : cell))
+    return row.type.create(row.attrs, Fragment.from(cells))
+  })
+  return table.type.create(table.attrs, Fragment.from(rows))
+}
+
+/** Row `index` given its height in px (a row is at least as tall as its words) */
+export function setRowHeight(table: PMNode, index: number, px: number): PMNode {
+  const rows = children(table).map((row, i) => (i === index ? row.type.create({ ...row.attrs, height: clampSize(px, ROW_HEIGHT) }, row.content, row.marks) : row))
   return table.type.create(table.attrs, Fragment.from(rows))
 }
