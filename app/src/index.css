@@ -17,6 +17,8 @@
 @import "./styles/buttons.css";
 /* Text fields and the clickable rows that look like them (the sidebar's objects): one look in every theme */
 @import "./styles/fields.css";
+/* The shared Modal's gold frame (components/ui/overlays/Modal.tsx) */
+@import "./styles/modalFrame.css";
 
 /* The image cards' parts (features/dashboard/cards/crack.ts): the text part clips itself to a polygon, cracked along its top edge, and this
    wrapper draws a 1px outline along that shape (a drop shadow follows what is clipped, a border or ring would not) and the card's soft shadow.

@@ -3,6 +3,8 @@ import { BrowserRouter } from 'react-router-dom'
 import '@fontsource-variable/inter'
 // The Panel button's font (the floating Create button, styles/buttons.css)
 import '@fontsource/jacquard-24'
+// The framed Venom button's pixel font (styles/buttons.css)
+import '@fontsource/pixelify-sans/500.css'
 import { AppProvider } from './context/AppContext'
 import './index.css'
 import AppRoutes from './routes'

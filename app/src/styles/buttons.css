@@ -29,16 +29,16 @@
   --color-gold-dark: #9a6f22;
   --color-bone: #ece2c8;
   --color-bone-dim: #9d90b0;
-  /* Venom: face, bevels, hover, pressed, hover label */
-  --color-venom: #3f9a3a;
-  --color-venom-light: #74d45e;
-  --color-venom-dark: #1f5a22;
-  --color-venom-hover: #4cb946;
-  --color-venom-light-hover: #8bfe71;
-  --color-venom-dark-hover: #256c29;
-  --color-venom-face-press: #2d742a;
-  --color-venom-light-press: #5cb84c;
-  --color-venom-dark-press: #2b7330;
+  /* Venom (pastel teal cyan): face, bevels, hover, pressed, hover label */
+  --color-venom: #5dbfba;
+  --color-venom-light: #a6e8e3;
+  --color-venom-dark: #3b8e8a;
+  --color-venom-hover: #74d2cd;
+  --color-venom-light-hover: #c2f2ee;
+  --color-venom-dark-hover: #449c97;
+  --color-venom-face-press: #4aa7a2;
+  --color-venom-light-press: #82d6d1;
+  --color-venom-dark-press: #3f9590;
   --color-bone-hover: #fffff0;
   /* Stone: face, hover, light/dark bevel, row above strip, strip */
   --color-stone: #464646;
@@ -58,6 +58,8 @@
   --color-crypt-700-hover: #382a55;
   /* Panel's font (bundled: @fontsource/jacquard-24 in main.tsx); the other buttons use the app's font */
   --font-display: "Jacquard 24", serif;
+  /* the framed Venom button's pixel font (bundled: @fontsource/pixelify-sans in main.tsx) */
+  --font-pixel: "Pixelify Sans", monospace;
   --font-body: var(--font-sans);
 
   /* THE pixel unit of the buttons (Dark Fantasy UI's PIXEL in uiConfig.js) */
@@ -257,6 +259,223 @@
     --btn-press-bevel-bottom: #c24d46;
   }
 
+  /* Map: Cancel (a Shade button that is filled, with only text: the one beside a Create), and the Venom (its own body colour: below). The same
+     frame, panel shading, label and press, with small gray diamonds, and sides three times as thick as the top and the bottom (a side:
+     outline, three metal columns, outline; the top: outline, one metal row, outline), and the panel's inner shadow along its
+     sides too, as along its top. The art is 19 x 19 art pixels of 2px: a 9-pixel cap each side, one middle column that stretches; a
+     diamond sits on each side's middle, half of it inside the panel. Not with .ui-btn-plain (the dropdown triggers) or a square
+     icon button: they keep Shade */
+  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend),
+  .ui-btn-shade.ui-btn-filled:not(.ui-btn-plain, .ui-btn-square, .ui-extend),
+  .ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend) {
+    /* its art pixel: 2px (the Venom's is 1.5px); the same shape and sizes as at 1.5px, to within a pixel */
+    --vpx: var(--px);
+    --cancel-frame: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='19' height='19' viewBox='0 0 19 19' shape-rendering='crispEdges'><path fill='%23050203' d='M6 0h7v1h-7zM5 1h1v1h-1zM13 1h1v1h-1zM4 2h1v1h-1zM7 2h5v1h-5zM14 2h1v1h-1zM3 3h1v1h-1zM6 3h1v1h-1zM12 3h1v1h-1zM15 3h1v1h-1zM2 4h1v1h-1zM5 4h1v1h-1zM13 4h1v1h-1zM16 4h1v1h-1zM2 5h1v1h-1zM5 5h1v1h-1zM13 5h1v1h-1zM16 5h1v1h-1zM2 6h1v1h-1zM5 6h1v1h-1zM13 6h1v1h-1zM16 6h1v1h-1zM2 7h1v1h-1zM5 7h1v1h-1zM13 7h1v1h-1zM16 7h1v1h-1zM2 8h1v1h-1zM5 8h1v1h-1zM13 8h1v1h-1zM16 8h1v1h-1zM2 9h1v1h-1zM5 9h1v1h-1zM13 9h1v1h-1zM16 9h1v1h-1zM2 10h1v1h-1zM5 10h1v1h-1zM13 10h1v1h-1zM16 10h1v1h-1zM2 11h1v1h-1zM5 11h1v1h-1zM13 11h1v1h-1zM16 11h1v1h-1zM2 12h1v1h-1zM5 12h1v1h-1zM13 12h1v1h-1zM16 12h1v1h-1zM2 13h1v1h-1zM5 13h1v1h-1zM13 13h1v1h-1zM16 13h1v1h-1zM3 14h1v1h-1zM6 14h1v1h-1zM12 14h1v1h-1zM15 14h1v1h-1zM4 15h1v1h-1zM7 15h5v1h-5zM14 15h1v1h-1zM5 16h1v1h-1zM13 16h1v1h-1zM6 17h7v1h-7z'/><path fill='%23a89a91' d='M6 1h7v1h-7zM5 2h1v1h-1zM13 2h1v1h-1zM4 3h1v1h-1zM14 3h1v1h-1zM3 4h1v1h-1zM15 4h1v1h-1zM3 5h1v1h-1zM15 5h1v1h-1zM3 6h1v1h-1zM15 6h1v1h-1zM3 7h1v1h-1zM15 7h1v1h-1zM3 8h1v1h-1zM15 8h1v1h-1z'/><path fill='%238a7b74' d='M6 2h1v1h-1zM12 2h1v1h-1zM5 3h1v1h-1zM13 3h1v1h-1zM4 4h1v1h-1zM14 4h1v1h-1zM4 5h1v1h-1zM14 5h1v1h-1zM4 6h1v1h-1zM14 6h1v1h-1zM4 7h1v1h-1zM14 7h1v1h-1zM4 8h1v1h-1zM14 8h1v1h-1z'/><path fill='rgba(255,255,255,0.14)' d='M7 3h5v1h-5zM6 4h1v1h-1zM12 4h1v1h-1zM6 5h1v1h-1zM12 5h1v1h-1zM6 6h1v1h-1zM12 6h1v1h-1zM6 7h1v1h-1zM12 7h1v1h-1zM6 8h1v1h-1zM12 8h1v1h-1zM6 9h1v1h-1zM12 9h1v1h-1zM6 10h1v1h-1zM12 10h1v1h-1zM6 11h1v1h-1zM12 11h1v1h-1zM6 12h1v1h-1zM12 12h1v1h-1zM6 13h1v1h-1zM12 13h1v1h-1zM7 14h5v1h-5z'/><path fill='rgba(0,0,0,0.22)' d='M7 4h1v1h-1zM11 4h1v1h-1zM7 5h1v1h-1zM11 5h1v1h-1zM7 6h1v1h-1zM11 6h1v1h-1zM7 7h1v1h-1zM11 7h1v1h-1zM7 8h1v1h-1zM11 8h1v1h-1zM7 9h1v1h-1zM11 9h1v1h-1zM7 10h1v1h-1zM11 10h1v1h-1zM7 11h1v1h-1zM11 11h1v1h-1zM7 12h1v1h-1zM11 12h1v1h-1zM7 13h1v1h-1zM11 13h1v1h-1z'/><path fill='%236c5c56' d='M3 9h1v1h-1zM15 9h1v1h-1zM3 10h1v1h-1zM15 10h1v1h-1zM3 11h1v1h-1zM15 11h1v1h-1zM3 12h1v1h-1zM15 12h1v1h-1zM3 13h1v1h-1zM15 13h1v1h-1zM4 14h1v1h-1zM14 14h1v1h-1zM5 15h1v1h-1zM13 15h1v1h-1z'/><path fill='%234a3d3c' d='M4 9h1v1h-1zM14 9h1v1h-1zM4 10h1v1h-1zM14 10h1v1h-1zM4 11h1v1h-1zM14 11h1v1h-1zM4 12h1v1h-1zM14 12h1v1h-1zM4 13h1v1h-1zM14 13h1v1h-1zM5 14h1v1h-1zM13 14h1v1h-1zM6 15h1v1h-1zM12 15h1v1h-1z'/><path fill='rgba(0,0,0,0.35)' d='M2 14h1v1h-1zM16 14h1v1h-1zM3 15h1v1h-1zM15 15h1v1h-1zM4 16h1v1h-1zM14 16h1v1h-1zM5 17h1v1h-1zM13 17h1v1h-1zM6 18h7v1h-7z'/><path fill='%23625758' d='M6 16h7v1h-7z'/></svg>");
+    --cancel-diamond: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='7' viewBox='0 0 7 7' shape-rendering='crispEdges'><path fill='%23a89a91' d='M3 0h1v1h-1zM2 1h1v1h-1zM4 1h1v1h-1zM1 2h1v1h-1zM0 3h1v1h-1zM1 4h1v1h-1z'/><path fill='%234a4a50' d='M3 1h1v1h-1zM2 2h1v1h-1zM4 2h1v1h-1zM1 3h1v1h-1zM5 3h1v1h-1zM2 4h1v1h-1zM4 4h1v1h-1zM3 5h1v1h-1z'/><path fill='%23b0b0b6' d='M3 2h1v1h-1zM2 3h1v1h-1z'/><path fill='%234a3d3c' d='M5 2h1v1h-1zM6 3h1v1h-1zM5 4h1v1h-1zM2 5h1v1h-1zM4 5h1v1h-1zM3 6h1v1h-1z'/><path fill='%23e6e6ea' d='M3 3h1v1h-1z'/><path fill='%238e8e94' d='M4 3h1v1h-1zM3 4h1v1h-1z'/></svg>");
+    --cancel-diamond-hover: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='7' viewBox='0 0 7 7' shape-rendering='crispEdges'><path fill='%23a89a91' d='M3 0h1v1h-1zM2 1h1v1h-1zM4 1h1v1h-1zM1 2h1v1h-1zM0 3h1v1h-1zM1 4h1v1h-1z'/><path fill='%2356565c' d='M3 1h1v1h-1zM2 2h1v1h-1zM4 2h1v1h-1zM1 3h1v1h-1zM5 3h1v1h-1zM2 4h1v1h-1zM4 4h1v1h-1zM3 5h1v1h-1z'/><path fill='%23c8c8ce' d='M3 2h1v1h-1zM2 3h1v1h-1z'/><path fill='%234a3d3c' d='M5 2h1v1h-1zM6 3h1v1h-1zM5 4h1v1h-1zM2 5h1v1h-1zM4 5h1v1h-1zM3 6h1v1h-1z'/><path fill='%23ffffff' d='M3 3h1v1h-1z'/><path fill='%23a2a2a8' d='M4 3h1v1h-1zM3 4h1v1h-1z'/></svg>");
+    --_frame: var(--cancel-frame);
+    /* the diamonds: a layer of their own (the ::after), so they can move: on a press they come a little nearer the middle */
+    --_dia: var(--cancel-diamond);
+    --_nudge: 0px;
+    --cancel-nudge: 1px;
+    /* the panel: art columns 5.. from each side, rows 3..14 */
+    --_panel: calc(var(--vpx) * 5) calc(var(--vpx) * 3) / calc(100% - var(--vpx) * 10) calc(var(--vpx) * 12) no-repeat;
+    /* the panel's gray: the Stone's */
+    --btn-bg: var(--color-stone);
+    --btn-hover-bg: var(--color-stone-hover);
+    --btn-text: var(--color-bone);
+    --btn-hover-text: var(--color-bone-hover);
+    --btn-font: var(--font-pixel);
+    --btn-font-weight: 500;
+    --btn-letter-spacing: 0.5px;
+    --btn-pad-x: 28px;
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: calc(var(--vpx) * 19);
+    min-width: 70px;
+    padding-block: 0 var(--vpx);
+    background: linear-gradient(var(--_bg), var(--_bg)) var(--_panel);
+    box-shadow: none;
+    text-align: center;
+    -webkit-font-smoothing: none;
+    font-smooth: never;
+    /* the label's outline stays 1.5px, as the Venom's */
+    --_tx: 1.5px;
+    text-shadow:
+      var(--_tx) 0 0 #0c0600, calc(var(--_tx) * -1) 0 0 #0c0600, 0 var(--_tx) 0 #0c0600, 0 calc(var(--_tx) * -1) 0 #0c0600;
+    transition:
+      transform 0.12s steps(3),
+      color 0.15s steps(2),
+      background-color 0.12s steps(2),
+      padding 0.18s ease-out;
+  }
+
+  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend)::before,
+  .ui-btn-shade.ui-btn-filled:not(.ui-btn-plain, .ui-btn-square, .ui-extend)::before,
+  .ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend)::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-style: solid;
+    border-color: transparent;
+    border-width: 0 calc(var(--vpx) * 9);
+    border-image: var(--_frame) 0 9 fill / 0 calc(var(--vpx) * 9) / 0 stretch;
+    image-rendering: pixelated;
+  }
+
+  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend)::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    /* each 7 x 7 diamond: its middle on the side's metal, 6 rows down, moving in by --_nudge */
+    background:
+      var(--_dia) left calc(var(--vpx) + var(--_nudge)) top calc(var(--vpx) * 6) / calc(var(--vpx) * 7) calc(var(--vpx) * 7) no-repeat,
+      var(--_dia) right calc(var(--vpx) + var(--_nudge)) top calc(var(--vpx) * 6) / calc(var(--vpx) * 7) calc(var(--vpx) * 7) no-repeat;
+    image-rendering: pixelated;
+    transition: background-position 0.18s ease-out;
+  }
+
+  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend):hover:not(:disabled) {
+    --_dia: var(--cancel-diamond-hover);
+  }
+
+  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend):active:not(:disabled),
+  .ui-btn-shade.ui-btn-filled:not(.ui-btn-plain, .ui-btn-square, .ui-extend):active:not(:disabled),
+  .ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):active:not(:disabled) {
+    --_nudge: var(--cancel-nudge);
+    --_bg: #3a3a3a;
+    transform: translateY(var(--vpx));
+  }
+
+  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend):is(.ui-btn-sm, .ui-btn-xs),
+  .ui-btn-shade.ui-btn-filled:not(.ui-btn-plain, .ui-btn-square, .ui-extend):is(.ui-btn-sm, .ui-btn-xs),
+  .ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):is(.ui-btn-sm, .ui-btn-xs) {
+    /* tight rows: art pixels of 1.5px (28.5px tall), the padding in proportion */
+    --vpx: 1.5px;
+    --btn-pad-x: 21px;
+    min-width: 52px;
+  }
+
+  /* Map: Venom: the Cancel's look above (frame, small diamonds, panel shading, bone label, press), with its body as before: the Stone's
+     gray with a soft teal glow inside. Delete (.ui-btn-danger): red */
+  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend, .ui-btn-danger) {
+    /* the body gray (the Stone's), as before */
+    --btn-bg: var(--color-stone);
+    --btn-hover-bg: var(--color-stone-hover);
+    /* the teal glow inside the panel, as before: soft, from its edges, fading out towards its middle with no step (four eased
+       gradients on the panel: art columns 5.. from each side, rows 3..14). --_glow-a: how strong; brighter hovered, fainter pressed */
+    --_glow: 93 191 186;
+    --_glow-a: 0.55;
+    --_glowl:
+      linear-gradient(to bottom, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) left calc(var(--vpx) * 5) top calc(var(--vpx) * 3) / calc(100% - var(--vpx) * 10) calc(var(--vpx) * 6) no-repeat,
+      linear-gradient(to top, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) left calc(var(--vpx) * 5) bottom calc(var(--vpx) * 4) / calc(100% - var(--vpx) * 10) calc(var(--vpx) * 6) no-repeat,
+      linear-gradient(to right, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) left calc(var(--vpx) * 5) top calc(var(--vpx) * 3) / calc(var(--vpx) * 15) calc(var(--vpx) * 12) no-repeat,
+      linear-gradient(to left, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) right calc(var(--vpx) * 5) top calc(var(--vpx) * 3) / calc(var(--vpx) * 15) calc(var(--vpx) * 12) no-repeat;
+    background: var(--_glowl), linear-gradient(var(--_bg), var(--_bg)) var(--_panel);
+  }
+
+  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend, .ui-btn-danger):hover:not(:disabled) {
+    --_glow-a: 0.8;
+  }
+
+  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend, .ui-btn-danger):active:not(:disabled) {
+    --_bg: #3a3a3a;
+    --_glow-a: 0.4;
+  }
+
+  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend, .ui-btn-danger):disabled {
+    --_glow-a: 0.3;
+  }
+
+  .ui-btn-venom.ui-btn-danger:not(.ui-btn-gold, .ui-btn-square, .ui-extend) {
+    --btn-bg: #a8322d;
+    --btn-hover-bg: #bf3b35;
+  }
+
+  .ui-btn-venom.ui-btn-danger:not(.ui-btn-gold, .ui-btn-square, .ui-extend):active:not(:disabled) {
+    --_bg: #7e2622;
+  }
+
+  /* Map: Shade framed (every ghost Button with text, as "Sort by": not plain, filled, square or an ExtendMenu's box): the Cancel's look
+     above (its frame, gray panel, bone label in the pixel font, press) without its diamonds, and a little less room inside. Hovered or
+     chosen (aria-pressed, aria-current, .ui-btn-selected): the lighter gray. The icon and the text don't close up when hovered.
+     Cancel (a filled Shade) is the same button: one style, not two */
+  .ui-btn-shade.ui-btn-filled:not(.ui-btn-plain, .ui-btn-square, .ui-extend),
+  .ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend) {
+    --btn-pad-x: 18px;
+    --btn-icon-edge: var(--btn-pad-x);
+    /* an icon close to its text */
+    --btn-icon-gap: 6px;
+    --btn-hover-pull: 0px;
+  }
+
+  .ui-btn-shade.ui-btn-filled:not(.ui-btn-plain, .ui-btn-square, .ui-extend):is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected),
+  .ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
+    --_bg: var(--btn-hover-bg);
+  }
+
+  /* in an ExtendMenu ("Sort by"), closed: its panel (the box behind it is see-through); open (and folding back): no frame or panel of
+     its own, the box's band is round it all */
+  .ui-extend>.ui-btn.ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend) {
+    background: linear-gradient(var(--_bg), var(--_bg)) var(--_panel);
+  }
+
+  .ui-extend:is([data-open='true'], [data-closing='true'])>.ui-btn.ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend) {
+    background: none;
+  }
+
+  .ui-extend:is([data-open='true'], [data-closing='true'])>.ui-btn.ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend)::before {
+    display: none;
+  }
+
+  /* Map: the shared Modal's close X (components/ui/overlays/Modal.tsx), as part of its gold frame (styles/modalFrame.css): a square on
+     the top right corner, with the title plaque's look (--mf-plaque-*: flat, the frame's outlined line round it), a bone X. Hover:
+     a little lighter; press: down a pixel */
+  .ui-btn.ui-modal-close {
+    position: absolute;
+    /* its middle on the band's middle, at the corner */
+    top: calc(var(--mf-px, 2px) * -1.5);
+    right: calc(var(--mf-px, 2px) * -1.5);
+    z-index: 1;
+    /* as tall as the title's plaque, its middle on the frame's corner: it covers the corner's step, and the lines meet its edges */
+    width: 33px;
+    height: 33px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    color: var(--color-bone);
+    /* the title plaque's pixel border (modalFrame.css): 6px, pixel-stepped round corners */
+    background: var(--mf-plaque-bg) padding-box;
+    border: 6px solid transparent;
+    border-image: var(--mf-plaque-border) 6 / 12px / 0 stretch;
+    image-rendering: pixelated;
+    transform: translate(50%, -50%);
+    transition: color 0.15s ease-out, background-color 0.15s ease-out;
+  }
+
+  .ui-btn.ui-modal-close>svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* (more specific than .ui-btn-square's hover, which gives a Shade square a right padding on hover and would move the X) */
+  .ui-btn.ui-btn-square.ui-modal-close:hover:not(:disabled) {
+    padding: 0;
+    color: var(--color-bone-hover);
+    background: color-mix(in srgb, #fff 8%, var(--surface)) padding-box;
+  }
+
+  .ui-btn.ui-modal-close:active:not(:disabled) {
+    transform: translate(50%, calc(-50% + 1px));
+  }
+
   /* Map: Venom in gold (the floating Create button): the same face, bevels, brackets and press, gold colours and a dark gray icon, and a soft
      shadow under it besides Venom's own */
   .ui-btn-venom.ui-btn-gold {
@@ -361,6 +580,84 @@
     transition: none;
   }
 
+  /* Map: Venom split, framed (SplitButton, ExtendMenu's Create): the framed Venom's look (its frame, diamonds, pixel font, press),
+     the icon and the label side by side in its one green panel, with no faces of their own. The pieces keep their size open
+     and closed (ExtendMenu turns them into Shade buttons while open: their hover then shows) */
+  .ui-btn.ui-btn-venom.ui-btn-venom-split {
+    align-items: center;
+    gap: 3px;
+    padding: 0 28px var(--vpx);
+    background: var(--_glowl, linear-gradient(transparent, transparent)), linear-gradient(var(--_bg), var(--_bg)) var(--_panel);
+  }
+
+  .ui-btn.ui-btn-venom.ui-btn-venom-split>span {
+    min-height: 0;
+    padding: 3px 4.5px;
+    box-shadow: none;
+  }
+
+  .ui-btn.ui-btn-venom.ui-btn-venom-split>.ui-btn-venom-split-icon {
+    width: auto;
+  }
+
+  .ui-btn.ui-btn-venom.ui-btn-venom-split:not(.ui-extend[data-open='true']>*)>span {
+    background: none;
+  }
+
+  /* inside an open ExtendMenu (and while it folds back): no frame or green of its own; the box's frame is round it all */
+  .ui-extend:is([data-open='true'], [data-closing='true'])>.ui-btn.ui-btn-venom.ui-btn-venom-split {
+    background: none;
+  }
+
+  .ui-extend:is([data-open='true'], [data-closing='true'])>.ui-btn.ui-btn-venom.ui-btn-venom-split::before,
+  .ui-extend:is([data-open='true'], [data-closing='true'])>.ui-btn.ui-btn-venom.ui-btn-venom-split::after {
+    display: none;
+  }
+
+  /* Map: ExtendMenu's Venom box (the Create dropdown), in the framed buttons' look: no white brackets; open, the dark grey
+     panel inside the buttons' metal band (outline, three rows of metal lit from above, outline; cut corners, a drop shadow:
+     pixel art in a 9-slice border-image, so it grows with the box), the options in the buttons' pixel font. The band shows
+     at once on opening and stays while it folds back (0.2s) */
+  .ui-btn:is(.ui-btn-venom, .ui-btn-shade).ui-extend,
+  .ui-btn:is(.ui-btn-venom, .ui-btn-shade).ui-extend:is(:hover, :active) {
+    --vpx: calc(var(--px) * 0.75);
+    --btn-font: var(--font-pixel);
+    --btn-font-weight: 500;
+    --btn-letter-spacing: 0.5px;
+    -webkit-font-smoothing: none;
+    background: var(--_bg);
+  }
+
+  .ui-btn:is(.ui-btn-venom, .ui-btn-shade).ui-extend::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 calc(var(--vpx) * -2);
+    z-index: 1;
+    pointer-events: none;
+    border-style: solid;
+    border-color: transparent;
+    border-width: calc(var(--vpx) * 8) calc(var(--vpx) * 8) calc(var(--vpx) * 10);
+    border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='17' height='19' viewBox='0 0 17 19' shape-rendering='crispEdges'><path fill='%23050203' d='M4 0h9v1h-9zM3 1h1v1h-1zM13 1h1v1h-1zM2 2h1v1h-1zM14 2h1v1h-1zM1 3h1v1h-1zM15 3h1v1h-1zM0 4h1v1h-1zM7 4h3v1h-3zM16 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM16 5h1v1h-1zM0 6h1v1h-1zM5 6h1v1h-1zM11 6h1v1h-1zM16 6h1v1h-1zM0 7h1v1h-1zM4 7h1v1h-1zM12 7h1v1h-1zM16 7h1v1h-1zM0 8h1v1h-1zM4 8h1v1h-1zM12 8h1v1h-1zM16 8h1v1h-1zM0 9h1v1h-1zM4 9h1v1h-1zM12 9h1v1h-1zM16 9h1v1h-1zM0 10h1v1h-1zM5 10h1v1h-1zM11 10h1v1h-1zM16 10h1v1h-1zM0 11h1v1h-1zM6 11h1v1h-1zM10 11h1v1h-1zM16 11h1v1h-1zM0 12h1v1h-1zM7 12h3v1h-3zM16 12h1v1h-1zM1 13h1v1h-1zM15 13h1v1h-1zM2 14h1v1h-1zM14 14h1v1h-1zM3 15h1v1h-1zM13 15h1v1h-1zM4 16h9v1h-9z'/><path fill='%23a89a91' d='M4 1h9v1h-9zM3 2h1v1h-1zM13 2h1v1h-1zM2 3h1v1h-1zM14 3h1v1h-1zM1 4h1v1h-1zM15 4h1v1h-1zM1 5h1v1h-1zM15 5h1v1h-1zM1 6h1v1h-1zM15 6h1v1h-1zM1 7h1v1h-1zM15 7h1v1h-1zM1 8h1v1h-1zM15 8h1v1h-1zM1 9h1v1h-1zM15 9h1v1h-1zM1 10h1v1h-1zM15 10h1v1h-1zM1 11h1v1h-1zM15 11h1v1h-1zM1 12h1v1h-1zM15 12h1v1h-1zM2 13h1v1h-1zM14 13h1v1h-1z'/><path fill='%238a7b74' d='M4 2h9v1h-9zM3 3h1v1h-1zM13 3h1v1h-1z'/><path fill='%236c5c56' d='M4 3h9v1h-9zM2 4h1v1h-1zM4 4h3v1h-3zM10 4h3v1h-3zM14 4h1v1h-1zM2 5h1v1h-1zM5 5h1v1h-1zM11 5h1v1h-1zM14 5h1v1h-1zM2 6h1v1h-1zM14 6h1v1h-1zM2 7h1v1h-1zM14 7h1v1h-1zM2 8h1v1h-1zM14 8h1v1h-1zM2 9h1v1h-1zM14 9h1v1h-1zM2 10h1v1h-1zM14 10h1v1h-1zM2 11h1v1h-1zM14 11h1v1h-1zM2 12h1v1h-1zM14 12h1v1h-1z'/><path fill='%234a3d3c' d='M3 4h1v1h-1zM13 4h1v1h-1zM3 5h2v1h-2zM12 5h2v1h-2zM3 6h2v1h-2zM12 6h2v1h-2zM3 7h1v1h-1zM13 7h1v1h-1zM3 8h1v1h-1zM13 8h1v1h-1zM3 9h1v1h-1zM13 9h1v1h-1zM3 10h2v1h-2zM12 10h2v1h-2zM3 11h2v1h-2zM12 11h2v1h-2zM3 12h1v1h-1zM13 12h1v1h-1zM3 13h1v1h-1zM13 13h1v1h-1zM4 14h9v1h-9z'/><path fill='%23625758' d='M5 11h1v1h-1zM11 11h1v1h-1zM4 12h3v1h-3zM10 12h3v1h-3zM4 13h9v1h-9z'/><path fill='%23392d31' d='M3 14h1v1h-1zM13 14h1v1h-1zM4 15h9v1h-9z'/><path fill='rgba(0,0,0,0.35)' d='M3 17h11v1h-11zM5 18h7v1h-7z'/></svg>") 8 8 10 8 / calc(var(--vpx) * 8) calc(var(--vpx) * 8) calc(var(--vpx) * 10) / 0 stretch;
+    image-rendering: pixelated;
+    opacity: 0;
+    transition: opacity 0s 0.2s;
+  }
+
+  .ui-btn:is(.ui-btn-venom, .ui-btn-shade).ui-extend[data-open='true']::before {
+    opacity: 1;
+    transition: none;
+  }
+
+  /* its options clear of the band */
+  :is(.ui-btn-venom, .ui-btn-shade).ui-extend .ui-extend-item {
+    padding-inline: calc(var(--vpx) * 10);
+  }
+
+  /* (on the last option, not the list: ExtendMenu measures the options alone to size the box) */
+  :is(.ui-btn-venom, .ui-btn-shade).ui-extend .ui-extend-item:last-child {
+    padding-bottom: calc(var(--btn-pad-y) + var(--vpx) * 5);
+  }
+
   /* C3. Stone: grey block with stepped pixel corners, bevel, soft inner shadow
      and a strip underneath. The button is the strip, .ui-btn-stone-face sits on
      it; pressing pushes the face into the strip. */
@@ -449,6 +746,7 @@
     background: none;
     clip-path: none;
   }
+
   .ui-btn-stone-face {
     background: var(--_bg);
     /* Inner shadows instead of a light line on top and a dark band under it. The button keeps the height the band gave it (--btn-edge), shared
@@ -463,9 +761,11 @@
     clip-path: var(--btn-rock, none);
     text-shadow: none;
   }
+
   .ui-btn-stone-face::after {
     display: none;
   }
+
   .ui-btn-stone:active:not(:disabled) .ui-btn-stone-face {
     transform: none;
     filter: brightness(0.88);
@@ -787,7 +1087,8 @@
 
   /* Venom split, closed: the box is see-through: the two pieces show (its brackets, while hovered, are exactly under
      the pieces' outer ones) */
-  .ui-btn-venom.ui-extend:not([data-open='true']) {
+  .ui-btn-venom.ui-extend:not([data-open='true']),
+  .ui-btn.ui-btn-shade.ui-extend:not([data-open='true']):is(*, :hover) {
     --_bg: transparent;
   }
 

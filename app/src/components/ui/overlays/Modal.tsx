@@ -15,7 +15,8 @@ const SIZES = {
 // Centred over a dimmed, blurred page. Opening: fades in and grows from 95% (@starting-style); closing
 // is instant, since the content unmounts then
 const DIALOG =
-  'm-auto w-[calc(100%-2rem)] max-h-[calc(100%-2rem)] overflow-hidden rounded-(--card-radius) p-0 shadow-xl ' +
+  // overflow-visible + ui-modal-frame: the gold frame (styles/modalFrame.css) is drawn partly outside the dialog; square corners, as the frame's
+  'ui-modal-frame m-auto w-[calc(100%-2rem)] max-h-[calc(100%-2rem)] overflow-visible rounded-none p-0 shadow-xl ' +
   'transition-[opacity,scale] duration-200 ease-out starting:open:opacity-0 starting:open:scale-95 ' +
   'backdrop:bg-overlay/30 backdrop:backdrop-blur-sm backdrop:transition-opacity backdrop:duration-200 starting:open:backdrop:opacity-0 ' +
   'motion-reduce:transition-none motion-reduce:backdrop:transition-none'
@@ -116,8 +117,8 @@ export default function Modal({ open, onClose, title, children, footer, size = '
               {title}
             </h2>
           ) : (
-          <header className={`flex shrink-0 items-center border-b border-line py-2 pr-2 pl-4 ${tightHeader ? 'gap-sm' : 'gap-(--btn-gap)'}`}>
-            <h2 id={titleId} className="truncate text-body font-medium">
+          <header className={`ui-modal-header flex min-h-7 shrink-0 items-center py-2 pr-9 pl-4 ${tightHeader ? 'gap-sm' : 'gap-(--btn-gap)'}`}>
+            <h2 id={titleId} className="ui-modal-title truncate">
               {title}
             </h2>
             {actions && <div className={`ml-auto flex items-center ${tightHeader ? 'gap-base' : 'gap-(--btn-gap)'}`}>{actions}</div>}
@@ -133,10 +134,10 @@ export default function Modal({ open, onClose, title, children, footer, size = '
                   }}
                   className={actions ? '' : 'ml-auto'}
                 />
-                <IconButton icon={LuX} label="Close" onClick={onClose} />
+                <IconButton icon={LuX} label="Close" onClick={onClose} className="ui-modal-close" />
               </>
             ) : (
-              <IconButton icon={LuX} label="Close" onClick={onClose} className={actions ? '' : 'ml-auto'} />
+              <IconButton icon={LuX} label="Close" onClick={onClose} className="ui-modal-close" />
             )}
           </header>
           )}
