@@ -5,9 +5,9 @@ import '@fontsource-variable/inter'
 import '@fontsource/jacquard-24'
 // The framed Venom button's pixel font (styles/buttons.css)
 import '@fontsource/pixelify-sans/500.css'
-// The Dashboard's article cards' pixel font (styles/bloodCard.css)
-import '@fontsource/pixelify-sans/400.css'
-import '@fontsource/pixelify-sans/600.css'
+// The Dashboard's article cards' font (styles/bloodCard.css)
+import '@fontsource/alegreya/400.css'
+import '@fontsource/alegreya/700.css'
 import { AppProvider } from './context/AppContext'
 import './index.css'
 import AppRoutes from './routes'

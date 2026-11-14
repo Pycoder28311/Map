@@ -1,10 +1,11 @@
 import { useState, type KeyboardEvent } from 'react'
-import { LuExternalLink, LuFileText, LuPencil, LuPin, LuPinOff, LuTrash2 } from 'react-icons/lu'
+import { LuExternalLink, LuPencil, LuPin, LuPinOff, LuTrash2 } from 'react-icons/lu'
 import TreeMenu from '../../../components/ui/tree/TreeMenu'
 import type { TreeMenuGroup } from '../../../components/ui/tree/types'
 import { useResourceMenu } from '../../../lib/resource/actions'
 import type { AnyResource } from '../../../resources/types'
-import { ArrowCap, LongGem, RoundGem } from './pixelGems'
+import FRAME from '../../../assets/cards/blood-card-frame.png'
+import DEFAULT_ART from '../../../assets/cards/blood-card-art.png'
 import RenameDialog from './RenameDialog'
 
 type Item = Record<string, unknown> & { id: number | string }
@@ -16,8 +17,8 @@ function pictureOf(item: Item): string | null {
 }
 
 /**
- * An article as a Dashboard card, in the dark crimson pixel-art look (styles/bloodCard.css): a metal frame with gems, its picture (or a
- * crimson placeholder), its title on a plaque across the picture's bottom edge and its first lines under it. A click (or Enter) opens it;
+ * An article as a Dashboard card, the crimson card of the design (styles/bloodCard.css): the design's own frame art, the article's picture
+ * in its window (none: the design's chalice art), its title on the plaque and its first lines under it. A click (or Enter) opens it;
  * the ⋯ at the top right has Open, Rename, Pin / Unpin and Move to Trash.
  */
 export default function ArticleCard({ resource, item, onOpen }: { resource: AnyResource; item: Item; onOpen: () => void }) {
@@ -49,35 +50,15 @@ export default function ArticleCard({ resource, item, onOpen }: { resource: AnyR
   return (
     <>
       <div role="button" tabIndex={0} aria-label={`Open ${title}`} data-card-id={String(item.id)} data-card-kind="article" onClick={onOpen} onKeyDown={onKey} className="blood-card">
-        <div aria-hidden className="blood-card__frame" />
-        <div aria-hidden className="blood-card__band" />
-        <div aria-hidden className="blood-card__body" />
-        <RoundGem className="blood-card__corner blood-card__corner--tl" />
-        <RoundGem className="blood-card__corner blood-card__corner--tr" />
-        <RoundGem className="blood-card__corner blood-card__corner--bl" />
-        <RoundGem className="blood-card__corner blood-card__corner--br" />
-        <LongGem className="blood-card__edge-gem blood-card__edge-gem--top" />
-        <LongGem className="blood-card__edge-gem blood-card__edge-gem--bottom" />
-
-        <div className="blood-card__content">
-          <div className="blood-card__picture">
-            {picture ? (
-              <img src={picture} alt="" />
-            ) : (
-              <div className="blood-card__placeholder">
-                <LuFileText aria-hidden />
-              </div>
-            )}
-          </div>
-          <div className="blood-card__plaque">
-            <ArrowCap className="blood-card__cap" />
-            <div className="blood-card__plaque-box">
-              <h3 className="blood-card__title">{title}</h3>
-            </div>
-            <ArrowCap className="blood-card__cap blood-card__cap--right" />
-          </div>
-          <p className={`blood-card__text ${text ? '' : 'blood-card__text--empty'}`}>{text || 'No text yet'}</p>
+        {/* The picture behind the frame's window; an article without one shows the design's own art */}
+        <div className={`blood-card__picture ${picture ? 'blood-card__picture--own' : ''}`}>
+          <img src={picture ?? DEFAULT_ART} alt="" draggable={false} />
         </div>
+        <img className="blood-card__frame" src={FRAME} alt="" draggable={false} />
+        <h3 className="blood-card__title">
+          <span>{title}</span>
+        </h3>
+        <p className={`blood-card__text ${text ? '' : 'blood-card__text--empty'}`}>{text || 'No text yet'}</p>
 
         {pinned && (
           <span className="blood-card__pin" title="Pinned">
