@@ -3,7 +3,8 @@
 // and where things go. How to change it:
 //   - a colour: change it in PALETTE (cardPixelData.ts): every pixel of that letter changes;
 //   - a pixel of the frame: change its letter in FRAME_LEFT (the right half follows: it is the left half mirrored);
-//   - a gem: CORNER_GEM (both top corners), TOP_GEM, BOTTOM_GEM; they are put on the frame unmirrored, at GEMS' places;
+//   - a gem: CORNER_GEM (the gem of both top corners' stars), TOP_GEM, BOTTOM_GEM; they are put on the frame unmirrored, at GEMS' places, each covering its
+//     whole box (its '.' are see-through there);
 //   - the chalice (the picture of an article without one): CHALICE and ART_PALETTE;
 //   - where the picture, title and text go: LAYOUT (bloodCard.css takes them from there).
 // Each is drawn as an SVG, one <path> per colour, made once (ArticleCard.tsx). Pure: cardPixels.test.ts.
@@ -26,10 +27,10 @@ export const LAYOUT = {
 
 /** Where the gems go: their top left corners */
 export const GEMS = [
-  { piece: CORNER_GEM, x: 21, y: 15 },
-  { piece: CORNER_GEM, x: 151, y: 15 },
-  { piece: TOP_GEM, x: 84, y: 6 },
-  { piece: BOTTOM_GEM, x: 84, y: 218 },
+  { piece: CORNER_GEM, x: 20, y: 16 },
+  { piece: CORNER_GEM, x: 153, y: 16 },
+  { piece: TOP_GEM, x: 82, y: 0 },
+  { piece: BOTTOM_GEM, x: 82, y: 210 },
 ] as const
 
 /** A grid of letters (null: none) */
@@ -37,11 +38,11 @@ export type Canvas = (string | null)[][]
 
 const toCanvas = (rows: readonly string[]): Canvas => rows.map((row) => [...row].map((ch) => (ch === '.' ? null : ch)))
 
-/** Puts a letter grid on the canvas with its top left at x, y; its '.' leave what is there */
+/** Puts a letter grid on the canvas with its top left at x, y, over its whole box: its '.' are see-through */
 function stamp(canvas: Canvas, piece: readonly string[], x: number, y: number) {
   piece.forEach((row, dy) => {
     ;[...row].forEach((ch, dx) => {
-      if (ch !== '.' && canvas[y + dy]?.[x + dx] !== undefined) canvas[y + dy][x + dx] = ch
+      if (canvas[y + dy]?.[x + dx] !== undefined) canvas[y + dy][x + dx] = ch === '.' ? null : ch
     })
   })
 }

@@ -30,6 +30,40 @@ describe('the article card pixel art', () => {
     expect(row.slice(LAYOUT.width / 2)).toEqual(row.slice(0, LAYOUT.width / 2).reverse())
   })
 
+  it('the silhouette is clean: its outer edge is outline all round (corners too), every outline pixel outlines something, nothing floats', () => {
+    const frame = drawFrame()
+    const H = frame.length
+    const W = frame[0].length
+    const at = (x: number, y: number) => (x >= 0 && y >= 0 && x < W && y < H ? frame[y][x] : null)
+    // the see-through pixels joined to the card's edges: the outside
+    const outside = new Set<string>()
+    const stack: [number, number][] = []
+    for (let x = 0; x < W; x++) stack.push([x, 0], [x, H - 1])
+    for (let y = 0; y < H; y++) stack.push([0, y], [W - 1, y])
+    while (stack.length) {
+      const [x, y] = stack.pop()!
+      const key = `${x},${y}`
+      if (x < 0 || y < 0 || x >= W || y >= H || outside.has(key) || frame[y][x] !== null) continue
+      outside.add(key)
+      stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1])
+    }
+    const steps = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+    const around = [...steps, [1, 1], [1, -1], [-1, 1], [-1, -1]]
+    const wrong: string[] = []
+    frame.forEach((row, y) =>
+      row.forEach((c, x) => {
+        if (c === null) return
+        // touching the outside, even only at a corner: a gap in the outline otherwise
+        const touchesOutside = around.some(([dx, dy]) => outside.has(`${x + dx},${y + dy}`))
+        if (touchesOutside && c !== 'o') wrong.push(`${x},${y} is '${c}' on the outer edge (should be outline 'o')`)
+        // an outline pixel of the outer edge with nothing coloured round it: a stub sticking out, outlining nothing
+        if (touchesOutside && c === 'o' && !around.some(([dx, dy]) => ![null, 'o'].includes(at(x + dx, y + dy)))) wrong.push(`${x},${y} is a stub of outline`)
+        if (steps.every(([dx, dy]) => at(x + dx, y + dy) === null)) wrong.push(`${x},${y} floats on its own`)
+      }),
+    )
+    expect(wrong).toEqual([])
+  })
+
   it('the paths cover exactly the pixels drawn', () => {
     for (const [canvas, palette] of [
       [drawFrame(), PALETTE],
