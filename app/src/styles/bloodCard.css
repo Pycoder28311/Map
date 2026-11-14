@@ -1,0 +1,220 @@
+/* The Dashboard's article card (features/dashboard/project/ArticleCard.tsx): a dark crimson pixel-art card in a metal frame, with a gem at
+   each corner and in the middle of the top and bottom edges, the picture in an inner frame, the title on a plaque across the picture's bottom
+   edge and the article's first lines under it. One look in every theme. The corners are cut in steps (clip-path) like pixel art. */
+.blood-card {
+  --bc-metal-dark: #3a1e19;
+  --bc-metal: #7a4a3b;
+  --bc-metal-light: #b98466;
+  --bc-ink: #120709;
+  --bc-body: #1f0d11;
+  --bc-body-light: #2c1218;
+  --bc-crimson: #8e1b24;
+  --bc-title: #e0675a;
+  --bc-text: #eadccd;
+  --bc-step: 6px;
+
+  position: relative;
+  aspect-ratio: 412 / 534;
+  width: 100%;
+  cursor: pointer;
+  font-family: 'Pixelify Sans', ui-serif, Georgia, serif;
+  filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.45));
+  transition: transform 160ms ease-out, filter 160ms ease-out;
+}
+.blood-card:hover {
+  transform: translateY(-3px);
+  filter: drop-shadow(0 10px 16px rgb(0 0 0 / 0.55)) drop-shadow(0 0 10px rgb(179 32 47 / 0.35));
+}
+.blood-card:focus-visible {
+  outline: 2px solid var(--bc-title);
+  outline-offset: 4px;
+}
+
+/* The frame: three nested boxes (dark outline, metal band, dark inner line), each cut in steps at the corners */
+.blood-card__frame,
+.blood-card__band,
+.blood-card__body {
+  position: absolute;
+  clip-path: polygon(
+    var(--bc-step) 0, calc(100% - var(--bc-step)) 0, calc(100% - var(--bc-step)) calc(var(--bc-step) / 2),
+    calc(100% - var(--bc-step) / 2) calc(var(--bc-step) / 2), calc(100% - var(--bc-step) / 2) var(--bc-step), 100% var(--bc-step),
+    100% calc(100% - var(--bc-step)), calc(100% - var(--bc-step) / 2) calc(100% - var(--bc-step)),
+    calc(100% - var(--bc-step) / 2) calc(100% - var(--bc-step) / 2), calc(100% - var(--bc-step)) calc(100% - var(--bc-step) / 2),
+    calc(100% - var(--bc-step)) 100%, var(--bc-step) 100%, var(--bc-step) calc(100% - var(--bc-step) / 2),
+    calc(var(--bc-step) / 2) calc(100% - var(--bc-step) / 2), calc(var(--bc-step) / 2) calc(100% - var(--bc-step)), 0 calc(100% - var(--bc-step)),
+    0 var(--bc-step), calc(var(--bc-step) / 2) var(--bc-step), calc(var(--bc-step) / 2) calc(var(--bc-step) / 2), var(--bc-step) calc(var(--bc-step) / 2)
+  );
+}
+.blood-card__frame {
+  inset: 0;
+  background: var(--bc-ink);
+}
+.blood-card__band {
+  inset: 3px;
+  background: linear-gradient(180deg, var(--bc-metal-light), var(--bc-metal) 18%, var(--bc-metal-dark) 50%, var(--bc-metal) 82%, var(--bc-metal-light));
+}
+.blood-card__body {
+  inset: 8px;
+  background:
+    radial-gradient(120% 60% at 50% 100%, rgb(142 27 36 / 0.18), transparent 70%),
+    linear-gradient(180deg, var(--bc-body-light), var(--bc-body));
+  box-shadow: inset 0 0 0 2px var(--bc-ink), inset 0 0 0 3px rgb(185 132 102 / 0.35);
+}
+
+/* The gems on the frame */
+.blood-card__corner {
+  position: absolute;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+}
+.blood-card__corner--tl { top: -4px; left: -4px; }
+.blood-card__corner--tr { top: -4px; right: -4px; }
+.blood-card__corner--bl { bottom: -4px; left: -4px; }
+.blood-card__corner--br { bottom: -4px; right: -4px; }
+.blood-card__edge-gem {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  width: 20px;
+  height: 22px;
+  transform: translateX(-50%);
+}
+.blood-card__edge-gem--top { top: -8px; }
+.blood-card__edge-gem--bottom { bottom: -8px; }
+
+/* The content: picture, plaque and text, inside the body */
+.blood-card__content {
+  position: absolute;
+  inset: 16px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
+}
+
+/* The picture, in its own thin frame */
+.blood-card__picture {
+  position: relative;
+  width: 100%;
+  flex: 0 0 56%;
+  overflow: hidden;
+  background: #170609;
+  box-shadow: 0 0 0 2px var(--bc-ink), 0 0 0 4px var(--bc-metal), 0 0 0 5px var(--bc-ink);
+  image-rendering: pixelated;
+}
+.blood-card__picture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* No picture: a dark crimson glow with faint swirls, the article icon in the middle */
+.blood-card__placeholder {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: rgb(234 220 205 / 0.28);
+  background:
+    radial-gradient(40% 35% at 50% 50%, rgb(179 32 47 / 0.55), transparent 70%),
+    radial-gradient(30% 50% at 22% 70%, rgb(142 27 36 / 0.5), transparent 70%),
+    radial-gradient(30% 50% at 80% 30%, rgb(142 27 36 / 0.45), transparent 70%),
+    repeating-radial-gradient(circle at 50% 55%, rgb(0 0 0 / 0) 0 9px, rgb(0 0 0 / 0.22) 9px 12px),
+    linear-gradient(180deg, #2a0a10, #12050a);
+}
+.blood-card__placeholder svg {
+  width: 30%;
+  height: auto;
+  filter: drop-shadow(0 2px 0 rgb(0 0 0 / 0.6));
+}
+
+/* The title plaque: across the bottom edge of the picture, with an arrow cap at each end */
+.blood-card__plaque {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  margin-top: -14px;
+}
+.blood-card__cap {
+  flex: none;
+  width: 16px;
+  height: 24px;
+}
+.blood-card__cap--right { transform: scaleX(-1); }
+.blood-card__plaque-box {
+  min-width: 0;
+  flex: 1;
+  margin-inline: -3px;
+  padding: 5px 10px 6px;
+  text-align: center;
+  background: linear-gradient(180deg, #2b1116, #1a0a0d);
+  box-shadow:
+    0 0 0 2px var(--bc-ink),
+    0 0 0 4px var(--bc-metal),
+    0 0 0 5px var(--bc-ink),
+    inset 0 0 0 1px rgb(185 132 102 / 0.4);
+}
+.blood-card__title {
+  overflow: hidden;
+  color: var(--bc-title);
+  font-size: clamp(0.95rem, 1.15vw + 0.45rem, 1.3rem);
+  font-weight: 600;
+  line-height: 1.15;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 0 #000, 0 0 8px rgb(179 32 47 / 0.5);
+}
+
+/* The article's first lines */
+.blood-card__text {
+  display: -webkit-box;
+  min-height: 0;
+  margin-top: 12px;
+  padding-inline: 4px;
+  overflow: hidden;
+  color: var(--bc-text);
+  font-size: 0.9rem;
+  line-height: 1.3;
+  text-align: center;
+  text-shadow: 0 1px 0 #000;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.blood-card__text--empty { color: rgb(234 220 205 / 0.45); font-style: italic; }
+
+/* A pin mark at the top left, inside the frame */
+.blood-card__pin {
+  position: absolute;
+  z-index: 3;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  padding: 3px;
+  color: var(--bc-title);
+  background: rgb(18 7 9 / 0.75);
+  box-shadow: 0 0 0 1px var(--bc-metal);
+}
+
+/* The ⋯ button at the top right, inside the frame: a dark round button with a metal ring, always shown */
+.blood-card__more {
+  position: absolute;
+  z-index: 3;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: var(--bc-text);
+  background: rgb(18 7 9 / 0.85);
+  box-shadow: 0 0 0 1px var(--bc-ink), 0 0 0 2px var(--bc-metal), 0 2px 4px rgb(0 0 0 / 0.6);
+  --fg: var(--bc-text);
+  /* Its menu opens inside the card: the app's own font there, not the card's */
+  font-family: var(--font-sans);
+}
+.blood-card__more:hover { background: #3a141b; }

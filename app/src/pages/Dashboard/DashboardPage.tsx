@@ -1,27 +1,26 @@
 import { useState } from 'react'
-import { LuEye, LuEyeOff, LuLogOut } from 'react-icons/lu'
+import { LuLogOut } from 'react-icons/lu'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/ui/buttons/Button'
-import DashboardRelics from '../../features/dashboard/DashboardRelics'
-import EditIconsPreview from '../../features/dashboard/EditIconsPreview'
-import QuillIconsPreview from '../../features/dashboard/QuillIconsPreview'
-import DashboardColumns from '../../features/dashboard/DashboardColumns'
-import DashboardSections from '../../features/dashboard/DashboardSections'
-import { useDashboardColumns } from '../../features/dashboard/useDashboardColumns'
+import ResourceCreateDialog from '../../components/ui/resource/ResourceCreateDialog'
+import ProjectBoards from '../../features/dashboard/project/ProjectBoards'
 import QuickCreate from '../../features/notes/QuickCreate'
 import { authClient } from '../../lib/auth-client'
+import { resourceByName } from '../../resources/registry'
+import type { AnyResource } from '../../resources/types'
+
+const ARTICLES = resourceByName('articles')
+const MAPS = resourceByName('maps')
 
 // Also a workspace panel (src/panels.ts): no <main> here, AppLayout provides it
 /**
- * The main page: the quick note input, three columns (Recent, Notes, Maps by default; each can show
- * another list), and under them a row of cards per project (its items) and an Orphans row
+ * The main page: the note input, a Create article and a Create map button under it, then a block per project (its name, then its
+ * articles and the maps side by side: ProjectBoards), and the signed-in line at the bottom
  */
 export default function DashboardPage() {
     const navigate = useNavigate()
     const { data: session } = authClient.useSession()
-    const columns = useDashboardColumns()
-    const [showIcons, setShowIcons] = useState(false)
-    const firstName = session?.user.name?.split(/\s+/)[0]
+    const [creating, setCreating] = useState<AnyResource | null>(null)
 
     const signOut = async () => {
         await authClient.signOut()
@@ -30,40 +29,27 @@ export default function DashboardPage() {
 
     return (
         <div className="relative min-h-full">
-            <div className="relative mx-auto flex max-w-[65rem] flex-col gap-12 px-4 pt-8 pb-24">
-                <div className="flex justify-end">
-                    <Button
-                        variant="ghost"
-                        icon={showIcons ? LuEyeOff : LuEye}
-                        onClick={() => setShowIcons((v) => !v)}
-                        aria-pressed={showIcons}
-                    >
-                        {showIcons ? 'Hide icons' : 'Show icons'}
-                    </Button>
-                </div>
-                {showIcons && (
-                    <>
-                        {/* Pixel-art items along the top (a theme turns them on) */}
-                        <DashboardRelics />
-                        {/* TEMPORARY: the quill icons to choose from */}
-                        <QuillIconsPreview />
-                        {/* TEMPORARY: the pencil / edit / create icons to choose from */}
-                        <EditIconsPreview />
-                    </>
-                )}
-                {/* The input and the columns share one narrower width, centred over the sections */}
-                <div className="mx-auto flex w-full max-w-[54rem] flex-col gap-xl">
-                    {/* A greeting, then the page's main input, low on the screen with room above them */}
-                    <div className="mt-[18vh] flex flex-col items-center gap-12">
-                        <h1 className="text-center text-5xl font-semibold tracking-tight">Hello{firstName ? `, ${firstName}` : ''}</h1>
-                        <div className="w-full">
-                            <QuickCreate />
-                        </div>
+            <div className="relative mx-auto flex max-w-[72rem] flex-col gap-12 px-4 pt-8 pb-24">
+                {/* The note input and the two Create buttons, centred, low on the screen with room above them */}
+                <div className="mx-auto mt-[14vh] flex w-full max-w-[34rem] flex-col items-center gap-5">
+                    <div className="w-full">
+                        <QuickCreate />
                     </div>
-                    <DashboardColumns {...columns} />
+                    <div className="grid w-full grid-cols-2 gap-3">
+                        {ARTICLES && (
+                            <Button variant="secondary" icon={ARTICLES.ui.icon} onClick={() => setCreating(ARTICLES)} className="w-full justify-center">
+                                Create article
+                            </Button>
+                        )}
+                        {MAPS && (
+                            <Button variant="secondary" icon={MAPS.ui.icon} onClick={() => setCreating(MAPS)} className="w-full justify-center">
+                                Create map
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
-                <DashboardSections />
+                <ProjectBoards />
 
                 <footer className="flex items-center justify-between gap-4 border-t border-line pt-4">
                     <p className="text-body text-fg-muted">
@@ -74,6 +60,7 @@ export default function DashboardPage() {
                     </Button>
                 </footer>
             </div>
+            {creating && <ResourceCreateDialog resource={creating} onClose={() => setCreating(null)} />}
         </div>
     )
 }
