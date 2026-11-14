@@ -1,238 +1,108 @@
 // THE ARTICLE CARD'S PIXEL ART (ArticleCard.tsx), drawn the way the framed buttons are (styles/buttons.css): flat colours on a grid of
-// art pixels (--cpx: 2px each, styles/bloodCard.css). Everything here is in art pixels. How to change it:
-//   - a colour: change it in PALETTE (every pixel of that letter changes);
-//   - a piece (a corner star, a gem, a knot): edit its letter grid, one letter per pixel, '.' for none. Keep its rows the same length;
-//   - the frame's band and the plaque's border: change their PROFILE (the colours from the outside in);
-//   - where things are, or the card's size: change LAYOUT (bloodCard.css places the picture, title and text from the same numbers).
-// The card is drawn as one SVG, one <path> per colour (ArticleCard.tsx). Pure: cardPixels.test.ts.
+// art pixels (--cpx each, styles/bloodCard.css). The art itself is in cardPixelData.ts, as letter grids; here: how it is put together,
+// and where things go. How to change it:
+//   - a colour: change it in PALETTE (cardPixelData.ts): every pixel of that letter changes;
+//   - a pixel of the frame: change its letter in FRAME_LEFT (the right half follows: it is the left half mirrored);
+//   - a gem: CORNER_GEM (both top corners), TOP_GEM, BOTTOM_GEM; they are put on the frame unmirrored, at GEMS' places;
+//   - the chalice (the picture of an article without one): CHALICE and ART_PALETTE;
+//   - where the picture, title and text go: LAYOUT (bloodCard.css takes them from there).
+// Each is drawn as an SVG, one <path> per colour, made once (ArticleCard.tsx). Pure: cardPixels.test.ts.
+import { ART_PALETTE, BOTTOM_GEM, CHALICE, CORNER_GEM, FRAME_LEFT, PALETTE, TOP_GEM } from './cardPixelData'
 
-/** The colours, by letter. Taken from the design (the crimson card) */
-export const PALETTE = {
-  /** the outline round everything */
-  o: '#0e0406',
-  /** the panels' deep red-black (behind the text) */
-  k: '#1e1014',
-  /** the plaque's inside */
-  p: '#2c1418',
-  /** metal, darkest to lightest */
-  d: '#43292d',
-  m: '#694b49',
-  M: '#876663',
-  L: '#a77f77',
-  H: '#d9b1ab',
-  /** gem, darkest to lightest */
-  r: '#400911',
-  g: '#7a0d22',
-  G: '#931931',
-  R: '#ce7d85',
-  w: '#f4a8ae',
-} as const
-
-export type Colour = keyof typeof PALETTE
+export { ART_PALETTE, PALETTE }
 
 /** Sizes and places, in art pixels (x, y from the card's top left) */
 export const LAYOUT = {
-  /** The whole card (the frame, and the ornaments sticking out of it) */
-  width: 122,
-  height: 178,
-  /** The frame's outer edge */
-  frame: { x: 3, y: 6, width: 116, height: 165 },
-  /** The picture's window (see-through: the picture is behind the frame) */
-  window: { x: 10, y: 13, width: 102, height: 94 },
-  /** The title's plaque (its pointed ends reach onto the frame's sides) */
-  plaque: { x: 6, y: 107, width: 110, height: 21 },
-  /** The text, under the plaque */
-  text: { x: 21, y: 131, width: 80, height: 31 },
+  /** The whole card (the frame, and the gems sticking out of it) */
+  width: 184,
+  height: 238,
+  /** The picture: behind the frame's window (the window, and a pixel under the frame all round) */
+  window: { x: 24, y: 19, width: 134, height: 122 },
+  /** The title: on the plaque, inside its border */
+  title: { x: 38, y: 146, width: 108, height: 24 },
+  /** The text, under the plaque (three lines) */
+  text: { x: 31, y: 178, width: 122, height: 40 },
 } as const
 
-/** The frame's band, from its outer edge in: outline, a light line, dark metal, outline, a dark groove, a thin light line, outline */
-export const BAND = ['o', 'L', 'm', 'o', 'd', 'M', 'o'] as const satisfies readonly Colour[]
-/** The plaque's border, from its edge in: outline, a light line, dark metal, outline, a dark line; inside it, `p` */
-export const PLAQUE_BORDER = ['o', 'M', 'd', 'o', 'k'] as const satisfies readonly Colour[]
+/** Where the gems go: their top left corners */
+export const GEMS = [
+  { piece: CORNER_GEM, x: 21, y: 15 },
+  { piece: CORNER_GEM, x: 151, y: 15 },
+  { piece: TOP_GEM, x: 84, y: 6 },
+  { piece: BOTTOM_GEM, x: 84, y: 218 },
+] as const
 
-/** A corner of the frame (top left; the others are it mirrored): a round gem in a metal ring, eight spikes */
-export const STAR = [
-  '..........oHo..........',
-  '..........oLo..........',
-  '..........oLo..........',
-  '....o.....oLmo....o....',
-  '...oHo...ooLmo...oHo...',
-  '....oLoooMMMMMoooLo....',
-  '.....oLMMMoooMMMLo.....',
-  '.....oMMoogggooddo.....',
-  '.....oMoogggggoodo.....',
-  '...ooMMogwRGgggoddo....',
-  'ooommMoggRGgggggodooooo',
-  'HLLLLMoggGggggrgodLLLLH',
-  'oooooMoggggggrrgodmmooo',
-  '....oMMoggggrrgoddoo...',
-  '.....oMooggrrgoodo.....',
-  '.....oMdoogggooddo.....',
-  '.....oLdddooodddLo.....',
-  '....oLooodddddoooLo....',
-  '...oHo...omLoo...oHo...',
-  '....o....omLo.....o....',
-  '..........oLo..........',
-  '..........oLo..........',
-  '..........oHo..........',
-]
+/** A grid of letters (null: none) */
+export type Canvas = (string | null)[][]
 
-/** The gem in the middle of the frame's top edge */
-export const TOP_GEM = [
-  '.........oLo.........',
-  '.........oLo.........',
-  '........oLLMo........',
-  '........oLoMo........',
-  '.......oLogoMo.......',
-  '.o....oLLogoMMo....o.',
-  'oLo...oLowggoMo...oMo',
-  '.oLo.oLoGRRggoMo.oMo.',
-  '..oLoLLoRGgggoMMoMo..',
-  '...oLLoGGGggggoMMo...',
-  '...oLoGGGGgggggoMo...',
-  '....oLoGGGggggoMo....',
-  '....oLLoGGgrgoMMo....',
-  '.....oLoGGgrgoMo.....',
-  '......oLoGrgoMo......',
-  '......oLLogoMMo......',
-  '.......oLogoMo.......',
-  '........oLoMo........',
-  '........oLLMo........',
-  '.........oLo.........',
-  '.........oLo.........',
-]
+const toCanvas = (rows: readonly string[]): Canvas => rows.map((row) => [...row].map((ch) => (ch === '.' ? null : ch)))
 
-/** The gem in the middle of the frame's bottom edge */
-export const BOTTOM_GEM = [
-  '......oLo......',
-  '......oLo......',
-  '.....oLoMo.....',
-  '....oLogoMo....',
-  '...oLLwgoMMo...',
-  '..oLLoRggoMMo..',
-  '.oLLoRGgggoMMo.',
-  'oLLoGGGggggoMMo',
-  '.oLLoGGgggoMMo.',
-  '..oLLoGgroMMo..',
-  '...oLLoroMMo...',
-  '....oLogoMo....',
-  '.....oLoMo.....',
-  '......oLo......',
-  '......oLo......',
-]
-
-/** The knot in each bottom corner, inside the frame */
-export const KNOT = [
-  '...ooooo...',
-  '..oMMMMMo..',
-  '.oMMoooMdo.',
-  'oMMookooddo',
-  'oMookLkoodo',
-  'oMokLHLkodo',
-  'oMookLkoodo',
-  'oMMookooddo',
-  '.oddoooddo.',
-  '..odddddo..',
-  '...ooooo...',
-]
-
-/** The small studs on the plaque's top and bottom edges, and the dark crosses near its ends */
-export const STUD = ['.o.', 'oLo', '.o.']
-export const CROSS = ['.g.', 'ggg', '.g.']
-
-/** A grid of colours (null: none), as wide and tall as the card */
-type Canvas = (Colour | null)[][]
-
-const blank = (): Canvas => Array.from({ length: LAYOUT.height }, () => Array<Colour | null>(LAYOUT.width).fill(null))
-
-/** Puts a letter grid on the canvas with its top left at x, y (mirrored left to right with `flip`); its '.' leave what is there */
-function stamp(canvas: Canvas, piece: readonly string[], x: number, y: number, flip = false) {
+/** Puts a letter grid on the canvas with its top left at x, y; its '.' leave what is there */
+function stamp(canvas: Canvas, piece: readonly string[], x: number, y: number) {
   piece.forEach((row, dy) => {
-    for (let dx = 0; dx < row.length; dx++) {
-      const ch = row[flip ? row.length - 1 - dx : dx]
-      const cy = Math.floor(y) + dy
-      const cx = Math.floor(x) + dx
-      if (ch !== '.' && canvas[cy]?.[cx] !== undefined) canvas[cy][cx] = ch as Colour
-    }
+    ;[...row].forEach((ch, dx) => {
+      if (ch !== '.' && canvas[y + dy]?.[x + dx] !== undefined) canvas[y + dy][x + dx] = ch
+    })
   })
 }
 
-/** Fills a rectangle (null: makes it see-through) */
-function fill(canvas: Canvas, { x, y, width, height }: { x: number; y: number; width: number; height: number }, colour: Colour | null) {
-  for (let cy = y; cy < y + height; cy++) for (let cx = x; cx < x + width; cx++) canvas[cy][cx] = colour
-}
-
-/** The frame: its band (BAND, from each edge in, meeting at the corners) round a `k` inside */
-function drawFrame(canvas: Canvas) {
-  const { x, y, width, height } = LAYOUT.frame
-  for (let cy = y; cy < y + height; cy++) {
-    for (let cx = x; cx < x + width; cx++) {
-      const depth = Math.min(cx - x, x + width - 1 - cx, cy - y, y + height - 1 - cy)
-      canvas[cy][cx] = depth < BAND.length ? BAND[depth] : 'k'
-    }
-  }
-}
-
-/** The plaque: straight along its top and bottom, its ends pointed (45°); PLAQUE_BORDER from its edge in, `p` inside */
-function drawPlaque(canvas: Canvas) {
-  const { x, y, width, height } = LAYOUT.plaque
-  const mid = (height - 1) / 2
-  for (let row = 0; row < height; row++) {
-    // how far in each end starts on this row: 0 on the middle row, more towards the top and bottom
-    const inset = Math.round(Math.abs(row - mid))
-    for (let cx = x + inset; cx < x + width - inset; cx++) {
-      const fromEnd = Math.min(cx - x - inset, x + width - 1 - inset - cx)
-      const depth = Math.min(row, height - 1 - row, fromEnd)
-      canvas[y + row][cx] = depth < PLAQUE_BORDER.length ? PLAQUE_BORDER[depth] : 'p'
-    }
-  }
-  const centre = x + (width - STUD[0].length) / 2
-  stamp(canvas, STUD, centre, y - 1)
-  stamp(canvas, STUD, centre, y + height - 2)
-  stamp(canvas, CROSS, x + 9, y + mid - 1)
-  stamp(canvas, CROSS, x + width - 12, y + mid - 1)
-}
-
-/** The whole card, as a grid of colours: the frame, the see-through window, the plaque and the ornaments */
-export function drawCard(): Canvas {
-  const canvas = blank()
-  drawFrame(canvas)
-  fill(canvas, LAYOUT.window, null)
-  drawPlaque(canvas)
-  const { frame } = LAYOUT
-  const right = LAYOUT.width - STAR[0].length
-  stamp(canvas, STAR, 0, frame.y - 1)
-  stamp(canvas, STAR, right, frame.y - 1, true)
-  stamp(canvas, TOP_GEM, (LAYOUT.width - TOP_GEM[0].length) / 2, 0)
-  stamp(canvas, BOTTOM_GEM, (LAYOUT.width - BOTTOM_GEM[0].length) / 2, frame.y + frame.height - 9)
-  stamp(canvas, KNOT, frame.x + 2, frame.y + frame.height - KNOT.length - 2)
-  stamp(canvas, KNOT, frame.x + frame.width - KNOT[0].length - 2, frame.y + frame.height - KNOT.length - 2, true)
+/** The frame: its left half, and that half mirrored on the right; then the gems */
+export function drawFrame(): Canvas {
+  const canvas = toCanvas(FRAME_LEFT.map((row) => row + [...row].reverse().join('')))
+  for (const { piece, x, y } of GEMS) stamp(canvas, piece, x, y)
   return canvas
 }
 
+/** The chalice */
+export const drawChalice = (): Canvas => toCanvas(CHALICE)
+
 /**
- * A canvas as SVG paths, one per colour: each run of one colour along a row is a rectangle, joined with the same run in the rows under it.
- * In PALETTE's order, so the file reads the same every time
+ * A canvas as SVG paths, one per letter: each run of one letter along a row is a rectangle, joined with the same run (same place, same
+ * width, ending at the same letters) in the rows under it. In the palette's order, so the file reads the same every time
  */
-export function toPaths(canvas: Canvas): { colour: Colour; d: string }[] {
-  const rects = new Map<Colour, string[]>()
-  const done = canvas.map((row) => row.map(() => false))
-  canvas.forEach((row, y) => {
+export function toPaths(canvas: Canvas, palette: Record<string, string>): { letter: string; d: string }[] {
+  const rects = new Map<string, string[]>()
+  const runsOf = (row: (string | null)[]) => {
+    const runs: { x: number; w: number; letter: string }[] = []
     let x = 0
     while (x < row.length) {
-      const colour = row[x]
-      if (colour === null || done[y][x]) {
-        x++
-        continue
-      }
+      const letter = row[x]
       let w = 1
-      while (x + w < row.length && row[x + w] === colour && !done[y][x + w]) w++
-      let h = 1
-      while (y + h < canvas.length && canvas[y + h].slice(x, x + w).every((c, i) => c === colour && !done[y + h][x + i]) && (canvas[y + h][x - 1] !== colour || x === 0) && canvas[y + h][x + w] !== colour) h++
-      for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) done[y + dy][x + dx] = true
-      rects.set(colour, [...(rects.get(colour) ?? []), `M${x} ${y}h${w}v${h}h-${w}z`])
+      while (x + w < row.length && row[x + w] === letter) w++
+      if (letter !== null) runs.push({ x, w, letter })
       x += w
     }
+    return runs
+  }
+  const rows = canvas.map(runsOf)
+  const used = rows.map((runs) => runs.map(() => false))
+  rows.forEach((runs, y) => {
+    runs.forEach((run, i) => {
+      if (used[y][i]) return
+      let h = 1
+      for (;;) {
+        const below = rows[y + h]?.findIndex((r) => r.x === run.x && r.w === run.w && r.letter === run.letter)
+        if (below === undefined || below < 0 || used[y + h][below]) break
+        used[y + h][below] = true
+        h++
+      }
+      rects.set(run.letter, [...(rects.get(run.letter) ?? []), `M${run.x} ${y}h${run.w}v${h}h-${run.w}z`])
+    })
   })
-  return (Object.keys(PALETTE) as Colour[]).filter((c) => rects.has(c)).map((colour) => ({ colour, d: rects.get(colour)!.join('') }))
+  return Object.keys(palette)
+    .filter((letter) => rects.has(letter))
+    .map((letter) => ({ letter, d: rects.get(letter)!.join('') }))
 }
+
+/** A canvas as an SVG file's text: square pixels, sharp at any size */
+export function toSvg(canvas: Canvas, palette: Record<string, string>): string {
+  const width = canvas[0].length
+  const height = canvas.length
+  const paths = toPaths(canvas, palette)
+    .map(({ letter, d }) => `<path fill="${palette[letter]}" d="${d}"/>`)
+    .join('')
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" shape-rendering="crispEdges">${paths}</svg>`
+}
+
+/** An SVG as an address an <img> can show */
+export const svgUrl = (svg: string) => `data:image/svg+xml,${encodeURIComponent(svg)}`

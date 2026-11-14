@@ -1,11 +1,11 @@
 /* The Dashboard's article card (features/dashboard/project/ArticleCard.tsx), the crimson card of the design. Pixel art like the framed
-   buttons (buttons.css): flat colours on a grid of art pixels of --cpx (2px), so the card is 122 x 178 art pixels (244 x 356px). The art
-   itself (the frame, plaque, gems and knots, and their colours) is in features/dashboard/project/cardPixels.ts; here: its size, and where the
-   picture, title and text go. Those places come from cardPixels.ts's LAYOUT, set on the card as --window-x, --plaque-y… (in art pixels), so
-   a change there moves them here too. One look in every theme. */
+   buttons (buttons.css): flat colours on a grid of art pixels of --cpx, so the card is 184 x 238 art pixels. The art itself (the frame, its
+   gems, the chalice, and their colours) is in features/dashboard/project/cardPixelData.ts; here: its size, and where the picture, title
+   and text go. Those places come from cardPixels.ts's LAYOUT, set on the card as --window-x, --title-y… (in art pixels), so a change there
+   moves them here too. One look in every theme. */
 .blood-card {
-  /* THE art pixel of the card: 2px. Change it to make the whole card bigger or smaller (whole pixels keep it sharp) */
-  --cpx: 2px;
+  /* THE art pixel of the card. Change it to make the whole card bigger or smaller */
+  --cpx: 1.3px;
   --title-colour: #ac6063;
   --text-colour: #b8abaa;
   --title-font: 'Alegreya', Georgia, serif;
@@ -13,8 +13,8 @@
 
   position: relative;
   flex: none;
-  width: calc(122 * var(--cpx));
-  height: calc(178 * var(--cpx));
+  width: calc(184 * var(--cpx));
+  height: calc(238 * var(--cpx));
   cursor: pointer;
   transition: transform 0.12s steps(3), filter 0.12s steps(2);
 }
@@ -63,28 +63,29 @@
   pointer-events: none;
 }
 
-/* The frame, plaque and ornaments: the SVG of the pixel art, over the picture */
+/* The frame, plaque and gems: the SVG of the pixel art, over the picture */
 .blood-card__frame {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
+  user-select: none;
 }
 
-/* The title, inside the plaque's border (4 art pixels in from its top and bottom, 13 from its ends) */
+/* The title, on the plaque */
 .blood-card__title {
-  top: calc((var(--plaque-y) + 4) * var(--cpx));
-  left: calc((var(--plaque-x) + 13) * var(--cpx));
+  top: calc(var(--title-y) * var(--cpx));
+  left: calc(var(--title-x) * var(--cpx));
   display: flex;
-  width: calc((var(--plaque-width) - 26) * var(--cpx));
-  height: calc((var(--plaque-height) - 8) * var(--cpx));
+  width: calc(var(--title-width) * var(--cpx));
+  height: calc(var(--title-height) * var(--cpx));
   align-items: center;
   justify-content: center;
   overflow: hidden;
   color: var(--title-colour);
   font-family: var(--title-font);
-  font-size: calc(var(--cpx) * 12.5);
+  font-size: calc(var(--cpx) * 16.7);
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
@@ -105,8 +106,8 @@
   overflow: hidden;
   color: var(--text-colour);
   font-family: var(--text-font);
-  font-size: calc(var(--cpx) * 8.3);
-  line-height: 1.12;
+  font-size: calc(var(--cpx) * 11.2);
+  line-height: 1.07;
   text-align: center;
   text-shadow: 0 var(--cpx) 0 #0e0406;
   -webkit-box-orient: vertical;
@@ -120,8 +121,8 @@
 /* A pin mark at the top left of the window, clear of the corner star */
 .blood-card__pin {
   position: absolute;
-  top: calc((var(--window-y) + 16) * var(--cpx));
-  left: calc((var(--window-x) + 4) * var(--cpx));
+  top: calc((var(--window-y) + 22) * var(--cpx));
+  left: calc((var(--window-x) + 6) * var(--cpx));
   display: flex;
   padding: var(--cpx);
   color: #ce7d85;
@@ -132,11 +133,11 @@
 /* The ⋯ button at the top right of the window, clear of the corner star: always shown */
 .blood-card__more {
   position: absolute;
-  top: calc((var(--window-y) + 3) * var(--cpx));
-  right: calc(24 * var(--cpx));
+  top: calc((var(--window-y) + 4) * var(--cpx));
+  right: calc(42 * var(--cpx));
   display: flex;
-  width: calc(15 * var(--cpx));
-  height: calc(15 * var(--cpx));
+  width: calc(20 * var(--cpx));
+  height: calc(20 * var(--cpx));
   align-items: center;
   justify-content: center;
   color: #d9b1ab;
