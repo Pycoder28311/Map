@@ -80,13 +80,16 @@ describe('the article card pixel art', () => {
     }
   })
 
-  it("the crimson ⋯ set into its top-right star: the gem taken out of the socket, three gems in its place, only the palette's letters", () => {
+  it("the crimson ⋯ set into the frame: its socket emptied to the recess, three gems in it, only the palette's letters", () => {
     const o = SKINS.crimson.ornament
     const frame = drawFrame()
     const base = drawOrnament(frame, o, 'dot', 'base')
     const { socket, box } = o
     for (let y = socket.y; y < socket.y + socket.height; y++)
-      for (let x = socket.x; x < socket.x + socket.width; x++) expect(o.clear.includes(base[y - box.y][x - box.x] ?? '')).toBe(false)
+      for (let x = socket.x; x < socket.x + socket.width; x++) {
+        const c = base[y - box.y][x - box.x]
+        if (c !== null) expect(c === o.recess || !o.clear.includes(c)).toBe(true)
+      }
     for (const state of ['dot', 'hover', 'pressed'] as const) {
       const gems = drawOrnament(frame, o, state, 'gems').flat().filter((c) => c !== null)
       expect(gems).toHaveLength(3 * o[state].join('').replaceAll('.', '').length)

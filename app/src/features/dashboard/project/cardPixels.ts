@@ -4,8 +4,8 @@
 // The crimson one, how to change it:
 //   - a colour: change it in PALETTE (cardPixelData.ts): every pixel of that letter changes;
 //   - a pixel of the frame: change its letter in FRAME_LEFT (the right half follows: it is the left half mirrored);
-//   - a gem: CORNER_GEM (the gem of both top corners' stars), TOP_GEM, BOTTOM_GEM; they are put on the frame unmirrored, at GEMS' places, each covering its
-//     whole box (its '.' are see-through there);
+//   - a gem: CORNER_GEM (the round gem on both top corners), TOP_GEM, BOTTOM_GEM (the diamonds); they are put on the frame unmirrored,
+//     at GEMS' places; a diamond covers its whole box (its '.' are see-through there), a corner gem only its own pixels;
 //   - the chalice (the picture of an article without one): CHALICE and ART_PALETTE;
 //   - where the picture, title and text go: LAYOUT (bloodCard.css takes them from there).
 // The gold one: GOLD_FRAME (the whole frame, as drawn: not mirrored), GOLD_PALETTE, GOLD_CHALICE, GOLD_ART_PALETTE (goldCardData.ts), and
@@ -31,10 +31,11 @@ export const LAYOUT = {
 
 /** Where the gems go: their top left corners */
 export const GEMS = [
-  { piece: CORNER_GEM, x: 20, y: 16 },
-  { piece: CORNER_GEM, x: 153, y: 16 },
-  { piece: TOP_GEM, x: 82, y: 0 },
-  { piece: BOTTOM_GEM, x: 82, y: 210 },
+  // the corner gems sit on the band's corners: where they have no pixels the band shows (`keep`)
+  { piece: CORNER_GEM, x: 14, y: 9, keep: true },
+  { piece: CORNER_GEM, x: 158, y: 9, keep: true },
+  { piece: TOP_GEM, x: 82, y: 0, keep: false },
+  { piece: BOTTOM_GEM, x: 82, y: 210, keep: false },
 ] as const
 
 /** A grid of letters (null: none) */
@@ -55,7 +56,7 @@ function stamp(canvas: Canvas, piece: readonly string[], x: number, y: number, k
 /** The frame: its left half, and that half mirrored on the right; then the gems */
 export function drawFrame(): Canvas {
   const canvas = toCanvas(FRAME_LEFT.map((row) => row + [...row].reverse().join('')))
-  for (const { piece, x, y } of GEMS) stamp(canvas, piece, x, y)
+  for (const { piece, x, y, keep } of GEMS) stamp(canvas, piece, x, y, keep)
   return canvas
 }
 
@@ -126,6 +127,8 @@ export type Skin = {
   window: Box
   /** The title's box on the plaque, and the text's box under it */
   title: Box
+  /** The title in the buttons' frame (the framed Shade look, as the Share button), not on a plaque of the art */
+  titleFrame?: boolean
   text: Box
   /** Type sizes in art pixels, the text's line height, and the colours (taken from the design) */
   titleSize: number
@@ -157,11 +160,11 @@ export type MoreOrnament = {
   pressed: readonly string[]
 }
 
-/** The crimson card's ⋯: three small rubies in the top-right star, in place of its gem */
+/** The crimson card's ⋯: three small rubies in a slot of the top band, beside the top-right corner gem (the corner is the button too) */
 const CRIMSON_ORNAMENT: MoreOrnament = {
-  box: { x: 146, y: 5, width: 28, height: 30 },
-  socket: { x: 155, y: 16, width: 11, height: 10 },
-  clear: 'rgGsRPw',
+  box: { x: 134, y: 6, width: 38, height: 18 },
+  socket: { x: 140, y: 12, width: 13, height: 6 },
+  clear: 'okdmnMLHWrgGsRPw',
   recess: 'o',
   gap: 1,
   dot: ['PGg', 'Ggr', 'grr'],
@@ -201,7 +204,9 @@ export const SKINS = {
     palette: PALETTE,
     chalice: drawChalice,
     artPalette: ART_PALETTE,
-    titleSize: 16.7,
+    title: { x: 31, y: 147, width: 122, height: 22 },
+    titleFrame: true,
+    titleSize: 13,
     textSize: 11.2,
     lineHeight: 1.07,
     titleColour: '#ac6063',

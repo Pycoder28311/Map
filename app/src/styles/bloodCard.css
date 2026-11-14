@@ -201,3 +201,27 @@
   outline-offset: 0;
   border-radius: 50%;
 }
+
+/* The title in the buttons' frame (a skin's titleFrame: the framed Shade look, as the Share button): the frame and its panel are the
+   button's; the title's own font, size and colour inside it. A look only: it takes no hover */
+.blood-card__title .blood-card__label {
+  max-width: 100%;
+  min-width: 0;
+  pointer-events: none;
+  --btn-pad-x: calc(var(--cpx) * 9);
+}
+.blood-card__label .blood-card__label-text {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--title-colour);
+  font-family: var(--title-font);
+  font-size: calc(var(--cpx) * var(--title-size));
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-shadow: 0 var(--cpx) 0 #0e0406;
+  -webkit-font-smoothing: auto;
+}
