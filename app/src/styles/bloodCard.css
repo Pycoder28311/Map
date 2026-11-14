@@ -1,7 +1,8 @@
 /* The Dashboard's article card (features/dashboard/project/ArticleCard.tsx), the crimson card of the design. The frame is pixel art,
-   184 x 238 art pixels (assets/cards/blood-card-frame.png: one file pixel per art pixel, 32 colours, its picture window see-through), drawn
-   with square pixels at any size (image-rendering: pixelated); edit it in any pixel editor (Aseprite, Piskel…). Behind its window: the
-   article's picture, or the design's chalice (blood-card-art.png, 134 x 122 art pixels: cells 24–157 x 19–140 of the frame). Places in the
+   184 x 238 art pixels, as an SVG of pixel squares (assets/cards/blood-card-frame.svg: one <path> per colour, its id the colour, e.g.
+   #c7a1f1d: change its fill to recolour every pixel of that colour; the picture window is left empty). Sharp at any size, and editable in
+   Figma, Illustrator or Inkscape, or as text. Behind its window: the article's picture, or the design's chalice (blood-card-art.svg, the
+   same kind of file, 134 x 122 art pixels: cells 24–157 x 19–140 of the frame). Places in the
    window are in frame cells (of 184 x 238); the title and text are in pixels of the design at 412 x 534; both are shares of the card, so it
    can be any width. The type is in cqw (hundredths of the card's width), so it keeps the design's size wherever it is. One look in every theme. */
 .blood-card {

@@ -4,8 +4,8 @@ import TreeMenu from '../../../components/ui/tree/TreeMenu'
 import type { TreeMenuGroup } from '../../../components/ui/tree/types'
 import { useResourceMenu } from '../../../lib/resource/actions'
 import type { AnyResource } from '../../../resources/types'
-import FRAME from '../../../assets/cards/blood-card-frame.png'
-import DEFAULT_ART from '../../../assets/cards/blood-card-art.png'
+import FRAME from '../../../assets/cards/blood-card-frame.svg'
+import DEFAULT_ART from '../../../assets/cards/blood-card-art.svg'
 import RenameDialog from './RenameDialog'
 
 type Item = Record<string, unknown> & { id: number | string }
