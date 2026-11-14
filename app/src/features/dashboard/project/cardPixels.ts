@@ -1,16 +1,20 @@
-// THE ARTICLE CARD'S PIXEL ART (ArticleCard.tsx), drawn the way the framed buttons are (styles/buttons.css): flat colours on a grid of
-// art pixels (--cpx each, styles/bloodCard.css). The art itself is in cardPixelData.ts, as letter grids; here: how it is put together,
-// and where things go. How to change it:
+// THE ARTICLE CARDS' PIXEL ART (ArticleCard.tsx), drawn the way the framed buttons are (styles/buttons.css): flat colours on a grid of
+// art pixels (--cpx each, styles/bloodCard.css). Two looks, SKINS: `crimson` (the first design) and `gold` (the second). Their art is in
+// cardPixelData.ts and goldCardData.ts, as letter grids; here: how it is put together, and where things go.
+// The crimson one, how to change it:
 //   - a colour: change it in PALETTE (cardPixelData.ts): every pixel of that letter changes;
 //   - a pixel of the frame: change its letter in FRAME_LEFT (the right half follows: it is the left half mirrored);
 //   - a gem: CORNER_GEM (the gem of both top corners' stars), TOP_GEM, BOTTOM_GEM; they are put on the frame unmirrored, at GEMS' places, each covering its
 //     whole box (its '.' are see-through there);
 //   - the chalice (the picture of an article without one): CHALICE and ART_PALETTE;
 //   - where the picture, title and text go: LAYOUT (bloodCard.css takes them from there).
+// The gold one: GOLD_FRAME (the whole frame, as drawn: not mirrored), GOLD_PALETTE, GOLD_CHALICE, GOLD_ART_PALETTE (goldCardData.ts), and
+// its places in SKINS.gold below.
 // Each is drawn as an SVG, one <path> per colour, made once (ArticleCard.tsx). Pure: cardPixels.test.ts.
 import { ART_PALETTE, BOTTOM_GEM, CHALICE, CORNER_GEM, FRAME_LEFT, PALETTE, TOP_GEM } from './cardPixelData'
+import { GOLD_ART_PALETTE, GOLD_CHALICE, GOLD_FRAME, GOLD_PALETTE } from './goldCardData'
 
-export { ART_PALETTE, PALETTE }
+export { ART_PALETTE, GOLD_ART_PALETTE, GOLD_PALETTE, PALETTE }
 
 /** Sizes and places, in art pixels (x, y from the card's top left) */
 export const LAYOUT = {
@@ -104,6 +108,71 @@ export function toSvg(canvas: Canvas, palette: Record<string, string>): string {
     .join('')
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" shape-rendering="crispEdges">${paths}</svg>`
 }
+
+/** A box, in art pixels */
+type Box = { x: number; y: number; width: number; height: number }
+
+/** One look of the card: its art, and where its picture, title and text go (in art pixels), and how they look */
+export type Skin = {
+  /** The card's size in art pixels (the frame's grid) */
+  width: number
+  height: number
+  frame: () => Canvas
+  palette: Record<string, string>
+  chalice: () => Canvas
+  artPalette: Record<string, string>
+  /** Where the picture goes (behind the frame's window) */
+  window: Box
+  /** The title's box on the plaque, and the text's box under it */
+  title: Box
+  text: Box
+  /** Type sizes in art pixels, the text's line height, and the colours (taken from the design) */
+  titleSize: number
+  textSize: number
+  lineHeight: number
+  titleColour: string
+  textColour: string
+  /** The ⋯ button's place (from the card's top and right) and the pin's (from its top and left), clear of the corner ornaments */
+  more: { top: number; right: number }
+  pin: { top: number; left: number }
+}
+
+export const SKINS = {
+  crimson: {
+    ...LAYOUT,
+    frame: drawFrame,
+    palette: PALETTE,
+    chalice: drawChalice,
+    artPalette: ART_PALETTE,
+    titleSize: 16.7,
+    textSize: 11.2,
+    lineHeight: 1.07,
+    titleColour: '#ac6063',
+    textColour: '#b8abaa',
+    more: { top: 23, right: 42 },
+    pin: { top: 41, left: 30 },
+  },
+  gold: {
+    width: 236,
+    height: 306,
+    frame: () => toCanvas(GOLD_FRAME),
+    palette: GOLD_PALETTE,
+    chalice: () => toCanvas(GOLD_CHALICE),
+    artPalette: GOLD_ART_PALETTE,
+    window: { x: 37, y: 27, width: 162, height: 158 },
+    title: { x: 42.5, y: 189, width: 148, height: 28 },
+    text: { x: 38.6, y: 228.5, width: 156, height: 48 },
+    titleSize: 21.3,
+    textSize: 14.6,
+    lineHeight: 1.04,
+    titleColour: '#8e5a5c',
+    textColour: '#969393',
+    more: { top: 44, right: 42 },
+    pin: { top: 44, left: 44 },
+  },
+} satisfies Record<string, Skin>
+
+export type SkinName = keyof typeof SKINS
 
 /** An SVG as an address an <img> can show */
 export const svgUrl = (svg: string) => `data:image/svg+xml,${encodeURIComponent(svg)}`

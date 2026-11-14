@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ART_PALETTE, BOTTOM_GEM, CHALICE, CORNER_GEM, FRAME_LEFT, PALETTE, TOP_GEM } from './cardPixelData'
-import { drawChalice, drawFrame, LAYOUT, toPaths } from './cardPixels'
+import { drawChalice, drawFrame, LAYOUT, SKINS, toPaths, type Canvas } from './cardPixels'
+import { GOLD_ART_PALETTE, GOLD_CHALICE, GOLD_FRAME, GOLD_PALETTE } from './goldCardData'
 
 const frameLetters = new Set([...Object.keys(PALETTE), '.'])
 const artLetters = new Set([...Object.keys(ART_PALETTE), '.'])
@@ -30,8 +31,8 @@ describe('the article card pixel art', () => {
     expect(row.slice(LAYOUT.width / 2)).toEqual(row.slice(0, LAYOUT.width / 2).reverse())
   })
 
-  it('the silhouette is clean: its outer edge is outline all round (corners too), every outline pixel outlines something, nothing floats', () => {
-    const frame = drawFrame()
+  it.each(Object.keys(SKINS) as (keyof typeof SKINS)[])('%s: the silhouette is clean: its outer edge is outline all round (corners too), every outline pixel outlines something, nothing floats', (name) => {
+    const frame: Canvas = SKINS[name].frame()
     const H = frame.length
     const W = frame[0].length
     const at = (x: number, y: number) => (x >= 0 && y >= 0 && x < W && y < H ? frame[y][x] : null)
@@ -64,10 +65,27 @@ describe('the article card pixel art', () => {
     expect(wrong).toEqual([])
   })
 
+  it('the gold card: rows of one length, only the letters of its palettes, the chalice the size of its window', () => {
+    const goldLetters = new Set([...Object.keys(GOLD_PALETTE), '.'])
+    const goldArt = new Set(Object.keys(GOLD_ART_PALETTE))
+    expect(GOLD_FRAME).toHaveLength(SKINS.gold.height)
+    for (const row of GOLD_FRAME) {
+      expect(row).toHaveLength(SKINS.gold.width)
+      for (const ch of row) expect(goldLetters.has(ch)).toBe(true)
+    }
+    expect(GOLD_CHALICE).toHaveLength(SKINS.gold.window.height)
+    for (const row of GOLD_CHALICE) {
+      expect(row).toHaveLength(SKINS.gold.window.width)
+      for (const ch of row) expect(goldArt.has(ch)).toBe(true)
+    }
+  })
+
   it('the paths cover exactly the pixels drawn', () => {
     for (const [canvas, palette] of [
       [drawFrame(), PALETTE],
       [drawChalice(), ART_PALETTE],
+      [SKINS.gold.frame(), GOLD_PALETTE],
+      [SKINS.gold.chalice(), GOLD_ART_PALETTE],
     ] as const) {
       const drawn = canvas.flat().filter((c) => c !== null).length
       const area = toPaths(canvas, palette)

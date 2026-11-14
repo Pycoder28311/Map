@@ -1,20 +1,19 @@
 /* The Dashboard's article card (features/dashboard/project/ArticleCard.tsx), the crimson card of the design. Pixel art like the framed
-   buttons (buttons.css): flat colours on a grid of art pixels of --cpx, so the card is 184 x 238 art pixels. The art itself (the frame, its
-   gems, the chalice, and their colours) is in features/dashboard/project/cardPixelData.ts; here: its size, and where the picture, title
-   and text go. Those places come from cardPixels.ts's LAYOUT, set on the card as --window-x, --title-y… (in art pixels), so a change there
-   moves them here too. One look in every theme. */
+   buttons (buttons.css): flat colours on a grid of art pixels of --cpx. Two designs (skins: crimson, gold; features/dashboard/project/
+   cardPixels.ts SKINS), each with its own art and grid; every card is --card-width wide, its art pixel that width over its grid's. Where the
+   picture, title and text go, the type sizes and colours all come from the skin, set on the card as --window-x, --title-y, --title-size…
+   (in art pixels), so a change there moves them here too. One look in every theme. */
 .blood-card {
-  /* THE art pixel of the card. Change it to make the whole card bigger or smaller */
-  --cpx: 1.3px;
-  --title-colour: #ac6063;
-  --text-colour: #b8abaa;
+  /* THE card's width (both designs): change it to make every card bigger or smaller. Its art pixel follows */
+  --card-width: 239px;
+  --cpx: calc(var(--card-width) / var(--art-width));
   --title-font: 'Alegreya', Georgia, serif;
   --text-font: 'Alegreya', Georgia, serif;
 
   position: relative;
   flex: none;
-  width: calc(184 * var(--cpx));
-  height: calc(238 * var(--cpx));
+  width: var(--card-width);
+  height: calc(var(--art-height) * var(--cpx));
   cursor: pointer;
   transition: transform 0.12s steps(3), filter 0.12s steps(2);
 }
@@ -85,7 +84,7 @@
   overflow: hidden;
   color: var(--title-colour);
   font-family: var(--title-font);
-  font-size: calc(var(--cpx) * 16.7);
+  font-size: calc(var(--cpx) * var(--title-size));
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
@@ -106,8 +105,8 @@
   overflow: hidden;
   color: var(--text-colour);
   font-family: var(--text-font);
-  font-size: calc(var(--cpx) * 11.2);
-  line-height: 1.07;
+  font-size: calc(var(--cpx) * var(--text-size));
+  line-height: var(--text-line);
   text-align: center;
   text-shadow: 0 var(--cpx) 0 #0e0406;
   -webkit-box-orient: vertical;
@@ -121,8 +120,8 @@
 /* A pin mark at the top left of the window, clear of the corner star */
 .blood-card__pin {
   position: absolute;
-  top: calc((var(--window-y) + 22) * var(--cpx));
-  left: calc((var(--window-x) + 6) * var(--cpx));
+  top: calc(var(--pin-top) * var(--cpx));
+  left: calc(var(--pin-left) * var(--cpx));
   display: flex;
   padding: var(--cpx);
   color: #ce7d85;
@@ -133,11 +132,11 @@
 /* The ⋯ button at the top right of the window, clear of the corner star: always shown */
 .blood-card__more {
   position: absolute;
-  top: calc((var(--window-y) + 4) * var(--cpx));
-  right: calc(42 * var(--cpx));
+  top: calc(var(--more-top) * var(--cpx));
+  right: calc(var(--more-right) * var(--cpx));
   display: flex;
-  width: calc(20 * var(--cpx));
-  height: calc(20 * var(--cpx));
+  width: 26px;
+  height: 26px;
   align-items: center;
   justify-content: center;
   color: #d9b1ab;

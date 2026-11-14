@@ -4,19 +4,36 @@ import TreeMenu from '../../../components/ui/tree/TreeMenu'
 import type { TreeMenuGroup } from '../../../components/ui/tree/types'
 import { useResourceMenu } from '../../../lib/resource/actions'
 import type { AnyResource } from '../../../resources/types'
-import { ART_PALETTE, drawChalice, drawFrame, LAYOUT, PALETTE, svgUrl, toSvg } from './cardPixels'
+import { SKINS, svgUrl, toSvg, type SkinName } from './cardPixels'
 import RenameDialog from './RenameDialog'
 
 type Item = Record<string, unknown> & { id: number | string }
 
-/** The card's pixel art (cardPixels.ts), drawn once, as SVG files: the frame, and the chalice (an article without a picture) */
-const FRAME = svgUrl(toSvg(drawFrame(), PALETTE))
-const CHALICE = svgUrl(toSvg(drawChalice(), ART_PALETTE))
-
-/** Where the picture, title and text go, in art pixels (cardPixels.ts LAYOUT), for bloodCard.css */
-const PLACES = Object.fromEntries(
-  (['window', 'title', 'text'] as const).flatMap((name) => Object.entries(LAYOUT[name]).map(([k, v]) => [`--${name}-${k}`, v])),
-) as CSSProperties
+/** Each skin's art (cardPixels.ts), drawn once as SVG files (the frame, and the chalice of an article without a picture), and its places
+ * and type, as the CSS variables bloodCard.css reads (in art pixels) */
+const LOOKS = Object.fromEntries(
+  Object.entries(SKINS).map(([name, skin]) => [
+    name,
+    {
+      frame: svgUrl(toSvg(skin.frame(), skin.palette)),
+      chalice: svgUrl(toSvg(skin.chalice(), skin.artPalette)),
+      style: {
+        '--art-width': skin.width,
+        '--art-height': skin.height,
+        ...Object.fromEntries((['window', 'title', 'text'] as const).flatMap((box) => Object.entries(skin[box]).map(([k, v]) => [`--${box}-${k}`, v]))),
+        '--title-size': skin.titleSize,
+        '--text-size': skin.textSize,
+        '--text-line': skin.lineHeight,
+        '--title-colour': skin.titleColour,
+        '--text-colour': skin.textColour,
+        '--more-top': skin.more.top,
+        '--more-right': skin.more.right,
+        '--pin-top': skin.pin.top,
+        '--pin-left': skin.pin.left,
+      } as CSSProperties,
+    },
+  ]),
+) as Record<SkinName, { frame: string; chalice: string; style: CSSProperties }>
 
 /** The card's picture: the article's Info box picture, else its banner (a list item has its Info box, not its text) */
 function pictureOf(item: Item): string | null {
@@ -25,11 +42,12 @@ function pictureOf(item: Item): string | null {
 }
 
 /**
- * An article as a Dashboard card, the crimson card of the design (styles/bloodCard.css): its pixel-art frame (cardPixels.ts), the article's
+ * An article as a Dashboard card in one of the two designs, `skin` (crimson or gold: cardPixels.ts SKINS; styles/bloodCard.css): its pixel-art frame, the article's
  * picture in its window (none: the design's chalice art), its title on the plaque and its first lines under it. A click (or Enter) opens it;
  * the ⋯ at the top right has Open, Rename, Pin / Unpin and Move to Trash.
  */
-export default function ArticleCard({ resource, item, onOpen }: { resource: AnyResource; item: Item; onOpen: () => void }) {
+export default function ArticleCard({ resource, item, onOpen, skin = 'crimson' }: { resource: AnyResource; item: Item; onOpen: () => void; skin?: SkinName }) {
+  const look = LOOKS[skin]
   const { actions, attempt, dialogs } = useResourceMenu(resource)
   const [renaming, setRenaming] = useState(false)
   const title = resource.ui.row.title(item)
@@ -57,12 +75,12 @@ export default function ArticleCard({ resource, item, onOpen }: { resource: AnyR
 
   return (
     <>
-      <div role="button" tabIndex={0} aria-label={`Open ${title}`} data-card-id={String(item.id)} data-card-kind="article" onClick={onOpen} onKeyDown={onKey} className="blood-card" style={PLACES}>
+      <div role="button" tabIndex={0} aria-label={`Open ${title}`} data-card-id={String(item.id)} data-card-kind="article" onClick={onOpen} onKeyDown={onKey} className={`blood-card blood-card--${skin}`} style={look.style}>
         {/* The picture behind the frame's window; an article without one shows the design's own art */}
         <div className={`blood-card__picture ${picture ? 'blood-card__picture--own' : ''}`}>
-          {picture ? <img src={picture} alt="" draggable={false} /> : <img className="blood-card__art" src={CHALICE} alt="" draggable={false} />}
+          {picture ? <img src={picture} alt="" draggable={false} /> : <img className="blood-card__art" src={look.chalice} alt="" draggable={false} />}
         </div>
-        <img className="blood-card__frame" src={FRAME} alt="" draggable={false} />
+        <img className="blood-card__frame" src={look.frame} alt="" draggable={false} />
         <h3 className="blood-card__title">
           <span>{title}</span>
         </h3>

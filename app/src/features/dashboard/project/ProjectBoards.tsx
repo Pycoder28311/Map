@@ -15,7 +15,7 @@ type Item = Record<string, unknown> & { id: number | string }
 
 /**
  * Under the Create buttons: a block per project, its name as the heading, then two boxes side by side: Articles (the project's articles,
- * also those inside its folders, as crimson cards: ArticleCard) and Maps (every map: maps belong to no project). The articles in no
+ * also those inside its folders, as cards in the two designs in turn, crimson and gold: ArticleCard) and Maps (every map: maps belong to no project). The articles in no
  * project get a last block of their own. The lists are the ones the sidebar already holds (useResourceLists: one request each, shared).
  */
 export default function ProjectBoards() {
@@ -62,8 +62,9 @@ export default function ProjectBoards() {
                 <Empty>No articles here yet</Empty>
               ) : (
                 <div className="flex flex-wrap justify-center gap-x-4 gap-y-8 p-1">
-                  {block.articles.map(({ resource, item }) => (
-                    <ArticleCard key={`${resource.name}:${item.id}`} resource={resource} item={item} onOpen={() => openItem(resource, item.id)} />
+                  {/* The two designs in turn: every other card crimson, the others gold */}
+                  {block.articles.map(({ resource, item }, i) => (
+                    <ArticleCard key={`${resource.name}:${item.id}`} resource={resource} item={item} skin={i % 2 === 0 ? 'crimson' : 'gold'} onOpen={() => openItem(resource, item.id)} />
                   ))}
                 </div>
               )}
