@@ -1,5 +1,5 @@
 /* The Dashboard's note cards (features/dashboard/project/NotesShelf.tsx): each note on a sheet of old paper, the design's pixel art
-   (paperData.ts: 135 x 193 art pixels, its edge exactly as drawn, its inside the plain paper). Every sheet is the whole design at its own
+   (paperData.ts: 135 x 120 art pixels, its edge exactly as drawn, its inside the plain paper; shortened where its sides repeat). Every sheet is the whole design at its own
    shape, one art pixel --npx wide, so its edge is never stretched or repeated. The note's title and text in dark ink on it. One look in
    every theme. */
 .paper-note {
@@ -11,7 +11,7 @@
   position: relative;
   flex: none;
   width: calc(135 * var(--npx));
-  height: calc(193 * var(--npx));
+  height: calc(120 * var(--npx));
   cursor: pointer;
   transition: transform 0.12s steps(3);
 }
@@ -63,7 +63,7 @@
   line-height: 1.2;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 9;
+  -webkit-line-clamp: 5;
 }
 .paper-note__text--empty {
   font-style: italic;

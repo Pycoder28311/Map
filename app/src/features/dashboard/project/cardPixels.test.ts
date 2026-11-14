@@ -116,13 +116,13 @@ describe('the note paper', () => {
   it('rows of one length, only PAPER_PALETTE letters, its inside the plain paper', async () => {
     const { PAPER, PAPER_PALETTE } = await import('./paperData')
     const letters = new Set([...Object.keys(PAPER_PALETTE), '.'])
-    expect(PAPER).toHaveLength(193)
+    expect(PAPER).toHaveLength(120)
     for (const row of PAPER) {
       expect([...row]).toHaveLength(135)
       for (const ch of row) expect(letters.has(ch)).toBe(true)
     }
     // the middle of the sheet is plain paper; its corners are see-through
-    expect([...PAPER[96]][67]).toBe('p')
+    expect([...PAPER[60]][67]).toBe('p')
     expect([...PAPER[0]][0]).toBe('.')
   })
 })
