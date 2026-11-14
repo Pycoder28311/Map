@@ -61,7 +61,7 @@ export default function ProjectBoards() {
               ) : block.articles.length === 0 ? (
                 <Empty>No articles here yet</Empty>
               ) : (
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(11.5rem,1fr))] gap-x-5 gap-y-7 p-2">
+                <div className="flex flex-wrap justify-center gap-x-4 gap-y-8 p-1">
                   {block.articles.map(({ resource, item }) => (
                     <ArticleCard key={`${resource.name}:${item.id}`} resource={resource} item={item} onOpen={() => openItem(resource, item.id)} />
                   ))}

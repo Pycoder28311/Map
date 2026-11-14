@@ -1,14 +1,33 @@
-import { useState, type KeyboardEvent } from 'react'
+import { useState, type CSSProperties, type KeyboardEvent } from 'react'
 import { LuExternalLink, LuPencil, LuPin, LuPinOff, LuTrash2 } from 'react-icons/lu'
 import TreeMenu from '../../../components/ui/tree/TreeMenu'
 import type { TreeMenuGroup } from '../../../components/ui/tree/types'
 import { useResourceMenu } from '../../../lib/resource/actions'
 import type { AnyResource } from '../../../resources/types'
-import FRAME from '../../../assets/cards/blood-card-frame.svg'
 import DEFAULT_ART from '../../../assets/cards/blood-card-art.svg'
+import { drawCard, LAYOUT, PALETTE, toPaths } from './cardPixels'
 import RenameDialog from './RenameDialog'
 
 type Item = Record<string, unknown> & { id: number | string }
+
+/** The card's pixel art (cardPixels.ts), drawn once: one path per colour */
+const PATHS = toPaths(drawCard())
+
+/** Where the picture, title and text go, in art pixels (cardPixels.ts LAYOUT), for bloodCard.css */
+const PLACES = Object.fromEntries(
+  (['window', 'plaque', 'text'] as const).flatMap((name) => Object.entries(LAYOUT[name]).map(([k, v]) => [`--${name}-${k}`, v])),
+) as CSSProperties
+
+/** The frame, plaque and ornaments: the card's pixel art, square pixels at any size */
+function CardArt() {
+  return (
+    <svg aria-hidden className="blood-card__frame" viewBox={`0 0 ${LAYOUT.width} ${LAYOUT.height}`} shapeRendering="crispEdges">
+      {PATHS.map(({ colour, d }) => (
+        <path key={colour} fill={PALETTE[colour]} d={d} />
+      ))}
+    </svg>
+  )
+}
 
 /** The card's picture: the article's Info box picture, else its banner (a list item has its Info box, not its text) */
 function pictureOf(item: Item): string | null {
@@ -17,8 +36,8 @@ function pictureOf(item: Item): string | null {
 }
 
 /**
- * An article as a Dashboard card, the crimson card of the design (styles/bloodCard.css): the design's own frame art, the article's picture
- * in its window (none: the design's chalice art), its title on the plaque and its first lines under it. A click (or Enter) opens it;
+ * An article as a Dashboard card, the crimson card of the design (styles/bloodCard.css): its pixel-art frame (cardPixels.ts), the article's
+ * picture in its window (none: the design's chalice art), its title on the plaque and its first lines under it. A click (or Enter) opens it;
  * the ⋯ at the top right has Open, Rename, Pin / Unpin and Move to Trash.
  */
 export default function ArticleCard({ resource, item, onOpen }: { resource: AnyResource; item: Item; onOpen: () => void }) {
@@ -49,12 +68,12 @@ export default function ArticleCard({ resource, item, onOpen }: { resource: AnyR
 
   return (
     <>
-      <div role="button" tabIndex={0} aria-label={`Open ${title}`} data-card-id={String(item.id)} data-card-kind="article" onClick={onOpen} onKeyDown={onKey} className="blood-card">
+      <div role="button" tabIndex={0} aria-label={`Open ${title}`} data-card-id={String(item.id)} data-card-kind="article" onClick={onOpen} onKeyDown={onKey} className="blood-card" style={PLACES}>
         {/* The picture behind the frame's window; an article without one shows the design's own art */}
         <div className={`blood-card__picture ${picture ? 'blood-card__picture--own' : ''}`}>
           {picture ? <img src={picture} alt="" draggable={false} /> : <img className="blood-card__art" src={DEFAULT_ART} alt="" draggable={false} />}
         </div>
-        <img className="blood-card__frame" src={FRAME} alt="" draggable={false} />
+        <CardArt />
         <h3 className="blood-card__title">
           <span>{title}</span>
         </h3>

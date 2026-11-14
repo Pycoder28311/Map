@@ -1,107 +1,114 @@
-/* The Dashboard's article card (features/dashboard/project/ArticleCard.tsx), the crimson card of the design. The frame is pixel art,
-   184 x 238 art pixels, as an SVG of pixel squares (assets/cards/blood-card-frame.svg: one <path> per colour, its id the colour, e.g.
-   #c7a1f1d: change its fill to recolour every pixel of that colour; the picture window is left empty). Sharp at any size, and editable in
-   Figma, Illustrator or Inkscape, or as text. Behind its window: the article's picture, or the design's chalice (blood-card-art.svg, the
-   same kind of file, 134 x 122 art pixels: cells 24–157 x 19–140 of the frame). Places in the
-   window are in frame cells (of 184 x 238); the title and text are in pixels of the design at 412 x 534; both are shares of the card, so it
-   can be any width. The type is in cqw (hundredths of the card's width), so it keeps the design's size wherever it is. One look in every theme. */
+/* The Dashboard's article card (features/dashboard/project/ArticleCard.tsx), the crimson card of the design. Pixel art like the framed
+   buttons (buttons.css): flat colours on a grid of art pixels of --cpx (2px), so the card is 122 x 178 art pixels (244 x 356px). The art
+   itself (the frame, plaque, gems and knots, and their colours) is in features/dashboard/project/cardPixels.ts; here: its size, and where the
+   picture, title and text go. Those places come from cardPixels.ts's LAYOUT, set on the card as --window-x, --plaque-y… (in art pixels), so
+   a change there moves them here too. One look in every theme. */
 .blood-card {
+  /* THE art pixel of the card: 2px. Change it to make the whole card bigger or smaller (whole pixels keep it sharp) */
+  --cpx: 2px;
+  --title-colour: #ac6063;
+  --text-colour: #b8abaa;
+  --title-font: 'Alegreya', Georgia, serif;
+  --text-font: 'Alegreya', Georgia, serif;
+
   position: relative;
-  container-type: inline-size;
-  aspect-ratio: 412 / 534;
-  width: 100%;
+  flex: none;
+  width: calc(122 * var(--cpx));
+  height: calc(178 * var(--cpx));
   cursor: pointer;
-  transition: transform 160ms ease-out, filter 160ms ease-out;
+  transition: transform 0.12s steps(3), filter 0.12s steps(2);
 }
 .blood-card:hover {
-  transform: translateY(-3px);
-  filter: drop-shadow(0 0 10px rgb(179 32 47 / 0.35));
+  transform: translateY(calc(var(--cpx) * -2));
+  filter: drop-shadow(0 0 calc(var(--cpx) * 4) rgb(147 25 49 / 0.45));
 }
 .blood-card:focus-visible {
-  outline: 2px solid #c25a55;
-  outline-offset: 4px;
+  outline: var(--cpx) solid var(--title-colour);
+  outline-offset: calc(var(--cpx) * 2);
 }
 
-/* The picture behind the frame's window: cells 24–157 x 19–140 (the window, and one cell under the frame all round, so no gap shows) */
-.blood-card__picture {
+/* A box at a place of the layout (in art pixels) */
+.blood-card__picture,
+.blood-card__title,
+.blood-card__text {
   position: absolute;
-  top: calc(19 / 238 * 100%);
-  left: calc(24 / 184 * 100%);
-  width: calc(134 / 184 * 100%);
-  height: calc(122 / 238 * 100%);
+  margin: 0;
+}
+
+/* The picture: in the window, behind the frame */
+.blood-card__picture {
+  top: calc(var(--window-y) * var(--cpx));
+  left: calc(var(--window-x) * var(--cpx));
+  width: calc(var(--window-width) * var(--cpx));
+  height: calc(var(--window-height) * var(--cpx));
   overflow: hidden;
-  background: #1f0b0f;
+  background: #1e1014;
 }
 .blood-card__picture img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-/* The design's chalice: pixel art, exactly the size of the box */
+/* The design's chalice (an article without a picture): pixel art, the size of the window */
 .blood-card__picture img.blood-card__art {
   object-fit: fill;
   image-rendering: pixelated;
 }
-/* An article's own picture: the window's edges in shadow, as the design's art has them (painted in) */
+/* An article's own picture: the window's edges in shadow, as the chalice art has them */
 .blood-card__picture--own::after {
   position: absolute;
   inset: 0;
   content: '';
-  box-shadow: inset 0 0 6cqw rgb(20 4 8 / 0.75);
+  box-shadow: inset 0 0 calc(var(--cpx) * 8) rgb(20 4 8 / 0.75);
   pointer-events: none;
 }
 
+/* The frame, plaque and ornaments: the SVG of the pixel art, over the picture */
 .blood-card__frame {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  image-rendering: pixelated;
   pointer-events: none;
-  user-select: none;
 }
 
-/* The title, on the plaque's inside (x 86–324, y 328–381) */
+/* The title, inside the plaque's border (4 art pixels in from its top and bottom, 13 from its ends) */
 .blood-card__title {
-  position: absolute;
-  top: calc(328 / 534 * 100%);
-  left: calc(86 / 412 * 100%);
+  top: calc((var(--plaque-y) + 4) * var(--cpx));
+  left: calc((var(--plaque-x) + 13) * var(--cpx));
   display: flex;
-  width: calc(238 / 412 * 100%);
-  height: calc(53 / 534 * 100%);
+  width: calc((var(--plaque-width) - 26) * var(--cpx));
+  height: calc((var(--plaque-height) - 8) * var(--cpx));
   align-items: center;
   justify-content: center;
-  margin: 0;
   overflow: hidden;
-  color: #ac6063;
-  font-family: 'Alegreya', Georgia, serif;
-  font-size: 9.1cqw;
+  color: var(--title-colour);
+  font-family: var(--title-font);
+  font-size: calc(var(--cpx) * 12.5);
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
-  text-shadow: 0 0.3cqw 0 #12050a;
+  text-shadow: 0 var(--cpx) 0 #0e0406;
 }
 .blood-card__title span {
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* The text, under the plaque (x 70–342, y 399–487): three lines at most, centred */
+/* The text, under the plaque: three lines at most, centred */
 .blood-card__text {
-  position: absolute;
-  top: calc(399 / 534 * 100%);
-  left: calc(70 / 412 * 100%);
+  top: calc(var(--text-y) * var(--cpx));
+  left: calc(var(--text-x) * var(--cpx));
   display: -webkit-box;
-  width: calc(272 / 412 * 100%);
-  max-height: calc(88 / 534 * 100%);
-  margin: 0;
+  width: calc(var(--text-width) * var(--cpx));
+  max-height: calc(var(--text-height) * var(--cpx));
   overflow: hidden;
-  color: #b8abaa;
-  font-family: 'Alegreya', Georgia, serif;
-  font-size: 6.1cqw;
-  line-height: 1.07;
+  color: var(--text-colour);
+  font-family: var(--text-font);
+  font-size: calc(var(--cpx) * 8.3);
+  line-height: 1.12;
   text-align: center;
-  text-shadow: 0 0.25cqw 0 #12050a;
+  text-shadow: 0 var(--cpx) 0 #0e0406;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
@@ -110,36 +117,35 @@
   font-style: italic;
 }
 
-/* A pin mark at the top left of the window, clear of the corner gem */
+/* A pin mark at the top left of the window, clear of the corner star */
 .blood-card__pin {
   position: absolute;
-  top: calc(56 / 534 * 100%);
-  left: calc(92 / 412 * 100%);
+  top: calc((var(--window-y) + 16) * var(--cpx));
+  left: calc((var(--window-x) + 4) * var(--cpx));
   display: flex;
-  padding: 3px;
-  color: #e07a74;
-  background: rgb(18 5 9 / 0.8);
-  box-shadow: 0 0 0 1px #7a4a3b;
+  padding: var(--cpx);
+  color: #ce7d85;
+  background: #0e0406;
+  box-shadow: 0 0 0 var(--cpx) #876663;
 }
 
-/* The ⋯ button at the top right of the window, clear of the corner gem: always shown */
+/* The ⋯ button at the top right of the window, clear of the corner star: always shown */
 .blood-card__more {
   position: absolute;
-  top: calc(52 / 534 * 100%);
-  right: calc(88 / 412 * 100%);
+  top: calc((var(--window-y) + 3) * var(--cpx));
+  right: calc(24 * var(--cpx));
   display: flex;
-  width: 30px;
-  height: 30px;
+  width: calc(15 * var(--cpx));
+  height: calc(15 * var(--cpx));
   align-items: center;
   justify-content: center;
-  border-radius: 9999px;
-  color: #eadccd;
-  background: rgb(18 5 9 / 0.85);
-  box-shadow: 0 0 0 1px #12050a, 0 0 0 2px #8a5a48, 0 2px 4px rgb(0 0 0 / 0.6);
-  --fg: #eadccd;
+  color: #d9b1ab;
+  background: #0e0406;
+  box-shadow: 0 0 0 var(--cpx) #876663, 0 0 0 calc(var(--cpx) * 2) #0e0406;
+  --fg: #d9b1ab;
   /* Its menu opens inside the card: the app's own font there */
   font-family: var(--font-sans);
 }
 .blood-card__more:hover {
-  background: #3a141b;
+  background: #2c1418;
 }
