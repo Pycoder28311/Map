@@ -1,0 +1,96 @@
+/* The Dashboard's note cards (features/dashboard/project/NotesShelf.tsx): each note on a sheet of old paper, the design's pixel art
+   (paperData.ts: 135 x 193 art pixels, its edge exactly as drawn, its inside the plain paper). Every sheet is the whole design at its own
+   shape, one art pixel --npx wide, so its edge is never stretched or repeated. The note's title and text in dark ink on it. One look in
+   every theme. */
+.paper-note {
+  /* THE sheet's art pixel: change it to make every note bigger or smaller */
+  --npx: 1.5px;
+  --ink: #1b180f;
+  --ink-soft: #4a3f2a;
+
+  position: relative;
+  flex: none;
+  width: calc(135 * var(--npx));
+  height: calc(193 * var(--npx));
+  cursor: pointer;
+  transition: transform 0.12s steps(3);
+}
+.paper-note:hover {
+  transform: translateY(calc(var(--npx) * -2)) rotate(-0.6deg);
+}
+.paper-note:focus-visible {
+  outline: var(--npx) solid #dcc47c;
+  outline-offset: calc(var(--npx) * 3);
+}
+.paper-note__sheet {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  pointer-events: none;
+  user-select: none;
+}
+/* The writing: inside the edge (12 art pixels in), the title then the text, cut off where the sheet ends */
+.paper-note__body {
+  position: absolute;
+  inset: calc(14 * var(--npx)) calc(12 * var(--npx)) calc(14 * var(--npx));
+  display: flex;
+  flex-direction: column;
+  gap: calc(5 * var(--npx));
+  overflow: hidden;
+  color: var(--ink);
+  font-family: 'Alegreya', Georgia, serif;
+  text-align: center;
+}
+.paper-note__title {
+  margin: 0;
+  overflow: hidden;
+  font-size: calc(13 * var(--npx));
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.paper-note__text {
+  margin: 0;
+  min-height: 0;
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: calc(10 * var(--npx));
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 9;
+}
+.paper-note__text--empty {
+  font-style: italic;
+  opacity: 0.6;
+}
+.paper-note__pin {
+  position: absolute;
+  top: calc(6 * var(--npx));
+  left: calc(8 * var(--npx));
+  width: calc(8 * var(--npx));
+  height: calc(8 * var(--npx));
+  color: #7b5a31;
+}
+/* The ⋯: top right, shown on hover or keyboard focus, and while its menu is open; dark ink on the paper */
+.paper-note__more {
+  position: absolute;
+  top: calc(4 * var(--npx));
+  right: calc(6 * var(--npx));
+  display: flex;
+  opacity: 0;
+  transition: opacity 0.12s;
+  --fg: var(--ink);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+.paper-note:hover .paper-note__more,
+.paper-note:focus-within .paper-note__more,
+.paper-note__more:has(:popover-open) {
+  opacity: 1;
+}

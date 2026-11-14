@@ -21,6 +21,8 @@
 @import "./styles/modalFrame.css";
 /* The Dashboard's crimson article cards (features/dashboard/project/ArticleCard.tsx) */
 @import "./styles/bloodCard.css";
+/* The Dashboard's note cards: old paper (features/dashboard/project/NotesShelf.tsx) */
+@import "./styles/paperNote.css";
 
 /* The image cards' parts (features/dashboard/cards/crack.ts): the text part clips itself to a polygon, cracked along its top edge, and this
    wrapper draws a 1px outline along that shape (a drop shadow follows what is clipped, a border or ring would not) and the card's soft shadow.

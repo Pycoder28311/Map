@@ -3,6 +3,7 @@ import { LuLogOut } from 'react-icons/lu'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/ui/buttons/Button'
 import ResourceCreateDialog from '../../components/ui/resource/ResourceCreateDialog'
+import NotesShelf from '../../features/dashboard/project/NotesShelf'
 import ProjectBoards from '../../features/dashboard/project/ProjectBoards'
 import QuickCreate from '../../features/notes/QuickCreate'
 import { authClient } from '../../lib/auth-client'
@@ -14,7 +15,7 @@ const MAPS = resourceByName('maps')
 
 // Also a workspace panel (src/panels.ts): no <main> here, AppLayout provides it
 /**
- * The main page: the note input, a Create article and a Create map button under it, then a block per project (its name, then its
+ * The main page: the note input, a Create article and a Create map button under it, the notes (each on old paper), then a block per project (its name, then its
  * articles and the maps side by side: ProjectBoards), and the signed-in line at the bottom
  */
 export default function DashboardPage() {
@@ -48,6 +49,8 @@ export default function DashboardPage() {
                         )}
                     </div>
                 </div>
+
+                <NotesShelf />
 
                 <ProjectBoards />
 
