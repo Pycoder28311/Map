@@ -4,7 +4,7 @@ import TreeMenu from '../../../components/ui/tree/TreeMenu'
 import type { TreeMenuGroup } from '../../../components/ui/tree/types'
 import { useResourceMenu } from '../../../lib/resource/actions'
 import type { AnyResource } from '../../../resources/types'
-import { SKINS, svgUrl, toSvg, type SkinName } from './cardPixels'
+import { drawOrnament, SKINS, svgUrl, toSvg, type SkinName } from './cardPixels'
 import RenameDialog from './RenameDialog'
 
 type Item = Record<string, unknown> & { id: number | string }
@@ -12,10 +12,11 @@ type Item = Record<string, unknown> & { id: number | string }
 /** Each skin's art (cardPixels.ts), drawn once as SVG files (the frame, and the chalice of an article without a picture), and its places
  * and type, as the CSS variables bloodCard.css reads (in art pixels) */
 const LOOKS = Object.fromEntries(
-  Object.entries(SKINS).map(([name, skin]) => [
+  Object.entries(SKINS).map(([name, skin]: [string, (typeof SKINS)[SkinName]]) => [
     name,
     {
       frame: svgUrl(toSvg(skin.frame(), skin.palette)),
+      ornament: 'ornament' in skin ? ornamentLook(skin) : null,
       chalice: svgUrl(toSvg(skin.chalice(), skin.artPalette)),
       style: {
         '--art-width': skin.width,
@@ -33,7 +34,24 @@ const LOOKS = Object.fromEntries(
       } as CSSProperties,
     },
   ]),
-) as Record<SkinName, { frame: string; chalice: string; style: CSSProperties }>
+) as Record<SkinName, { frame: string; chalice: string; ornament: CSSProperties | null; style: CSSProperties }>
+
+/** A skin's ⋯ set into its frame (cardPixels.ts MoreOrnament): its box, and its art (the corner, and the gems in each state) as CSS variables */
+function ornamentLook(skin: (typeof SKINS)['crimson']): CSSProperties {
+  const o = skin.ornament
+  const frame = skin.frame()
+  const url = (canvas: ReturnType<typeof drawOrnament>) => `url("${svgUrl(toSvg(canvas, skin.palette))}")`
+  return {
+    '--orn-x': o.box.x,
+    '--orn-y': o.box.y,
+    '--orn-width': o.box.width,
+    '--orn-height': o.box.height,
+    '--orn-base': url(drawOrnament(frame, o, 'dot', 'base')),
+    '--orn-gems': url(drawOrnament(frame, o, 'dot', 'gems')),
+    '--orn-gems-lit': url(drawOrnament(frame, o, 'hover', 'gems')),
+    '--orn-gems-pressed': url(drawOrnament(frame, o, 'pressed', 'gems')),
+  } as CSSProperties
+}
 
 /** The card's picture: the article's Info box picture, else its banner (a list item has its Info box, not its text) */
 function pictureOf(item: Item): string | null {
@@ -91,8 +109,14 @@ export default function ArticleCard({ resource, item, onOpen, skin = 'crimson' }
             <LuPin aria-hidden className="size-3.5" />
           </span>
         )}
-        {/* Its own button: clicking it doesn't open the card */}
-        <span className="blood-card__more" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+        {/* Its own button: clicking it doesn't open the card. Set into the frame's corner (the skin's ornament), or a small dark button */}
+        <span
+          className={look.ornament ? 'blood-card__ornament' : 'blood-card__more'}
+          style={look.ornament ?? undefined}
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          {look.ornament && <span aria-hidden className="blood-card__ornament-gems" />}
           <TreeMenu label={`More: ${title}`} groups={menu} fill />
         </span>
       </div>

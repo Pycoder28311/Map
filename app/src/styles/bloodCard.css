@@ -149,3 +149,55 @@
 .blood-card__more:hover {
   background: #2c1418;
 }
+
+/* The ⋯ set into the frame's top-right corner (a skin's ornament: cardPixels.ts MoreOrnament): the corner cut from the frame with its gem
+   taken out, and three small gems set there (a layer of their own: lit, they glow). The whole corner is the button; the menu's own trigger
+   lies over it, see-through. Hovered, or while its menu is open, the gems light up; pressed, they sink a pixel */
+.blood-card__ornament {
+  position: absolute;
+  top: calc(var(--orn-y) * var(--cpx));
+  left: calc(var(--orn-x) * var(--cpx));
+  width: calc(var(--orn-width) * var(--cpx));
+  height: calc(var(--orn-height) * var(--cpx));
+  background: var(--orn-base) center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  cursor: pointer;
+  /* Its menu opens inside the card: the app's own font there */
+  font-family: var(--font-sans);
+}
+.blood-card__ornament-gems {
+  position: absolute;
+  inset: 0;
+  background: var(--orn-gems) center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+  transition: filter 0.12s steps(2);
+}
+.blood-card__ornament:hover .blood-card__ornament-gems,
+.blood-card__ornament:has(:popover-open) .blood-card__ornament-gems {
+  background-image: var(--orn-gems-lit);
+  filter: drop-shadow(0 0 calc(var(--cpx) * 1.5) rgb(244 120 140 / 0.85)) drop-shadow(0 0 calc(var(--cpx) * 4) rgb(200 30 60 / 0.55));
+}
+.blood-card__ornament:active .blood-card__ornament-gems {
+  background-image: var(--orn-gems-pressed);
+  filter: none;
+}
+/* The menu's trigger: the whole corner, see-through (the gems are its look); a ring only for the keyboard */
+.blood-card__ornament > span > button[popovertarget] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: transparent;
+}
+.blood-card__ornament > span > button[popovertarget] > * {
+  opacity: 0;
+}
+.blood-card__ornament > span > button[popovertarget]:focus-visible {
+  outline: var(--cpx) solid #f4a8ae;
+  outline-offset: 0;
+  border-radius: 50%;
+}

@@ -42,11 +42,12 @@ export type Canvas = (string | null)[][]
 
 const toCanvas = (rows: readonly string[]): Canvas => rows.map((row) => [...row].map((ch) => (ch === '.' ? null : ch)))
 
-/** Puts a letter grid on the canvas with its top left at x, y, over its whole box: its '.' are see-through */
-function stamp(canvas: Canvas, piece: readonly string[], x: number, y: number) {
+/** Puts a letter grid on the canvas with its top left at x, y, over its whole box: its '.' are see-through (`keep`: they leave what is there) */
+function stamp(canvas: Canvas, piece: readonly string[], x: number, y: number, keep = false) {
   piece.forEach((row, dy) => {
     ;[...row].forEach((ch, dx) => {
-      if (canvas[y + dy]?.[x + dx] !== undefined) canvas[y + dy][x + dx] = ch === '.' ? null : ch
+      if (canvas[y + dy]?.[x + dx] === undefined || (keep && ch === '.')) return
+      canvas[y + dy][x + dx] = ch === '.' ? null : ch
     })
   })
 }
@@ -134,7 +135,63 @@ export type Skin = {
   textColour: string
   /** The ⋯ button's place (from the card's top and right) and the pin's (from its top and left), clear of the corner ornaments */
   more: { top: number; right: number }
+  /** The ⋯ set into the frame instead (MoreOrnament); without it, a small dark button at `more` */
+  ornament?: MoreOrnament
   pin: { top: number; left: number }
+}
+
+/**
+ * The ⋯ set into the frame's top-right corner ornament: its gem taken out (`clear`'s letters inside `socket` become `recess`) and three
+ * small gems set there in a row, `gap` apart, centred in the socket. It is drawn from the frame itself (the `box` cut out of it), so it is
+ * part of it; the whole box is the button. `dot` is one gem as it rests, `hover` lit (also while its menu is open), `pressed` sunk (drawn
+ * one pixel lower)
+ */
+export type MoreOrnament = {
+  box: Box
+  socket: Box
+  clear: string
+  recess: string
+  gap: number
+  dot: readonly string[]
+  hover: readonly string[]
+  pressed: readonly string[]
+}
+
+/** The crimson card's ⋯: three small rubies in the top-right star, in place of its gem */
+const CRIMSON_ORNAMENT: MoreOrnament = {
+  box: { x: 146, y: 5, width: 28, height: 30 },
+  socket: { x: 155, y: 16, width: 11, height: 10 },
+  clear: 'rgGsRPw',
+  recess: 'o',
+  gap: 1,
+  dot: ['PGg', 'Ggr', 'grr'],
+  hover: ['wPG', 'PGs', 'Gsg'],
+  pressed: ['sgr', 'grr', 'rrr'],
+}
+
+/**
+ * The ornament's art in one state: the frame's box with the socket emptied and the three gems set in it. `part`: 'base' the box with the
+ * socket emptied (no gems), 'gems' the gems alone (a layer of their own: they glow when lit), 'all' both
+ */
+export function drawOrnament(frame: Canvas, o: MoreOrnament, state: 'dot' | 'hover' | 'pressed', part: 'all' | 'base' | 'gems' = 'all'): Canvas {
+  const dots = part === 'gems' ? 'only' : 'with'
+  const { box, socket } = o
+  const out: Canvas = Array.from({ length: box.height }, (_, y) =>
+    Array.from({ length: box.width }, (_, x) => {
+      if (dots === 'only') return null
+      const c = frame[box.y + y]?.[box.x + x] ?? null
+      const inSocket = box.x + x >= socket.x && box.x + x < socket.x + socket.width && box.y + y >= socket.y && box.y + y < socket.y + socket.height
+      return c !== null && inSocket && o.clear.includes(c) ? o.recess : c
+    }),
+  )
+  const gem = o[state]
+  const w = gem[0].length
+  const h = gem.length
+  const total = w * 3 + o.gap * 2
+  const x0 = socket.x - box.x + Math.floor((socket.width - total) / 2)
+  const y0 = socket.y - box.y + Math.floor((socket.height - h) / 2) + (state === 'pressed' ? 1 : 0)
+  if (part !== 'base') for (let i = 0; i < 3; i++) stamp(out, gem, x0 + i * (w + o.gap), y0, true)
+  return out
 }
 
 export const SKINS = {
@@ -151,6 +208,7 @@ export const SKINS = {
     textColour: '#b8abaa',
     more: { top: 23, right: 42 },
     pin: { top: 41, left: 30 },
+    ornament: CRIMSON_ORNAMENT,
   },
   gold: {
     width: 236,

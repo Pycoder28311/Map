@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ART_PALETTE, BOTTOM_GEM, CHALICE, CORNER_GEM, FRAME_LEFT, PALETTE, TOP_GEM } from './cardPixelData'
-import { drawChalice, drawFrame, LAYOUT, SKINS, toPaths, type Canvas } from './cardPixels'
+import { drawChalice, drawFrame, drawOrnament, LAYOUT, SKINS, toPaths, type Canvas } from './cardPixels'
 import { GOLD_ART_PALETTE, GOLD_CHALICE, GOLD_FRAME, GOLD_PALETTE } from './goldCardData'
 
 const frameLetters = new Set([...Object.keys(PALETTE), '.'])
@@ -78,6 +78,22 @@ describe('the article card pixel art', () => {
       expect(row).toHaveLength(SKINS.gold.window.width)
       for (const ch of row) expect(goldArt.has(ch)).toBe(true)
     }
+  })
+
+  it("the crimson ⋯ set into its top-right star: the gem taken out of the socket, three gems in its place, only the palette's letters", () => {
+    const o = SKINS.crimson.ornament
+    const frame = drawFrame()
+    const base = drawOrnament(frame, o, 'dot', 'base')
+    const { socket, box } = o
+    for (let y = socket.y; y < socket.y + socket.height; y++)
+      for (let x = socket.x; x < socket.x + socket.width; x++) expect(o.clear.includes(base[y - box.y][x - box.x] ?? '')).toBe(false)
+    for (const state of ['dot', 'hover', 'pressed'] as const) {
+      const gems = drawOrnament(frame, o, state, 'gems').flat().filter((c) => c !== null)
+      expect(gems).toHaveLength(3 * o[state].join('').replaceAll('.', '').length)
+      for (const c of drawOrnament(frame, o, state).flat()) if (c !== null) expect(c in PALETTE).toBe(true)
+    }
+    // outside the socket the corner is the frame's own pixels
+    expect(base[0]).toEqual(frame[box.y].slice(box.x, box.x + box.width))
   })
 
   it('the paths cover exactly the pixels drawn', () => {
