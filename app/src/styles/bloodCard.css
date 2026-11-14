@@ -1,7 +1,9 @@
-/* The Dashboard's article card (features/dashboard/project/ArticleCard.tsx), the crimson card of the design: the frame is the design's own
-   art (assets/cards/blood-card-frame.png, 412 x 534, its picture window see-through), with the article's picture behind its window and its
-   title and text where the design has them. Every place is a share of the art's 412 x 534 pixels, so the card can be any width; the type is
-   in cqw (hundredths of the card's width), so it keeps the design's size wherever it is. One look in every theme. */
+/* The Dashboard's article card (features/dashboard/project/ArticleCard.tsx), the crimson card of the design. The frame is pixel art,
+   184 x 238 art pixels (assets/cards/blood-card-frame.png: one file pixel per art pixel, 32 colours, its picture window see-through), drawn
+   with square pixels at any size (image-rendering: pixelated); edit it in any pixel editor (Aseprite, Piskel…). Behind its window: the
+   article's picture, or the design's chalice (blood-card-art.png, 134 x 122 art pixels: cells 24–157 x 19–140 of the frame). Places in the
+   window are in frame cells (of 184 x 238); the title and text are in pixels of the design at 412 x 534; both are shares of the card, so it
+   can be any width. The type is in cqw (hundredths of the card's width), so it keeps the design's size wherever it is. One look in every theme. */
 .blood-card {
   position: relative;
   container-type: inline-size;
@@ -19,13 +21,13 @@
   outline-offset: 4px;
 }
 
-/* The picture: the frame's window (x 55–351, y 44–314 of the art), behind the frame */
+/* The picture behind the frame's window: cells 24–157 x 19–140 (the window, and one cell under the frame all round, so no gap shows) */
 .blood-card__picture {
   position: absolute;
-  top: calc(44 / 534 * 100%);
-  left: calc(55 / 412 * 100%);
-  width: calc(296 / 412 * 100%);
-  height: calc(270 / 534 * 100%);
+  top: calc(19 / 238 * 100%);
+  left: calc(24 / 184 * 100%);
+  width: calc(134 / 184 * 100%);
+  height: calc(122 / 238 * 100%);
   overflow: hidden;
   background: #1f0b0f;
 }
@@ -33,6 +35,11 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+/* The design's chalice: pixel art, exactly the size of the box */
+.blood-card__picture img.blood-card__art {
+  object-fit: fill;
+  image-rendering: pixelated;
 }
 /* An article's own picture: the window's edges in shadow, as the design's art has them (painted in) */
 .blood-card__picture--own::after {
@@ -48,6 +55,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
+  image-rendering: pixelated;
   pointer-events: none;
   user-select: none;
 }

@@ -52,7 +52,7 @@ export default function ArticleCard({ resource, item, onOpen }: { resource: AnyR
       <div role="button" tabIndex={0} aria-label={`Open ${title}`} data-card-id={String(item.id)} data-card-kind="article" onClick={onOpen} onKeyDown={onKey} className="blood-card">
         {/* The picture behind the frame's window; an article without one shows the design's own art */}
         <div className={`blood-card__picture ${picture ? 'blood-card__picture--own' : ''}`}>
-          <img src={picture ?? DEFAULT_ART} alt="" draggable={false} />
+          {picture ? <img src={picture} alt="" draggable={false} /> : <img className="blood-card__art" src={DEFAULT_ART} alt="" draggable={false} />}
         </div>
         <img className="blood-card__frame" src={FRAME} alt="" draggable={false} />
         <h3 className="blood-card__title">
