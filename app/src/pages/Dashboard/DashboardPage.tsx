@@ -37,12 +37,12 @@ export default function DashboardPage() {
                     </div>
                     <div className="grid w-full grid-cols-2 gap-3">
                         {ARTICLES && (
-                            <Button variant="secondary" icon={ARTICLES.ui.icon} onClick={() => setCreating(ARTICLES)} className="w-full justify-center">
+                            <Button variant="create" icon={ARTICLES.ui.icon} onClick={() => setCreating(ARTICLES)} className="w-full justify-center">
                                 Create article
                             </Button>
                         )}
                         {MAPS && (
-                            <Button variant="secondary" icon={MAPS.ui.icon} onClick={() => setCreating(MAPS)} className="w-full justify-center">
+                            <Button variant="create" icon={MAPS.ui.icon} onClick={() => setCreating(MAPS)} className="w-full justify-center">
                                 Create map
                             </Button>
                         )}
