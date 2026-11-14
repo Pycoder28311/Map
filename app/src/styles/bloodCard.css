@@ -202,26 +202,21 @@
   border-radius: 50%;
 }
 
-/* The title in the buttons' frame (a skin's titleFrame: the framed Shade look, as the Share button): the frame and its panel are the
-   button's; the title's own font, size and colour inside it. A look only: it takes no hover */
-.blood-card__title .blood-card__label {
-  max-width: 100%;
-  min-width: 0;
-  pointer-events: none;
-  --btn-pad-x: calc(var(--cpx) * 9);
+/* The title in the buttons' frame in the old plaque's colours (a skin's titleFrame: cardPixels.ts LABEL_FRAME, --label-frame), drawn one
+   card art pixel per pixel, in the plaque's place: its 9-pixel ends and its 4 rows on top and 5 below as they are, its middle stretched.
+   Its panel, the plaque's dark fill, from column 5 and row 3 in, as the button's */
+.blood-card__title--framed {
+  box-sizing: border-box;
+  padding: 0 calc(var(--cpx) * 12);
+  border-style: solid;
+  border-color: transparent;
+  border-width: calc(var(--cpx) * 4) calc(var(--cpx) * 9) calc(var(--cpx) * 5);
+  border-image: var(--label-frame) 4 9 5 fill / calc(var(--cpx) * 4) calc(var(--cpx) * 9) calc(var(--cpx) * 5) / 0 stretch;
+  background: linear-gradient(#35171b, #1b0d10 55%) calc(var(--cpx) * 5) calc(var(--cpx) * 3) / calc(100% - var(--cpx) * 10)
+    calc(100% - var(--cpx) * 7) no-repeat;
+  background-origin: border-box;
+  image-rendering: pixelated;
 }
-.blood-card__label .blood-card__label-text {
-  display: block;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--title-colour);
-  font-family: var(--title-font);
-  font-size: calc(var(--cpx) * var(--title-size));
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  text-shadow: 0 var(--cpx) 0 #0e0406;
-  -webkit-font-smoothing: auto;
+.blood-card__title--framed span {
+  padding-bottom: var(--cpx);
 }

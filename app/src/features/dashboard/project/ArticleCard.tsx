@@ -1,14 +1,16 @@
 import { useState, type CSSProperties, type KeyboardEvent } from 'react'
 import { LuExternalLink, LuPencil, LuPin, LuPinOff, LuTrash2 } from 'react-icons/lu'
-import ButtonLook from '../../../components/ui/buttons/ButtonLook'
 import TreeMenu from '../../../components/ui/tree/TreeMenu'
 import type { TreeMenuGroup } from '../../../components/ui/tree/types'
 import { useResourceMenu } from '../../../lib/resource/actions'
 import type { AnyResource } from '../../../resources/types'
-import { drawOrnament, SKINS, svgUrl, toSvg, type Skin, type SkinName } from './cardPixels'
+import { drawOrnament, LABEL_FRAME, LABEL_PALETTE, SKINS, svgUrl, toSvg, type Canvas, type Skin, type SkinName } from './cardPixels'
 import RenameDialog from './RenameDialog'
 
 type Item = Record<string, unknown> & { id: number | string }
+
+/** The title frame (cardPixels.ts LABEL_FRAME), as an SVG, for bloodCard.css */
+const LABEL = `url("${svgUrl(toSvg(LABEL_FRAME.map((row) => [...row].map((ch) => (ch === '.' ? null : ch))) as Canvas, LABEL_PALETTE))}")`
 
 /** Each skin's art (cardPixels.ts), drawn once as SVG files (the frame, and the chalice of an article without a picture), and its places
  * and type, as the CSS variables bloodCard.css reads (in art pixels) */
@@ -30,6 +32,7 @@ const LOOKS = Object.fromEntries(
         '--text-colour': skin.textColour,
         '--more-top': skin.more.top,
         '--more-right': skin.more.right,
+        '--label-frame': LABEL,
         '--pin-top': skin.pin.top,
         '--pin-left': skin.pin.left,
       } as CSSProperties,
@@ -100,15 +103,8 @@ export default function ArticleCard({ resource, item, onOpen, skin = 'crimson' }
           {picture ? <img src={picture} alt="" draggable={false} /> : <img className="blood-card__art" src={look.chalice} alt="" draggable={false} />}
         </div>
         <img className="blood-card__frame" src={look.frame} alt="" draggable={false} />
-        <h3 className="blood-card__title">
-          {(SKINS[skin] as Skin).titleFrame ? (
-            // In the buttons' frame (the Share button's look): a look only, nothing to click
-            <ButtonLook variant="ghost" size="sm" className="blood-card__label">
-              <span className="blood-card__label-text">{title}</span>
-            </ButtonLook>
-          ) : (
-            <span>{title}</span>
-          )}
+        <h3 className={`blood-card__title ${(SKINS[skin] as Skin).titleFrame ? 'blood-card__title--framed' : ''}`}>
+          <span>{title}</span>
         </h3>
         <p className={`blood-card__text ${text ? '' : 'blood-card__text--empty'}`}>{text || 'No text yet'}</p>
 

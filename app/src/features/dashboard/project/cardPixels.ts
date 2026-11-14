@@ -127,7 +127,7 @@ export type Skin = {
   window: Box
   /** The title's box on the plaque, and the text's box under it */
   title: Box
-  /** The title in the buttons' frame (the framed Shade look, as the Share button), not on a plaque of the art */
+  /** The title in LABEL_FRAME (the buttons' frame in the plaque's colours), not on a plaque of the art */
   titleFrame?: boolean
   text: Box
   /** Type sizes in art pixels, the text's line height, and the colours (taken from the design) */
@@ -159,6 +159,45 @@ export type MoreOrnament = {
   hover: readonly string[]
   pressed: readonly string[]
 }
+
+/**
+ * The crimson card's title frame: the buttons' frame (the framed Shade look, as the Share button: styles/buttons.css --cancel-frame, 19 x 19,
+ * 9-pixel ends, 4 rows on top, 5 below) in the old plaque's colours, drawn one card art pixel per pixel, as thick as the plaque's border was.
+ * Its middle rows stretch to the box's height, its middle column to its width
+ */
+export const LABEL_FRAME = [
+  '......AAAAAAA......',
+  '.....ABBBBBBBA.....',
+  '....ABCAAAAACBA....',
+  '...ABCADDDDDACBA...',
+  '..ABCADE...EDACBA..',
+  '..ABCADE...EDACBA..',
+  '..ABCADE...EDACBA..',
+  '..ABCADE...EDACBA..',
+  '..ABCADE...EDACBA..',
+  '..AFGADE...EDAGFA..',
+  '..AFGADE...EDAGFA..',
+  '..AFGADE...EDAGFA..',
+  '..AFGADE...EDAGFA..',
+  '..AFGADE...EDAGFA..',
+  '..HAFGADDDDDAGFAH..',
+  '...HAFGAAAAAGFAH...',
+  '....HAIIIIIIIAH....',
+  '.....HAAAAAAAH.....',
+  '......HHHHHHH......',
+]
+/** Its colours: the button's, each in the plaque's colour (PALETTE: o outline, M light, n mid, m and d the darker lower side); the shading as the button's */
+export const LABEL_PALETTE = {
+  A: PALETTE.o,
+  B: PALETTE.M,
+  C: PALETTE.n,
+  D: 'rgba(255,255,255,0.14)',
+  E: 'rgba(0,0,0,0.22)',
+  F: PALETTE.m,
+  G: PALETTE.d,
+  H: 'rgba(0,0,0,0.35)',
+  I: PALETTE.m,
+} as const
 
 /** The crimson card's ⋯: three small rubies in a slot of the top band, beside the top-right corner gem (the corner is the button too) */
 const CRIMSON_ORNAMENT: MoreOrnament = {
@@ -204,9 +243,10 @@ export const SKINS = {
     palette: PALETTE,
     chalice: drawChalice,
     artPalette: ART_PALETTE,
-    title: { x: 31, y: 147, width: 122, height: 22 },
+    // the old plaque's place and size exactly
+    title: { x: 21, y: 143, width: 142, height: 31 },
     titleFrame: true,
-    titleSize: 13,
+    titleSize: 16.7,
     textSize: 11.2,
     lineHeight: 1.07,
     titleColour: '#ac6063',
