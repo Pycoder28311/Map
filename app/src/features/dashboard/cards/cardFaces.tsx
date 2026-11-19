@@ -8,7 +8,7 @@ import { CARD_SIZE, cardOf } from './cardStyles'
 import { BOOK, BOOK_FRAME, BOOK_SIZE, BOOK_TEXT, bookAt } from './book'
 import BookArt from './BookArt'
 import PixelRects from './PixelRects'
-import { FRAME_PIXELS, FRAME_SIZE, frameCracks } from './stoneFrame'
+import { FRAME_BORDER, FRAME_PIXELS, FRAME_SIZE, frameCracks } from './stoneFrame'
 import FolderFace from './FolderFace'
 import MapPreview from './MapPreview'
 import { DAY_MONTH } from '../../../lib/dates'
@@ -63,12 +63,12 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
       // The preview in a pixel-art stone frame (stoneFrame.ts), like an old game's notice board; the name hangs on its bottom edge, centred.
       // The map reaches under the frame, which covers it up to its opening
       <div {...box} className={`group/card relative shrink-0 snap-start ${CARD_SIZE} ${className}`}>
-        <div className="absolute overflow-hidden bg-surface" style={{ inset: `${(3 / FRAME_SIZE) * 100}%` }}>
+        <div className="absolute overflow-hidden bg-surface" style={{ inset: `${((FRAME_BORDER - 1) / FRAME_SIZE) * 100}%` }}>
           <div data-card-body data-card-bleed className="size-full">
             <MapPreview id={String(item.id)} className="size-full" />
           </div>
         </div>
-        {/* Cracks in the map, running in from the frame (each map its own) */}
+        {/* Small tears in the map's edge, like old paper's (each map its own) */}
         <PixelRects rects={frameCracks(String(item.id))} width={FRAME_SIZE} height={FRAME_SIZE} />
         <PixelRects rects={FRAME_PIXELS} width={FRAME_SIZE} height={FRAME_SIZE} className="[filter:drop-shadow(0_3px_0_rgb(0_0_0/0.22))]" />
         {/* The name: a Stone button's look (like the Recent History button) */}
