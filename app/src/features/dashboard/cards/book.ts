@@ -34,9 +34,8 @@ export const BOOK = {
   hinge: '#5e3619',
   rivet: '#d7d2c8',
   rivetShade: '#7d776e',
-  /** The bands' dashes (a faint light top and face) and the groove they sit in */
-  band: '#c9a26a',
-  bandLight: '#e3c58f',
+  /** The bands' dashes (one pixel tall, a muted stitch close to the leather) and the groove they sit in */
+  band: '#a27846',
   groove: '#5e3619',
   /** The metal corners */
   gold: '#c9963e',
@@ -90,13 +89,10 @@ function seeded(start: number) {
   return () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648
 }
 
-/** A band across the cover at `y`: a faint groove, and thin dashes in it (a light top and a face, two pixels tall), ending by the gold corner */
+/** A band across the cover at `y`: a faint groove, and dashes in it one pixel tall (a muted stitch), ending by the brass corner */
 const band = (y: number): Rect[] => [
   [9, y + 1, R - 16, 1, BOOK.groove],
-  ...[9, 18, 27, 36, 45].flatMap((x): Rect[] => [
-    [x + 1, y, 5, 1, BOOK.bandLight],
-    [x, y + 1, 7, 1, BOOK.band],
-  ]),
+  ...[9, 18, 27, 36, 45].map((x): Rect => [x, y + 1, 7, 1, BOOK.band]),
 ]
 
 /** A gold corner: an L two pixels thick along the top (or bottom) and the right, a light glint, a darker tip and inner corner */
