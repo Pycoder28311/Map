@@ -1,10 +1,9 @@
 import type { CSSProperties } from 'react'
-import { seededRandom } from '../../../lib/seededRandom'
 
 // An article's Dashboard card drawn as a pixel-art book (BookArt.tsx draws it from the pixels here): a closed tome of brown leather seen from the front (in
 // the map card's colours: its outlines, its paper),
 // its stitched spine along the left with rivets on the hinge, a cover with faint diamonds, grain, scratches, worn edges and a debossed border,
-// stitched bands ending in brass corners, its picture on a torn paper label (bookLabel), its pages and a ribbon bookmark
+// stitched bands ending in brass corners, its picture in a one-pixel outline, its pages and a ribbon bookmark
 // along the bottom. The book fills the card's box, BOOK_W × BOOK_H
 // pixels of the drawing (a square), each BOOK_PIXEL px on screen: the same size as the Dashboard's other pixel art (DashboardRelics: SCALE). The
 // card's content (its picture, title, preview and date) is laid on the cover by cardFaces.tsx, placed on the same grid with `bookAt`.
@@ -53,14 +52,9 @@ export const BOOK = {
   ribbonFold: '#c93a45',
   ribbonLight: '#e5463a',
   ribbonTip: '#f5822a',
-  /** The paper label the picture is printed on (the map card's paper, mapFrame.ts): its colour, speckles, aged edge, and its shadow */
-  label: '#eddab0',
-  labelDark: '#e2cb9b',
-  labelLight: '#f5e8c8',
-  labelEdge: '#cfb07a',
-  labelShadow: 'rgb(30 15 5 / 0.35)',
-  /** The words on the label when there is no picture */
-  labelInk: '#8a6a3e',
+  /** Behind the picture (what shows when there is none), and the words there */
+  picture: '#4f2f15',
+  pictureInk: '#e2cb9b',
   /** The title on the cover, and its shadow */
   ink: '#f5e8c8',
   inkShadow: '#2f1b0c',
@@ -83,10 +77,9 @@ export function bookAt(x: number, y: number, w: number, h: number): CSSPropertie
   return { position: 'absolute', left: pct(x, BOOK_W), top: pct(y, BOOK_H), width: pct(w, BOOK_W), height: pct(h, BOOK_H) }
 }
 
-/** The paper label on the cover (its edges a little torn: bookLabel), the picture printed on it less BOOK_LABEL_MARGIN each side */
+/** The picture's box on the cover: a one-pixel outline, the picture filling the rest */
 export const BOOK_FRAME = { x: 10, y: 8, w: 47, h: 27 } as const
-export const BOOK_LABEL_MARGIN = 2
-/** The title, under the label, above the bottom band */
+/** The title, under the picture, above the bottom band */
 export const BOOK_TITLE = { x: 10, y: 37, w: 47, h: 10 } as const
 
 type Rect = [x: number, y: number, w: number, h: number, fill: string]
@@ -223,6 +216,8 @@ export const BOOK_PIXELS: Rect[] = [
   ...band(50),
   ...corner(2, false),
   ...corner(47, true),
+  // The picture's outline
+  [BOOK_FRAME.x, BOOK_FRAME.y, BOOK_FRAME.w, BOOK_FRAME.h, BOOK.outline],
   // The pages' edge, between the cover's bottom rows
   [4, 54, R - 6, 5, BOOK.pages],
   [4, 54, R - 6, 1, BOOK.pagesLight],
@@ -247,35 +242,3 @@ export const BOOK_PIXELS: Rect[] = [
   [14, 63, 1, 1, BOOK.ribbonTip],
   [19, 63, 1, 1, BOOK.ribbonTip],
 ]
-
-/**
- * The paper label on an article's cover (its id is the seed: each its own): a sheet over BOOK_FRAME, its edges torn a little (a pixel off
- * here and there, two now and then), the pixels along them darker (aged), the rest speckled, a shadow along its right and bottom
- */
-export function bookLabel(seed: string): Rect[] {
-  const next = seededRandom(`${seed}:label`)
-  const { x: x0, y: y0, w, h } = BOOK_FRAME
-  const x1 = x0 + w - 1
-  const y1 = y0 + h - 1
-  const torn = (n: number) => Array.from({ length: n }, () => {
-    const roll = next()
-    return roll < 0.85 ? 0 : roll < 0.98 ? 1 : 2
-  })
-  const [top, bottom] = [torn(BOOK_W), torn(BOOK_W)]
-  const [left, right] = [torn(BOOK_H), torn(BOOK_H)]
-  const on = (x: number, y: number) =>
-    x >= x0 + left[y] && x <= x1 - right[y] && y >= y0 + top[x] && y <= y1 - bottom[x] && !((x === x0 || x === x1) && (y === y0 || y === y1))
-  const rects: Rect[] = [
-    [x1 + 1, y0 + 1, 1, h, BOOK.labelShadow],
-    [x0 + 1, y1 + 1, w, 1, BOOK.labelShadow],
-  ]
-  for (let y = y0; y <= y1; y++) {
-    for (let x = x0; x <= x1; x++) {
-      if (!on(x, y)) continue
-      const edge = !on(x - 1, y) || !on(x + 1, y) || !on(x, y - 1) || !on(x, y + 1)
-      const roll = next()
-      rects.push([x, y, 1, 1, edge ? BOOK.labelEdge : roll < 0.12 ? BOOK.labelDark : roll < 0.24 ? BOOK.labelLight : BOOK.label])
-    }
-  }
-  return rects
-}

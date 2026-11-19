@@ -5,7 +5,7 @@ import type { AnyResource } from '../../../resources/types'
 import type { Entry } from '../../../lib/resource/reorder'
 import { hueOf } from '../../objects/placeholderArt'
 import { CARD_SIZE, cardOf } from './cardStyles'
-import { BOOK, BOOK_FRAME, BOOK_H, BOOK_LABEL_MARGIN, BOOK_SIZE, BOOK_TITLE, BOOK_W, bookAt, bookLabel } from './book'
+import { BOOK, BOOK_FRAME, BOOK_SIZE, BOOK_TITLE, bookAt } from './book'
 import BookArt from './BookArt'
 import PixelRects from './PixelRects'
 import { FRAME_PIXELS, FRAME_SIZE, MAP_INSET, paperMarks, paperPixels } from './mapFrame'
@@ -46,7 +46,7 @@ type Props = {
 /**
  * The look of a Dashboard card, by its resource's `ui.card`: `plain`, like a comment: a square paper card, its title and date on top, its preview quoted below
  * behind a thin bar, fading out where it's cut; `image`, a picture on top (a placeholder made from its id: the list has no images), its
- * its title, on the cover of a square pixel-art leather book (book.ts: the picture on a paper label on it, the title under it, the name on the frame's edge, the pages and a ribbon below); `map`, its preview printed on pixel-art old paper in a thin pixel-art wooden frame filling the card (mapFrame.ts), its title in a narrower box hanging below it, centred on its bottom edge; `folder`,
+ * its title, on the cover of a square pixel-art leather book (book.ts: the picture in a one-pixel outline on it, the title under it, the name on the frame's edge, the pages and a ribbon below); `map`, its preview printed on pixel-art old paper in a thin pixel-art wooden frame filling the card (mapFrame.ts), its title in a narrower box hanging below it, centred on its bottom edge; `folder`,
  * its name floating on its top left corner and its first four items as tiles. Only what is inside the box: the real card (ResourceCard) adds drag, menu and zoom, a draft (DraftCard) blurs it.
  * The element of the title carries `data-card-title`, where a draft's title input lands when it is created. What a draft blurs is marked `data-card-body`
  * (the content, never the box with the border), and `data-card-bleed` too when it fills its box to the edge (it is scaled up a little while blurred, so its blurred edge is out of sight).
@@ -85,24 +85,23 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
     const src = firstImage(item)
     const frame = BOOK_FRAME
     return (
-      // A pixel-art book (book.ts): its picture on a torn paper label on the cover, its title under it (no plate, no preview or date); its
+      // A pixel-art book (book.ts): its picture in a one-pixel outline on the cover, its title under it (no plate, no preview or date); its
       // pages and a ribbon along the bottom. On hover it lifts a little off the shelf
       <div {...box} className={`group/card relative shrink-0 snap-start text-start ${BOOK_SIZE} ${className}`} style={{ color: BOOK.ink }}>
         <div className="absolute inset-0 transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none">
           <BookArt className="[filter:drop-shadow(0_3px_0_rgb(0_0_0/0.22))]" />
-          {/* The paper label (torn a little, each article its own), the picture printed on it (smooth) */}
-          <PixelRects rects={bookLabel(String(item.id))} width={BOOK_W} height={BOOK_H} />
-          <div className="overflow-hidden" style={bookAt(frame.x + BOOK_LABEL_MARGIN, frame.y + BOOK_LABEL_MARGIN, frame.w - 2 * BOOK_LABEL_MARGIN, frame.h - 2 * BOOK_LABEL_MARGIN)}>
+          {/* The picture, filling its box inside the one-pixel outline */}
+          <div className="overflow-hidden" style={{ ...bookAt(frame.x + 1, frame.y + 1, frame.w - 2, frame.h - 2), backgroundColor: BOOK.picture }}>
             {src ? (
               <img data-card-body data-card-bleed src={src} alt="" className="size-full object-cover" />
             ) : (
-              <div data-card-body data-card-bleed className="flex size-full flex-col items-center justify-center gap-1 text-small" style={{ color: BOOK.labelInk }}>
+              <div data-card-body data-card-bleed className="flex size-full flex-col items-center justify-center gap-1 text-small" style={{ color: BOOK.pictureInk }}>
                 <LuImageOff aria-hidden className="size-6 opacity-80" />
                 No image found
               </div>
             )}
           </div>
-          {/* The title, in the pixel font, on the leather under the label */}
+          {/* The title, in the pixel font, on the leather under the picture */}
           <div data-card-title-box className="flex items-center justify-center px-1 text-center" style={bookAt(BOOK_TITLE.x, BOOK_TITLE.y, BOOK_TITLE.w, BOOK_TITLE.h)}>
             <span
               data-card-title
