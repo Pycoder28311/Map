@@ -9,21 +9,24 @@ import type { CSSProperties } from 'react'
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const BOOK = {
   /** The hard outline round everything */
-  outline: '#1f2329',
+  outline: '#111317',
   /** The back cover, seen along the left, and the ridges across it */
-  spine: '#3a4049',
-  ridge: '#7d8794',
+  spine: '#23272e',
+  ridge: '#4c5460',
   /** The front cover: its face, the light line along its top and the shade along its right and bottom */
-  cover: '#6b7480',
-  coverLight: '#848e9b',
-  coverShade: '#5a626e',
+  cover: '#343a43',
+  coverLight: '#464d58',
+  coverShade: '#2a2f37',
+  /** The cover's grain: faint streaks a little darker and a little lighter than it */
+  grainDark: '#2d323a',
+  grainLight: '#3b424c',
   /** The hinge, where the cover meets the spine */
-  hinge: '#4b525e',
+  hinge: '#272b33',
   /** The bands' dashes (light top, face, shaded bottom) and the groove they sit in */
-  band: '#a7b1be',
-  bandLight: '#d5dbe3',
-  bandShade: '#7d8794',
-  groove: '#4b525e',
+  band: '#7f8995',
+  bandLight: '#aab3bf',
+  bandShade: '#59626e',
+  groove: '#22262d',
   /** The metal corners */
   gold: '#ffd43b',
   goldDeep: '#f7931e',
@@ -53,9 +56,9 @@ export function bookAt(x: number, y: number, w: number, h: number): CSSPropertie
 }
 
 /** The picture's frame on the cover (its outline: the picture fills it less one pixel each side); the title sits on its bottom edge */
-export const BOOK_FRAME = { x: 10, y: 9, w: 48, h: 23 } as const
+export const BOOK_FRAME = { x: 8, y: 7, w: 51, h: 26 } as const
 /** The preview and date, under the title, above the bottom band */
-export const BOOK_TEXT = { x: 10, y: 36, w: 45, h: 12 } as const
+export const BOOK_TEXT = { x: 8, y: 36, w: 48, h: 12 } as const
 
 type Rect = [x: number, y: number, w: number, h: number, fill: string]
 
@@ -86,6 +89,21 @@ const corner = (y: number, down: boolean): Rect[] => {
   ]
 }
 
+/** The cover's grain, like worn leather: short faint streaks across it, scattered the same way on every book (a fixed seed) */
+function grain(): Rect[] {
+  let seed = 7
+  const next = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648)
+  const rects: Rect[] = []
+  for (let y = 2; y < 62; y += 2) {
+    // a few streaks on each other row, each 2–6 pixels long, a step off the row now and then
+    for (let x = 8 + Math.floor(next() * 6); x < 60; x += 5 + Math.floor(next() * 9)) {
+      const length = Math.min(2 + Math.floor(next() * 5), 61 - x)
+      rects.push([x, y + (next() < 0.3 ? 1 : 0), length, 1, next() < 0.6 ? BOOK.grainDark : BOOK.grainLight])
+    }
+  }
+  return rects
+}
+
 /** The pixels of the book, back to front */
 export const BOOK_PIXELS: Rect[] = [
   // The spine (the back cover, seen along the left), its top and bottom stepping in to the cover's corners, and its ridges
@@ -100,6 +118,7 @@ export const BOOK_PIXELS: Rect[] = [
   [4, 62, 59, 1, BOOK.coverShade],
   [4, 1, 3, 62, BOOK.hinge],
   [7, 2, 1, 60, BOOK.coverLight],
+  ...grain(),
   // The bands, ending in the gold corners
   ...band(3),
   ...band(49),
