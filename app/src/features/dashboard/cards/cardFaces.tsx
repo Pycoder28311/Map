@@ -88,8 +88,8 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
       // A pixel-art book (book.ts): its picture in a frame on the cover, the name on the frame's bottom edge, the preview and date
       // under it; its pages and a ribbon along the bottom. On hover it lifts a little off the shelf
       <div {...box} className={`group/card relative shrink-0 snap-start text-start ${CARD_SIZE} ${className}`} style={{ color: BOOK.ink }}>
-        <div className="absolute inset-0 transition-transform duration-200 ease-out group-hover/card:-translate-y-1 motion-reduce:transition-none">
-          <BookArt className="[filter:drop-shadow(0_4px_0_rgb(0_0_0/0.22))]" />
+        <div className="absolute inset-0 transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none">
+          <BookArt className="[filter:drop-shadow(0_3px_0_rgb(0_0_0/0.22))]" />
           {/* The picture, inside the frame's one-pixel outline */}
           <div className="overflow-hidden" style={{ ...bookAt(frame.x + 1, frame.y + 1, frame.w - 2, frame.h - 2), backgroundColor: BOOK.hinge }}>
             {src ? (
@@ -112,7 +112,7 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
             )}
           </div>
           {/* The name, on the frame's bottom edge, like a plate */}
-          <div className="flex items-center justify-center" style={bookAt(frame.x - 2, frame.y + frame.h - 3, frame.w + 4, 5)}>
+          <div className="flex items-center justify-center" style={bookAt(frame.x - 2, frame.y + frame.h - 4, frame.w + 4, 7)}>
             <ButtonLook data-card-title-box variant="secondary" size="xs" icon={Icon} className="max-w-full min-w-0">
               <span data-card-title className="min-w-0 truncate">
                 {title}
