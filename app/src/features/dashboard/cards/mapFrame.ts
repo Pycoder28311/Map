@@ -1,30 +1,27 @@
 import { seededRandom } from '../../../lib/seededRandom'
 
 // A map's Dashboard card, in pixel art, in three layers (cardFaces.tsx stacks them): a sheet of old paper with a torn, slightly cracked edge
-// filling a thin wooden frame, the map (smooth, not pixel art) printed on the paper. The frame (FRAME_PIXELS): a dark outline, two pixels of wood with its grain
-// running along each side, mitred at the corners and stepped round a small notch in each (like an old game's panel), lighter on its outer
-// top and left and darker by the opening, and a dark lip inside it. The paper (paperPixels): speckled, darker along its torn edge, on the
-// dark backing the frame holds. The marks (paperMarks): its folds, and a few cracks running in from its edge. Each map has its own
-// paper (its id is the seed); the frame is the same on every card. FRAME_SIZE × FRAME_SIZE pixels of FRAME_PIXEL px each: the size of the
-// Dashboard's other pixel art (book.ts).
+// in a frame of four wooden planks, the map (smooth, not pixel art) printed on the paper. The frame (FRAME_PIXELS): two horizontal planks
+// across the top and bottom and two vertical ones down the sides, crossing at the corners with their ends sticking out a little, the
+// horizontal ones in front (casting a shadow on the vertical ones), a nail through each crossing; each plank outlined, its grain running
+// along it, its outer row lighter. The paper (paperPixels): speckled, darker along its torn edge, on the dark backing behind it. The marks
+// (paperMarks): its folds, and a few cracks running in from its edge. Each map has its own paper (its id is the seed); the frame is the same
+// on every card. FRAME_SIZE × FRAME_SIZE pixels of FRAME_PIXEL px each: the size of the Dashboard's other pixel art (book.ts).
 
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const FRAME = {
-  /** The dark outline round the outside, and the lip inside the wood */
+  /** The planks' dark outline */
   outline: '#2f1b0c',
-  lip: '#3d2411',
-  /** The wood: its two tones, its grain (darker and lighter streaks), knots, and the joint at the mitred corners */
+  /** The wood: its two tones, its grain (darker and lighter streaks), knots, and the shadow a horizontal plank casts on a vertical one */
   wood: '#8c5a2c',
   woodAlt: '#7f5027',
   grainDark: '#6a411e',
   grainLight: '#a26b37',
   knot: '#4f3016',
   joint: '#553317',
-  /** The bevels: the outer edge's light (top, left) and dark (bottom, right), and the inner edge's */
-  bevelLight: '#b8824a',
-  bevelDark: '#5a3819',
-  innerLight: '#9c6634',
-  innerDark: '#4e2f15',
+  /** The nails at the crossings: their light top left, and the rest of their head */
+  nailLight: '#d7d2c8',
+  nail: '#7d776e',
   /** The backing behind the paper (what shows through its tears and cracks) */
   backing: '#2b190b',
   /** The paper: its colour, speckles a little darker and lighter (and its stains), and its aged edge */
@@ -45,12 +42,14 @@ export const FRAME = {
 /** Pixels across (and down): the 192px card at FRAME_PIXEL px a pixel */
 export const FRAME_SIZE = 64
 export const FRAME_PIXEL = 3
-/** How thick the frame is, in pixels: outline, two of wood, lip */
-export const FRAME_BORDER = 4
-/** How big the square notch cut out of each corner is (pixels), for the outline; each ring further in goes round it, one more */
-const NOTCH = 3
-/** Where the paper lies (filling the frame's opening, its edge under the lip's shadow) and where the map printed on it starts (a margin of
- *  paper round it) */
+/** How wide a plank is (pixels): its outline on each side and two of wood */
+const PLANK = 4
+/** How far the planks' ends stick out past the ones they cross (pixels) */
+const OVERHANG = 2
+/** How far in from the card's edge the frame reaches (pixels): the overhang and a plank */
+export const FRAME_BORDER = OVERHANG + PLANK
+/** Where the paper lies (filling the frame's opening, under the planks' shadow) and where the map printed on it starts (a margin of paper
+ *  round it) */
 const PAPER_FROM = FRAME_BORDER
 export const MAP_INSET = PAPER_FROM + 3
 /** The map's size in pixels */
@@ -59,19 +58,8 @@ export const MAP_GRID = FRAME_SIZE - 2 * MAP_INSET
 type Rect = [x: number, y: number, w: number, h: number, fill: string]
 const LAST = FRAME_SIZE - 1
 
-/** Whether pixel (x, y) is in ring `i` or further in: inside the square inset by `i`, and out of the notch round each corner */
-function inside(x: number, y: number, i: number): boolean {
-  if (x < i || y < i || x > LAST - i || y > LAST - i) return false
-  return Math.min(x, LAST - x) >= NOTCH + i || Math.min(y, LAST - y) >= NOTCH + i
-}
-
-/** How deep in the frame a pixel is: 0 outside it, 1 the outline, 2 to FRAME_BORDER - 1 the wood, FRAME_BORDER the lip, one more the
- *  opening's first ring, then the rest of it */
-function depth(x: number, y: number): number {
-  let level = 0
-  while (level <= FRAME_BORDER + 1 && inside(x, y, level)) level++
-  return level
-}
+/** Whether pixel (x, y) is in the frame's opening (where the paper lies) */
+const inOpening = (x: number, y: number) => x >= FRAME_BORDER && y >= FRAME_BORDER && x <= LAST - FRAME_BORDER && y <= LAST - FRAME_BORDER
 
 /** Pixels as rectangles: each run of one colour along a row is one */
 function runs(colourAt: (x: number, y: number) => string | null): Rect[] {
@@ -91,11 +79,11 @@ function runs(colourAt: (x: number, y: number) => string | null): Rect[] {
   return rects
 }
 
-/** The wood's grain: for each side (top, bottom, left, right) and each of its three middle rows, a colour per pixel along it, in streaks */
+/** The planks' grain: for each plank (top, bottom, left, right) and each of its two rows of wood, a colour per pixel along it, in streaks */
 const GRAIN: string[][][] = (() => {
   const next = seededRandom('map-frame-wood')
   return [0, 1, 2, 3].map(() =>
-    [0, 1, 2].map((row) => {
+    [0, 1].map((row) => {
       const base = row === 1 ? FRAME.woodAlt : FRAME.wood
       const line: string[] = []
       while (line.length < FRAME_SIZE) {
@@ -110,33 +98,43 @@ const GRAIN: string[][][] = (() => {
   )
 })()
 
-/** The colour of a pixel of the frame (none: outside it, or its opening) */
+/** Which plank a row (or column) is in: 0 the first (top or left), 1 the second, and how far across it; none: in neither */
+function plankAt(v: number): { index: number; across: number } | null {
+  if (v >= OVERHANG && v < OVERHANG + PLANK) return { index: 0, across: v - OVERHANG }
+  if (v > LAST - OVERHANG - PLANK && v <= LAST - OVERHANG) return { index: 1, across: v - (LAST - OVERHANG - PLANK + 1) }
+  return null
+}
+
+/** A pixel of a plank: `across` it (0 and PLANK - 1 its outline), `along` it (0 and LAST its ends); its corners rounded off */
+function plankPixel(plank: number, across: number, along: number, outer: boolean): string | null {
+  const end = along === 0 || along === LAST
+  const edge = across === 0 || across === PLANK - 1
+  if (end && edge) return null
+  if (end || edge) return FRAME.outline
+  const row = across - 1
+  const grain = GRAIN[plank][row][along]
+  // its outer row a touch lighter
+  return outer && row === (plank === 1 || plank === 3 ? 1 : 0) && grain === FRAME.wood ? FRAME.grainLight : grain
+}
+
+/** The colour of a pixel of the frame (none: off the planks and out of the paper's shadow) */
 function woodAt(x: number, y: number): string | null {
-  const d = depth(x, y)
-  const fromTop = Math.min(y, LAST - y)
-  const fromSide = Math.min(x, LAST - x)
-  // The top or left (towards the light), or the bottom or right
-  const lit = Math.min(x, y) < Math.min(LAST - x, LAST - y)
-  if (d === 0) return null
-  if (d === 1) return FRAME.outline
-  if (d === FRAME_BORDER) return FRAME.lip
-  if (d > FRAME_BORDER) return d === FRAME_BORDER + 1 && lit ? FRAME.shadow : null
-  // The wood: grained along its side, its outer row lit on the top and left (and shaded on the bottom and right) where it is thick
-  // enough for bevels, the corners' mitres a darker joint
-  const ring = d - 2
-  const rings = FRAME_BORDER - 2
-  if (rings >= 3 && ring === 0) return lit ? FRAME.bevelLight : FRAME.bevelDark
-  if (rings >= 3 && ring === rings - 1) return lit ? FRAME.innerDark : FRAME.innerLight
-  if (fromTop === fromSide) return FRAME.joint
-  const horizontal = fromTop < fromSide
-  const side = horizontal ? (y < FRAME_SIZE / 2 ? 0 : 1) : x < FRAME_SIZE / 2 ? 2 : 3
-  const grain = GRAIN[side][(rings >= 3 ? ring - 1 : ring) % GRAIN[side].length][horizontal ? x : y]
-  // a thin frame: its outer row a touch lighter on the lit sides, its inner a touch darker on the others
-  if (rings < 3 && grain !== FRAME.knot) {
-    if (ring === 0 && lit && grain === FRAME.wood) return FRAME.grainLight
-    if (ring === rings - 1 && !lit && grain === FRAME.woodAlt) return FRAME.grainDark
+  const h = plankAt(y)
+  const v = plankAt(x)
+  // A crossing: the horizontal plank in front, with a nail through the middle of it
+  if (h && v) {
+    const [nx, ny] = [v.across, h.across]
+    if (nx >= 1 && nx <= 2 && ny >= 1 && ny <= 2) return nx === 1 && ny === 1 ? FRAME.nailLight : FRAME.nail
   }
-  return grain
+  if (h) return plankPixel(h.index, h.across, x, true)
+  if (v) {
+    // just under the top plank, its shadow
+    if (y === OVERHANG + PLANK && v.across > 0 && v.across < PLANK - 1) return FRAME.joint
+    return plankPixel(2 + v.index, v.across, y, true)
+  }
+  // The paper: the planks' shadow along its top and left
+  if (inOpening(x, y) && (y === FRAME_BORDER || x === FRAME_BORDER)) return FRAME.shadow
+  return null
 }
 
 /** The frame's pixels (the same on every card) */
@@ -165,7 +163,7 @@ export function paperPixels(seed: string): Rect[] {
   const stains = Array.from({ length: 2 }, () => ({ x: PAPER_FROM + next() * (to - PAPER_FROM), y: PAPER_FROM + next() * (to - PAPER_FROM), r: 3 + next() * 4 }))
   const speck = seededRandom(`${seed}:speck`)
   return runs((x, y) => {
-    if (depth(x, y) <= FRAME_BORDER) return null
+    if (!inOpening(x, y)) return null
     if (!onPaper(x, y)) return FRAME.backing
     if (!onPaper(x - 1, y) || !onPaper(x + 1, y) || !onPaper(x, y - 1) || !onPaper(x, y + 1)) return FRAME.paperEdge
     if (stains.some((s) => (x - s.x) ** 2 + (y - s.y) ** 2 < s.r * s.r)) return FRAME.paperDark
