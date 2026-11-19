@@ -1,58 +1,69 @@
 import type { CSSProperties } from 'react'
+import { seededRandom } from '../../../lib/seededRandom'
 
-// An article's Dashboard card drawn as a pixel-art book (BookArt.tsx draws it from the pixels here): a closed grey tome seen from the front,
+// An article's Dashboard card drawn as a pixel-art book (BookArt.tsx draws it from the pixels here): a closed tome of brown leather seen from the front (in
+// the map card's colours: its outlines, its paper),
 // its stitched spine along the left with rivets on the hinge, a cover with faint diamonds, grain, scratches, worn edges and a debossed border,
-// thin faint bands ending in gold corners, its pages and a ribbon bookmark along the bottom. The book fills the card's box, BOOK_W × BOOK_H
+// stitched bands ending in brass corners, its picture on a torn paper label (bookLabel), its pages and a ribbon bookmark
+// along the bottom. The book fills the card's box, BOOK_W × BOOK_H
 // pixels of the drawing (5:4), each BOOK_PIXEL px on screen: the same size as the Dashboard's other pixel art (DashboardRelics: SCALE). The
 // card's content (its picture, title, preview and date) is laid on the cover by cardFaces.tsx, placed on the same grid with `bookAt`.
 
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const BOOK = {
   /** The hard outline round everything */
-  outline: '#1b1e23',
+  outline: '#2f1b0c',
   /** The back cover, seen along the left, its ridges and their shade, and its stitches */
-  spine: '#4a515b',
-  ridge: '#858e9a',
-  ridgeShade: '#3c424b',
-  stitch: '#959eaa',
+  spine: '#4f2f15',
+  ridge: '#9a6634',
+  ridgeShade: '#3a2210',
+  stitch: '#d9b97f',
   /** The front cover: its face, the light line along its top and the shade along its right and bottom */
-  cover: '#646d79',
-  coverLight: '#7c8591',
-  coverShade: '#565e69',
+  cover: '#7a4a24',
+  coverLight: '#946036',
+  coverShade: '#62391b',
   /** The faint shapes on the cover: its grain (darker and lighter streaks), small diamonds, scratches and worn specks */
-  grainDark: '#5c646f',
-  grainLight: '#6e7783',
-  motif: '#6c7581',
-  scratch: '#78818d',
-  wear: '#8a939f',
+  grainDark: '#6c4020',
+  grainLight: '#86542c',
+  motif: '#83512a',
+  scratch: '#956237',
+  wear: '#a26c3c',
   /** The debossed border round the cover: its pressed line and the light line beside it */
-  deboss: '#545c67',
-  emboss: '#737c88',
+  deboss: '#5e3619',
+  emboss: '#8c5a30',
   /** The hinge, where the cover meets the spine, and its rivets */
-  hinge: '#4f5661',
-  rivet: '#a9b1bc',
-  rivetShade: '#3c424b',
+  hinge: '#5e3619',
+  rivet: '#d7d2c8',
+  rivetShade: '#7d776e',
   /** The bands' dashes (a faint light top and face) and the groove they sit in */
-  band: '#7a838f',
-  bandLight: '#8c95a1',
-  groove: '#5a626d',
+  band: '#c9a26a',
+  bandLight: '#e3c58f',
+  groove: '#5e3619',
   /** The metal corners */
-  gold: '#ffd43b',
-  goldDeep: '#f7931e',
-  goldLight: '#fff1a8',
+  gold: '#c9963e',
+  goldDeep: '#8a5f22',
+  goldLight: '#ecc77a',
   /** The pages' edge: its light line on top, the lines between the pages, and its shaded line below */
-  pages: '#fbb07a',
-  pagesLight: '#fdd0a2',
-  pagesLine: '#eba077',
-  pagesShade: '#dfa398',
+  pages: '#eddab0',
+  pagesLight: '#f5e8c8',
+  pagesLine: '#d9c296',
+  pagesShade: '#cfb07a',
   /** The ribbon: in the book, its light fold, out of it, and its forked tip */
   ribbon: '#b0303f',
   ribbonFold: '#c93a45',
   ribbonLight: '#e5463a',
   ribbonTip: '#f5822a',
+  /** The paper label the picture is printed on (the map card's paper, mapFrame.ts): its colour, speckles, aged edge, and its shadow */
+  label: '#eddab0',
+  labelDark: '#e2cb9b',
+  labelLight: '#f5e8c8',
+  labelEdge: '#cfb07a',
+  labelShadow: 'rgb(30 15 5 / 0.35)',
+  /** The words on the label when there is no picture */
+  labelInk: '#8a6a3e',
   /** The text on the cover */
-  ink: '#f3f5f8',
-  inkFaint: '#dde2e8',
+  ink: '#f5e8c8',
+  inkFaint: '#e2cb9b',
 } as const
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -70,8 +81,10 @@ export function bookAt(x: number, y: number, w: number, h: number): CSSPropertie
   return { position: 'absolute', left: pct(x, BOOK_W), top: pct(y, BOOK_H), width: pct(w, BOOK_W), height: pct(h, BOOK_H) }
 }
 
-/** The picture's frame on the cover (its outline: the picture fills it less one pixel each side); the title sits on its bottom edge */
+/** The paper label on the cover (its edges a little torn: bookLabel), the picture printed on it less BOOK_LABEL_MARGIN each side; the title
+ *  sits on its bottom edge */
 export const BOOK_FRAME = { x: 10, y: 8, w: 65, h: 25 } as const
+export const BOOK_LABEL_MARGIN = 2
 /** The preview and date, under the title, above the bottom band */
 export const BOOK_TEXT = { x: 10, y: 36, w: 62, h: 12 } as const
 
@@ -214,8 +227,6 @@ export const BOOK_PIXELS: Rect[] = [
   [4, 54, 72, 1, BOOK.pagesLight],
   ...pageLines(),
   [4, 58, 72, 1, BOOK.pagesShade],
-  // The picture's frame
-  [BOOK_FRAME.x, BOOK_FRAME.y, BOOK_FRAME.w, BOOK_FRAME.h, BOOK.outline],
   // The outline: top, right, bottom, and the spine's left with its steps
   [4, 0, 76, 1, BOOK.outline],
   [79, 1, 1, 63, BOOK.outline],
@@ -235,3 +246,35 @@ export const BOOK_PIXELS: Rect[] = [
   [14, 63, 1, 1, BOOK.ribbonTip],
   [19, 63, 1, 1, BOOK.ribbonTip],
 ]
+
+/**
+ * The paper label on an article's cover (its id is the seed: each its own): a sheet over BOOK_FRAME, its edges torn a little (a pixel off
+ * here and there, two now and then), the pixels along them darker (aged), the rest speckled, a shadow along its right and bottom
+ */
+export function bookLabel(seed: string): Rect[] {
+  const next = seededRandom(`${seed}:label`)
+  const { x: x0, y: y0, w, h } = BOOK_FRAME
+  const x1 = x0 + w - 1
+  const y1 = y0 + h - 1
+  const torn = (n: number) => Array.from({ length: n }, () => {
+    const roll = next()
+    return roll < 0.85 ? 0 : roll < 0.98 ? 1 : 2
+  })
+  const [top, bottom] = [torn(BOOK_W), torn(BOOK_W)]
+  const [left, right] = [torn(BOOK_H), torn(BOOK_H)]
+  const on = (x: number, y: number) =>
+    x >= x0 + left[y] && x <= x1 - right[y] && y >= y0 + top[x] && y <= y1 - bottom[x] && !((x === x0 || x === x1) && (y === y0 || y === y1))
+  const rects: Rect[] = [
+    [x1 + 1, y0 + 1, 1, h, BOOK.labelShadow],
+    [x0 + 1, y1 + 1, w, 1, BOOK.labelShadow],
+  ]
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      if (!on(x, y)) continue
+      const edge = !on(x - 1, y) || !on(x + 1, y) || !on(x, y - 1) || !on(x, y + 1)
+      const roll = next()
+      rects.push([x, y, 1, 1, edge ? BOOK.labelEdge : roll < 0.12 ? BOOK.labelDark : roll < 0.24 ? BOOK.labelLight : BOOK.label])
+    }
+  }
+  return rects
+}
