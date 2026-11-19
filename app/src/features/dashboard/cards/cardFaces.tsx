@@ -5,7 +5,7 @@ import type { AnyResource } from '../../../resources/types'
 import type { Entry } from '../../../lib/resource/reorder'
 import { hueOf } from '../../objects/placeholderArt'
 import { CARD_SIZE, cardOf } from './cardStyles'
-import { BOOK, BOOK_FRAME, BOOK_TEXT, bookAt } from './book'
+import { BOOK, BOOK_FRAME, BOOK_SIZE, BOOK_TEXT, bookAt } from './book'
 import BookArt from './BookArt'
 import { paperEdgePolygon } from './paperEdge'
 import FolderFace from './FolderFace'
@@ -87,7 +87,7 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
     return (
       // A pixel-art book (book.ts): its picture in a frame on the cover, the name on the frame's bottom edge, the preview and date
       // under it; its pages and a ribbon along the bottom. On hover it lifts a little off the shelf
-      <div {...box} className={`group/card relative shrink-0 snap-start text-start ${CARD_SIZE} ${className}`} style={{ color: BOOK.ink }}>
+      <div {...box} className={`group/card relative shrink-0 snap-start text-start ${BOOK_SIZE} ${className}`} style={{ color: BOOK.ink }}>
         <div className="absolute inset-0 transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none">
           <BookArt className="[filter:drop-shadow(0_3px_0_rgb(0_0_0/0.22))]" />
           {/* The picture, inside the frame's one-pixel outline */}

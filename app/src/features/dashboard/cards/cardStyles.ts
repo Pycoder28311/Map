@@ -1,4 +1,5 @@
-// The Dashboard cards' boxes: every card, of every look, a square of the same size, so a row lines up (each look arranges its own content inside)
+// The Dashboard cards' boxes: every card, of every look, a square of the same size, so a row lines up (each look arranges its own content inside);
+// an article's book is as tall but wider, 5:4 (book.ts: BOOK_SIZE)
 const CARD_BASE =
   'group/card relative flex shrink-0 snap-start flex-col overflow-hidden rounded-(--card-radius) text-start shadow-sm ring-1 ring-line'
 const PADDED = 'gap-2 p-2'
