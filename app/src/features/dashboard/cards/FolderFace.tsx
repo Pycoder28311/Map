@@ -7,7 +7,7 @@ import MapPreview from './MapPreview'
 export const FOLDER_TILES = 4
 
 /** One tile of a folder card: a small preview of an item (a map's picture, else its icon) and its title below it */
-function Tile({ entry, icon = 'size-5', pin = 'size-5', text = 'text-[10px]', className = '' }: { entry: Entry; icon?: string; pin?: string; text?: string; className?: string }) {
+function Tile({ entry, icon = 'size-5', text = 'text-[10px]', className = '' }: { entry: Entry; icon?: string; text?: string; className?: string }) {
   const { resource, item } = entry
   const Icon = resource.ui.icon
   const title = resource.ui.row.title(item)
@@ -16,7 +16,7 @@ function Tile({ entry, icon = 'size-5', pin = 'size-5', text = 'text-[10px]', cl
     <div data-tile-key={`${resource.name}:${item.id}`} title={title} className={`relative flex min-w-0 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-(--btn-radius) bg-surface ${className}`}>
       {resource.ui.card === 'map' ? (
         <>
-          <MapPreview id={String(item.id)} pin={pin} className="min-h-0 w-full flex-1" />
+          <MapPreview id={String(item.id)} className="min-h-0 w-full flex-1" />
           <span className="w-full bg-surface py-0.5">{name}</span>
         </>
       ) : (
@@ -47,7 +47,7 @@ type Props = { contents: Entry[]; dropping?: boolean; pending?: boolean }
 
 /** The grid and the tile of each count (Tailwind needs the full class strings): one grid for all of them, so a tile is the same element when the count changes */
 const GRID = ['', 'grid-cols-1 grid-rows-1', 'grid-cols-2 grid-rows-[1fr] items-center', 'grid-cols-4 grid-rows-2', 'grid-cols-2 grid-rows-2']
-const BIG = [{}, { icon: 'size-10', pin: 'size-10', text: 'text-small' }, { icon: 'size-6', pin: 'size-6' }, {}, {}]
+const BIG = [{}, { icon: 'size-10', text: 'text-small' }, { icon: 'size-6' }, {}, {}]
 /** How long a tile takes to go to its new place and size, or to appear (ms) */
 const MOVE_MS = 320
 

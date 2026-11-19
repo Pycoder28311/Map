@@ -66,7 +66,7 @@ export function useLinkInfo(link: ArticleLink, doc: PMNode | null, words = ''): 
       const image = infobox?.image ?? infobox?.banner ?? firstImage(content)
       const picture =
         link.type === 'map' ? (
-          <MapPreview id={String(record.id)} className="size-full" pin="size-6" />
+          <MapPreview id={String(record.id)} className="size-full" />
         ) : image ? (
           <img src={image} alt="" className="size-full object-cover" />
         ) : (

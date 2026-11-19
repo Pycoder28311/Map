@@ -110,7 +110,7 @@ export default function ResourceCard({ resource, item, menu, onOpen, place, cont
     <>
       {face}
       <Modal open={zoomed} onClose={() => setZoomed(false)} title={title} size="lg">
-        <MapPreview id={id} pin="size-16" className="aspect-video w-full rounded-(--btn-radius)" />
+        <MapPreview id={id} className="aspect-video w-full rounded-(--btn-radius)" />
       </Modal>
     </>
   )
