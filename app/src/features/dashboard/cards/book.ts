@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react'
 // its stitched spine along the left with rivets on the hinge, a cover with faint diamonds, grain, scratches, worn edges and a debossed border,
 // stitched bands ending in brass corners, its picture in a one-pixel outline, its pages and a ribbon bookmark
 // along the bottom. The book fills the card's box, BOOK_W × BOOK_H
-// pixels of the drawing (4:5, taller than wide), each BOOK_PIXEL px on screen: the same size as the Dashboard's other pixel art (DashboardRelics: SCALE). The
+// pixels of the drawing (4:5, taller than wide, as tall as the other cards), each BOOK_PIXEL px on screen: the same size as the Dashboard's other pixel art (DashboardRelics: SCALE). The
 // card's content (its picture, title, preview and date) is laid on the cover by cardFaces.tsx, placed on the same grid with `bookAt`.
 
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -62,11 +62,11 @@ export const BOOK = {
 
 /** One pixel of the drawing on screen (px): the Dashboard's pixel art's size (DashboardRelics) */
 export const BOOK_PIXEL = 3
-/** Pixels across and down the drawing: 4:5, as wide as every other card (192px) and taller (240px) */
-export const BOOK_W = 64
-export const BOOK_H = 80
-/** The card's box: BOOK_W × BOOK_PIXEL by BOOK_H × BOOK_PIXEL (192 × 240px) */
-export const BOOK_SIZE = 'h-60 w-48'
+/** Pixels across and down the drawing: 4:5 (as near as whole pixels go), as tall as every other card (192px), so a row lines up */
+export const BOOK_W = 51
+export const BOOK_H = 64
+/** The card's box: BOOK_W × BOOK_PIXEL by BOOK_H × BOOK_PIXEL (153 × 192px) */
+export const BOOK_SIZE = 'h-48 w-[153px]'
 /** The cover's right edge (its shaded column), where the right-hand parts are placed from */
 const R = BOOK_W - 2
 /** The cover's left edge, past the spine (two pixels, and its outline) */
@@ -81,9 +81,9 @@ export function bookAt(x: number, y: number, w: number, h: number): CSSPropertie
 }
 
 /** The picture's box on the cover: a one-pixel outline, the picture filling the rest */
-export const BOOK_FRAME = { x: 10, y: 8, w: 47, h: 35 } as const
+export const BOOK_FRAME = { x: 10, y: 8, w: R - 13, h: 27 } as const
 /** The title, under the picture, above the bottom band */
-export const BOOK_TITLE = { x: 10, y: 45, w: 47, h: 16 } as const
+export const BOOK_TITLE = { x: 8, y: 36, w: R - 9, h: 11 } as const
 /** Where the bottom band is (its groove row), and the debossed border's bottom line above it */
 const BAND_LOW = B - 12
 const BORDER_LOW = B - 15
@@ -99,7 +99,7 @@ function seeded(start: number) {
 /** A band across the cover, its groove on row `y`: a faint groove, and dashes in it one pixel tall (a muted stitch), ending by the brass corner */
 const band = (y: number): Rect[] => [
   [9, y, R - 16, 1, BOOK.groove],
-  ...[9, 18, 27, 36, 45].map((x): Rect => [x, y, 7, 1, BOOK.band]),
+  ...Array.from({ length: Math.floor((R - 15) / 9) }, (_, i): Rect => [9 + i * 9, y, 7, 1, BOOK.band]),
 ]
 
 /** A brass corner: an L two pixels thick along the top (or bottom) and the right, a light glint, a darker tip and inner corner. `y` its
@@ -141,12 +141,11 @@ function diamonds(): Rect[] {
 
 /** A few faint scratches on the cover, diagonal: where each starts, how long, and which way it slopes (1: down, -1: up) */
 const SCRATCHES: [x: number, y: number, length: number, slope: 1 | -1][] = [
-  [11, 48, 4, 1],
-  [26, 58, 3, -1],
-  [42, 46, 4, 1],
-  [57, 56, 3, -1],
-  [52, 50, 3, 1],
-  [35, 53, 2, 1],
+  [11, 38, 4, 1],
+  [24, 46, 3, -1],
+  [34, 37, 4, 1],
+  [R - 7, 45, 3, -1],
+  [29, 42, 2, 1],
   [R - 5, 14, 3, 1],
 ]
 const scratches = (): Rect[] => SCRATCHES.flatMap(([x, y, length, slope]) => Array.from({ length }, (_, i): Rect => [x + i, y + i * slope, 1, 1, BOOK.scratch]))
