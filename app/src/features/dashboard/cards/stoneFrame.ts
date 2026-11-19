@@ -1,3 +1,5 @@
+import { seededRandom } from '../../../lib/seededRandom'
+
 // A map's Dashboard card: its preview in a pixel-art stone frame, like an old game's notice board (the board without its label, text or
 // button): a thick grey border with rounded corners, a hard dark outline outside and inside it, a light bevel on its outer top and left
 // edges and a dark one on its bottom and right (the other way round on its inner edges), its face speckled like stone. The frame fills the
@@ -86,3 +88,50 @@ export const FRAME_PIXELS: Rect[] = (() => {
   }
   return rects
 })()
+
+// ── The cracks in the map, running in from the frame's opening ──────────────────────────────────────────────────────────────────
+/** How many cracks a map has, and how far in (pixels) the longest goes */
+export const CRACK_COUNT = 6
+export const CRACK_REACH = 9
+/** A crack's line, and the light edge beside it (on its lower right, where the light catches the broken edge) */
+const CRACK_LINE = 'rgb(18 18 20 / 0.6)'
+const CRACK_EDGE = 'rgb(255 255 255 / 0.22)'
+
+/** The first and last pixel of the opening, across and down */
+const OPEN_FROM = FRAME_BORDER + 1
+const OPEN_TO = FRAME_SIZE - 2 - FRAME_BORDER
+
+/**
+ * The cracks of a map (its id is the seed: each map has its own, the same every time): each starts on a side of the opening, away from its
+ * corners, and wanders in a pixel at a time, a step sideways now and then; some fork once. A small chip of the edge where each starts.
+ */
+export function frameCracks(seed: string): Rect[] {
+  const next = seededRandom(`${seed}:cracks`)
+  const rects: Rect[] = []
+  const dot = (x: number, y: number) => {
+    if (x < OPEN_FROM || y < OPEN_FROM || x > OPEN_TO || y > OPEN_TO) return
+    rects.push([x, y, 1, 1, CRACK_LINE])
+    if (x + 1 <= OPEN_TO && y + 1 <= OPEN_TO) rects.push([x + 1, y + 1, 1, 1, CRACK_EDGE])
+  }
+  // Walk `steps` pixels in from (x, y): `ix, iy` the way in, a step sideways (across it) a third of the time
+  const walk = (x: number, y: number, ix: number, iy: number, steps: number, fork: boolean) => {
+    for (let i = 0; i < steps; i++) {
+      const roll = next()
+      const side = roll < 0.18 ? -1 : roll < 0.36 ? 1 : 0
+      x += ix + (iy !== 0 ? side : 0)
+      y += iy + (ix !== 0 ? side : 0)
+      dot(x, y)
+      if (fork && i === 2 && next() < 0.5) walk(x, y, ix, iy, 2 + Math.floor(next() * 3), false)
+    }
+  }
+  for (let c = 0; c < CRACK_COUNT; c++) {
+    const side = Math.floor(next() * 4)
+    const along = OPEN_FROM + 6 + Math.floor(next() * (OPEN_TO - OPEN_FROM - 12))
+    const [x, y, ix, iy] =
+      side === 0 ? [along, OPEN_FROM - 1, 0, 1] : side === 1 ? [OPEN_TO + 1, along, -1, 0] : side === 2 ? [along, OPEN_TO + 1, 0, -1] : [OPEN_FROM - 1, along, 1, 0]
+    // the chip: two pixels of the edge broken off where it starts
+    dot(x + ix + (iy !== 0 ? 1 : 0), y + iy + (ix !== 0 ? 1 : 0))
+    walk(x, y, ix, iy, 3 + Math.floor(next() * (CRACK_REACH - 2)), true)
+  }
+  return rects
+}

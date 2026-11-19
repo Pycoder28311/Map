@@ -8,7 +8,7 @@ import { CARD_SIZE, cardOf } from './cardStyles'
 import { BOOK, BOOK_FRAME, BOOK_SIZE, BOOK_TEXT, bookAt } from './book'
 import BookArt from './BookArt'
 import PixelRects from './PixelRects'
-import { FRAME_PIXELS, FRAME_SIZE } from './stoneFrame'
+import { FRAME_PIXELS, FRAME_SIZE, frameCracks } from './stoneFrame'
 import FolderFace from './FolderFace'
 import MapPreview from './MapPreview'
 import { DAY_MONTH } from '../../../lib/dates'
@@ -68,6 +68,8 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
             <MapPreview id={String(item.id)} className="size-full" />
           </div>
         </div>
+        {/* Cracks in the map, running in from the frame (each map its own) */}
+        <PixelRects rects={frameCracks(String(item.id))} width={FRAME_SIZE} height={FRAME_SIZE} />
         <PixelRects rects={FRAME_PIXELS} width={FRAME_SIZE} height={FRAME_SIZE} className="[filter:drop-shadow(0_3px_0_rgb(0_0_0/0.22))]" />
         {/* The name: a Stone button's look (like the Recent History button) */}
         <ButtonLook data-card-title-box variant="secondary" size="xs" icon={Icon} className="absolute bottom-0 left-1/2 max-w-[85%] min-w-0 -translate-x-1/2 translate-y-1/2">
