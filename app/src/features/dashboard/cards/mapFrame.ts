@@ -48,9 +48,9 @@ const PLANK = 4
 const OVERHANG = 2
 /** How far in from the card's edge the frame reaches (pixels): the overhang and a plank */
 export const FRAME_BORDER = OVERHANG + PLANK
-/** Where the paper lies (filling the frame's opening, under the planks' shadow) and where the map printed on it starts (a margin of paper
- *  round it) */
-const PAPER_FROM = FRAME_BORDER
+/** Where the paper lies (a pixel in from the planks, the backing showing between, the planks' shadow on its top and left edges) and where
+ *  the map printed on it starts (a margin of paper round it) */
+const PAPER_FROM = FRAME_BORDER + 1
 export const MAP_INSET = PAPER_FROM + 3
 /** The map's size in pixels */
 export const MAP_GRID = FRAME_SIZE - 2 * MAP_INSET
@@ -133,7 +133,7 @@ function woodAt(x: number, y: number): string | null {
     return plankPixel(2 + v.index, v.across, y, true)
   }
   // The paper: the planks' shadow along its top and left
-  if (inOpening(x, y) && (y === FRAME_BORDER || x === FRAME_BORDER)) return FRAME.shadow
+  if (inOpening(x, y) && x >= PAPER_FROM && y >= PAPER_FROM && (y === PAPER_FROM || x === PAPER_FROM)) return FRAME.shadow
   return null
 }
 
