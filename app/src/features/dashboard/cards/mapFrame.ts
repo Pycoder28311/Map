@@ -1,10 +1,10 @@
 import { seededRandom } from '../../../lib/seededRandom'
 
 // A map's Dashboard card, in pixel art, in three layers (cardFaces.tsx stacks them): a sheet of old paper with a torn, slightly cracked edge
-// filling a thick wooden frame, the map printed on the paper. The frame (FRAME_PIXELS): a dark outline, five pixels of wood with its grain
+// filling a thin wooden frame, the map (smooth, not pixel art) printed on the paper. The frame (FRAME_PIXELS): a dark outline, two pixels of wood with its grain
 // running along each side, mitred at the corners and stepped round a small notch in each (like an old game's panel), lighter on its outer
 // top and left and darker by the opening, and a dark lip inside it. The paper (paperPixels): speckled, darker along its torn edge, on the
-// dark backing the frame holds. The marks (paperMarks): its folds, a few cracks running in from its edge, faint stains. Each map has its own
+// dark backing the frame holds. The marks (paperMarks): its folds, and a few cracks running in from its edge. Each map has its own
 // paper (its id is the seed); the frame is the same on every card. FRAME_SIZE × FRAME_SIZE pixels of FRAME_PIXEL px each: the size of the
 // Dashboard's other pixel art (book.ts).
 
@@ -27,12 +27,11 @@ export const FRAME = {
   innerDark: '#4e2f15',
   /** The backing behind the paper (what shows through its tears and cracks) */
   backing: '#2b190b',
-  /** The paper: its colour, speckles a little darker and lighter, its aged edge, and its stains */
+  /** The paper: its colour, speckles a little darker and lighter (and its stains), and its aged edge */
   paper: '#eddab0',
   paperDark: '#e2cb9b',
   paperLight: '#f5e8c8',
   paperEdge: '#cfb07a',
-  stain: 'rgb(170 120 50 / 0.08)',
   /** A fold: its crease (in shade) and the light ridge beside it */
   crease: 'rgb(110 70 30 / 0.16)',
   ridge: 'rgb(255 250 235 / 0.28)',
@@ -46,15 +45,15 @@ export const FRAME = {
 /** Pixels across (and down): the 192px card at FRAME_PIXEL px a pixel */
 export const FRAME_SIZE = 64
 export const FRAME_PIXEL = 3
-/** How thick the frame is, in pixels: outline, five of wood, lip */
-export const FRAME_BORDER = 7
+/** How thick the frame is, in pixels: outline, two of wood, lip */
+export const FRAME_BORDER = 4
 /** How big the square notch cut out of each corner is (pixels), for the outline; each ring further in goes round it, one more */
 const NOTCH = 3
 /** Where the paper lies (filling the frame's opening, its edge under the lip's shadow) and where the map printed on it starts (a margin of
  *  paper round it) */
 const PAPER_FROM = FRAME_BORDER
-export const MAP_INSET = PAPER_FROM + 2
-/** The map's size in pixels (it is drawn at this many pixels across: MapPreview's `grid`) */
+export const MAP_INSET = PAPER_FROM + 3
+/** The map's size in pixels */
 export const MAP_GRID = FRAME_SIZE - 2 * MAP_INSET
 
 type Rect = [x: number, y: number, w: number, h: number, fill: string]
@@ -66,7 +65,8 @@ function inside(x: number, y: number, i: number): boolean {
   return Math.min(x, LAST - x) >= NOTCH + i || Math.min(y, LAST - y) >= NOTCH + i
 }
 
-/** How deep in the frame a pixel is: 0 outside it, 1 the outline, 2–6 the wood, 7 the lip, 8 the opening's first ring, 9 the rest of it */
+/** How deep in the frame a pixel is: 0 outside it, 1 the outline, 2 to FRAME_BORDER - 1 the wood, FRAME_BORDER the lip, one more the
+ *  opening's first ring, then the rest of it */
 function depth(x: number, y: number): number {
   let level = 0
   while (level <= FRAME_BORDER + 1 && inside(x, y, level)) level++
@@ -121,14 +121,22 @@ function woodAt(x: number, y: number): string | null {
   if (d === 1) return FRAME.outline
   if (d === FRAME_BORDER) return FRAME.lip
   if (d > FRAME_BORDER) return d === FRAME_BORDER + 1 && lit ? FRAME.shadow : null
-  // The wood: the outer and inner edges bevelled, the rows between grained along their side, the corners' mitres a darker joint
+  // The wood: grained along its side, its outer row lit on the top and left (and shaded on the bottom and right) where it is thick
+  // enough for bevels, the corners' mitres a darker joint
   const ring = d - 2
-  if (ring === 0) return lit ? FRAME.bevelLight : FRAME.bevelDark
-  if (ring === 4) return lit ? FRAME.innerDark : FRAME.innerLight
+  const rings = FRAME_BORDER - 2
+  if (rings >= 3 && ring === 0) return lit ? FRAME.bevelLight : FRAME.bevelDark
+  if (rings >= 3 && ring === rings - 1) return lit ? FRAME.innerDark : FRAME.innerLight
   if (fromTop === fromSide) return FRAME.joint
   const horizontal = fromTop < fromSide
   const side = horizontal ? (y < FRAME_SIZE / 2 ? 0 : 1) : x < FRAME_SIZE / 2 ? 2 : 3
-  return GRAIN[side][ring - 1][horizontal ? x : y]
+  const grain = GRAIN[side][(rings >= 3 ? ring - 1 : ring) % GRAIN[side].length][horizontal ? x : y]
+  // a thin frame: its outer row a touch lighter on the lit sides, its inner a touch darker on the others
+  if (rings < 3 && grain !== FRAME.knot) {
+    if (ring === 0 && lit && grain === FRAME.wood) return FRAME.grainLight
+    if (ring === rings - 1 && !lit && grain === FRAME.woodAlt) return FRAME.grainDark
+  }
+  return grain
 }
 
 /** The frame's pixels (the same on every card) */
@@ -171,7 +179,7 @@ export const CRACK_COUNT = 4
 export const CRACK_REACH = 4
 
 /**
- * What lies over a map's paper and its map: the two folds across it (a crease in shade, a light ridge beside it), faint stains, and a few
+ * What lies over a map's paper and its map: the two folds across it (a crease in shade, a light ridge beside it), and a few
  * small cracks running in from the paper's edge into the map, narrowing to a point, with light torn fibres along them.
  */
 export function paperMarks(seed: string): Rect[] {
@@ -185,11 +193,6 @@ export function paperMarks(seed: string): Rect[] {
     [PAPER_FROM + 1, middle - 1, span - 2, 1, FRAME.crease],
     [PAPER_FROM + 1, middle, span - 2, 1, FRAME.ridge],
   ]
-  for (let s = 0; s < 3; s++) {
-    const x = MAP_INSET + Math.floor(next() * (MAP_GRID - 4))
-    const y = MAP_INSET + Math.floor(next() * (MAP_GRID - 4))
-    rects.push([x, y, 3, 2, FRAME.stain], [x + 1, y - 1, 2, 1, FRAME.stain], [x + 1, y + 2, 1, 1, FRAME.stain])
-  }
   for (let c = 0; c < CRACK_COUNT; c++) {
     const side = Math.floor(next() * 4)
     const along = MAP_INSET + 3 + Math.floor(next() * (MAP_GRID - 6))

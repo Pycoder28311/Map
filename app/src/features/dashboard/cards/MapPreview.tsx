@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import { seededRandom } from '../../../lib/seededRandom'
 import { hueOf } from '../../objects/placeholderArt'
 
@@ -67,24 +67,8 @@ const urlOf = (svg: string) => `data:image/svg+xml;utf8,${encodeURIComponent(svg
 /**
  * A map's picture, until a map has a drawing to show: a continent on a light blue sea (shallows and sand round its coast, forests and
  * plains on it, a lake), a few islands, faint grid lines and a pin. The id picks the shape and scatters the rest, so maps differ.
- * `grid`: drawn as pixel art, that many pixels across (each a square, scaled up with hard edges), as on the Dashboard's map card; else smooth.
  */
-export default function MapPreview({ id, className = '', grid }: { id: string; className?: string; grid?: number }) {
+export default function MapPreview({ id, className = '' }: { id: string; className?: string }) {
   const url = useMemo(() => urlOf(mapSvg(id)), [id])
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!grid || !canvas) return
-    const image = new Image()
-    image.onload = () => {
-      const context = canvas.getContext('2d')
-      if (!context) return
-      context.imageSmoothingEnabled = false
-      context.clearRect(0, 0, grid, grid)
-      context.drawImage(image, 0, 0, grid, grid)
-    }
-    image.src = url
-  }, [url, grid])
-  if (grid) return <canvas ref={canvasRef} aria-hidden width={grid} height={grid} className={`[image-rendering:pixelated] ${className}`} />
   return <img src={url} alt="" aria-hidden draggable={false} className={`object-cover ${className}`} />
 }
