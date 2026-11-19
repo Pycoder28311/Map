@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 
 // An article's Dashboard card drawn as a pixel-art book (BookArt.tsx draws it from the pixels here): a closed grey tome seen from the front,
-// its spine along the left, banded cover with gold corners, its pages and a ribbon bookmark along the bottom. The book fills the card's box
+// its spine along the left (stitched), a cover with faint diamonds, grain and scratches on it, bands with gold corners, its pages and a ribbon bookmark along the bottom. The book fills the card's box
 // (the same square as every card), on a grid of BOOK_GRID × BOOK_GRID pixels: one pixel of the drawing is BOOK_PIXEL px on screen, the same
 // size as the Dashboard's other pixel art (DashboardRelics: SCALE). The card's content (its picture, title, preview and date) is laid on the
 // cover by cardFaces.tsx, placed on the same grid with `bookAt`, so it lines up with the drawing.
@@ -9,24 +9,28 @@ import type { CSSProperties } from 'react'
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const BOOK = {
   /** The hard outline round everything */
-  outline: '#111317',
+  outline: '#16191d',
   /** The back cover, seen along the left, and the ridges across it */
-  spine: '#23272e',
-  ridge: '#4c5460',
+  spine: '#363c45',
+  ridge: '#6a7380',
   /** The front cover: its face, the light line along its top and the shade along its right and bottom */
-  cover: '#343a43',
-  coverLight: '#464d58',
-  coverShade: '#2a2f37',
+  cover: '#4d5561',
+  coverLight: '#646d7a',
+  coverShade: '#40474f',
   /** The cover's grain: faint streaks a little darker and a little lighter than it */
-  grainDark: '#2d323a',
-  grainLight: '#3b424c',
+  grainDark: '#454c57',
+  grainLight: '#56606b',
+  /** The faint shapes on the cover: its small diamonds, its scratches, and the spine's stitches */
+  motif: '#535b67',
+  scratch: '#5d6672',
+  stitch: '#7a8390',
   /** The hinge, where the cover meets the spine */
-  hinge: '#272b33',
+  hinge: '#3a414a',
   /** The bands' dashes (light top, face, shaded bottom) and the groove they sit in */
-  band: '#7f8995',
-  bandLight: '#aab3bf',
-  bandShade: '#59626e',
-  groove: '#22262d',
+  band: '#9ba5b1',
+  bandLight: '#c8d0da',
+  bandShade: '#737d89',
+  groove: '#363c45',
   /** The metal corners */
   gold: '#ffd43b',
   goldDeep: '#f7931e',
@@ -40,7 +44,7 @@ export const BOOK = {
   ribbonTip: '#f5822a',
   /** The text on the cover */
   ink: '#eef1f5',
-  inkFaint: '#c3cad4',
+  inkFaint: '#d2d8e0',
 } as const
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -104,6 +108,31 @@ function grain(): Rect[] {
   return rects
 }
 
+/** A faint pattern of small diamonds over the cover (each a ring of four pixels), every other row of them shifted half a step */
+function diamonds(): Rect[] {
+  const rects: Rect[] = []
+  for (let row = 0, cy = 9; cy < 60; row++, cy += 6) {
+    for (let cx = 11 + (row % 2) * 4; cx < 60; cx += 8) {
+      rects.push([cx, cy - 1, 1, 1, BOOK.motif], [cx - 1, cy, 1, 1, BOOK.motif], [cx + 1, cy, 1, 1, BOOK.motif], [cx, cy + 1, 1, 1, BOOK.motif])
+    }
+  }
+  return rects
+}
+
+/** A few faint scratches on the cover, diagonal: where each starts, how long, and which way it slopes (1: down, -1: up) */
+const SCRATCHES: [x: number, y: number, length: number, slope: 1 | -1][] = [
+  [10, 38, 4, 1],
+  [27, 46, 3, -1],
+  [41, 35, 4, 1],
+  [52, 44, 3, -1],
+  [59, 12, 3, 1],
+  [34, 41, 2, 1],
+]
+const scratches = (): Rect[] => SCRATCHES.flatMap(([x, y, length, slope]) => Array.from({ length }, (_, i): Rect => [x + i, y + i * slope, 1, 1, BOOK.scratch]))
+
+/** The spine's stitches: a light pixel every few down its middle */
+const stitches = (): Rect[] => Array.from({ length: 10 }, (_, i): Rect => [2, 11 + i * 5, 1, 2, BOOK.stitch])
+
 /** The pixels of the book, back to front */
 export const BOOK_PIXELS: Rect[] = [
   // The spine (the back cover, seen along the left), its top and bottom stepping in to the cover's corners, and its ridges
@@ -111,6 +140,7 @@ export const BOOK_PIXELS: Rect[] = [
   [2, 2, 2, 60, BOOK.spine],
   [1, 7, 3, 1, BOOK.ridge],
   [1, 56, 3, 1, BOOK.ridge],
+  ...stitches(),
   // The front cover: its face, a light line along the top, a shade along the right and bottom, and the hinge
   [4, 1, 59, 62, BOOK.cover],
   [4, 1, 59, 1, BOOK.coverLight],
@@ -118,7 +148,9 @@ export const BOOK_PIXELS: Rect[] = [
   [4, 62, 59, 1, BOOK.coverShade],
   [4, 1, 3, 62, BOOK.hinge],
   [7, 2, 1, 60, BOOK.coverLight],
+  ...diamonds(),
   ...grain(),
+  ...scratches(),
   // The bands, ending in the gold corners
   ...band(3),
   ...band(49),
