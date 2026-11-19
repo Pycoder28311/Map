@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react'
 // its stitched spine along the left with rivets on the hinge, a cover with faint diamonds, grain, scratches, worn edges and a debossed border,
 // stitched bands ending in brass corners, its picture in a one-pixel outline, its pages and a ribbon bookmark
 // along the bottom. The book fills the card's box, BOOK_W × BOOK_H
-// pixels of the drawing (a square), each BOOK_PIXEL px on screen: the same size as the Dashboard's other pixel art (DashboardRelics: SCALE). The
+// pixels of the drawing (4:5, taller than wide), each BOOK_PIXEL px on screen: the same size as the Dashboard's other pixel art (DashboardRelics: SCALE). The
 // card's content (its picture, title, preview and date) is laid on the cover by cardFaces.tsx, placed on the same grid with `bookAt`.
 
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -62,13 +62,17 @@ export const BOOK = {
 
 /** One pixel of the drawing on screen (px): the Dashboard's pixel art's size (DashboardRelics) */
 export const BOOK_PIXEL = 3
-/** Pixels across and down the drawing: a square, the size of every other card (192px), so a row lines up */
+/** Pixels across and down the drawing: 4:5, as wide as every other card (192px) and taller (240px) */
 export const BOOK_W = 64
-export const BOOK_H = 64
-/** The card's box: BOOK_W × BOOK_PIXEL by BOOK_H × BOOK_PIXEL (192 × 192px) */
-export const BOOK_SIZE = 'size-48'
+export const BOOK_H = 80
+/** The card's box: BOOK_W × BOOK_PIXEL by BOOK_H × BOOK_PIXEL (192 × 240px) */
+export const BOOK_SIZE = 'h-60 w-48'
 /** The cover's right edge (its shaded column), where the right-hand parts are placed from */
 const R = BOOK_W - 2
+/** The cover's left edge, past the spine (two pixels, and its outline) */
+const C = 3
+/** The bottom row (the outline), where the bottom parts are placed from */
+const B = BOOK_H - 1
 
 /** Where something on the cover goes, in pixels of the drawing (from the top left): its absolute position as percentages of the card */
 export function bookAt(x: number, y: number, w: number, h: number): CSSProperties {
@@ -77,9 +81,12 @@ export function bookAt(x: number, y: number, w: number, h: number): CSSPropertie
 }
 
 /** The picture's box on the cover: a one-pixel outline, the picture filling the rest */
-export const BOOK_FRAME = { x: 10, y: 8, w: 47, h: 27 } as const
+export const BOOK_FRAME = { x: 10, y: 8, w: 47, h: 35 } as const
 /** The title, under the picture, above the bottom band */
-export const BOOK_TITLE = { x: 10, y: 37, w: 47, h: 10 } as const
+export const BOOK_TITLE = { x: 10, y: 45, w: 47, h: 16 } as const
+/** Where the bottom band is (its groove row), and the debossed border's bottom line above it */
+const BAND_LOW = B - 12
+const BORDER_LOW = B - 15
 
 type Rect = [x: number, y: number, w: number, h: number, fill: string]
 
@@ -89,13 +96,14 @@ function seeded(start: number) {
   return () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648
 }
 
-/** A band across the cover at `y`: a faint groove, and dashes in it one pixel tall (a muted stitch), ending by the brass corner */
+/** A band across the cover, its groove on row `y`: a faint groove, and dashes in it one pixel tall (a muted stitch), ending by the brass corner */
 const band = (y: number): Rect[] => [
-  [9, y + 1, R - 16, 1, BOOK.groove],
-  ...[9, 18, 27, 36, 45].map((x): Rect => [x, y + 1, 7, 1, BOOK.band]),
+  [9, y, R - 16, 1, BOOK.groove],
+  ...[9, 18, 27, 36, 45].map((x): Rect => [x, y, 7, 1, BOOK.band]),
 ]
 
-/** A gold corner: an L two pixels thick along the top (or bottom) and the right, a light glint, a darker tip and inner corner */
+/** A brass corner: an L two pixels thick along the top (or bottom) and the right, a light glint, a darker tip and inner corner. `y` its
+ *  top row; `down`: the bottom one (its foot along its bottom) */
 const corner = (y: number, down: boolean): Rect[] => {
   const edge = down ? y + 4 : y
   return [
@@ -111,8 +119,8 @@ const corner = (y: number, down: boolean): Rect[] => {
 function grain(): Rect[] {
   const next = seeded(7)
   const rects: Rect[] = []
-  for (let y = 2; y < 62; y += 2) {
-    for (let x = 9 + Math.floor(next() * 6); x < R - 2; x += 5 + Math.floor(next() * 9)) {
+  for (let y = 2; y < B - 2; y += 2) {
+    for (let x = 8 + Math.floor(next() * 6); x < R - 2; x += 5 + Math.floor(next() * 9)) {
       const length = Math.min(2 + Math.floor(next() * 5), R - 1 - x)
       rects.push([x, y + (next() < 0.3 ? 1 : 0), length, 1, next() < 0.6 ? BOOK.grainDark : BOOK.grainLight])
     }
@@ -123,8 +131,8 @@ function grain(): Rect[] {
 /** A faint pattern of small diamonds over the cover (each a ring of four pixels), every other row of them shifted half a step */
 function diamonds(): Rect[] {
   const rects: Rect[] = []
-  for (let row = 0, cy = 9; cy < 60; row++, cy += 6) {
-    for (let cx = 12 + (row % 2) * 4; cx < R - 2; cx += 8) {
+  for (let row = 0, cy = 9; cy < B - 4; row++, cy += 6) {
+    for (let cx = 11 + (row % 2) * 4; cx < R - 2; cx += 8) {
       rects.push([cx, cy - 1, 1, 1, BOOK.motif], [cx - 1, cy, 1, 1, BOOK.motif], [cx + 1, cy, 1, 1, BOOK.motif], [cx, cy + 1, 1, 1, BOOK.motif])
     }
   }
@@ -133,12 +141,12 @@ function diamonds(): Rect[] {
 
 /** A few faint scratches on the cover, diagonal: where each starts, how long, and which way it slopes (1: down, -1: up) */
 const SCRATCHES: [x: number, y: number, length: number, slope: 1 | -1][] = [
-  [11, 38, 4, 1],
-  [26, 46, 3, -1],
-  [42, 35, 4, 1],
-  [57, 44, 3, -1],
-  [52, 39, 3, 1],
-  [35, 41, 2, 1],
+  [11, 48, 4, 1],
+  [26, 58, 3, -1],
+  [42, 46, 4, 1],
+  [57, 56, 3, -1],
+  [52, 50, 3, 1],
+  [35, 53, 2, 1],
   [R - 5, 14, 3, 1],
 ]
 const scratches = (): Rect[] => SCRATCHES.flatMap(([x, y, length, slope]) => Array.from({ length }, (_, i): Rect => [x + i, y + i * slope, 1, 1, BOOK.scratch]))
@@ -147,59 +155,62 @@ const scratches = (): Rect[] => SCRATCHES.flatMap(([x, y, length, slope]) => Arr
 function wear(): Rect[] {
   const next = seeded(23)
   const rects: Rect[] = []
-  for (let x = 9; x < R - 1; x += 2 + Math.floor(next() * 5)) rects.push([x, 2, 1 + Math.floor(next() * 2), 1, BOOK.wear])
-  for (let y = 10; y < 46; y += 2 + Math.floor(next() * 5)) rects.push([R - 1, y, 1, 1 + Math.floor(next() * 2), BOOK.wear])
+  for (let x = 8; x < R - 1; x += 2 + Math.floor(next() * 5)) rects.push([x, 2, 1 + Math.floor(next() * 2), 1, BOOK.wear])
+  for (let y = 10; y < BORDER_LOW - 2; y += 2 + Math.floor(next() * 5)) rects.push([R - 1, y, 1, 1 + Math.floor(next() * 2), BOOK.wear])
   return rects
 }
 
-/** The debossed border round the cover's middle: a pressed line with a light line inside it (the parts not under the picture and text) */
+/** The debossed border round the cover's middle: a pressed line with a light line inside it (the parts not under the picture and title) */
 const border = (): Rect[] => [
-  [8, 6, R - 9, 1, BOOK.deboss],
-  [8, 48, R - 9, 1, BOOK.deboss],
-  [8, 6, 1, 43, BOOK.deboss],
-  [R - 2, 9, 1, 37, BOOK.deboss],
-  [9, 7, R - 11, 1, BOOK.emboss],
-  [9, 7, 1, 41, BOOK.emboss],
+  [7, 6, R - 8, 1, BOOK.deboss],
+  [7, BORDER_LOW, R - 8, 1, BOOK.deboss],
+  [7, 6, 1, BORDER_LOW - 5, BOOK.deboss],
+  [R - 2, 9, 1, BORDER_LOW - 11, BOOK.deboss],
+  [8, 7, R - 10, 1, BOOK.emboss],
+  [8, 7, 1, BORDER_LOW - 7, BOOK.emboss],
 ]
 
 /** The hinge's rivets: a light head with a shaded lower right */
-const rivets = (): Rect[] => [13, 28, 43].flatMap((y): Rect[] => [
-  [5, y, 2, 2, BOOK.rivet],
-  [6, y + 1, 1, 1, BOOK.rivetShade],
+const rivets = (): Rect[] => [13, Math.round(BOOK_H / 2) - 4, B - 20].flatMap((y): Rect[] => [
+  [C + 1, y, 2, 2, BOOK.rivet],
+  [C + 2, y + 1, 1, 1, BOOK.rivetShade],
 ])
 
-/** The spine: its ridges (a light line, a shade under it) and its stitches down the middle between them */
+/** The spine (two pixels wide): its ridges (a light line, a shade under it) and its stitches down it between them */
 const spine = (): Rect[] => [
-  ...[7, 10, 53, 56].flatMap((y): Rect[] => [
-    [1, y, 3, 1, BOOK.ridge],
-    [1, y + 1, 3, 1, BOOK.ridgeShade],
+  ...[7, 10, B - 12, B - 9].flatMap((y): Rect[] => [
+    [1, y, 2, 1, BOOK.ridge],
+    [1, y + 1, 2, 1, BOOK.ridgeShade],
   ]),
-  ...Array.from({ length: 8 }, (_, i): Rect => [2, 15 + i * 5, 1, 2, BOOK.stitch]),
+  ...Array.from({ length: Math.floor((B - 30) / 5) }, (_, i): Rect => [1, 15 + i * 5, 1, 2, BOOK.stitch]),
 ]
+
+/** The pages: five rows, between the cover's row above them and its bottom strip (three rows, the outline under it) */
+const PAGES = B - 8
 
 /** The pages' edge: lines between the pages, broken here and there */
 function pageLines(): Rect[] {
   const next = seeded(41)
   const rects: Rect[] = []
-  for (const y of [55, 57]) {
-    for (let x = 5 + Math.floor(next() * 4); x < R - 4; x += 6 + Math.floor(next() * 8)) rects.push([x, y, Math.min(3 + Math.floor(next() * 8), R - 3 - x), 1, BOOK.pagesLine])
+  for (const y of [PAGES + 1, PAGES + 3]) {
+    for (let x = C + 1 + Math.floor(next() * 4); x < R - 4; x += 6 + Math.floor(next() * 8)) rects.push([x, y, Math.min(3 + Math.floor(next() * 8), R - 3 - x), 1, BOOK.pagesLine])
   }
   return rects
 }
 
 /** The pixels of the book, back to front */
 export const BOOK_PIXELS: Rect[] = [
-  // The spine (the back cover, seen along the left), its top and bottom stepping in to the cover's corners
-  [1, 3, 1, 58, BOOK.spine],
-  [2, 2, 2, 60, BOOK.spine],
+  // The spine (the back cover, seen along the left, two pixels), its top and bottom stepping in to the cover's corners
+  [1, 3, 1, B - 5, BOOK.spine],
+  [2, 2, 1, B - 3, BOOK.spine],
   ...spine(),
   // The front cover: its face, a light line along the top, a shade along the right and bottom, the hinge and its rivets
-  [4, 1, R - 3, 62, BOOK.cover],
-  [4, 1, R - 3, 1, BOOK.coverLight],
-  [R, 1, 1, 62, BOOK.coverShade],
-  [4, 62, R - 3, 1, BOOK.coverShade],
-  [4, 1, 3, 62, BOOK.hinge],
-  [7, 2, 1, 60, BOOK.coverLight],
+  [C, 1, R - C + 1, B - 1, BOOK.cover],
+  [C, 1, R - C + 1, 1, BOOK.coverLight],
+  [R, 1, 1, B - 1, BOOK.coverShade],
+  [C, B - 1, R - C + 1, 1, BOOK.coverShade],
+  [C, 1, 3, B - 1, BOOK.hinge],
+  [C + 3, 2, 1, B - 3, BOOK.coverLight],
   ...rivets(),
   // The faint shapes on the cover
   ...diamonds(),
@@ -207,34 +218,34 @@ export const BOOK_PIXELS: Rect[] = [
   ...scratches(),
   ...wear(),
   ...border(),
-  // The bands, ending in the gold corners
-  ...band(3),
-  ...band(50),
+  // The bands, ending in the brass corners
+  ...band(4),
+  ...band(BAND_LOW),
   ...corner(2, false),
-  ...corner(47, true),
+  ...corner(BAND_LOW - 4, true),
   // The picture's outline
   [BOOK_FRAME.x, BOOK_FRAME.y, BOOK_FRAME.w, BOOK_FRAME.h, BOOK.outline],
   // The pages' edge, between the cover's bottom rows
-  [4, 54, R - 6, 5, BOOK.pages],
-  [4, 54, R - 6, 1, BOOK.pagesLight],
+  [C, PAGES, R - C - 2, 5, BOOK.pages],
+  [C, PAGES, R - C - 2, 1, BOOK.pagesLight],
   ...pageLines(),
-  [4, 58, R - 6, 1, BOOK.pagesShade],
+  [C, PAGES + 4, R - C - 2, 1, BOOK.pagesShade],
   // The outline: top, right, bottom, and the spine's left with its steps
-  [4, 0, BOOK_W - 4, 1, BOOK.outline],
-  [BOOK_W - 1, 1, 1, 63, BOOK.outline],
-  [4, 63, BOOK_W - 4, 1, BOOK.outline],
-  [0, 3, 1, 58, BOOK.outline],
+  [C, 0, BOOK_W - C, 1, BOOK.outline],
+  [BOOK_W - 1, 1, 1, B, BOOK.outline],
+  [C, B, BOOK_W - C, 1, BOOK.outline],
+  [0, 3, 1, B - 5, BOOK.outline],
   [1, 2, 1, 1, BOOK.outline],
-  [2, 1, 2, 1, BOOK.outline],
-  [1, 61, 1, 1, BOOK.outline],
-  [2, 62, 2, 1, BOOK.outline],
+  [2, 1, 1, 1, BOOK.outline],
+  [1, B - 2, 1, 1, BOOK.outline],
+  [2, B - 1, 1, 1, BOOK.outline],
   // The ribbon: in the pages (a lighter fold down its left), out over the bottom of the cover, its forked tip on the bottom edge
-  [14, 54, 6, 5, BOOK.ribbon],
-  [14, 54, 1, 5, BOOK.ribbonFold],
-  [14, 59, 6, 2, BOOK.ribbonLight],
-  [14, 61, 6, 1, BOOK.ribbonTip],
-  [14, 62, 2, 1, BOOK.ribbonTip],
-  [18, 62, 2, 1, BOOK.ribbonTip],
-  [14, 63, 1, 1, BOOK.ribbonTip],
-  [19, 63, 1, 1, BOOK.ribbonTip],
+  [14, PAGES, 6, 5, BOOK.ribbon],
+  [14, PAGES, 1, 5, BOOK.ribbonFold],
+  [14, B - 3, 6, 1, BOOK.ribbonLight],
+  [14, B - 2, 6, 1, BOOK.ribbonTip],
+  [14, B - 1, 2, 1, BOOK.ribbonTip],
+  [18, B - 1, 2, 1, BOOK.ribbonTip],
+  [14, B, 1, 1, BOOK.ribbonTip],
+  [19, B, 1, 1, BOOK.ribbonTip],
 ]
