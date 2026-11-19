@@ -5,7 +5,7 @@ import type { AnyResource } from '../../../resources/types'
 import type { Entry } from '../../../lib/resource/reorder'
 import { hueOf } from '../../objects/placeholderArt'
 import { CARD_SIZE, cardOf } from './cardStyles'
-import { BOOK, BOOK_FRAME, BOOK_H, BOOK_LABEL_MARGIN, BOOK_SIZE, BOOK_TEXT, BOOK_W, bookAt, bookLabel } from './book'
+import { BOOK, BOOK_FRAME, BOOK_H, BOOK_LABEL_MARGIN, BOOK_SIZE, BOOK_TITLE, BOOK_W, bookAt, bookLabel } from './book'
 import BookArt from './BookArt'
 import PixelRects from './PixelRects'
 import { FRAME_PIXELS, FRAME_SIZE, MAP_INSET, paperMarks, paperPixels } from './mapFrame'
@@ -46,7 +46,7 @@ type Props = {
 /**
  * The look of a Dashboard card, by its resource's `ui.card`: `plain`, like a comment: a square paper card, its title and date on top, its preview quoted below
  * behind a thin bar, fading out where it's cut; `image`, a picture on top (a placeholder made from its id: the list has no images), its
- * title, date and two lines, all on the cover of a pixel-art leather book (book.ts: the picture on a paper label on it, the name on the frame's edge, the pages and a ribbon below); `map`, its preview printed on pixel-art old paper in a thin pixel-art wooden frame filling the card (mapFrame.ts), its title in a narrower box hanging below it, centred on its bottom edge; `folder`,
+ * its title, on the cover of a square pixel-art leather book (book.ts: the picture on a paper label on it, the title under it, the name on the frame's edge, the pages and a ribbon below); `map`, its preview printed on pixel-art old paper in a thin pixel-art wooden frame filling the card (mapFrame.ts), its title in a narrower box hanging below it, centred on its bottom edge; `folder`,
  * its name floating on its top left corner and its first four items as tiles. Only what is inside the box: the real card (ResourceCard) adds drag, menu and zoom, a draft (DraftCard) blurs it.
  * The element of the title carries `data-card-title`, where a draft's title input lands when it is created. What a draft blurs is marked `data-card-body`
  * (the content, never the box with the border), and `data-card-bleed` too when it fills its box to the edge (it is scaled up a little while blurred, so its blurred edge is out of sight).
@@ -84,10 +84,9 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
   if (look === 'image') {
     const src = firstImage(item)
     const frame = BOOK_FRAME
-    const text = BOOK_TEXT
     return (
-      // A pixel-art book (book.ts): its picture on a torn paper label on the cover, the name on the label's bottom edge, the preview and date
-      // under it; its pages and a ribbon along the bottom. On hover it lifts a little off the shelf
+      // A pixel-art book (book.ts): its picture on a torn paper label on the cover, its title under it (no plate, no preview or date); its
+      // pages and a ribbon along the bottom. On hover it lifts a little off the shelf
       <div {...box} className={`group/card relative shrink-0 snap-start text-start ${BOOK_SIZE} ${className}`} style={{ color: BOOK.ink }}>
         <div className="absolute inset-0 transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none">
           <BookArt className="[filter:drop-shadow(0_3px_0_rgb(0_0_0/0.22))]" />
@@ -103,23 +102,15 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
               </div>
             )}
           </div>
-          <div className="flex items-start gap-2" style={bookAt(text.x, text.y, text.w, text.h)}>
-            <p data-card-body className="line-clamp-2 min-w-0 flex-1 text-small leading-4">
-              {subtitle}
-            </p>
-            {date && (
-              <span data-card-body className="shrink-0 text-small leading-4" style={{ color: BOOK.inkFaint }}>
-                {DAY_MONTH.format(created!)}
-              </span>
-            )}
-          </div>
-          {/* The name, on the frame's bottom edge, like a plate */}
-          <div className="flex items-center justify-center" style={bookAt(frame.x - 2, frame.y + frame.h - 4, frame.w + 4, 7)}>
-            <ButtonLook data-card-title-box variant="secondary" size="xs" icon={Icon} className="max-w-full min-w-0">
-              <span data-card-title className="min-w-0 truncate">
-                {title}
-              </span>
-            </ButtonLook>
+          {/* The title, in the pixel font, on the leather under the label */}
+          <div data-card-title-box className="flex items-center justify-center px-1 text-center" style={bookAt(BOOK_TITLE.x, BOOK_TITLE.y, BOOK_TITLE.w, BOOK_TITLE.h)}>
+            <span
+              data-card-title
+              className="line-clamp-2 font-(family-name:--font-pixel) text-sm leading-4 font-medium"
+              style={{ textShadow: `0 2px 0 ${BOOK.inkShadow}` }}
+            >
+              {title}
+            </span>
           </div>
         </div>
         {marks}
