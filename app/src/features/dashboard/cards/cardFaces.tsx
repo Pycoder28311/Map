@@ -8,7 +8,7 @@ import { CARD_SIZE, cardOf } from './cardStyles'
 import { BOOK, BOOK_FRAME, BOOK_SIZE, BOOK_TEXT, bookAt } from './book'
 import BookArt from './BookArt'
 import PixelRects from './PixelRects'
-import { FRAME_BORDER, FRAME_PIXELS, FRAME_SIZE, frameCracks } from './stoneFrame'
+import { FRAME_BORDER, FRAME_PIXELS, FRAME_SIZE, frameCracks } from './mapFrame'
 import FolderFace from './FolderFace'
 import MapPreview from './MapPreview'
 import { DAY_MONTH } from '../../../lib/dates'
@@ -46,7 +46,7 @@ type Props = {
 /**
  * The look of a Dashboard card, by its resource's `ui.card`: `plain`, like a comment: a square paper card, its title and date on top, its preview quoted below
  * behind a thin bar, fading out where it's cut; `image`, a picture on top (a placeholder made from its id: the list has no images), its
- * title, date and two lines, all on the cover of a pixel-art book (book.ts: the picture framed on it, the name on the frame's edge, the pages and a ribbon below); `map`, its preview in a pixel-art stone frame filling the card (stoneFrame.ts), its title in a narrower box hanging below it, centred on its bottom edge; `folder`,
+ * title, date and two lines, all on the cover of a pixel-art book (book.ts: the picture framed on it, the name on the frame's edge, the pages and a ribbon below); `map`, its preview in a pixel-art parchment frame filling the card (mapFrame.ts), its title in a narrower box hanging below it, centred on its bottom edge; `folder`,
  * its name floating on its top left corner and its first four items as tiles. Only what is inside the box: the real card (ResourceCard) adds drag, menu and zoom, a draft (DraftCard) blurs it.
  * The element of the title carries `data-card-title`, where a draft's title input lands when it is created. What a draft blurs is marked `data-card-body`
  * (the content, never the box with the border), and `data-card-bleed` too when it fills its box to the edge (it is scaled up a little while blurred, so its blurred edge is out of sight).
@@ -60,7 +60,7 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
 
   if (look === 'map') {
     return (
-      // The preview in a pixel-art stone frame (stoneFrame.ts), like an old game's notice board; the name hangs on its bottom edge, centred.
+      // The preview in a pixel-art parchment frame (mapFrame.ts), like an old game's panel; the name hangs on its bottom edge, centred.
       // The map reaches under the frame, which covers it up to its opening
       <div {...box} className={`group/card relative shrink-0 snap-start ${CARD_SIZE} ${className}`}>
         <div className="absolute overflow-hidden bg-surface" style={{ inset: `${((FRAME_BORDER - 1) / FRAME_SIZE) * 100}%` }}>
