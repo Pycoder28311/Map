@@ -8,6 +8,9 @@ import type { StonePalette } from './stoneButton'
 
 export const SPRITE_W = 40
 export const SPRITE_H = 38
+/** Where each sheet of paper is on its animation's grid (x, y, width, height): the button places it by its paper */
+export const MAP_PAPER = [1, 4, 33, 28] as const
+export const ARTICLE_PAPER = [3, 5, 27, 31] as const
 
 type Rect = [x: number, y: number, w: number, h: number, fill: string]
 type Point = [x: number, y: number]
@@ -63,21 +66,22 @@ function quill([x, y]: Point, p: StonePalette): Rect[] {
   return rects
 }
 
-/** A sheet of old paper: its face in the button's light rim colour, speckled and worn darker along its edges, a darker edge along its
- *  right and bottom (its thickness); the same speckles every time (`seed`) */
+/**
+ * A sheet of old paper that blends into the button: its face in the button's light rim colour, lightly speckled, its edges dissolving
+ * into the button's face in a dither (every other pixel on its outermost ring, three in four on the next), so it has no hard border; the
+ * same speckles every time (`seed`)
+ */
 function sheet(x: number, y: number, w: number, h: number, p: StonePalette, seed = 1): Rect[] {
   let n = seed * 7919
   const next = () => (n = (n * 1103515245 + 12345) % 2147483648) / 2147483648
-  const rects: Rect[] = [
-    [x, y, w, h, p.rim],
-    [x + w, y + 1, 1, h, p.bevel],
-    [x + 1, y + h, w, 1, p.bevel],
-  ]
+  const rects: Rect[] = []
   for (let j = 0; j < h; j++) {
     for (let i = 0; i < w; i++) {
-      const edge = i === 0 || j === 0 || i === w - 1 || j === h - 1
+      const ring = Math.min(i, j, w - 1 - i, h - 1 - j)
       const roll = next()
-      if (edge ? roll < 0.45 : roll < 0.07) rects.push([x + i, y + j, 1, 1, p.face])
+      if (ring === 0 && (i + j) % 2 === 1) continue
+      if (ring === 1 && (i + 2 * j) % 4 === 0) continue
+      rects.push([x + i, y + j, 1, 1, ring > 1 && roll < 0.07 ? p.face : p.rim])
     }
   }
   return rects
@@ -99,7 +103,7 @@ function inside([x, y]: Point, corners: Point[]): boolean {
  * island is shaded in, with two little mountains on it; then a dashed route from it to an X
  */
 export function mapFrames(p: StonePalette): Rect[][] {
-  const [sx, sy, sw, sh] = [1, 4, 33, 28]
+  const [sx, sy, sw, sh] = MAP_PAPER
   const paper: Rect[] = [
     ...sheet(sx, sy, sw, sh, p, 3),
     // the fold
@@ -136,7 +140,7 @@ export function mapFrames(p: StonePalette): Rect[][] {
 
 /** A quill writing lines on a page with a folded corner: each line a wavy scribble, left to right */
 export function articleFrames(p: StonePalette): Rect[][] {
-  const [x0, y0, w, h] = [3, 5, 27, 31]
+  const [x0, y0, w, h] = ARTICLE_PAPER
   const page: Rect[] = [
     ...sheet(x0, y0, w, h, p, 5),
     // the folded top right corner

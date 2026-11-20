@@ -33,7 +33,8 @@ const FIELD = 'w-full resize-none bg-transparent px-4 text-fg outline-none place
  * Opening, Create slides in at the bottom right, with the format buttons on the left. Create (or Ctrl/⌘+Enter) makes the note
  * on the server (and says so if it could not); a click outside or Esc folds the card back, keeping the draft.
  */
-/** `tall`: its text two lines tall from the start (both shown even folded), as on the Dashboard over its big buttons; else one */
+/** `tall`: its text two lines tall from the start (both shown even folded), and its bottom bar (format buttons, kinds, Create) always shown as a
+ *  second row, as on the Dashboard over its big buttons; else one line, and the bar only while open */
 export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
   const rootRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLInputElement>(null)
@@ -59,6 +60,8 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
   const [kindBox, setKindBox] = useState({ width: 0, gap: 4 })
 
   const canCreate = title.trim() !== '' || text !== ''
+  // The bottom bar (format buttons, kinds, Create): always there when tall, else only while open
+  const bar = open || tall
 
   // Measured while folded (open, the button is hidden): the button is centred in the text row, so its top and bottom gaps are equal
   useLayoutEffect(() => {
@@ -197,7 +200,7 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
             like the rows' Sort by, as far from the right edge as from the top and bottom (out of the way once open: the two buttons are beside Create) */}
         <div ref={rowRef} className={`${FIELD} relative flex items-start py-3 text-body`}>
           <div
-            style={{ marginInlineEnd: open ? 0 : kindBox.width + kindBox.gap - 16 + 8 }}
+            style={{ marginInlineEnd: bar ? 0 : kindBox.width + kindBox.gap - 16 + 8 }}
             className={`${tall ? 'min-h-[2lh]' : 'min-h-[1lh]'} min-w-0 flex-1 transition-[margin] ${ANIMATE} ${open ? 'max-h-[50vh] overflow-y-auto' : tall ? 'max-h-[2lh] overflow-hidden' : 'max-h-[1lh] overflow-hidden'}`}
           >
             <RichTextField
@@ -213,9 +216,9 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
           </div>
           <div
             ref={kindRef}
-            inert={open}
+            inert={bar}
             style={{ insetInlineEnd: kindBox.gap }}
-            className={`absolute top-1/2 -translate-y-1/2 transition-opacity ${ANIMATE} ${open ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
+            className={`absolute top-1/2 -translate-y-1/2 transition-opacity ${ANIMATE} ${bar ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
           >
             <ExtendMenu variant="ghost" label="Kind" items={KINDS} value={kind.name} onSelect={chooseKind}>
               <kind.ui.icon aria-hidden className="size-4" />
@@ -232,21 +235,21 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
         )}
 
         {/* The bottom part, growing below (Create lies over it) */}
-        <div className={`${GROW} ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+        <div className={`${GROW} ${bar ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
           <div className="min-h-0 overflow-hidden">
             <div className="h-11" />
           </div>
         </div>
 
         {/* The format buttons, at the bottom left of the open card */}
-        <div inert={!open} className={`absolute bottom-1 left-2 transition-opacity ${ANIMATE} ${open ? `opacity-100 ${AFTER_GROW}` : 'opacity-0'}`}>
+        <div inert={!bar} className={`absolute bottom-1 left-2 transition-opacity ${ANIMATE} ${bar ? `opacity-100 ${AFTER_GROW}` : 'opacity-0'}`}>
           <RichTextToolbar editor={editor} only={['bold', 'italic', 'size']} />
         </div>
 
         <div
-          inert={!open}
+          inert={!bar}
           className={`absolute right-1 bottom-1 ${
-            open ? `translate-x-0 opacity-100 transition-[translate,opacity] ${ANIMATE} ${AFTER_GROW}` : 'translate-x-[calc(100%+1rem)] opacity-0'
+            bar ? `translate-x-0 opacity-100 transition-[translate,opacity] ${ANIMATE} ${AFTER_GROW}` : 'translate-x-[calc(100%+1rem)] opacity-0'
           }`}
         >
           <div className="flex items-center gap-sm">
