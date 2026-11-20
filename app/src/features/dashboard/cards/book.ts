@@ -69,8 +69,8 @@ export const BOOK_H = 64
 export const BOOK_SIZE = 'h-48 w-[153px]'
 /** The cover's right edge (its shaded column), where the right-hand parts are placed from */
 const R = BOOK_W - 2
-/** The cover's left edge, past the spine (two pixels, and its outline) */
-const C = 3
+/** The cover's left edge, past the spine (one pixel, and its outline) */
+const C = 2
 /** The bottom row (the outline), where the bottom parts are placed from */
 const B = BOOK_H - 1
 
@@ -85,8 +85,8 @@ export const BOOK_FRAME = { x: 10, y: 8, w: R - 13, h: 27 } as const
 /** The title, under the picture, above the bottom band */
 export const BOOK_TITLE = { x: 8, y: 36, w: R - 9, h: 11 } as const
 /** Where the bottom band is (its groove row), and the debossed border's bottom line above it */
-const BAND_LOW = B - 12
-const BORDER_LOW = B - 15
+const BAND_LOW = B - 11
+const BORDER_LOW = B - 14
 
 type Rect = [x: number, y: number, w: number, h: number, fill: string]
 
@@ -178,14 +178,14 @@ const rivets = (): Rect[] => [13, Math.round(BOOK_H / 2) - 4, B - 20].flatMap((y
 /** The spine (two pixels wide): its ridges (a light line, a shade under it) and its stitches down it between them */
 const spine = (): Rect[] => [
   ...[7, 10, B - 12, B - 9].flatMap((y): Rect[] => [
-    [1, y, 2, 1, BOOK.ridge],
-    [1, y + 1, 2, 1, BOOK.ridgeShade],
+    [1, y, 1, 1, BOOK.ridge],
+    [1, y + 1, 1, 1, BOOK.ridgeShade],
   ]),
   ...Array.from({ length: Math.floor((B - 30) / 5) }, (_, i): Rect => [1, 15 + i * 5, 1, 2, BOOK.stitch]),
 ]
 
-/** The pages: five rows, between the cover's row above them and its bottom strip (three rows, the outline under it) */
-const PAGES = B - 8
+/** The pages: five rows, between the cover's row above them and its bottom strip (two rows, the outline under it) */
+const PAGES = B - 7
 
 /** The pages' edge: lines between the pages, broken here and there */
 function pageLines(): Rect[] {
@@ -199,9 +199,8 @@ function pageLines(): Rect[] {
 
 /** The pixels of the book, back to front */
 export const BOOK_PIXELS: Rect[] = [
-  // The spine (the back cover, seen along the left, two pixels), its top and bottom stepping in to the cover's corners
-  [1, 3, 1, B - 5, BOOK.spine],
-  [2, 2, 1, B - 3, BOOK.spine],
+  // The spine (the back cover, seen along the left, one pixel), its top and bottom stepping in to the cover's corners
+  [1, 2, 1, B - 3, BOOK.spine],
   ...spine(),
   // The front cover: its face, a light line along the top, a shade along the right and bottom, the hinge and its rivets
   [C, 1, R - C + 1, B - 1, BOOK.cover],
@@ -233,16 +232,13 @@ export const BOOK_PIXELS: Rect[] = [
   [C, 0, BOOK_W - C, 1, BOOK.outline],
   [BOOK_W - 1, 1, 1, B, BOOK.outline],
   [C, B, BOOK_W - C, 1, BOOK.outline],
-  [0, 3, 1, B - 5, BOOK.outline],
-  [1, 2, 1, 1, BOOK.outline],
-  [2, 1, 1, 1, BOOK.outline],
-  [1, B - 2, 1, 1, BOOK.outline],
-  [2, B - 1, 1, 1, BOOK.outline],
+  [0, 2, 1, B - 3, BOOK.outline],
+  [1, 1, 1, 1, BOOK.outline],
+  [1, B - 1, 1, 1, BOOK.outline],
   // The ribbon: in the pages (a lighter fold down its left), out over the bottom of the cover, its forked tip on the bottom edge
   [14, PAGES, 6, 5, BOOK.ribbon],
   [14, PAGES, 1, 5, BOOK.ribbonFold],
-  [14, B - 3, 6, 1, BOOK.ribbonLight],
-  [14, B - 2, 6, 1, BOOK.ribbonTip],
+  [14, B - 2, 6, 1, BOOK.ribbonLight],
   [14, B - 1, 2, 1, BOOK.ribbonTip],
   [18, B - 1, 2, 1, BOOK.ribbonTip],
   [14, B, 1, 1, BOOK.ribbonTip],
