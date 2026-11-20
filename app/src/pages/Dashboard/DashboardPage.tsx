@@ -55,8 +55,8 @@ export default function DashboardPage() {
                 )}
                 {/* The input and the Create buttons share one narrower width, centred over the sections */}
                 <div className="mx-auto flex w-full max-w-[54rem] flex-col gap-xl">
-                    {/* A greeting, then the page's main input, low on the screen with room above them */}
-                    <div className="mt-[18vh] flex flex-col items-center gap-12">
+                    {/* A greeting, then the page's main input and the Create buttons, near the top of the screen */}
+                    <div className="mt-[4vh] flex flex-col items-center gap-12">
                         <h1 className="text-center text-5xl font-semibold tracking-tight">Hello{firstName ? `, ${firstName}` : ''}</h1>
                         {/* As wide as the two Create buttons under it, and twice as tall as a field */}
                         <div className="w-full" style={{ maxWidth: TWO_BUTTONS }}>
