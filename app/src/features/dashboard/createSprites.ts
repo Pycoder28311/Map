@@ -1,12 +1,13 @@
 // The little pixel-art animations on the Dashboard's big Create buttons (BigCreateButton.tsx), drawn in the button's own colours so they
-// blend into its face: a pencil sketching a map (an island's coast, then a dashed route to an X) and a quill writing lines on a page.
+// blend into its face: a pencil sketching a map on an old sheet (an island's coast, shaded, then a dashed route to an X) and a quill
+// writing lines on a page.
 // Each is a list of frames (its pixels as rectangles) on a SPRITE_W × SPRITE_H grid, the button's pixel size; the last frames hold the
 // finished drawing before it starts again. Pure.
 
 import type { StonePalette } from './stoneButton'
 
-export const SPRITE_W = 34
-export const SPRITE_H = 30
+export const SPRITE_W = 40
+export const SPRITE_H = 38
 
 type Rect = [x: number, y: number, w: number, h: number, fill: string]
 type Point = [x: number, y: number]
@@ -62,50 +63,92 @@ function quill([x, y]: Point, p: StonePalette): Rect[] {
   return rects
 }
 
-/** A sheet of paper: its face in the button's light rim colour, a darker edge along its right and bottom */
-function sheet(x: number, y: number, w: number, h: number, p: StonePalette): Rect[] {
-  return [
+/** A sheet of old paper: its face in the button's light rim colour, speckled and worn darker along its edges, a darker edge along its
+ *  right and bottom (its thickness); the same speckles every time (`seed`) */
+function sheet(x: number, y: number, w: number, h: number, p: StonePalette, seed = 1): Rect[] {
+  let n = seed * 7919
+  const next = () => (n = (n * 1103515245 + 12345) % 2147483648) / 2147483648
+  const rects: Rect[] = [
     [x, y, w, h, p.rim],
     [x + w, y + 1, 1, h, p.bevel],
     [x + 1, y + h, w, 1, p.bevel],
   ]
+  for (let j = 0; j < h; j++) {
+    for (let i = 0; i < w; i++) {
+      const edge = i === 0 || j === 0 || i === w - 1 || j === h - 1
+      const roll = next()
+      if (edge ? roll < 0.45 : roll < 0.07) rects.push([x + i, y + j, 1, 1, p.face])
+    }
+  }
+  return rects
 }
 
-/** A pencil drawing a little map on a sheet: an island's coast, then a dashed route from it to an X */
-export function mapFrames(p: StonePalette): Rect[][] {
-  const paper = sheet(2, 9, 26, 18, p)
-  // The coast: a lumpy loop round the island
-  const coast = through([[7, 18], [8, 15], [11, 13], [14, 14], [16, 12], [19, 14], [19, 17], [17, 20], [13, 21], [10, 22], [8, 20], [7, 18]])
-  // The route: every other pixel of a line from the coast to the X, a bend in it
-  const route = through([[19, 15], [22, 14], [23, 12]]).filter((_, i) => i % 2 === 0)
-  const x: Point[] = [[24, 11], [26, 13], [25, 12], [26, 11], [24, 13]]
-  const stroke: Point[] = [...coast, ...route, ...x]
-  const frames: Rect[][] = []
-  // Two pixels a frame
-  for (let n = 2; n <= stroke.length + 1; n += 2) {
-    const drawn = stroke.slice(0, Math.min(n, stroke.length))
-    frames.push([...paper, ...drawn.map((pt) => px(pt, p.ink)), ...pencil(drawn[drawn.length - 1], p)])
+/** Whether (x, y) is inside the polygon through these corners */
+function inside([x, y]: Point, corners: Point[]): boolean {
+  let hit = false
+  for (let i = 0, j = corners.length - 1; i < corners.length; j = i++) {
+    const [xi, yi] = corners[i]
+    const [xj, yj] = corners[j]
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) hit = !hit
   }
-  const done = [...paper, ...stroke.map((pt) => px(pt, p.ink))]
+  return hit
+}
+
+/**
+ * A pencil drawing a little map on an old sheet (speckled, a fold down its middle, ripples on its sea): first an island's coast; then the
+ * island is shaded in, with two little mountains on it; then a dashed route from it to an X
+ */
+export function mapFrames(p: StonePalette): Rect[][] {
+  const [sx, sy, sw, sh] = [1, 4, 33, 28]
+  const paper: Rect[] = [
+    ...sheet(sx, sy, sw, sh, p, 3),
+    // the fold
+    [sx + 16, sy + 1, 1, sh - 2, p.face],
+    // ripples on the sea
+    ...([[4, 9], [26, 27], [5, 27], [27, 21], [10, 8]] as Point[]).flatMap(([x, y]): Rect[] => [
+      [x, y, 2, 1, p.bevel],
+      [x + 2, y - 1, 1, 1, p.bevel],
+    ]),
+  ]
+  const corners: Point[] = [[7, 20], [8, 15], [12, 12], [16, 13], [19, 10], [24, 12], [25, 17], [22, 22], [17, 24], [12, 26], [8, 24], [7, 20]]
+  const coast = through(corners)
+  // The land: every pixel inside the coast, shaded, with a light speckle; two little mountains on it
+  const land: Rect[] = []
+  for (let y = 10; y <= 26; y++) for (let x = 7; x <= 25; x++) if (inside([x + 0.5, y + 0.5], corners)) land.push(px([x, y], (x * 7 + y * 3) % 11 === 0 ? p.rim : p.bevel))
+  const mountains: Rect[] = ([[12, 19], [17, 17]] as Point[]).flatMap(([x, y]): Rect[] => [px([x, y], p.ink), px([x - 1, y + 1], p.ink), px([x + 1, y + 1], p.ink), px([x - 2, y + 2], p.ink), px([x + 2, y + 2], p.ink)])
+  const route = through([[25, 15], [28, 14], [29, 12], [30, 11]]).filter((_, i) => i % 2 === 0)
+  const x: Point[] = [[29, 8], [31, 10], [30, 9], [31, 8], [29, 10]]
+  const frames: Rect[][] = []
+  const draw = (fixed: Rect[], stroke: Point[]) => {
+    for (let n = 2; n <= stroke.length + 1; n += 2) {
+      const drawn = stroke.slice(0, Math.min(n, stroke.length))
+      frames.push([...fixed, ...drawn.map((pt) => px(pt, p.ink)), ...pencil(drawn[drawn.length - 1], p)])
+    }
+  }
+  draw(paper, coast)
+  const island = [...paper, ...land, ...coast.map((pt) => px(pt, p.ink)), ...mountains]
+  frames.push([...island, ...pencil([17, 17], p)], [...island, ...pencil([17, 17], p)])
+  draw(island, [...route, ...x])
+  const done = [...island, ...[...route, ...x].map((pt) => px(pt, p.ink))]
   for (let i = 0; i < HOLD; i++) frames.push(done)
   return frames
 }
 
 /** A quill writing lines on a page with a folded corner: each line a wavy scribble, left to right */
 export function articleFrames(p: StonePalette): Rect[][] {
-  const [x0, y0, w, h] = [5, 5, 19, 23]
+  const [x0, y0, w, h] = [3, 5, 27, 31]
   const page: Rect[] = [
-    ...sheet(x0, y0, w, h, p),
+    ...sheet(x0, y0, w, h, p, 5),
     // the folded top right corner
-    [x0 + w - 4, y0, 4, 4, p.face],
-    [x0 + w - 4, y0, 1, 4, p.bevel],
-    [x0 + w - 4, y0 + 3, 4, 1, p.bevel],
-    [x0 + w - 3, y0 + 1, 2, 2, p.rim],
+    [x0 + w - 5, y0, 5, 5, p.face],
+    [x0 + w - 5, y0, 1, 5, p.bevel],
+    [x0 + w - 5, y0 + 4, 5, 1, p.bevel],
+    [x0 + w - 4, y0 + 1, 3, 3, p.rim],
   ]
   // The lines: their lengths, a short last one; the writing waves a pixel up now and then, with gaps between words
-  const lengths = [10, 14, 13, 14, 12, 7]
+  const lengths = [14, 21, 20, 21, 19, 21, 18, 10]
   const writing: Point[] = lengths.flatMap((length, row) => {
-    const y = y0 + 6 + row * 3
+    const y = y0 + 7 + row * 3
     const points: Point[] = []
     for (let i = 0; i < length; i++) {
       if ((i + row * 2) % 6 === 5) continue

@@ -8,9 +8,9 @@ import { STONE_BELOW_FACE, STONE_GREEN, STONE_PIXEL, STONE_PRESS, stonePixels, t
 export const BIG_BUTTON_W = 100
 export const BIG_BUTTON_H = 50
 
-/** Where the animation sits on the face (pixels of the drawing): in its left half, centred on the face's height */
-const SPRITE_X = 9
-const SPRITE_Y = Math.round((BIG_BUTTON_H - STONE_BELOW_FACE - SPRITE_H) / 2) + 1
+/** Where the animation sits on the face (pixels of the drawing): in its left half, a small margin from the face's left and top edges */
+const SPRITE_X = 5
+const SPRITE_Y = 3
 /** How long each frame of the animation shows (ms) */
 const FRAME_MS = 110
 
