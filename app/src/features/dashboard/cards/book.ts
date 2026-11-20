@@ -85,8 +85,8 @@ export const BOOK_FRAME = { x: 10, y: 8, w: R - 13, h: 27 } as const
 /** The title, under the picture, above the bottom band */
 export const BOOK_TITLE = { x: 8, y: 36, w: R - 9, h: 11 } as const
 /** Where the bottom band is (its groove row), and the debossed border's bottom line above it */
-const BAND_LOW = B - 11
-const BORDER_LOW = B - 14
+const BAND_LOW = B - 9
+const BORDER_LOW = B - 12
 
 type Rect = [x: number, y: number, w: number, h: number, fill: string]
 
@@ -184,14 +184,15 @@ const spine = (): Rect[] => [
   ...Array.from({ length: Math.floor((B - 30) / 5) }, (_, i): Rect => [1, 15 + i * 5, 1, 2, BOOK.stitch]),
 ]
 
-/** The pages: five rows, between the cover's row above them and its bottom strip (two rows, the outline under it) */
-const PAGES = B - 7
+/** The pages: three rows (a light one, one with its lines, a shaded one), between the cover's row above them and its bottom strip (two
+ *  rows, the outline under it) */
+const PAGES = B - 5
 
 /** The pages' edge: lines between the pages, broken here and there */
 function pageLines(): Rect[] {
   const next = seeded(41)
   const rects: Rect[] = []
-  for (const y of [PAGES + 1, PAGES + 3]) {
+  for (const y of [PAGES + 1]) {
     for (let x = C + 1 + Math.floor(next() * 4); x < R - 4; x += 6 + Math.floor(next() * 8)) rects.push([x, y, Math.min(3 + Math.floor(next() * 8), R - 3 - x), 1, BOOK.pagesLine])
   }
   return rects
@@ -224,10 +225,10 @@ export const BOOK_PIXELS: Rect[] = [
   // The picture's outline
   [BOOK_FRAME.x, BOOK_FRAME.y, BOOK_FRAME.w, BOOK_FRAME.h, BOOK.outline],
   // The pages' edge, between the cover's bottom rows
-  [C, PAGES, R - C - 2, 5, BOOK.pages],
+  [C, PAGES, R - C - 2, 3, BOOK.pages],
   [C, PAGES, R - C - 2, 1, BOOK.pagesLight],
   ...pageLines(),
-  [C, PAGES + 4, R - C - 2, 1, BOOK.pagesShade],
+  [C, PAGES + 2, R - C - 2, 1, BOOK.pagesShade],
   // The outline: top, right, bottom, and the spine's left with its steps
   [C, 0, BOOK_W - C, 1, BOOK.outline],
   [BOOK_W - 1, 1, 1, B, BOOK.outline],
@@ -236,8 +237,8 @@ export const BOOK_PIXELS: Rect[] = [
   [1, 1, 1, 1, BOOK.outline],
   [1, B - 1, 1, 1, BOOK.outline],
   // The ribbon: in the pages (a lighter fold down its left), out over the bottom of the cover, its forked tip on the bottom edge
-  [14, PAGES, 6, 5, BOOK.ribbon],
-  [14, PAGES, 1, 5, BOOK.ribbonFold],
+  [14, PAGES, 6, 3, BOOK.ribbon],
+  [14, PAGES, 1, 3, BOOK.ribbonFold],
   [14, B - 2, 6, 1, BOOK.ribbonLight],
   [14, B - 1, 2, 1, BOOK.ribbonTip],
   [18, B - 1, 2, 1, BOOK.ribbonTip],

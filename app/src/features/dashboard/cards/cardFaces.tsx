@@ -11,6 +11,7 @@ import PixelRects from './PixelRects'
 import { FRAME_PIXELS, FRAME_SIZE, MAP_INSET, paperMarks, paperPixels } from './mapFrame'
 import FolderFace from './FolderFace'
 import MapPreview from './MapPreview'
+import WoodSign from './WoodSign'
 import { DAY_MONTH } from '../../../lib/dates'
 
 /** The picture of an item's card: the first one of its text (when the item has its `content`: a list gives only the preview), else its Info box's picture or its banner (an article) */
@@ -72,12 +73,8 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
         </div>
         <PixelRects rects={paperMarks(String(item.id))} width={FRAME_SIZE} height={FRAME_SIZE} />
         <PixelRects rects={FRAME_PIXELS} width={FRAME_SIZE} height={FRAME_SIZE} className="[filter:drop-shadow(0_3px_0_rgb(0_0_0/0.22))]" />
-        {/* The name: a Stone button's look (like the Recent History button) */}
-        <ButtonLook data-card-title-box variant="secondary" size="xs" icon={Icon} className="absolute bottom-0 left-1/2 max-w-[85%] min-w-0 -translate-x-1/2 translate-y-1/2">
-          <span data-card-title className="min-w-0 truncate">
-            {title}
-          </span>
-        </ButtonLook>
+        {/* The name on a little wooden plank, in the frame's wood (WoodSign) */}
+        <WoodSign title={title} icon={Icon} className="absolute bottom-0 left-1/2 max-w-[85%] -translate-x-1/2 translate-y-1/2" />
         {marks}
       </div>
     )
