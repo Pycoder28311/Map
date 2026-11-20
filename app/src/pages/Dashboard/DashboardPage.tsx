@@ -6,21 +6,18 @@ import DashboardRelics from '../../features/dashboard/DashboardRelics'
 import EditIconsPreview from '../../features/dashboard/EditIconsPreview'
 import QuillIconsPreview from '../../features/dashboard/QuillIconsPreview'
 import BigCreateButton from '../../features/dashboard/BigCreateButton'
-import DashboardColumns from '../../features/dashboard/DashboardColumns'
 import DashboardSections from '../../features/dashboard/DashboardSections'
-import { useDashboardColumns } from '../../features/dashboard/useDashboardColumns'
 import QuickCreate from '../../features/notes/QuickCreate'
 import { authClient } from '../../lib/auth-client'
 
 // Also a workspace panel (src/panels.ts): no <main> here, AppLayout provides it
 /**
- * The main page: the quick note input, three columns (Recent, Notes, Maps by default; each can show
- * another list), the big Create button under them, and under that a row of cards per project (its items) and an Orphans row
+ * The main page: the greeting and the quick note input, the two big Create buttons (Create, Create map) under them (the
+ * Recent / Notes / Maps columns are hidden: DashboardColumns), and under that a row of cards per project (its items) and an Orphans row
  */
 export default function DashboardPage() {
     const navigate = useNavigate()
     const { data: session } = authClient.useSession()
-    const columns = useDashboardColumns()
     const [showIcons, setShowIcons] = useState(false)
     const firstName = session?.user.name?.split(/\s+/)[0]
 
@@ -52,7 +49,7 @@ export default function DashboardPage() {
                         <EditIconsPreview />
                     </>
                 )}
-                {/* The input and the columns share one narrower width, centred over the sections */}
+                {/* The input and the Create buttons share one narrower width, centred over the sections */}
                 <div className="mx-auto flex w-full max-w-[54rem] flex-col gap-xl">
                     {/* A greeting, then the page's main input, low on the screen with room above them */}
                     <div className="mt-[18vh] flex flex-col items-center gap-12">
@@ -61,9 +58,11 @@ export default function DashboardPage() {
                             <QuickCreate />
                         </div>
                     </div>
-                    <DashboardColumns {...columns} />
-                    {/* The big Create button, under the columns (it opens the Create modal) */}
-                    <BigCreateButton />
+                    {/* The two big Create buttons, side by side under the input (they open the Create modal, the second on its Map tab) */}
+                    <div className="flex flex-wrap items-start justify-center gap-6">
+                        <BigCreateButton label="Create" />
+                        <BigCreateButton label="Create map" kind="maps" width={130} />
+                    </div>
                 </div>
 
                 <DashboardSections />

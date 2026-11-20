@@ -22,6 +22,8 @@ function formOf(resource: AnyResource) {
 }
 
 type Props = {
+  /** The tab to open on (a resource name); else the last one used */
+  kind?: string
   /** The frame is open (not growing back): a click outside decides only then */
   active: boolean
   /** The Cancel button (bottom right, where the Create label was) */
@@ -35,9 +37,9 @@ type Props = {
  * and its text). The page behind never changes. Mounted fresh each time it opens, so a cancelled
  * draft is gone. A click outside decides (draftOutcome): nothing typed closes it, text creates it, only a title asks first.
  */
-export default function CreateModal({ active, onCancel, onCreated }: Props) {
+export default function CreateModal({ kind, active, onCancel, onCreated }: Props) {
   const formId = useId()
-  const [kindName, setKindName] = useState(lastKind)
+  const [kindName, setKindName] = useState(() => (kind && KINDS.some((r) => r.name === kind) ? kind : lastKind))
   const resource = KINDS.find((r) => r.name === kindName) ?? KINDS[0]
   const { title: titleField, body: bodyField, rich } = formOf(resource)
   const [asking, setAsking] = useState(false)
