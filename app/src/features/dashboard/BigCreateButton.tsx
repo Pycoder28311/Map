@@ -3,9 +3,9 @@ import { openCreate } from '../create/openCreate'
 import PixelRects from './cards/PixelRects'
 import { STONE_BELOW_FACE, STONE_GREEN, STONE_PIXEL, STONE_PRESS, stonePixels, type StonePalette } from './stoneButton'
 
-/** The buttons' size in pixels of the drawing (STONE_PIXEL px each): 3:2, 297 × 198px */
-export const BIG_BUTTON_W = 99
-export const BIG_BUTTON_H = 66
+/** The buttons' size in pixels of the drawing (STONE_PIXEL px each): 2:1, 300 × 150px */
+export const BIG_BUTTON_W = 100
+export const BIG_BUTTON_H = 50
 
 type Props = {
   /** The word on it */
@@ -16,7 +16,7 @@ type Props = {
 }
 
 /**
- * A big Create button of the Dashboard: a stone slab in pixel art (stoneButton.ts: its edges copied from the reference), 3:2, with its
+ * A big Create button of the Dashboard: a stone slab in pixel art (stoneButton.ts: its edges copied from the reference), 2:1, with its
  * word on it in the blackletter pixel font. Its face sinks into the slab's thickness while pressed and is a touch lighter on hover. It
  * opens the Create modal (openCreate), on `kind`'s tab. As wide as its pixels allow, narrower on a small screen (its pixels scale down).
  */
