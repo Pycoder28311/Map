@@ -16,7 +16,7 @@ const TWO_BUTTONS = 2 * BIG_BUTTON_W * STONE_PIXEL + 24
 
 // Also a workspace panel (src/panels.ts): no <main> here, AppLayout provides it
 /**
- * The main page: the greeting and the quick note input, the two big Create buttons (Create, Create map) under them (the
+ * The main page: the greeting and the quick note input, the two big Create buttons (Create article, Create map) under them (the
  * Recent / Notes / Maps columns are hidden: DashboardColumns), and under that a row of cards per project (its items) and an Orphans row
  */
 export default function DashboardPage() {
@@ -63,10 +63,10 @@ export default function DashboardPage() {
                             <QuickCreate tall />
                         </div>
                     </div>
-                    {/* The two big Create buttons, side by side under the input (they open the Create modal, the second on its Map tab) */}
+                    {/* The two big Create buttons, side by side under the input (they open the Create modal on its Article and Map tabs) */}
                     <div className="mx-auto flex w-full items-start justify-center gap-6" style={{ maxWidth: TWO_BUTTONS }}>
-                        <BigCreateButton label="Create" />
-                        <BigCreateButton label="Create map" kind="maps" />
+                        <BigCreateButton lines={['Create', 'article']} art="article" kind="articles" />
+                        <BigCreateButton lines={['Create', 'map']} art="map" kind="maps" />
                     </div>
                 </div>
 
