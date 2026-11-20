@@ -11,31 +11,31 @@ import { seededRandom } from '../../../lib/seededRandom'
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const FRAME = {
   /** The planks' dark outline */
-  outline: '#2f1b0c',
+  outline: '#0d0806',
   /** The wood: its two tones, its grain (darker and lighter streaks), knots, and the shadow a horizontal plank casts on a vertical one */
-  wood: '#8c5a2c',
-  woodAlt: '#7f5027',
-  grainDark: '#6a411e',
-  grainLight: '#a26b37',
-  knot: '#4f3016',
-  joint: '#553317',
+  wood: '#3a2617',
+  woodAlt: '#322012',
+  grainDark: '#22160c',
+  grainLight: '#4b3220',
+  knot: '#140c06',
+  joint: '#1c120a',
   /** The nails at the crossings: their light top left, and the rest of their head */
-  nailLight: '#d7d2c8',
-  nail: '#7d776e',
+  nailLight: '#9b9994',
+  nail: '#494642',
   /** The backing behind the paper (what shows through its tears and cracks) */
-  backing: '#2b190b',
+  backing: '#0a0604',
   /** The paper: its colour, speckles a little darker and lighter (and its stains), and its aged edge */
-  paper: '#eddab0',
-  paperDark: '#e2cb9b',
-  paperLight: '#f5e8c8',
-  paperEdge: '#cfb07a',
+  paper: '#c6b38c',
+  paperDark: '#b29d75',
+  paperLight: '#d4c4a0',
+  paperEdge: '#8a7049',
   /** A fold: its crease (in shade) and the light ridge beside it */
-  crease: 'rgb(110 70 30 / 0.16)',
-  ridge: 'rgb(255 250 235 / 0.28)',
+  crease: 'rgb(55 30 12 / 0.28)',
+  ridge: 'rgb(255 238 205 / 0.14)',
   /** The torn fibres along a crack */
-  fibre: '#f7edd4',
+  fibre: '#d6c4a0',
   /** The shadow the frame casts on the paper, along the top and left */
-  shadow: 'rgb(40 20 5 / 0.3)',
+  shadow: 'rgb(0 0 0 / 0.5)',
 } as const
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 

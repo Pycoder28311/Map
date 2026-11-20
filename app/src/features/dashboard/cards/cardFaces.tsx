@@ -66,7 +66,9 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
       <div {...box} className={`group/card relative shrink-0 snap-start ${CARD_SIZE} ${className}`}>
         <PixelRects rects={paperPixels(String(item.id))} width={FRAME_SIZE} height={FRAME_SIZE} />
         <div data-card-body data-card-bleed style={mapBox}>
-          <MapPreview id={String(item.id)} className="size-full" />
+          {/* Toned toward old sepia, darkened toward its edges: a dark fantasy map, its colours kept */}
+          <MapPreview id={String(item.id)} className="size-full [filter:sepia(0.35)_saturate(0.8)_brightness(0.86)_contrast(1.05)]" />
+          <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_0_18px_4px_rgb(25_12_4/0.6)]" />
         </div>
         <PixelRects rects={paperMarks(String(item.id))} width={FRAME_SIZE} height={FRAME_SIZE} />
         <PixelRects rects={FRAME_PIXELS} width={FRAME_SIZE} height={FRAME_SIZE} className="[filter:drop-shadow(0_3px_0_rgb(0_0_0/0.22))]" />
@@ -93,20 +95,21 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
           {/* The picture, filling its box inside the one-pixel outline */}
           <div className="overflow-hidden" style={{ ...bookAt(frame.x + 1, frame.y + 1, frame.w - 2, frame.h - 2), backgroundColor: BOOK.picture }}>
             {src ? (
-              <img data-card-body data-card-bleed src={src} alt="" className="size-full object-cover" />
+              <img data-card-body data-card-bleed src={src} alt="" className="size-full object-cover [filter:saturate(0.8)_brightness(0.88)_contrast(1.05)]" />
             ) : (
               <div data-card-body data-card-bleed className="flex size-full flex-col items-center justify-center gap-1 text-small" style={{ color: BOOK.pictureInk }}>
                 <LuImageOff aria-hidden className="size-6 opacity-80" />
                 No image found
               </div>
             )}
+            <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_0_14px_3px_rgb(0_0_0/0.55)]" />
           </div>
           {/* The title, in the pixel font, on the leather under the picture */}
           <div data-card-title-box className="flex items-center justify-center px-1 text-center" style={bookAt(BOOK_TITLE.x, BOOK_TITLE.y, BOOK_TITLE.w, BOOK_TITLE.h)}>
             <span
               data-card-title
               className="line-clamp-2 font-(family-name:--font-pixel) text-[13px] leading-4 font-medium"
-              style={{ textShadow: `0 2px 0 ${BOOK.inkShadow}` }}
+              style={{ textShadow: `0 2px 0 ${BOOK.inkShadow}, 0 0 6px rgb(170 40 25 / 0.45)` }}
             >
               {title}
             </span>

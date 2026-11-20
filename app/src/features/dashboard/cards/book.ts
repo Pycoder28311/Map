@@ -11,52 +11,52 @@ import type { CSSProperties } from 'react'
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const BOOK = {
   /** The hard outline round everything */
-  outline: '#2f1b0c',
+  outline: '#0d0806',
   /** The back cover, seen along the left, its ridges and their shade, and its stitches */
-  spine: '#4f2f15',
-  ridge: '#9a6634',
-  ridgeShade: '#3a2210',
-  stitch: '#d9b97f',
+  spine: '#1d110b',
+  ridge: '#3b2518',
+  ridgeShade: '#100905',
+  stitch: '#6e5f4c',
   /** The front cover: its face, the light line along its top and the shade along its right and bottom */
-  cover: '#7a4a24',
-  coverLight: '#946036',
-  coverShade: '#62391b',
+  cover: '#2c1812',
+  coverLight: '#3b2219',
+  coverShade: '#1f110c',
   /** The faint shapes on the cover: its grain (darker and lighter streaks), small diamonds, scratches and worn specks */
-  grainDark: '#6c4020',
-  grainLight: '#86542c',
-  motif: '#83512a',
-  scratch: '#956237',
-  wear: '#a26c3c',
+  grainDark: '#24130d',
+  grainLight: '#352019',
+  motif: '#341e16',
+  scratch: '#46291d',
+  wear: '#4f3122',
   /** The debossed border round the cover: its pressed line and the light line beside it */
-  deboss: '#5e3619',
-  emboss: '#8c5a30',
+  deboss: '#1b0f0a',
+  emboss: '#3a2219',
   /** The hinge, where the cover meets the spine, and its rivets */
-  hinge: '#5e3619',
-  rivet: '#d7d2c8',
-  rivetShade: '#7d776e',
+  hinge: '#20120c',
+  rivet: '#8d8b86',
+  rivetShade: '#3b3936',
   /** The bands' dashes (one pixel tall, a muted stitch close to the leather) and the groove they sit in */
-  band: '#a27846',
-  groove: '#5e3619',
+  band: '#5c4836',
+  groove: '#170d08',
   /** The metal corners */
-  gold: '#c9963e',
-  goldDeep: '#8a5f22',
-  goldLight: '#ecc77a',
+  gold: '#7b6436',
+  goldDeep: '#463719',
+  goldLight: '#a68e57',
   /** The pages' edge: its light line on top, the lines between the pages, and its shaded line below */
-  pages: '#eddab0',
-  pagesLight: '#f5e8c8',
-  pagesLine: '#d9c296',
-  pagesShade: '#cfb07a',
+  pages: '#b6a585',
+  pagesLight: '#c9bb9a',
+  pagesLine: '#9a8868',
+  pagesShade: '#807055',
   /** The ribbon: in the book, its light fold, out of it, and its forked tip */
-  ribbon: '#b0303f',
-  ribbonFold: '#c93a45',
-  ribbonLight: '#e5463a',
-  ribbonTip: '#f5822a',
+  ribbon: '#5a0e16',
+  ribbonFold: '#70161f',
+  ribbonLight: '#842028',
+  ribbonTip: '#9a2a2c',
   /** Behind the picture (what shows when there is none), and the words there */
-  picture: '#4f2f15',
-  pictureInk: '#e2cb9b',
+  picture: '#110a06',
+  pictureInk: '#8e7c62',
   /** The title on the cover, and its shadow */
-  ink: '#f5e8c8',
-  inkShadow: '#2f1b0c',
+  ink: '#d9cdb4',
+  inkShadow: '#000000',
 } as const
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
