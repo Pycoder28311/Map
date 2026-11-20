@@ -5,6 +5,7 @@ import { useTimeout } from '../../lib/useTimeout'
 import { useOpenLayout } from '../objects/ListRows'
 import { single } from '../workspace/layout'
 import CreateModal from './CreateModal'
+import { onOpenCreate } from './openCreate'
 import Button from '../../components/ui/buttons/Button'
 import PanelFrame from '../../components/ui/buttons/PanelFrame'
 
@@ -48,6 +49,9 @@ export default function CreateFab() {
     setOpen(false)
     closeTimer.set(() => setMounted(false), CLOSE_MS)
   }, [closeTimer])
+
+  // Another Create button asks for it (the Dashboard's big one: openCreate)
+  useEffect(() => onOpenCreate(show), [show])
 
   // Esc closes it (an open menu in it gets the Esc first)
   useEffect(() => {

@@ -5,6 +5,7 @@ import Button from '../../components/ui/buttons/Button'
 import DashboardRelics from '../../features/dashboard/DashboardRelics'
 import EditIconsPreview from '../../features/dashboard/EditIconsPreview'
 import QuillIconsPreview from '../../features/dashboard/QuillIconsPreview'
+import BigCreateButton from '../../features/dashboard/BigCreateButton'
 import DashboardColumns from '../../features/dashboard/DashboardColumns'
 import DashboardSections from '../../features/dashboard/DashboardSections'
 import { useDashboardColumns } from '../../features/dashboard/useDashboardColumns'
@@ -14,7 +15,7 @@ import { authClient } from '../../lib/auth-client'
 // Also a workspace panel (src/panels.ts): no <main> here, AppLayout provides it
 /**
  * The main page: the quick note input, three columns (Recent, Notes, Maps by default; each can show
- * another list), and under them a row of cards per project (its items) and an Orphans row
+ * another list), the big Create button under them, and under that a row of cards per project (its items) and an Orphans row
  */
 export default function DashboardPage() {
     const navigate = useNavigate()
@@ -61,6 +62,8 @@ export default function DashboardPage() {
                         </div>
                     </div>
                     <DashboardColumns {...columns} />
+                    {/* The big Create button, under the columns (it opens the Create modal) */}
+                    <BigCreateButton />
                 </div>
 
                 <DashboardSections />
