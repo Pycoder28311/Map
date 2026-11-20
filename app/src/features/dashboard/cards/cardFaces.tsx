@@ -8,7 +8,7 @@ import { CARD_SIZE, cardOf } from './cardStyles'
 import { BOOK, BOOK_FRAME, BOOK_SIZE, BOOK_TITLE, bookAt } from './book'
 import BookArt from './BookArt'
 import PixelRects from './PixelRects'
-import { FRAME_PIXELS, FRAME_SIZE, MAP_INSET, paperMarks, paperPixels } from './mapFrame'
+import { BOTTOM_PLANK_MIDDLE, FRAME_PIXELS, FRAME_SIZE, MAP_INSET, paperMarks, paperPixels } from './mapFrame'
 import FolderFace from './FolderFace'
 import MapPreview from './MapPreview'
 import WoodSign from './WoodSign'
@@ -73,8 +73,8 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
         </div>
         <PixelRects rects={paperMarks(String(item.id))} width={FRAME_SIZE} height={FRAME_SIZE} />
         <PixelRects rects={FRAME_PIXELS} width={FRAME_SIZE} height={FRAME_SIZE} className="[filter:drop-shadow(0_3px_0_rgb(0_0_0/0.22))]" />
-        {/* The name on a little wooden plank, in the frame's wood (WoodSign) */}
-        <WoodSign title={title} icon={Icon} className="absolute bottom-0 left-1/2 max-w-[85%] -translate-x-1/2 translate-y-1/2" />
+        {/* The name on a little wooden plank (WoodSign), centred on the frame's bottom plank */}
+        <WoodSign title={title} icon={Icon} className="absolute left-1/2 max-w-[85%] -translate-x-1/2 -translate-y-1/2" style={{ top: `${(BOTTOM_PLANK_MIDDLE / FRAME_SIZE) * 100}%` }} />
         {marks}
       </div>
     )

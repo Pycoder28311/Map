@@ -46,6 +46,8 @@ export const FRAME_PIXEL = 3
 const PLANK = 4
 /** How far the planks' ends stick out past the ones they cross (pixels) */
 const OVERHANG = 2
+/** Where the bottom plank's middle is (pixels from the top): where a map card's name sign is centred */
+export const BOTTOM_PLANK_MIDDLE = FRAME_SIZE - OVERHANG - PLANK / 2
 /** How far in from the card's edge the frame reaches (pixels): the overhang and a plank */
 export const FRAME_BORDER = OVERHANG + PLANK
 /** Where the paper lies (a pixel in from the planks, the backing showing between, the planks' shadow on its top and left edges) and where
