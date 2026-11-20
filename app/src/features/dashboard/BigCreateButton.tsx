@@ -8,9 +8,8 @@ import { STONE_BELOW_FACE, STONE_GREEN, STONE_PIXEL, STONE_PRESS, stonePixels, t
 export const BIG_BUTTON_W = 100
 export const BIG_BUTTON_H = 50
 
-/** Where the animation sits on the face (pixels of the drawing): in its left half, a small margin from the face's left and top edges */
-const SPRITE_X = 5
-const SPRITE_Y = 3
+/** Where each animation sits on the face (pixels of the drawing): its paper a pixel inside the face's light rim, top left */
+const SPRITE_AT: Record<'map' | 'article', [x: number, y: number]> = { map: [3, -1], article: [1, -2] }
 /** How long each frame of the animation shows (ms) */
 const FRAME_MS = 110
 
@@ -58,6 +57,7 @@ export default function BigCreateButton({ lines, art, kind, palette = STONE_GREE
   const pctX = (n: number) => `${(n / width) * 100}%`
   const pctY = (n: number) => `${(n / height) * 100}%`
   const faceRows = height - STONE_BELOW_FACE
+  const [spriteX, spriteY] = SPRITE_AT[art]
   return (
     <button
       type="button"
@@ -74,8 +74,9 @@ export default function BigCreateButton({ lines, art, kind, palette = STONE_GREE
       >
         <PixelRects rects={face} width={width} height={height} />
         {/* What it makes, drawing itself */}
-        <span aria-hidden className="absolute" style={{ left: pctX(SPRITE_X), top: pctY(SPRITE_Y), width: pctX(SPRITE_W), height: pctY(SPRITE_H) }}>
-          <PixelRects rects={frames[frame]} width={SPRITE_W} height={SPRITE_H} />
+        <span aria-hidden className="absolute" style={{ left: pctX(spriteX), top: pctY(spriteY), width: pctX(SPRITE_W), height: pctY(SPRITE_H) }}>
+          {/* (the pencil or quill may reach past its box: not clipped) */}
+          <PixelRects rects={frames[frame]} width={SPRITE_W} height={SPRITE_H} className="overflow-visible" />
         </span>
         <span
           aria-hidden
