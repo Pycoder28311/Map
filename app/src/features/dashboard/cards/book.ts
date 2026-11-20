@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react'
 // its stitched spine along the left with rivets on the hinge, a cover with faint diamonds, grain, scratches, worn edges and a debossed border,
 // stitched bands ending in brass corners, its picture in a one-pixel outline, its pages and a ribbon bookmark
 // along the bottom. The book fills the card's box, BOOK_W × BOOK_H
-// pixels of the drawing (4:5, taller than wide, as tall as the other cards), each BOOK_PIXEL px on screen: the same size as the Dashboard's other pixel art (DashboardRelics: SCALE). The
+// pixels of the drawing (4:5, taller than wide, as tall as the other cards), each BOOK_PIXEL px on screen: the cards' pixel (mapFrame.ts FRAME_PIXEL). The
 // card's content (its picture, title, preview and date) is laid on the cover by cardFaces.tsx, placed on the same grid with `bookAt`.
 
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -60,13 +60,13 @@ export const BOOK = {
 } as const
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** One pixel of the drawing on screen (px): the Dashboard's pixel art's size (DashboardRelics) */
-export const BOOK_PIXEL = 3
-/** Pixels across and down the drawing: 4:5 (as near as whole pixels go), as tall as every other card (192px), so a row lines up */
+/** One pixel of the drawing on screen (px): the cards' pixel (mapFrame.ts FRAME_PIXEL), so four cards fill a row */
+export const BOOK_PIXEL = 3.75
+/** Pixels across and down the drawing: 4:5 (as near as whole pixels go), as tall as every other card (240px), so a row lines up */
 export const BOOK_W = 51
 export const BOOK_H = 64
-/** The card's box: BOOK_W × BOOK_PIXEL by BOOK_H × BOOK_PIXEL (153 × 192px) */
-export const BOOK_SIZE = 'h-48 w-[153px]'
+/** The card's box: BOOK_W × BOOK_PIXEL by BOOK_H × BOOK_PIXEL (191.25 × 240px) */
+export const BOOK_SIZE = 'h-60 w-[191.25px]'
 /** The cover's right edge (its shaded column), where the right-hand parts are placed from */
 const R = BOOK_W - 2
 /** The cover's left edge, past the spine (one pixel, and its outline) */

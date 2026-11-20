@@ -64,7 +64,7 @@ export default function FolderDraft({ folderKey, resource, initial, onCreated, o
   if (!boxes) return null
   const left = boxes.folder.right + GAP
   const top = boxes.folder.top
-  const size = 192 // CARD_SIZE (size-48)
+  const size = 240 // CARD_SIZE (size-60)
   const tile = boxes.tile
   return createPortal(
     <div className="pointer-events-none fixed inset-0 z-40">

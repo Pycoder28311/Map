@@ -48,7 +48,7 @@ export default function WoodSign({ title, icon: Icon, className = '', style }: {
         </span>
         <span
           data-card-title
-          className="min-w-0 truncate font-(family-name:--font-pixel) text-[13px] leading-none font-medium"
+          className="min-w-0 truncate font-(family-name:--font-pixel) text-[15px] leading-none font-medium"
           style={{ color: FRAME.paperLight, textShadow: `0 ${U / 1.5}px 0 #000` }}
         >
           {title}

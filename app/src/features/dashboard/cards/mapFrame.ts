@@ -6,7 +6,7 @@ import { seededRandom } from '../../../lib/seededRandom'
 // horizontal ones in front (casting a shadow on the vertical ones), a nail through each crossing; each plank outlined, its grain running
 // along it, its outer row lighter. The paper (paperPixels): speckled, darker along its torn edge, on the dark backing behind it. The marks
 // (paperMarks): its folds, and a few cracks running in from its edge. Each map has its own paper (its id is the seed); the frame is the same
-// on every card. FRAME_SIZE × FRAME_SIZE pixels of FRAME_PIXEL px each: the size of the Dashboard's other pixel art (book.ts).
+// on every card. FRAME_SIZE × FRAME_SIZE pixels of FRAME_PIXEL px each: the cards' pixel, so four cards fill a Dashboard row (book.ts uses it too).
 
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const FRAME = {
@@ -39,9 +39,9 @@ export const FRAME = {
 } as const
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** Pixels across (and down): the 192px card at FRAME_PIXEL px a pixel */
+/** Pixels across (and down): the 240px card at FRAME_PIXEL px a pixel */
 export const FRAME_SIZE = 64
-export const FRAME_PIXEL = 3
+export const FRAME_PIXEL = 3.75
 /** How wide a plank is (pixels): its outline on each side and two of wood */
 const PLANK = 4
 /** How far the planks' ends stick out past the ones they cross (pixels) */

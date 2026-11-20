@@ -5,10 +5,14 @@ import Button from '../../components/ui/buttons/Button'
 import DashboardRelics from '../../features/dashboard/DashboardRelics'
 import EditIconsPreview from '../../features/dashboard/EditIconsPreview'
 import QuillIconsPreview from '../../features/dashboard/QuillIconsPreview'
-import BigCreateButton from '../../features/dashboard/BigCreateButton'
+import BigCreateButton, { BIG_BUTTON_W } from '../../features/dashboard/BigCreateButton'
+import { STONE_PIXEL } from '../../features/dashboard/stoneButton'
 import DashboardSections from '../../features/dashboard/DashboardSections'
 import QuickCreate from '../../features/notes/QuickCreate'
 import { authClient } from '../../lib/auth-client'
+
+/** The two big Create buttons side by side (px): their width each and the gap between them (gap-6). The note input is as wide */
+const TWO_BUTTONS = 2 * BIG_BUTTON_W * STONE_PIXEL + 24
 
 // Also a workspace panel (src/panels.ts): no <main> here, AppLayout provides it
 /**
@@ -54,14 +58,15 @@ export default function DashboardPage() {
                     {/* A greeting, then the page's main input, low on the screen with room above them */}
                     <div className="mt-[18vh] flex flex-col items-center gap-12">
                         <h1 className="text-center text-5xl font-semibold tracking-tight">Hello{firstName ? `, ${firstName}` : ''}</h1>
-                        <div className="w-full">
-                            <QuickCreate />
+                        {/* As wide as the two Create buttons under it, and twice as tall as a field */}
+                        <div className="w-full" style={{ maxWidth: TWO_BUTTONS }}>
+                            <QuickCreate tall />
                         </div>
                     </div>
                     {/* The two big Create buttons, side by side under the input (they open the Create modal, the second on its Map tab) */}
-                    <div className="flex flex-wrap items-start justify-center gap-6">
+                    <div className="mx-auto flex w-full items-start justify-center gap-6" style={{ maxWidth: TWO_BUTTONS }}>
                         <BigCreateButton label="Create" />
-                        <BigCreateButton label="Create map" kind="maps" width={130} />
+                        <BigCreateButton label="Create map" kind="maps" />
                     </div>
                 </div>
 

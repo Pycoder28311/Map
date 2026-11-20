@@ -1,7 +1,7 @@
 // The Dashboard's big Create button in pixel art (BigCreateButton.tsx): a pale stone slab, like an old game's menu button, its edges copied
 // from the reference: a light rim round the face's top and left, bevels and the slab's dark thickness down and to the right of it, a
 // shadow beside and under that, every corner stepped. In two parts, so the face can sink when pressed: FACE (the face and its rim) and
-// BASE (the bevels, the thickness, the shadow). its width × STONE_H pixels of STONE_PIXEL px each: the size of the
+// BASE (the bevels, the thickness, the shadow). its width × height in pixels of STONE_PIXEL px each: the size of the
 // Dashboard's other pixel art (cards/book.ts).
 
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -61,10 +61,8 @@ const BOTTOM: [left: string, right: string][] = [
   ['......SSSSSS', 'SSSSSSS...'],
   ['.......SSSSS', 'SSSSS.....'],
 ]
-/** The drawing's height in pixels (as many middle rows as keep the reference's proportions); its width is each button's (room for its word) */
-export const STONE_H = 40
-/** The rows down to the face's bottom bevel: its word is centred on them */
-export const STONE_FACE_ROWS = STONE_H - 7
+/** The rows under the face (its bevels, the thickness, the shadow): its word is centred on the rows above them */
+export const STONE_BELOW_FACE = 7
 /** How far (pixels) the face sinks while pressed */
 export const STONE_PRESS = 2
 
@@ -73,9 +71,9 @@ type Rect = [x: number, y: number, w: number, h: number, fill: string]
 /** What moves when pressed (the face and its rim); the rest stays (the bevels, the thickness, the shadow) */
 const ON_FACE = new Set(['R', 'F'])
 
-/** Every row of a slab `width` pixels wide, as a string of letters */
-function rowsOf(width: number): string[] {
-  return [...TOP, ...Array.from({ length: STONE_H - TOP.length - BOTTOM.length }, () => MIDDLE), ...BOTTOM].map(([left, right]) =>
+/** Every row of a slab `width` × `height` pixels, as a string of letters (the middle rows repeat as many times as the height needs) */
+function rowsOf(width: number, height: number): string[] {
+  return [...TOP, ...Array.from({ length: height - TOP.length - BOTTOM.length }, () => MIDDLE), ...BOTTOM].map(([left, right]) =>
     left + left[left.length - 1].repeat(width - left.length - right.length) + right,
   )
 }
@@ -96,8 +94,8 @@ function pixels(rows: string[], palette: StonePalette, keep: (letter: string) =>
   return rects
 }
 
-/** A slab `width` pixels wide in `palette`: its face and rim (they sink when pressed), and its base (the bevels, the thickness, the shadow) */
-export function stonePixels(width: number, palette: StonePalette): { face: Rect[]; base: Rect[] } {
-  const rows = rowsOf(width)
+/** A slab `width` × `height` pixels in `palette`: its face and rim (they sink when pressed), and its base (the bevels, the thickness, the shadow) */
+export function stonePixels(width: number, height: number, palette: StonePalette): { face: Rect[]; base: Rect[] } {
+  const rows = rowsOf(width, height)
   return { face: pixels(rows, palette, (l) => ON_FACE.has(l)), base: pixels(rows, palette, (l) => !ON_FACE.has(l)) }
 }

@@ -33,7 +33,8 @@ const FIELD = 'w-full resize-none bg-transparent px-4 text-fg outline-none place
  * Opening, Create slides in at the bottom right, with the format buttons on the left. Create (or Ctrl/⌘+Enter) makes the note
  * on the server (and says so if it could not); a click outside or Esc folds the card back, keeping the draft.
  */
-export default function QuickCreate() {
+/** `tall`: twice a field's height (44px → 88px: more room above and below its line), as on the Dashboard over its big buttons */
+export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
   const rootRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLInputElement>(null)
   const editorRef = useRef<Editor | null>(null)
@@ -194,7 +195,7 @@ export default function QuickCreate() {
 
         {/* Folded, the text shows its first line only; open, it grows with its lines. Folded, the Note / Article button is at its right, a dropdown
             like the rows' Sort by, as far from the right edge as from the top and bottom (out of the way once open: the two buttons are beside Create) */}
-        <div ref={rowRef} className={`${FIELD} relative flex items-start py-3 text-body`}>
+        <div ref={rowRef} className={`${FIELD} relative flex items-start ${tall ? 'py-[34px]' : 'py-3'} text-body`}>
           <div
             style={{ marginInlineEnd: open ? 0 : kindBox.width + kindBox.gap - 16 + 8 }}
             className={`min-h-[1lh] min-w-0 flex-1 transition-[margin] ${ANIMATE} ${open ? 'max-h-[50vh] overflow-y-auto' : 'max-h-[1lh] overflow-hidden'}`}
