@@ -4,9 +4,9 @@ import PixelRects from './cards/PixelRects'
 import { ARTICLE_PAPER, articleFrames, MAP_PAPER, mapFrames, SPRITE_H, SPRITE_W } from './createSprites'
 import { STONE_BELOW_FACE, STONE_GREEN, STONE_PIXEL, STONE_PRESS, stonePixels, type StonePalette } from './stoneButton'
 
-/** The buttons' size in pixels of the drawing (STONE_PIXEL px each): 2:1, 300 × 150px */
+/** The buttons' size in pixels of the drawing (STONE_PIXEL px each): a little under 2:1, 300 × 138px */
 export const BIG_BUTTON_W = 100
-export const BIG_BUTTON_H = 50
+export const BIG_BUTTON_H = 46
 
 /** Where each animation sits on the face (pixels of the drawing): its paper centred on the face's height, as far from the face's left
  *  edge as from its top */
@@ -49,7 +49,7 @@ function useFrame(count: number): number {
 }
 
 /**
- * A big Create button of the Dashboard: a stone slab in pixel art (stoneButton.ts: its edges copied from the reference), 2:1. On the left
+ * A big Create button of the Dashboard: a stone slab in pixel art (stoneButton.ts: its edges copied from the reference), a little under 2:1. On the left
  * half of its face a little looping pixel animation in the slab's own colours shows what it makes (createSprites.ts); on the right half
  * its words, in two lines, in the blackletter pixel font. Its face (and all on it) sinks into the slab's thickness while pressed and is a
  * touch lighter on hover. It opens the Create modal (openCreate) on `kind`'s tab. Narrower on a small screen (its pixels scale down).

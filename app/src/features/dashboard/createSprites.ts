@@ -66,12 +66,20 @@ function quill([x, y]: Point, p: StonePalette): Rect[] {
   return rects
 }
 
+/** A 4 × 4 ordered dither: which pixels of a ring show, so a fade reads as an even gradient rather than noise */
+const BAYER = [
+  [0, 8, 2, 10],
+  [12, 4, 14, 6],
+  [3, 11, 1, 9],
+  [15, 7, 13, 5],
+]
+
 /**
- * A sheet of old paper that blends into the button: its face in the button's light rim colour, lightly speckled, its edges dissolving
- * into the button's face in a dither (every other pixel on its outermost ring, three in four on the next), so it has no hard border; the
- * same speckles every time (`seed`)
+ * A sheet of old paper that blends into the button: its face in the button's light rim colour, lightly speckled, its edges fading into
+ * the button's face over `fade` rings of pixels (an ordered dither, each ring further in a little fuller), so it has no border; the same
+ * speckles every time (`seed`)
  */
-function sheet(x: number, y: number, w: number, h: number, p: StonePalette, seed = 1): Rect[] {
+function sheet(x: number, y: number, w: number, h: number, p: StonePalette, seed = 1, fade = 2): Rect[] {
   let n = seed * 7919
   const next = () => (n = (n * 1103515245 + 12345) % 2147483648) / 2147483648
   const rects: Rect[] = []
@@ -79,9 +87,8 @@ function sheet(x: number, y: number, w: number, h: number, p: StonePalette, seed
     for (let i = 0; i < w; i++) {
       const ring = Math.min(i, j, w - 1 - i, h - 1 - j)
       const roll = next()
-      if (ring === 0 && (i + j) % 2 === 1) continue
-      if (ring === 1 && (i + 2 * j) % 4 === 0) continue
-      rects.push([x + i, y + j, 1, 1, ring > 1 && roll < 0.07 ? p.face : p.rim])
+      if (ring < fade && BAYER[j % 4][i % 4] >= ((ring + 1) / (fade + 1)) * 16) continue
+      rects.push([x + i, y + j, 1, 1, ring >= fade && roll < 0.07 ? p.face : p.rim])
     }
   }
   return rects
@@ -105,7 +112,7 @@ function inside([x, y]: Point, corners: Point[]): boolean {
 export function mapFrames(p: StonePalette): Rect[][] {
   const [sx, sy, sw, sh] = MAP_PAPER
   const paper: Rect[] = [
-    ...sheet(sx, sy, sw, sh, p, 3),
+    ...sheet(sx, sy, sw, sh, p, 3, 5),
     // the fold
     [sx + 16, sy + 1, 1, sh - 2, p.face],
     // ripples on the sea
