@@ -1,14 +1,14 @@
 // The Dashboard's background (NightBackdrop.tsx): at the top, the night sky over the distant castle (a crop of the old night picture,
-// assets/dashboard-sky.jpg: its clouds and stars, the lit castle across the valley, the river), fading into a dark pixel-art wooden
-// surface (boards, seams, grain, knots) over a brown base; the page's edges a little darker. The wood is a small see-through SVG tile of
+// assets/dashboard-sky.jpg: its clouds and stars, the lit castle across the valley, the river), fading into a dark pixel-art slate
+// floor (flagstones, mortar, cracks) over a cool charcoal base; the page's edges a little darker. The floor is a small see-through SVG tile of
 // BACKDROP_PIXEL px pixels, drawn here from a fixed seed, so it is the same every time. Pure.
 
 // ── The colours and sizes to change ──────────────────────────────────────────────────────────────────────────────────────────────
 export const BACKDROP = {
-  /** The page's dark base: a deep night blue warmed toward brown */
-  base: '#1c1714',
+  /** The page's dark base: cool charcoal slate (warm cards and brass stand out on it) */
+  base: '#1a1c20',
 } as const
-/** One pixel of the wood and the horizon on screen (px) */
+/** One pixel of the floor and the horizon on screen (px) */
 export const BACKDROP_PIXEL = 5
 /** The sky picture: its width ÷ height, and where (as a share of its height) it starts fading into the base, and how much darker it is
  *  made (so the greeting reads on it) */
@@ -30,38 +30,65 @@ function seeded(start: number) {
 }
 
 /**
- * A dark wooden table, faint and see-through (so the base's colour shows through): wide horizontal boards, each with a soft seam under
- * it and its end at a different place from the boards above and below, and low-contrast grain streaks along it; no knots
+ * A dark slate floor, faint and see-through (so the base's colour shows through): rows of flagstones of different widths, the joints of
+ * each row away from the row above's, between them dark mortar; each stone a little lighter or darker than its neighbours, a faint light
+ * edge along its top and left, a crack in some, a chipped corner in a few. The rows' widths add up to the tile's, so it tiles without a seam
  */
-function wood(): { image: string; w: number; h: number } {
-  const next = seeded(9)
+function flagstones(): { image: string; w: number; h: number } {
+  const next = seeded(21)
   const W = 128
-  const BOARD = 10
-  const BOARDS = 4
-  const H = BOARD * BOARDS
+  const ROWS = [14, 12, 15, 13]
+  const H = ROWS.reduce((a, b) => a + b, 0)
   let body = ''
-  for (let b = 0; b < BOARDS; b++) {
-    const top = b * BOARD
-    // the board's tone, a little different from its neighbours'
-    body += rect(0, top, W, BOARD, b % 2 ? 'rgb(255 205 160 / 0.025)' : 'rgb(0 0 0 / 0.04)')
-    // grain streaks along it, long and faint
-    for (let row = top; row < top + BOARD - 1; row++) {
-      for (let x = Math.floor(next() * 10); x < W; x += 10 + Math.floor(next() * 18)) {
-        const length = Math.min(6 + Math.floor(next() * 18), W - x)
-        body += rect(x, row, length, 1, next() < 0.65 ? 'rgb(0 0 0 / 0.08)' : 'rgb(255 218 180 / 0.035)')
-      }
+  let top = 0
+  ROWS.forEach((rowH, r) => {
+    // the stones of this row: widths of 16–34, the last one closing the row; the row starts part way into a stone, staggered
+    const widths: number[] = []
+    let left = W
+    while (left > 0) {
+      const w = left < 40 ? left : 16 + Math.floor(next() * 19)
+      widths.push(Math.min(w, left))
+      left -= Math.min(w, left)
     }
-    // the seam under it, and where it ends (its joint with the next board along), staggered from board to board
-    body += rect(0, top + BOARD - 1, W, 1, 'rgb(0 0 0 / 0.22)')
-    const joint = (b * 53 + 30) % W
-    body += rect(joint, top, 1, BOARD - 1, 'rgb(0 0 0 / 0.18)')
-  }
+    let x = (r * 23) % W
+    for (const w of widths) {
+      const stone = (sx: number, sy: number, sw: number, sh: number, fill: string) => {
+        // a rectangle in the stone, wrapped round the tile's right edge
+        const at = (x + sx) % W
+        body += rect(at, top + sy, Math.min(sw, W - at), sh, fill)
+        if (at + sw > W) body += rect(0, top + sy, at + sw - W, sh, fill)
+      }
+      // its tone
+      const tone = next()
+      stone(0, 0, w, rowH, tone < 0.4 ? 'rgb(0 0 0 / 0.07)' : tone < 0.75 ? 'rgb(200 210 230 / 0.03)' : 'rgb(200 210 230 / 0.055)')
+      // a faint light edge along its top and left
+      stone(1, 1, w - 2, 1, 'rgb(220 228 240 / 0.05)')
+      stone(1, 1, 1, rowH - 2, 'rgb(220 228 240 / 0.04)')
+      // the mortar: along its bottom and its right side
+      stone(0, rowH - 1, w, 1, 'rgb(0 0 0 / 0.42)')
+      stone(w - 1, 0, 1, rowH, 'rgb(0 0 0 / 0.42)')
+      // a crack now and then: a few pixels stepping down across it
+      if (next() < 0.35) {
+        let cx = 3 + Math.floor(next() * (w - 8))
+        let cy = 2 + Math.floor(next() * 3)
+        for (let k = 0; k < 4 + Math.floor(next() * 5) && cy < rowH - 2 && cx < w - 2; k++) {
+          stone(cx, cy, 1, 1, 'rgb(0 0 0 / 0.3)')
+          if (next() < 0.5) cx++
+          cy++
+        }
+      }
+      // a chipped corner now and then (its top right)
+      if (next() < 0.25) stone(w - 3, 0, 2, 2, 'rgb(0 0 0 / 0.3)')
+      x = (x + w) % W
+    }
+    top += rowH
+  })
   return { image: tile(W, H, body), w: W * U, h: H * U }
 }
 
 /**
  * The horizon where the sky ends: a dark silhouette of rolling hills with a ragged treeline on them, in the base's colour, so the sky
- * meets the table at a horizon rather than fading into it. A tile repeated across, solid below its outline
+ * meets the floor at a horizon rather than fading into it. A tile repeated across, solid below its outline
  */
 export function horizonStyle(): Record<string, string> {
   const W = 160
@@ -78,15 +105,15 @@ export function horizonStyle(): Record<string, string> {
 }
 
 
-/** The CSS of the wooden surface (under the sky picture, which fades into it) */
-export function woodStyle(): Record<string, string> {
-  const g = wood()
+/** The CSS of the slate floor (under the sky picture, which fades into it) */
+export function floorStyle(): Record<string, string> {
+  const g = flagstones()
   return { backgroundImage: g.image, backgroundRepeat: 'repeat', backgroundSize: `${g.w}px ${g.h}px` }
 }
 
 /** The page's edges a little darker, over everything */
 export const VIGNETTE = 'radial-gradient(ellipse 80% 70% at 50% 40%, transparent 58%, rgb(0 0 0 / 0.5) 100%)'
 
-/** A lantern's warm light pooled on the table round the note input and the Create buttons (its middle `top` px down the page) */
+/** A lantern's warm light pooled on the floor round the note input and the Create buttons (its middle `top` px down the page) */
 export const lanternGlow = (top: number) =>
   `radial-gradient(ellipse 620px 300px at 50% ${top}px, rgb(255 180 90 / 0.09), rgb(255 170 80 / 0.04) 45%, transparent 75%)`
