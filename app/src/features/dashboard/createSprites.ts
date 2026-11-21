@@ -9,7 +9,7 @@ import type { StonePalette } from './stoneButton'
 export const SPRITE_W = 40
 export const SPRITE_H = 38
 /** Where each sheet of paper is on its animation's grid (x, y, width, height): the button places it by its paper */
-export const MAP_PAPER = [1, 4, 33, 28] as const
+export const MAP_PAPER = [1, 1, 34, 35] as const
 export const ARTICLE_PAPER = [3, 5, 27, 31] as const
 
 type Rect = [x: number, y: number, w: number, h: number, fill: string]
@@ -112,7 +112,7 @@ function inside([x, y]: Point, corners: Point[]): boolean {
 export function mapFrames(p: StonePalette): Rect[][] {
   const [sx, sy, sw, sh] = MAP_PAPER
   const paper: Rect[] = [
-    ...sheet(sx, sy, sw, sh, p, 3, 5),
+    ...sheet(sx, sy, sw, sh, p, 3, 7),
     // the fold
     [sx + 16, sy + 1, 1, sh - 2, p.face],
     // ripples on the sea
