@@ -3,7 +3,7 @@ import { openCreate } from '../create/openCreate'
 import PixelRects from './cards/PixelRects'
 import { ARTICLE_PAPER, articleFrames, MAP_PAPER, mapFrames, SPRITE_H, SPRITE_W } from './createSprites'
 import { mapFacePixels, mapPencilFrames } from './mapFace'
-import { STONE_BELOW_FACE, STONE_GREEN, STONE_PIXEL, STONE_PRESS, stonePixels, type StonePalette } from './stoneButton'
+import { STONE_BELOW_FACE, STONE_GOLD, STONE_PIXEL, STONE_PRESS, stonePixels, type StonePalette } from './stoneButton'
 
 /** The buttons' size in pixels of the drawing (STONE_PIXEL px each): 16:7, 288 × 126px */
 export const BIG_BUTTON_W = 96
@@ -69,7 +69,7 @@ function useFrame(count: number): number {
  * the whole face inside the rim is a pixel map (mapFace.ts); on the right half its words, in two lines, in the blackletter pixel font. Its face (and all on it) sinks into the slab's thickness while pressed and is a
  * touch lighter on hover. It opens the Create modal (openCreate) on `kind`'s tab. Narrower on a small screen (its pixels scale down).
  */
-export default function BigCreateButton({ lines, art, kind, palette = STONE_GREEN }: Props) {
+export default function BigCreateButton({ lines, art, kind, palette = STONE_GOLD }: Props) {
   const width = BIG_BUTTON_W
   const height = BIG_BUTTON_H
   const { face, base } = useMemo(() => stonePixels(width, height, palette), [width, height, palette])
@@ -128,7 +128,7 @@ export default function BigCreateButton({ lines, art, kind, palette = STONE_GREE
             height: pctY(faceRows),
             color: palette.ink,
             // on the map, a light outline so the words read over the land
-            textShadow: map ? '0 0 2px rgb(236 242 222 / 0.95), 0 0 6px rgb(236 242 222 / 0.6)' : undefined,
+            textShadow: map ? '0 0 2px rgb(250 238 205 / 0.95), 0 0 6px rgb(250 238 205 / 0.6)' : undefined,
           }}
         >
           <span>{lines[0]}</span>

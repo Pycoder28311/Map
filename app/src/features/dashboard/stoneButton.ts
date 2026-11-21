@@ -31,6 +31,18 @@ export const STONE_GREEN: StonePalette = {
   shadow: 'rgb(8 12 6 / 0.5)',
   ink: '#16220f',
 }
+
+/** Gold stone, the floating Create button's gold (styles/buttons.css: --color-gold, --color-gold-dark): the Dashboard's Create buttons */
+export const STONE_GOLD: StonePalette = {
+  rim: '#f6d580',
+  face: '#e8b84a',
+  bevel: '#c4912f',
+  bevelDark: '#9a6f22',
+  depth: '#5c4014',
+  depthLow: '#45300e',
+  shadow: 'rgb(14 9 3 / 0.5)',
+  ink: '#2e1e08',
+}
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 export const STONE_PIXEL = 3
