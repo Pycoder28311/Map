@@ -9,10 +9,10 @@ export const BIG_BUTTON_W = 96
 export const BIG_BUTTON_H = 42
 
 /** Where each animation sits on the face (pixels of the drawing): its paper centred on the face's height, as far from the face's left
- *  edge as from its top (the map's paper is the face's full height: from its very top left) */
+ *  edge as from its top, and inside its light rim (the map's paper runs from the rim to the bottom bevel) */
 function spriteAt(paper: readonly [number, number, number, number]): [x: number, y: number] {
   const [px, py, , ph] = paper
-  const margin = Math.max(1, Math.floor((BIG_BUTTON_H - STONE_BELOW_FACE - ph) / 2))
+  const margin = Math.max(3, Math.floor((BIG_BUTTON_H - STONE_BELOW_FACE - ph) / 2))
   return [margin - px, margin - py]
 }
 const SPRITE_AT: Record<'map' | 'article', [x: number, y: number]> = { map: spriteAt(MAP_PAPER), article: spriteAt(ARTICLE_PAPER) }

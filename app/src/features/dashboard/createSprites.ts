@@ -9,7 +9,7 @@ import type { StonePalette } from './stoneButton'
 export const SPRITE_W = 40
 export const SPRITE_H = 38
 /** Where each sheet of paper is on its animation's grid (x, y, width, height): the button places it by its paper */
-export const MAP_PAPER = [1, 1, 34, 35] as const
+export const MAP_PAPER = [1, 1, 34, 32] as const
 export const ARTICLE_PAPER = [3, 5, 27, 31] as const
 
 type Rect = [x: number, y: number, w: number, h: number, fill: string]
@@ -94,6 +94,31 @@ function sheet(x: number, y: number, w: number, h: number, p: StonePalette, seed
   return rects
 }
 
+/** A colour between two hex colours (`t` 0: the first, 1: the second) */
+function mix(a: string, b: string, t: number): string {
+  const ch = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16)
+  return `#${[0, 1, 2].map((i) => Math.round(ch(a, i) + (ch(b, i) - ch(a, i)) * t).toString(16).padStart(2, '0')).join('')}`
+}
+
+/**
+ * A sheet of old paper whose right edge melts into the button: lightly speckled, its last `fade` columns a smooth gradient from the
+ * paper's colour to the button's face (each column a step between them), its other edges plain; the same speckles every time (`seed`)
+ */
+function fadingSheet(x: number, y: number, w: number, h: number, p: StonePalette, seed: number, fade: number): Rect[] {
+  let n = seed * 7919
+  const next = () => (n = (n * 1103515245 + 12345) % 2147483648) / 2147483648
+  const rects: Rect[] = []
+  for (let i = 0; i < w; i++) {
+    // How far into the fade this column is: 0 before it, then up to 1 (the button's face itself) at the right edge
+    const t = Math.min(1, Math.max(0, (i - (w - fade - 1)) / fade))
+    const paper = mix(p.rim, p.face, t)
+    rects.push([x + i, y, 1, h, paper])
+    // speckles, fading out with the paper
+    for (let j = 0; j < h; j++) if (next() < 0.07 * (1 - t)) rects.push([x + i, y + j, 1, 1, p.face])
+  }
+  return rects
+}
+
 /** Whether (x, y) is inside the polygon through these corners */
 function inside([x, y]: Point, corners: Point[]): boolean {
   let hit = false
@@ -106,13 +131,14 @@ function inside([x, y]: Point, corners: Point[]): boolean {
 }
 
 /**
- * A pencil drawing a little map on an old sheet (speckled, a fold down its middle, ripples on its sea): first an island's coast; then the
- * island is shaded in, with two little mountains on it; then a dashed route from it to an X
+ * A pencil drawing a little map on an old sheet (speckled, a fold down its middle, ripples on its sea, its right edge melting into the
+ * button in a smooth gradient): first an island's coast; then the island is shaded in, with two little mountains on it; then a dashed
+ * route from it to an X
  */
 export function mapFrames(p: StonePalette): Rect[][] {
   const [sx, sy, sw, sh] = MAP_PAPER
   const paper: Rect[] = [
-    ...sheet(sx, sy, sw, sh, p, 3, 7),
+    ...fadingSheet(sx, sy, sw, sh, p, 3, 14),
     // the fold
     [sx + 16, sy + 1, 1, sh - 2, p.face],
     // ripples on the sea
