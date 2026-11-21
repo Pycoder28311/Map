@@ -1,42 +1,28 @@
-import type { Editor } from "@tiptap/react";
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
-import Button from "../../components/ui/buttons/Button";
-import RichTextToolbar from "../../components/ui/editors/RichTextToolbar";
-import RichTextField from "../../components/ui/fields/RichTextField";
-import { LuChevronDown } from "react-icons/lu";
-import ExtendMenu, {
-  type ExtendMenuItem,
-} from "../../components/ui/overlays/ExtendMenu";
-import { actionsOf } from "../../lib/resource/hooks";
-import { resourcesWith } from "../../resources/registry";
-import InputBox from "../../components/ui/fields/InputBox";
-import TitleInput from "../../components/ui/fields/TitleInput";
-import { isFirstLine } from "./editorKeys";
+import type { Editor } from '@tiptap/react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react'
+import Button from '../../components/ui/buttons/Button'
+import RichTextToolbar from '../../components/ui/editors/RichTextToolbar'
+import RichTextField from '../../components/ui/fields/RichTextField'
+import { LuChevronDown } from 'react-icons/lu'
+import ExtendMenu, { type ExtendMenuItem } from '../../components/ui/overlays/ExtendMenu'
+import { actionsOf } from '../../lib/resource/hooks'
+import { resourcesWith } from '../../resources/registry'
+import InputBox from '../../components/ui/fields/InputBox'
+import TitleInput from '../../components/ui/fields/TitleInput'
+import { isFirstLine } from './editorKeys'
 
 // Full class strings so Tailwind can detect them at build time.
-const ANIMATE = "duration-200 ease-out motion-reduce:transition-none";
+const ANIMATE = 'duration-200 ease-out motion-reduce:transition-none'
 // A row that grows from nothing (the title on top, the footer below): its grid row goes 0fr → 1fr
-const GROW = `grid transition-[grid-template-rows,opacity] ${ANIMATE}`;
+const GROW = `grid transition-[grid-template-rows,opacity] ${ANIMATE}`
 // Starts once the bottom part has grown (its duration, in ANIMATE)
-const AFTER_GROW = "delay-200";
+const AFTER_GROW = 'delay-200'
 // What the input can make: the resources with the quickCreate surface (the notes and the articles), in the UI config's order
-const QUICK = resourcesWith("quickCreate");
-const KINDS: ExtendMenuItem<string>[] = QUICK.map((r) => ({
-  value: r.name,
-  label: r.ui.label,
-  icon: r.ui.icon,
-}));
+const QUICK = resourcesWith('quickCreate')
+const KINDS: ExtendMenuItem<string>[] = QUICK.map((r) => ({ value: r.name, label: r.ui.label, icon: r.ui.icon }))
 // The last kind chosen, kept for the session (not across reloads)
-let lastKind = QUICK[0].name;
-const FIELD =
-  "w-full resize-none bg-transparent px-4 text-fg outline-none placeholder:text-fg-subtle";
+let lastKind = QUICK[0].name
+const FIELD = 'w-full resize-none bg-transparent px-4 text-fg outline-none placeholder:text-fg-subtle'
 
 /**
  * The wide "Take a note…" input (Dashboard), which makes a note or an article: folded, a Note / Article dropdown at the right of the text; open, two buttons beside Create. Clicked, it comes in front with a subtle shadow and a
@@ -49,178 +35,149 @@ const FIELD =
  */
 /** The big Create buttons' corners (features/dashboard/stoneButton.ts: their rows step in 4, 2, 2, 1, 1 of their 3px pixels at each corner),
  *  as a clip-path for the tall box, so the two match */
-const STEPS = [4, 2, 2, 1, 1];
+const STEPS = [4, 2, 2, 1, 1]
 /** The tall box's own colours: a much lighter warm stone, its border, and its faint and muted words */
-const TALL = {
-  bg: "#5a524b",
-  border: "#8c8178",
-  subtle: "#bdb3a9",
-  muted: "#d6cdc4",
-} as const;
+const TALL = { bg: '#5a524b', border: '#8c8178', subtle: '#bdb3a9', muted: '#d6cdc4' } as const
 const STEPPED_CORNERS = (() => {
-  const u = 3;
-  const pts: string[] = [];
+  const u = 3
+  const pts: string[] = []
   // top left, from the left edge up to the top edge
-  STEPS.slice()
-    .reverse()
-    .forEach((indent, k) => {
-      const y = (STEPS.length - 1 - k) * u;
-      pts.push(`${indent * u}px ${y + u}px`, `${indent * u}px ${y}px`);
-    });
+  STEPS.slice().reverse().forEach((indent, k) => {
+    const y = (STEPS.length - 1 - k) * u
+    pts.push(`${indent * u}px ${y + u}px`, `${indent * u}px ${y}px`)
+  })
   // (from the left edge itself, below the steps)
-  const tl = [`0px ${STEPS.length * u}px`, ...pts];
-  const mirrorX = (p: string) =>
-    p.replace(/^(\d+)px/, (_, x) => `calc(100% - ${x}px)`);
-  const mirrorY = (p: string) =>
-    p.replace(/ (\d+)px$/, (_, y) => ` calc(100% - ${y}px)`);
-  const tr = tl.slice().reverse().map(mirrorX);
-  const br = tl.map((p) => mirrorY(mirrorX(p)));
-  const bl = tl.slice().reverse().map(mirrorY);
-  return `polygon(${[...tl, ...tr, ...br, ...bl].join(", ")})`;
-})();
+  const tl = [`0px ${STEPS.length * u}px`, ...pts]
+  const mirrorX = (p: string) => p.replace(/^(\d+)px/, (_, x) => `calc(100% - ${x}px)`)
+  const mirrorY = (p: string) => p.replace(/ (\d+)px$/, (_, y) => ` calc(100% - ${y}px)`)
+  const tr = tl.slice().reverse().map(mirrorX)
+  const br = tl.map((p) => mirrorY(mirrorX(p)))
+  const bl = tl.slice().reverse().map(mirrorY)
+  return `polygon(${[...tl, ...tr, ...br, ...bl].join(', ')})`
+})()
 
 /** `tall`: notes only (no Note / Article choice), its text two lines tall from the start (both shown even folded), and its bottom bar (format
  *  buttons, Create) always shown as a second row; lighter, its corners stepped like the Create buttons', as on the Dashboard over its big buttons; else one line, and the bar only while open */
 export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
-  const rootRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLInputElement>(null);
-  const editorRef = useRef<Editor | null>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const titleBoxRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
+  const rootRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLInputElement>(null)
+  const editorRef = useRef<Editor | null>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const titleBoxRef = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState(false)
+  const [title, setTitle] = useState('')
   // The text is HTML ('' when it has no words); `drafts` starts a fresh editor after Create
-  const [text, setText] = useState("");
-  const [drafts, setDrafts] = useState(0);
-  const [editor, setEditor] = useState<Editor | null>(null);
-  const [kindName, setKindName] = useState(lastKind);
+  const [text, setText] = useState('')
+  const [drafts, setDrafts] = useState(0)
+  const [editor, setEditor] = useState<Editor | null>(null)
+  const [kindName, setKindName] = useState(lastKind)
   // tall (the Dashboard's): notes only, no choice of kind
-  const kind =
-    (tall
-      ? QUICK.find((r) => r.name === "notes")
-      : QUICK.find((r) => r.name === kindName)) ?? QUICK[0];
-  const textPlaceholder =
-    kind.ui.fields.find((f) => !f.heading)?.placeholder ?? "Take a note…";
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const kind = (tall ? QUICK.find((r) => r.name === 'notes') : QUICK.find((r) => r.name === kindName)) ?? QUICK[0]
+  const textPlaceholder = kind.ui.fields.find((f) => !f.heading)?.placeholder ?? 'Take a note…'
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   // The folded card's height (the place it keeps in the page) and the title's (how far the card moves up)
-  const [size, setSize] = useState({ folded: 0, title: 0 });
+  const [size, setSize] = useState({ folded: 0, title: 0 })
   // The Note / Article button: its width, and its distance from the row's top and bottom, which it also keeps from the card's right edge
-  const rowRef = useRef<HTMLDivElement>(null);
-  const kindRef = useRef<HTMLDivElement>(null);
-  const [kindBox, setKindBox] = useState({ width: 0, gap: 4 });
+  const rowRef = useRef<HTMLDivElement>(null)
+  const kindRef = useRef<HTMLDivElement>(null)
+  const [kindBox, setKindBox] = useState({ width: 0, gap: 4 })
 
-  const canCreate = title.trim() !== "" || text !== "";
+  const canCreate = title.trim() !== '' || text !== ''
   // The bottom bar (format buttons, kinds, Create): always there when tall, else only while open
-  const bar = open || tall;
+  const bar = open || tall
 
   // Measured while folded (open, the button is hidden): the button is centred in the text row, so its top and bottom gaps are equal
   useLayoutEffect(() => {
-    const row = rowRef.current;
-    const slot = kindRef.current;
-    if (!row || !slot) return;
+    const row = rowRef.current
+    const slot = kindRef.current
+    if (!row || !slot) return
     const measure = () => {
-      if (row.offsetHeight > 0 && slot.offsetHeight > 0)
-        setKindBox({
-          width: slot.offsetWidth,
-          gap: Math.max(0, (row.offsetHeight - slot.offsetHeight) / 2),
-        });
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(slot);
-    return () => observer.disconnect();
-  }, [kindName]);
+      if (row.offsetHeight > 0 && slot.offsetHeight > 0) setKindBox({ width: slot.offsetWidth, gap: Math.max(0, (row.offsetHeight - slot.offsetHeight) / 2) })
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(slot)
+    return () => observer.disconnect()
+  }, [kindName])
 
   // Open: a press anywhere outside folds it back (the dropdown's menu is inside it in the DOM)
   useEffect(() => {
-    if (!open) return;
+    if (!open) return
     const onDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("pointerdown", onDown);
-    return () => document.removeEventListener("pointerdown", onDown);
-  }, [open]);
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', onDown)
+    return () => document.removeEventListener('pointerdown', onDown)
+  }, [open])
 
   // Measured once: both are fixed (folded, the text shows one line; the title's height never changes)
   useLayoutEffect(() => {
     setSize({
       folded: cardRef.current?.offsetHeight ?? 0,
       title: titleBoxRef.current?.scrollHeight ?? 0,
-    });
-  }, []);
+    })
+  }, [])
 
   const fold = () => {
-    setOpen(false);
-    const active = document.activeElement;
-    if (active instanceof HTMLElement && rootRef.current?.contains(active))
-      active.blur();
-  };
+    setOpen(false)
+    const active = document.activeElement
+    if (active instanceof HTMLElement && rootRef.current?.contains(active)) active.blur()
+  }
 
   const create = async () => {
-    if (!canCreate || busy) return;
-    setBusy(true);
-    setError(null);
+    if (!canCreate || busy) return
+    setBusy(true)
+    setError(null)
     try {
-      await actionsOf(kind).create({ title: title.trim(), content: text });
-      setTitle("");
-      setText("");
-      setDrafts((n) => n + 1);
-      fold();
+      await actionsOf(kind).create({ title: title.trim(), content: text })
+      setTitle('')
+      setText('')
+      setDrafts((n) => n + 1)
+      fold()
     } catch (e) {
       // The draft stays, so nothing typed is lost
-      setError(
-        e instanceof Error
-          ? e.message
-          : `Could not create the ${kind.ui.label.toLowerCase()}.`,
-      );
+      setError(e instanceof Error ? e.message : `Could not create the ${kind.ui.label.toLowerCase()}.`)
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      void create();
-    } else if (
-      e.key === "Escape" &&
-      !rootRef.current?.querySelector(
-        ':popover-open, [aria-haspopup="menu"][aria-expanded="true"]',
-      )
-    ) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault()
+      void create()
+    } else if (e.key === 'Escape' && !rootRef.current?.querySelector(':popover-open, [aria-haspopup="menu"][aria-expanded="true"]')) {
       // (Esc in an open menu only closes the menu)
-      fold();
+      fold()
     }
-  };
+  }
 
   const chooseKind = (next: string) => {
-    lastKind = next;
-    setKindName(next);
-  };
+    lastKind = next
+    setKindName(next)
+  }
 
   const onEditor = useCallback((next: Editor | null) => {
-    editorRef.current = next;
-    setEditor(next);
-  }, []);
+    editorRef.current = next
+    setEditor(next)
+  }, [])
 
   // ArrowUp on the text's first line: to the title, caret at its end
   const onTextKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== "ArrowUp" || e.shiftKey || !isFirstLine(editorRef.current))
-      return;
-    e.preventDefault();
-    const input = titleRef.current;
-    input?.focus();
-    input?.setSelectionRange(input.value.length, input.value.length);
-  };
+    if (e.key !== 'ArrowUp' || e.shiftKey || !isFirstLine(editorRef.current)) return
+    e.preventDefault()
+    const input = titleRef.current
+    input?.focus()
+    input?.setSelectionRange(input.value.length, input.value.length)
+  }
 
   // ArrowDown or Enter in the title: to the text, caret at its start
   const onTitleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if ((e.key !== "ArrowDown" && e.key !== "Enter") || e.ctrlKey || e.metaKey)
-      return;
-    e.preventDefault();
-    editorRef.current?.commands.focus("start");
-  };
+    if ((e.key !== 'ArrowDown' && e.key !== 'Enter') || e.ctrlKey || e.metaKey) return
+    e.preventDefault()
+    editorRef.current?.commands.focus('start')
+  }
 
   return (
     // Keeps the folded card's place in the page; the open card lies over what's around it
@@ -229,11 +186,9 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
       style={{
         height: size.folded || undefined,
         // tall: its border drawn round its stepped corners (a 2px outline that follows the clipped shape)
-        filter: tall
-          ? `drop-shadow(2px 0 0 ${TALL.border}) drop-shadow(-2px 0 0 ${TALL.border}) drop-shadow(0 2px 0 ${TALL.border}) drop-shadow(0 -2px 0 ${TALL.border})`
-          : undefined,
+        filter: tall ? `drop-shadow(2px 0 0 ${TALL.border}) drop-shadow(-2px 0 0 ${TALL.border}) drop-shadow(0 2px 0 ${TALL.border}) drop-shadow(0 -2px 0 ${TALL.border})` : undefined,
       }}
-      className={`relative ${open ? "z-30" : ""}`}
+      className={`relative ${open ? 'z-30' : ''}`}
     >
       <InputBox
         as="div"
@@ -241,52 +196,38 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
         ref={cardRef}
         // Only a field opens it (the text or the title): the Note / Article button, and its menu, don't
         onFocus={(e) => {
-          if (
-            e.target instanceof HTMLInputElement ||
-            (e.target instanceof HTMLElement && e.target.isContentEditable)
-          )
-            setOpen(true);
+          if (e.target instanceof HTMLInputElement || (e.target instanceof HTMLElement && e.target.isContentEditable)) setOpen(true)
         }}
         // Tabbing out folds it too
         onBlur={(e) => {
-          if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget))
-            setOpen(false);
+          if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget)) setOpen(false)
         }}
         onKeyDown={onKeyDown}
         // Open: moved up by the title's height while the title grows (same timing), so the text stays put
         style={{
-          ...(open
-            ? {
-                boxShadow:
-                  "inset 0 0 0 var(--row-border-width) var(--row-border-color), var(--lift-shadow)",
-                transform: `translateY(${-size.title}px)`,
-              }
-            : {}),
+          ...(open ? { boxShadow: 'inset 0 0 0 var(--row-border-width) var(--row-border-color), var(--lift-shadow)', transform: `translateY(${-size.title}px)` } : {}),
           // tall (on the Dashboard): its corners stepped in pixels like the big Create buttons' under it
           ...(tall
             ? ({
                 borderRadius: 0,
                 clipPath: STEPPED_CORNERS,
                 // a much lighter box (its border drawn round the steps by the wrapper instead), its faint words lighter to match
-                ["--input-bg" as string]: TALL.bg,
-                ["--input-bg-now" as string]: TALL.bg,
-                ["--row-border-width" as string]: "0px",
-                ["--fg-subtle" as string]: TALL.subtle,
-                ["--fg-muted" as string]: TALL.muted,
-              } as React.CSSProperties)
+                ['--input-bg' as string]: TALL.bg,
+                ['--input-bg-now' as string]: TALL.bg,
+                ['--row-border-width' as string]: '0px',
+                ['--fg-subtle' as string]: TALL.subtle,
+                ['--fg-muted' as string]: TALL.muted,
+              } as CSSProperties)
             : {}),
         }}
         // overflow-hidden: Create slides in from beyond the right edge
-        className={`absolute inset-x-0 top-0 flex flex-col transition-[box-shadow,transform] ${ANIMATE} ${
-          // Open: clips Create sliding in from the right. Folded: nothing
-          open ? "overflow-hidden" : ""
-        }`}
+      className={`absolute inset-x-0 top-0 flex flex-col transition-[box-shadow,transform] ${ANIMATE} ${
+        // Open: clips Create sliding in from the right. Folded: nothing
+        open ? 'overflow-hidden' : ''
+      }`}
       >
         {/* The title, growing on top; out of the tab order while folded */}
-        <div
-          className={`${GROW} ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr] opacity-0"}`}
-          inert={!open}
-        >
+        <div className={`${GROW} ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr] opacity-0'}`} inert={!open}>
           <div ref={titleBoxRef} className="min-h-0 overflow-hidden">
             <TitleInput
               ref={titleRef}
@@ -304,15 +245,10 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
 
         {/* Folded, the text shows its first line only (its first two when `tall`, and it is two lines tall from the start); open, it grows with its lines. Folded, the Note / Article button is at its right, a dropdown
             like the rows' Sort by, as far from the right edge as from the top and bottom (out of the way once open: the two buttons are beside Create) */}
-        <div
-          ref={rowRef}
-          className={`${FIELD} relative flex items-start py-3 text-body`}
-        >
+        <div ref={rowRef} className={`${FIELD} relative flex items-start py-3 text-body`}>
           <div
-            style={{
-              marginInlineEnd: bar ? 0 : kindBox.width + kindBox.gap - 16 + 8,
-            }}
-            className={`${tall ? "min-h-[2lh]" : "min-h-[1lh]"} min-w-0 flex-1 transition-[margin] ${ANIMATE} ${open ? "max-h-[50vh] overflow-y-auto" : tall ? "max-h-[2lh] overflow-hidden" : "max-h-[1lh] overflow-hidden"}`}
+            style={{ marginInlineEnd: bar ? 0 : kindBox.width + kindBox.gap - 16 + 8 }}
+            className={`${tall ? 'min-h-[2lh]' : 'min-h-[1lh]'} min-w-0 flex-1 transition-[margin] ${ANIMATE} ${open ? 'max-h-[50vh] overflow-y-auto' : tall ? 'max-h-[2lh] overflow-hidden' : 'max-h-[1lh] overflow-hidden'}`}
           >
             <RichTextField
               key={drafts}
@@ -322,7 +258,7 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
               onKeyDown={onTextKeyDown}
               placeholder={textPlaceholder}
               label="Text"
-              minHeight={tall ? "min-h-[2lh]" : "min-h-0"}
+              minHeight={tall ? 'min-h-[2lh]' : 'min-h-0'}
             />
           </div>
           {!tall && (
@@ -330,15 +266,9 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
               ref={kindRef}
               inert={bar}
               style={{ insetInlineEnd: kindBox.gap }}
-              className={`absolute top-1/2 -translate-y-1/2 transition-opacity ${ANIMATE} ${bar ? "pointer-events-none opacity-0" : "opacity-100"}`}
+              className={`absolute top-1/2 -translate-y-1/2 transition-opacity ${ANIMATE} ${bar ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
             >
-              <ExtendMenu
-                variant="ghost"
-                label="Kind"
-                items={KINDS}
-                value={kind.name}
-                onSelect={chooseKind}
-              >
+              <ExtendMenu variant="ghost" label="Kind" items={KINDS} value={kind.name} onSelect={chooseKind}>
                 <kind.ui.icon aria-hidden className="size-4" />
                 {kind.ui.label}
                 <LuChevronDown aria-hidden className="ui-extend-flip size-4" />
@@ -354,55 +284,37 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
         )}
 
         {/* The bottom part, growing below (Create lies over it) */}
-        <div
-          className={`${GROW} ${bar ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
-        >
+        <div className={`${GROW} ${bar ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
           <div className="min-h-0 overflow-hidden">
             <div className="h-11" />
           </div>
         </div>
 
         {/* The format buttons, at the bottom left of the open card */}
-        <div
-          inert={!bar}
-          className={`absolute bottom-1 left-2 transition-opacity ${ANIMATE} ${bar ? `opacity-100 ${AFTER_GROW}` : "opacity-0"}`}
-        >
-          <RichTextToolbar editor={editor} only={["bold", "italic", "size"]} />
+        <div inert={!bar} className={`absolute bottom-1 left-2 transition-opacity ${ANIMATE} ${bar ? `opacity-100 ${AFTER_GROW}` : 'opacity-0'}`}>
+          <RichTextToolbar editor={editor} only={['bold', 'italic', 'size']} />
         </div>
 
         <div
           inert={!bar}
           className={`absolute right-1 bottom-1 ${
-            bar
-              ? `translate-x-0 opacity-100 transition-[translate,opacity] ${ANIMATE} ${AFTER_GROW}`
-              : "translate-x-[calc(100%+1rem)] opacity-0"
+            bar ? `translate-x-0 opacity-100 transition-[translate,opacity] ${ANIMATE} ${AFTER_GROW}` : 'translate-x-[calc(100%+1rem)] opacity-0'
           }`}
         >
           <div className="flex items-center gap-sm">
             {/* Open: not a dropdown, one button for each kind; the chosen one is outlined */}
             {!tall &&
               QUICK.map((r) => (
-                <Button
-                  key={r.name}
-                  plain
-                  variant={r === kind ? "selected" : "ghost"}
-                  icon={r.ui.icon}
-                  onClick={() => chooseKind(r.name)}
-                  aria-pressed={r === kind}
-                >
+                <Button key={r.name} plain variant={r === kind ? 'selected' : 'ghost'} icon={r.ui.icon} onClick={() => chooseKind(r.name)} aria-pressed={r === kind}>
                   {r.ui.label}
                 </Button>
               ))}
-            <Button
-              onClick={() => void create()}
-              disabled={!canCreate || busy}
-              title="Create (Ctrl+Enter)"
-            >
-              {busy ? "Creating…" : "Create"}
+            <Button onClick={() => void create()} disabled={!canCreate || busy} title="Create (Ctrl+Enter)">
+              {busy ? 'Creating…' : 'Create'}
             </Button>
           </div>
         </div>
       </InputBox>
     </div>
-  );
+  )
 }
