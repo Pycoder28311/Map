@@ -34,12 +34,12 @@ const scatter = (i: number, j: number) => {
 function layout(x0: number, y0: number, x1: number, y1: number) {
   const w = x1 - x0 + 1
   const h = y1 - y0 + 1
-  // The sea: a rounded box on the left filling nearly all of it (a pixel or two of land left along the rim, all round it), its right
+  // The sea: a rounded box on the left filling nearly all of it (about a pixel of land left along the rim, all round it), its right
   // shore short of the words; a little uneven
   const sx = 20.5
   const sy = (h - 1) / 2
-  const rx = 17
-  const ry = (h - 4) / 2 / 1.12
+  const rx = 17.6
+  const ry = (h - 2.4) / 2 / 1.12
   const sea = (i: number, j: number) => {
     const a = Math.atan2(j - sy, i - sx)
     const r = 1 + 0.025 * Math.sin(5 * a + 1.1) + 0.015 * Math.sin(9 * a + 0.3)
@@ -56,6 +56,25 @@ function layout(x0: number, y0: number, x1: number, y1: number) {
   return { w, h, sea, cx, cy, island }
 }
 
+/** The colour at `t` along the shore: deep sea up to 0.7, then smoothly through the shallows (0.9) and the beach (1.03) to the grass
+ *  (1.12), in steps of a few colours so it stays pixel art */
+const STOPS: [number, string][] = [[0.7, MAP_FACE.sea], [0.9, MAP_FACE.shallow], [1.0, MAP_FACE.sand], [1.06, MAP_FACE.sand], [1.12, MAP_FACE.grass]]
+function ramp(t: number): string {
+  if (t <= STOPS[0][0]) return STOPS[0][1]
+  for (let k = 1; k < STOPS.length; k++) {
+    const [t1, c1] = STOPS[k]
+    const [t0, c0] = STOPS[k - 1]
+    if (t <= t1) return mix(c0, c1, Math.round(((t - t0) / (t1 - t0)) * 4) / 4)
+  }
+  return STOPS[STOPS.length - 1][1]
+}
+
+/** A colour between two hex colours (`t` 0: the first, 1: the second) */
+function mix(a: string, b: string, t: number): string {
+  const ch = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16)
+  return `#${[0, 1, 2].map((i) => Math.round(ch(a, i) + (ch(b, i) - ch(a, i)) * t).toString(16).padStart(2, '0')).join('')}`
+}
+
 /** The map on the face inside (x0, y0)–(x1, y1); each row's runs of one colour are one rectangle */
 export function mapFacePixels(x0: number, y0: number, x1: number, y1: number): Rect[] {
   const { w, h, sea, cx, cy, island } = layout(x0, y0, x1, y1)
@@ -65,14 +84,14 @@ export function mapFacePixels(x0: number, y0: number, x1: number, y1: number): R
     for (let i = 0; i < w; i++) {
       const s = sea(i, j)
       const d = island(i, j)
+      // The colours blend smoothly from the deep sea through the shallows and the beach to the grass (in a few pixel steps), on the
+      // shore and round the island alike
+      const shore = s > 1.12 ? null : ramp(s)
+      // (the island: grass up to 0.75 of its size, open sea from 1.3)
+      const isle = ramp(1.693 - d * 0.764)
       let colour: string
-      if (s > 1.12) colour = scatter(i, j) < 0.025 ? MAP_FACE.grassLight : MAP_FACE.grass
-      else if (s > 1) colour = MAP_FACE.sand
-      else if (s > 0.86) colour = MAP_FACE.shallow
-      else if (d < 0.75) colour = MAP_FACE.grass
-      else if (d < 1) colour = MAP_FACE.sand
-      else if (d < 1.3) colour = MAP_FACE.shallow
-      else colour = MAP_FACE.sea
+      if (!shore) colour = scatter(i, j) < 0.025 ? MAP_FACE.grassLight : MAP_FACE.grass
+      else colour = d < 1.3 ? isle : shore
       row.push(colour)
     }
     grid.push(row)
