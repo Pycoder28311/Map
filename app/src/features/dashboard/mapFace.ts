@@ -14,9 +14,9 @@ export const MAP_FACE = {
   /** The pale beach along the coast, and the coastline drawn darker in the gold */
   sand: '#f5dc9a',
   coast: '#b8842c',
-  shallow: '#8cc4cf',
-  sea: '#5c9cbc',
-  wave: '#86bfd6',
+  shallow: '#86b8c6',
+  sea: '#4f8fae',
+  wave: '#7eb0c6',
   mountain: '#6b6a5c',
   mountainShade: '#56554a',
   snow: '#e4e2d6',

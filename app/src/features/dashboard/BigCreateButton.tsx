@@ -66,15 +66,16 @@ function useFrame(count: number): number {
 /**
  * A big Create button of the Dashboard: a stone slab in pixel art (stoneButton.ts: its edges copied from the reference), 16:7. On the left
  * half of its face a little looping pixel animation in the slab's own colours shows what it makes (createSprites.ts), or, for the map,
- * the whole face inside the rim is a pixel map (mapFace.ts); on the right half its words, in two lines, in the blackletter pixel font. Its face (and all on it) sinks into the slab's thickness while pressed and is a
- * touch lighter on hover. It opens the Create modal (openCreate) on `kind`'s tab. Narrower on a small screen (its pixels scale down).
+ * the whole face inside the rim is a pixel map (mapFace.ts), an engraved line round it; on the right half its words, in two lines, in the
+ * blackletter pixel font, engraved. On a metal face (STONE_GOLD) the face is shaded and worn like brass, and a glint sweeps across it on
+ * hover. Its face (and all on it) sinks into the slab's thickness while pressed and is a touch lighter on hover. It opens the Create modal (openCreate) on `kind`'s tab. Narrower on a small screen (its pixels scale down).
  */
 export default function BigCreateButton({ lines, art, kind, palette = STONE_GOLD }: Props) {
   const width = BIG_BUTTON_W
   const height = BIG_BUTTON_H
   const { face, base } = useMemo(() => stonePixels(width, height, palette), [width, height, palette])
   const frames = useMemo(() => (art === 'map' ? mapFrames(palette) : articleFrames(palette)), [art, palette])
-  const frame = useFrame(frames.length)
+  const step = useFrame(frames.length)
   // The map button's whole face, inside its light rim, is a map (mapFace.ts)
   const [mx1, my1] = [width - 7, height - STONE_BELOW_FACE - 2]
   const map = useMemo(() => (art === 'map' ? mapFacePixels(3, 3, mx1, my1) : null), [art, mx1, my1])
@@ -86,6 +87,19 @@ export default function BigCreateButton({ lines, art, kind, palette = STONE_GOLD
   const pctY = (n: number) => `${(n / height) * 100}%`
   const faceRows = height - STONE_BELOW_FACE
   const [spriteX, spriteY] = SPRITE_AT[art]
+  // An engraved line round the drawing (on a metal face): round the whole map, or round the open book
+  const frame = useMemo(() => {
+    const metal = palette.metal
+    if (!metal) return []
+    const [x0, y0, w, h] = art === 'map' ? [3, 3, mx1 - 2, my1 - 2] : [spriteX + ARTICLE_PAPER[0] - 3, spriteY + ARTICLE_PAPER[1] - 2, ARTICLE_PAPER[2] + 6, ARTICLE_PAPER[3] + 5]
+    const line = metal.engrave
+    return [
+      [x0, y0, w, 1, line],
+      [x0, y0 + h - 1, w, 1, line],
+      [x0, y0, 1, h, line],
+      [x0 + w - 1, y0, 1, h, line],
+    ] as [number, number, number, number, string][]
+  }, [art, palette, mx1, my1, spriteX, spriteY])
   return (
     <button
       type="button"
@@ -107,7 +121,7 @@ export default function BigCreateButton({ lines, art, kind, palette = STONE_GOLD
       >
         <PixelRects rects={face} width={width} height={height} />
         {map ? (
-          // The map button: its face a map, land with a bay of sea (and an island in it) on its left
+          // The map button: its face a map, the sea (and an island in it) on its left, golden land on its right
           <>
             <PixelRects rects={map} width={width} height={height} />
             {pencilFrame !== null && <PixelRects rects={pencilFrames[pencilFrame]} width={width} height={height} className="overflow-visible" />}
@@ -115,9 +129,18 @@ export default function BigCreateButton({ lines, art, kind, palette = STONE_GOLD
         ) : (
           // What it makes, drawing itself (the quill may reach past its box: not clipped)
           <span aria-hidden className="absolute" style={{ left: pctX(spriteX), top: pctY(spriteY), width: pctX(SPRITE_W), height: pctY(SPRITE_H) }}>
-            <PixelRects rects={frames[frame]} width={SPRITE_W} height={SPRITE_H} className="overflow-visible" />
+            <PixelRects rects={frames[step]} width={SPRITE_W} height={SPRITE_H} className="overflow-visible" />
           </span>
         )}
+        {/* The engraved line round the drawing */}
+        <PixelRects rects={frame} width={width} height={height} />
+        {/* On hover, a glint of light sweeps once across the face */}
+        <span aria-hidden className="absolute overflow-hidden motion-reduce:hidden" style={{ left: pctX(3), top: pctY(3), width: pctX(width - 9), height: pctY(faceRows - 4) }}>
+          <span
+            className="absolute inset-y-0 left-0 w-[14%] group-hover/stone:animate-glint"
+            style={{ transform: 'translateX(-120%)', background: 'linear-gradient(90deg, transparent 0 30%, rgb(255 250 225 / 0.35) 30% 55%, rgb(255 250 225 / 0.18) 55% 70%, transparent 70%)' }}
+          />
+        </span>
         <span
           aria-hidden
           className="absolute flex flex-col items-start justify-center font-(family-name:--font-display) text-[clamp(1.75rem,6vw,3.1rem)] leading-[0.9] select-none"
@@ -127,8 +150,8 @@ export default function BigCreateButton({ lines, art, kind, palette = STONE_GOLD
             width: pctX(width / 2 - 2),
             height: pctY(faceRows),
             color: palette.ink,
-            // on the map, a light outline so the words read over the land
-            textShadow: map ? '0 0 2px rgb(250 238 205 / 0.95), 0 0 6px rgb(250 238 205 / 0.6)' : undefined,
+            // engraved: a light line under each letter, as if stamped into the metal
+            textShadow: palette.metal ? `0 2px 0 ${palette.metal.emboss}` : undefined,
           }}
         >
           <span>{lines[0]}</span>

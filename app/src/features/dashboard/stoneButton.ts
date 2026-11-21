@@ -6,7 +6,19 @@
 
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 /** A slab's colours: its rim, face, bevels, thickness, shadow, and the word on it */
-export type StonePalette = { rim: string; face: string; bevel: string; bevelDark: string; depth: string; depthLow: string; shadow: string; ink: string }
+export type StonePalette = {
+  rim: string
+  face: string
+  bevel: string
+  bevelDark: string
+  depth: string
+  depthLow: string
+  shadow: string
+  ink: string
+  /** Metal: the face shaded in bands, lighter at the top and darker at the bottom, a highlight row under the top rim, worn specks, and the
+   *  colours of the engraved lines (a frame round its drawing; the light under its words) */
+  metal?: { top: string; bottom: string; highlight: string; wear: string; engrave: string; emboss: string }
+}
 
 /** The reference's pale stone */
 export const STONE: StonePalette = {
@@ -41,7 +53,8 @@ export const STONE_GOLD: StonePalette = {
   depth: '#5c4014',
   depthLow: '#45300e',
   shadow: 'rgb(14 9 3 / 0.5)',
-  ink: '#2e1e08',
+  ink: '#3a260c',
+  metal: { top: '#ecc160', bottom: '#dcac44', highlight: '#fbe7a6', wear: '#b98c36', engrave: '#8a6420', emboss: '#f6dc96' },
 }
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -109,5 +122,30 @@ function pixels(rows: string[], palette: StonePalette, keep: (letter: string) =>
 /** A slab `width` × `height` pixels in `palette`: its face and rim (they sink when pressed), and its base (the bevels, the thickness, the shadow) */
 export function stonePixels(width: number, height: number, palette: StonePalette): { face: Rect[]; base: Rect[] } {
   const rows = rowsOf(width, height)
-  return { face: pixels(rows, palette, (l) => ON_FACE.has(l)), base: pixels(rows, palette, (l) => !ON_FACE.has(l)) }
+  const face = pixels(rows, palette, (l) => ON_FACE.has(l))
+  return { face: palette.metal ? metalFace(face, rows, palette) : face, base: pixels(rows, palette, (l) => !ON_FACE.has(l)) }
+}
+
+/** A metal face: its face pixels in three bands (the top fifth lighter, the bottom third darker), a highlight row under the top rim, and
+ *  a few worn specks (always the same: from their place) */
+function metalFace(face: Rect[], rows: string[], palette: StonePalette): Rect[] {
+  const metal = palette.metal!
+  const faceRows = rows.length - STONE_BELOW_FACE
+  const top = Math.round(faceRows * 0.2)
+  const bottom = Math.round(faceRows * 0.62)
+  const speck = (x: number, y: number) => {
+    const v = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453
+    return v - Math.floor(v)
+  }
+  const out: Rect[] = []
+  for (const [x, y, w, h, fill] of face) {
+    if (fill !== palette.face) {
+      out.push([x, y, w, h, fill])
+      continue
+    }
+    const band = y === 3 ? metal.highlight : y < top ? metal.top : y >= bottom ? metal.bottom : palette.face
+    out.push([x, y, w, h, band])
+    for (let i = x; i < x + w; i++) if (y > 3 && speck(i, y) < 0.03) out.push([i, y, 1, 1, metal.wear])
+  }
+  return out
 }
