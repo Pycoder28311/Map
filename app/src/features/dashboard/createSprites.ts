@@ -43,12 +43,12 @@ function line([x0, y0]: Point, [x1, y1]: Point): Point[] {
 }
 
 /** A path through these corners, pixel by pixel, without repeating a corner */
-const through = (corners: Point[]): Point[] => corners.slice(1).flatMap((c, i) => line(corners[i], c).slice(i === 0 ? 0 : 1))
+export const through = (corners: Point[]): Point[] => corners.slice(1).flatMap((c, i) => line(corners[i], c).slice(i === 0 ? 0 : 1))
 
 const px = ([x, y]: Point, fill: string): Rect => [x, y, 1, 1, fill]
 
 /** A pencil whose tip is at `tip`, lying up and to the right of it: a dark point, a light wooden cone, a two-pixel body, a light end */
-function pencil([x, y]: Point, p: StonePalette): Rect[] {
+export function pencil([x, y]: Point, p: StonePalette): Rect[] {
   const rects: Rect[] = [px([x, y], p.ink), px([x + 1, y - 1], p.rim), px([x + 1, y], p.rim), px([x, y - 1], p.rim)]
   for (let k = 2; k <= 7; k++) rects.push(px([x + k, y - k], p.bevelDark), px([x + k + 1, y - k], p.depth), px([x + k, y - k - 1], p.bevel))
   rects.push(px([x + 8, y - 8], p.rim), px([x + 9, y - 8], p.rim), px([x + 8, y - 9], p.rim))

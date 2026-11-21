@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { openCreate } from '../create/openCreate'
 import PixelRects from './cards/PixelRects'
 import { ARTICLE_PAPER, articleFrames, MAP_PAPER, mapFrames, SPRITE_H, SPRITE_W } from './createSprites'
-import { mapFacePixels } from './mapFace'
+import { mapFacePixels, mapPencilFrames } from './mapFace'
 import { STONE_BELOW_FACE, STONE_GREEN, STONE_PIXEL, STONE_PRESS, stonePixels, type StonePalette } from './stoneButton'
 
 /** The buttons' size in pixels of the drawing (STONE_PIXEL px each): 16:7, 288 × 126px */
@@ -31,6 +31,17 @@ type Props = {
   /** The Create modal's tab it opens on (a resource name, e.g. "maps") */
   kind: string
   palette?: StonePalette
+}
+
+/** The frame of an animation that plays only while `on` (none while off); `restart` starts it from its first frame */
+function usePlayWhile(on: boolean, count: number): { frame: number | null; restart: () => void } {
+  const [frame, setFrame] = useState(0)
+  useEffect(() => {
+    if (!on || count === 0) return
+    const timer = setInterval(() => setFrame((f) => (f + 1) % count), FRAME_MS)
+    return () => clearInterval(timer)
+  }, [on, count])
+  return { frame: on ? frame : null, restart: () => setFrame(0) }
 }
 
 /** The frame to show: it steps through `count` frames, over and over (the last one, still, for those who ask for less motion) */
@@ -65,7 +76,12 @@ export default function BigCreateButton({ lines, art, kind, palette = STONE_GREE
   const frames = useMemo(() => (art === 'map' ? mapFrames(palette) : articleFrames(palette)), [art, palette])
   const frame = useFrame(frames.length)
   // The map button's whole face, inside its light rim, is a map (mapFace.ts)
-  const map = useMemo(() => (art === 'map' ? mapFacePixels(3, 3, width - 7, height - STONE_BELOW_FACE - 2) : null), [art, width, height])
+  const [mx1, my1] = [width - 7, height - STONE_BELOW_FACE - 2]
+  const map = useMemo(() => (art === 'map' ? mapFacePixels(3, 3, mx1, my1) : null), [art, mx1, my1])
+  // On the map: while hovered, a pencil draws a route across the island
+  const [hovered, setHovered] = useState(false)
+  const pencilFrames = useMemo(() => (art === 'map' ? mapPencilFrames(3, 3, mx1, my1, palette) : []), [art, mx1, my1, palette])
+  const { frame: pencilFrame, restart: restartPencil } = usePlayWhile(hovered && art === 'map', pencilFrames.length)
   const pctX = (n: number) => `${(n / width) * 100}%`
   const pctY = (n: number) => `${(n / height) * 100}%`
   const faceRows = height - STONE_BELOW_FACE
@@ -74,6 +90,11 @@ export default function BigCreateButton({ lines, art, kind, palette = STONE_GREE
     <button
       type="button"
       onClick={() => openCreate(kind)}
+      onPointerEnter={() => {
+        restartPencil()
+        setHovered(true)
+      }}
+      onPointerLeave={() => setHovered(false)}
       aria-label={lines.join(' ')}
       className="group/stone relative block min-w-0 flex-1 cursor-pointer outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-highlight"
       style={{ maxWidth: width * STONE_PIXEL, aspectRatio: `${width} / ${height}` }}
@@ -86,8 +107,11 @@ export default function BigCreateButton({ lines, art, kind, palette = STONE_GREE
       >
         <PixelRects rects={face} width={width} height={height} />
         {map ? (
-          // The map button: its face a map, land on the left and sea with a big island on the right
-          <PixelRects rects={map} width={width} height={height} />
+          // The map button: its face a map, the sea with a big island on the left and land on the right
+          <>
+            <PixelRects rects={map} width={width} height={height} />
+            {pencilFrame !== null && <PixelRects rects={pencilFrames[pencilFrame]} width={width} height={height} className="overflow-visible" />}
+          </>
         ) : (
           // What it makes, drawing itself (the quill may reach past its box: not clipped)
           <span aria-hidden className="absolute" style={{ left: pctX(spriteX), top: pctY(spriteY), width: pctX(SPRITE_W), height: pctY(SPRITE_H) }}>
@@ -103,7 +127,7 @@ export default function BigCreateButton({ lines, art, kind, palette = STONE_GREE
             width: pctX(width / 2 - 4),
             height: pctY(faceRows),
             color: palette.ink,
-            // on the map, a light outline so the words read over the sea and the island
+            // on the map, a light outline so the words read over the land
             textShadow: map ? '0 0 2px rgb(236 242 222 / 0.95), 0 0 6px rgb(236 242 222 / 0.6)' : undefined,
           }}
         >
