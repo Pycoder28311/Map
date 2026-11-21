@@ -1,6 +1,6 @@
-// The Create map button's face as a pixel-art map (BigCreateButton.tsx), filling the face inside its light rim: the sea on the left
-// (deep and mid blue, a few wave marks) with a big island in it (shallows, a sandy beach, plain grass, a few snowy mountains), and plain
-// green land on the right down to a sandy coast, with only a faint lighter speck now and then. While hovered, a pencil draws a dashed
+// The Create map button's face as a pixel-art map (BigCreateButton.tsx), filling the face inside its light rim: plain green land (only a
+// faint lighter speck now and then) with a bay of sea on its left, land all round it (a beach, shallows, a few wave marks), and a small
+// island in the bay's middle (shallows, a beach, grass, two snowy mountains), open water all round it. While hovered, a pencil draws a dashed
 // route across the island to an X (mapPencilFrames). On the button's pixel grid; the same every time. Pure.
 
 import type { StonePalette } from './stoneButton'
@@ -12,8 +12,6 @@ export const MAP_FACE = {
   grassLight: '#b4d17f',
   sand: '#d8c88e',
   shallow: '#8cc4cf',
-  /** The button's light rim along the sea (its top and left): the sea's light blue, as the green rim is the grass's */
-  rimSea: '#b4dbe6',
   sea: '#5c9cbc',
   wave: '#86bfd6',
   mountain: '#6b6a5c',
@@ -32,59 +30,57 @@ const scatter = (i: number, j: number) => {
   return v - Math.floor(v)
 }
 
-/** The map's layout on a face inside (x0, y0)–(x1, y1): where the coast is on each row, and the island's middle and size */
+/** The map's layout on a face inside (x0, y0)–(x1, y1): the sea, a bay with land all round it, and the island in its middle */
 function layout(x0: number, y0: number, x1: number, y1: number) {
   const w = x1 - x0 + 1
   const h = y1 - y0 + 1
-  // The coast: how far across the sea reaches on each row (a wavering line a third of the way across, so the words on the right half lie
-  // all on the land)
-  const coast = Array.from({ length: h }, (_, j) => Math.round(w * 0.36 + 2 * Math.sin(j / 4) + 1.5 * Math.sin(j / 1.7 + 1)))
-  const cx = Math.round(w * 0.17)
-  const cy = Math.round(h * 0.52)
-  const rx = w * 0.12
-  const ry = h * 0.36
+  // The sea: an uneven oval on the left, land all round it (so the button's rim always lies on land), well short of the words
+  const sx = w * 0.2
+  const sy = h * 0.5
+  const sea = (i: number, j: number) => {
+    const a = Math.atan2(j - sy, i - sx)
+    const r = 1 + 0.08 * Math.sin(3 * a + 1.1) + 0.05 * Math.sin(5 * a + 0.3)
+    return Math.hypot((i - sx) / (w * 0.165 * r), (j - sy) / (h * 0.4 * r))
+  }
+  // The island: small, in the sea's middle, a ring of open water all round it
+  const cx = Math.round(sx)
+  const cy = Math.round(sy)
   const island = (i: number, j: number) => {
     const a = Math.atan2(j - cy, i - cx)
     const r = 1 + 0.14 * Math.sin(3 * a + 0.7) + 0.09 * Math.sin(5 * a + 2)
-    return Math.hypot((i - cx) / (rx * r), (j - cy) / (ry * r))
+    return Math.hypot((i - cx) / (w * 0.075 * r), (j - cy) / (h * 0.22 * r))
   }
-  return { w, h, coast, cx, cy, island }
-}
-
-/** Where the sea ends along the face's top (the x of the first land pixel on the map's top row, on the button's grid) */
-export function seaEndAtTop(x0: number, y0: number, x1: number, y1: number): number {
-  return x0 + layout(x0, y0, x1, y1).coast[0]
+  return { w, h, sea, cx, cy, island }
 }
 
 /** The map on the face inside (x0, y0)–(x1, y1); each row's runs of one colour are one rectangle */
 export function mapFacePixels(x0: number, y0: number, x1: number, y1: number): Rect[] {
-  const { w, h, coast, cx, cy, island } = layout(x0, y0, x1, y1)
+  const { w, h, sea, cx, cy, island } = layout(x0, y0, x1, y1)
   const grid: string[][] = []
   for (let j = 0; j < h; j++) {
     const row: string[] = []
     for (let i = 0; i < w; i++) {
-      const fromCoast = i - coast[j]
+      const s = sea(i, j)
       const d = island(i, j)
       let colour: string
-      if (fromCoast > 2) colour = scatter(i, j) < 0.025 ? MAP_FACE.grassLight : MAP_FACE.grass
-      else if (fromCoast >= 1) colour = MAP_FACE.sand
-      else if (fromCoast > -3) colour = MAP_FACE.shallow
-      else if (d < 0.78) colour = MAP_FACE.grass
-      else if (d < 0.9) colour = MAP_FACE.sand
-      else if (d < 1.12) colour = MAP_FACE.shallow
+      if (s > 1.12) colour = scatter(i, j) < 0.025 ? MAP_FACE.grassLight : MAP_FACE.grass
+      else if (s > 1) colour = MAP_FACE.sand
+      else if (s > 0.86) colour = MAP_FACE.shallow
+      else if (d < 0.75) colour = MAP_FACE.grass
+      else if (d < 1) colour = MAP_FACE.sand
+      else if (d < 1.3) colour = MAP_FACE.shallow
       else colour = MAP_FACE.sea
       row.push(colour)
     }
     grid.push(row)
   }
-  // a few wave marks (‿) on the open sea
-  const waves: Point[] = [[3, 3], [w * 0.28, 4], [4, h - 6], [w * 0.29, h - 5]].map(([i, j]) => [Math.round(i), Math.round(j)])
-  for (const [i, j] of waves) {
-    if (island(i, j) < 1.25 || island(i + 2, j) < 1.25 || i + 3 >= coast[j] - 2) continue
-    for (const [di, dj] of [[0, 0], [1, 1], [2, 0]]) if (grid[j + dj]?.[i + di] === MAP_FACE.sea) grid[j + dj][i + di] = MAP_FACE.wave
+  // a few wave marks (‿) on the open sea, where there is room for them
+  for (const [i, j] of [[cx - 7, cy - 9], [cx + 3, cy - 10], [cx - 8, cy + 8], [cx + 4, cy + 9]] as Point[]) {
+    const fits = [0, 1, 2].every((di) => grid[j]?.[i + di] === MAP_FACE.sea && grid[j + 1]?.[i + di] === MAP_FACE.sea)
+    if (fits) for (const [di, dj] of [[0, 0], [1, 1], [2, 0]]) grid[j + dj][i + di] = MAP_FACE.wave
   }
   // mountains on the island: a little peak, snow at its top, shaded on its right
-  for (const [mx, my] of [[cx - 4, cy - 1], [cx + 2, cy - 4], [cx + 3, cy + 3]]) {
+  for (const [mx, my] of [[cx - 1, cy - 2], [cx + 1, cy + 3]]) {
     const peak: [number, number, string][] = [[0, -1, MAP_FACE.snow], [-1, 0, MAP_FACE.mountain], [0, 0, MAP_FACE.snow], [1, 0, MAP_FACE.mountainShade], [-2, 1, MAP_FACE.mountain], [-1, 1, MAP_FACE.mountain], [0, 1, MAP_FACE.mountain], [1, 1, MAP_FACE.mountainShade], [2, 1, MAP_FACE.mountainShade]]
     for (const [di, dj, c] of peak) if (grid[my + dj]?.[mx + di]) grid[my + dj][mx + di] = c
   }
@@ -103,13 +99,13 @@ export function mapFacePixels(x0: number, y0: number, x1: number, y1: number): R
 /** How many frames the finished route stays before it starts again */
 const HOLD = 12
 
-/** The pencil's frames while the button is hovered: it draws a dashed route across the island, between the mountains, to an X */
+/** The pencil's frames while the button is hovered: it draws a dashed route up the island, past its mountains, to an X */
 export function mapPencilFrames(x0: number, y0: number, x1: number, y1: number, p: StonePalette): Rect[][] {
   const { cx, cy } = layout(x0, y0, x1, y1)
   const at = ([i, j]: Point): Point => [x0 + i, y0 + j]
-  const corners: Point[] = [[cx - 8, cy + 4], [cx - 4, cy + 3], [cx - 1, cy], [cx + 1, cy - 1], [cx + 6, cy]]
+  const corners: Point[] = [[cx - 3, cy + 5], [cx - 2, cy + 2], [cx + 1, cy], [cx + 1, cy - 2]]
   const route = through(corners.map(at)).filter((_, k) => k % 2 === 0)
-  const x: Point[] = ([[cx + 7, cy - 2], [cx + 9, cy], [cx + 8, cy - 1], [cx + 9, cy - 2], [cx + 7, cy]] as Point[]).map(at)
+  const x: Point[] = ([[cx - 2, cy - 6], [cx, cy - 4], [cx - 1, cy - 5], [cx, cy - 6], [cx - 2, cy - 4]] as Point[]).map(at)
   const stroke = [...route, ...x]
   const dot = ([i, j]: Point): Rect => [i, j, 1, 1, MAP_FACE.ink]
   const frames: Rect[][] = []
