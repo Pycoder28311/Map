@@ -14,6 +14,8 @@ import { authClient } from '../../lib/auth-client'
 
 /** The two big Create buttons side by side (px): their width each and the gap between them (gap-6). The note input is as wide */
 const TWO_BUTTONS = 2 * BIG_BUTTON_W * STONE_PIXEL + 24
+/** How far in from the buttons' outer edges the note input stops, on each side (px) */
+const INPUT_INSET = 16
 
 // Also a workspace panel (src/panels.ts): no <main> here, AppLayout provides it
 /**
@@ -61,8 +63,8 @@ export default function DashboardPage() {
                     {/* A greeting, then the page's main input and the Create buttons, near the top of the screen */}
                     <div className="mt-[4vh] flex flex-col items-center gap-12">
                         <h1 className="text-center text-5xl font-semibold tracking-tight">Hello{firstName ? `, ${firstName}` : ''}</h1>
-                        {/* As wide as the two Create buttons under it, and twice as tall as a field */}
-                        <div className="w-full" style={{ maxWidth: TWO_BUTTONS }}>
+                        {/* A little narrower than the two Create buttons under it (INPUT_INSET in from each side) */}
+                        <div className="w-full" style={{ maxWidth: TWO_BUTTONS - 2 * INPUT_INSET }}>
                             <QuickCreate tall />
                         </div>
                     </div>
