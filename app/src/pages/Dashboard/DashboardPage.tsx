@@ -6,6 +6,7 @@ import DashboardRelics from '../../features/dashboard/DashboardRelics'
 import EditIconsPreview from '../../features/dashboard/EditIconsPreview'
 import QuillIconsPreview from '../../features/dashboard/QuillIconsPreview'
 import BigCreateButton, { BIG_BUTTON_W } from '../../features/dashboard/BigCreateButton'
+import NightBackdrop from '../../features/dashboard/NightBackdrop'
 import { STONE_PIXEL } from '../../features/dashboard/stoneButton'
 import DashboardSections from '../../features/dashboard/DashboardSections'
 import QuickCreate from '../../features/notes/QuickCreate'
@@ -32,6 +33,8 @@ export default function DashboardPage() {
 
     return (
         <div className="relative min-h-full">
+            {/* The pixel-art dusk behind it all (dark theme) */}
+            <NightBackdrop />
             <div className="relative mx-auto flex max-w-[65rem] flex-col gap-12 px-4 pt-8 pb-24">
                 <div className="flex justify-end">
                     <Button
