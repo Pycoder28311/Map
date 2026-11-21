@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { openCreate } from '../create/openCreate'
 import PixelRects from './cards/PixelRects'
 import { ARTICLE_PAPER, articleFrames, MAP_PAPER, mapFrames, SPRITE_H, SPRITE_W } from './createSprites'
-import { mapFacePixels, mapPencilFrames } from './mapFace'
+import { MAP_FACE, mapFacePixels, mapPencilFrames, seaEndAtTop } from './mapFace'
 import { STONE_BELOW_FACE, STONE_GREEN, STONE_PIXEL, STONE_PRESS, stonePixels, type StonePalette } from './stoneButton'
 
 /** The buttons' size in pixels of the drawing (STONE_PIXEL px each): 16:7, 288 × 126px */
@@ -72,7 +72,24 @@ function useFrame(count: number): number {
 export default function BigCreateButton({ lines, art, kind, palette = STONE_GREEN }: Props) {
   const width = BIG_BUTTON_W
   const height = BIG_BUTTON_H
-  const { face, base } = useMemo(() => stonePixels(width, height, palette), [width, height, palette])
+  const stone = useMemo(() => stonePixels(width, height, palette), [width, height, palette])
+  const base = stone.base
+  // On the map, the light rim along the top and left takes the sea's blue where the sea is (up to where the land starts), green beyond
+  const face = useMemo(() => {
+    if (art !== 'map') return stone.face
+    const seaEnd = seaEndAtTop(3, 3, width - 7, height - STONE_BELOW_FACE - 2)
+    const rim = (y: number) => y < 3
+    return stone.face.flatMap(([x, y, w, h, fill]): [number, number, number, number, string][] => {
+      const blue = fill === palette.rim ? MAP_FACE.rimSea : fill === palette.face ? MAP_FACE.shallow : null
+      if (!blue) return [[x, y, w, h, fill]]
+      // the left rim (its first three columns, all along the sea) blue; the top rim blue up to the coast; green after either
+      const split = Math.min(Math.max(rim(y) ? seaEnd : 3, x), x + w)
+      return [
+        ...(split > x ? [[x, y, split - x, h, blue] as [number, number, number, number, string]] : []),
+        ...(split < x + w ? [[split, y, x + w - split, h, fill] as [number, number, number, number, string]] : []),
+      ]
+    })
+  }, [art, stone.face, width, height, palette])
   const frames = useMemo(() => (art === 'map' ? mapFrames(palette) : articleFrames(palette)), [art, palette])
   const frame = useFrame(frames.length)
   // The map button's whole face, inside its light rim, is a map (mapFace.ts)

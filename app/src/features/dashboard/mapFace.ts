@@ -12,6 +12,8 @@ export const MAP_FACE = {
   grassLight: '#b4d17f',
   sand: '#d8c88e',
   shallow: '#8cc4cf',
+  /** The button's light rim along the sea (its top and left): the sea's light blue, as the green rim is the grass's */
+  rimSea: '#b4dbe6',
   sea: '#5c9cbc',
   wave: '#86bfd6',
   mountain: '#6b6a5c',
@@ -34,11 +36,12 @@ const scatter = (i: number, j: number) => {
 function layout(x0: number, y0: number, x1: number, y1: number) {
   const w = x1 - x0 + 1
   const h = y1 - y0 + 1
-  // The coast: how far across the sea reaches on each row (a wavering line a little past the middle)
-  const coast = Array.from({ length: h }, (_, j) => Math.round(w * 0.52 + 3 * Math.sin(j / 4) + 2 * Math.sin(j / 1.7 + 1)))
-  const cx = Math.round(w * 0.25)
+  // The coast: how far across the sea reaches on each row (a wavering line a third of the way across, so the words on the right half lie
+  // all on the land)
+  const coast = Array.from({ length: h }, (_, j) => Math.round(w * 0.36 + 2 * Math.sin(j / 4) + 1.5 * Math.sin(j / 1.7 + 1)))
+  const cx = Math.round(w * 0.17)
   const cy = Math.round(h * 0.52)
-  const rx = w * 0.17
+  const rx = w * 0.12
   const ry = h * 0.36
   const island = (i: number, j: number) => {
     const a = Math.atan2(j - cy, i - cx)
@@ -46,6 +49,11 @@ function layout(x0: number, y0: number, x1: number, y1: number) {
     return Math.hypot((i - cx) / (rx * r), (j - cy) / (ry * r))
   }
   return { w, h, coast, cx, cy, island }
+}
+
+/** Where the sea ends along the face's top (the x of the first land pixel on the map's top row, on the button's grid) */
+export function seaEndAtTop(x0: number, y0: number, x1: number, y1: number): number {
+  return x0 + layout(x0, y0, x1, y1).coast[0]
 }
 
 /** The map on the face inside (x0, y0)–(x1, y1); each row's runs of one colour are one rectangle */
@@ -70,7 +78,7 @@ export function mapFacePixels(x0: number, y0: number, x1: number, y1: number): R
     grid.push(row)
   }
   // a few wave marks (‿) on the open sea
-  const waves: Point[] = [[3, 3], [w * 0.42, 6], [5, h - 6], [w * 0.44, h - 4], [w * 0.36, h * 0.55]].map(([i, j]) => [Math.round(i), Math.round(j)])
+  const waves: Point[] = [[3, 3], [w * 0.28, 4], [4, h - 6], [w * 0.29, h - 5]].map(([i, j]) => [Math.round(i), Math.round(j)])
   for (const [i, j] of waves) {
     if (island(i, j) < 1.25 || island(i + 2, j) < 1.25 || i + 3 >= coast[j] - 2) continue
     for (const [di, dj] of [[0, 0], [1, 1], [2, 0]]) if (grid[j + dj]?.[i + di] === MAP_FACE.sea) grid[j + dj][i + di] = MAP_FACE.wave
