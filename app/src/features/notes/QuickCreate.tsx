@@ -33,6 +33,27 @@ const FIELD = 'w-full resize-none bg-transparent px-4 text-fg outline-none place
  * Opening, Create slides in at the bottom right, with the format buttons on the left. Create (or Ctrl/⌘+Enter) makes the note
  * on the server (and says so if it could not); a click outside or Esc folds the card back, keeping the draft.
  */
+/** The big Create buttons' corners (features/dashboard/stoneButton.ts: their rows step in 4, 2, 2, 1, 1 of their 3px pixels at each corner),
+ *  as a clip-path for the tall box, so the two match */
+const STEPS = [4, 2, 2, 1, 1]
+const STEPPED_CORNERS = (() => {
+  const u = 3
+  const pts: string[] = []
+  // top left, from the left edge up to the top edge
+  STEPS.slice().reverse().forEach((indent, k) => {
+    const y = (STEPS.length - 1 - k) * u
+    pts.push(`${indent * u}px ${y + u}px`, `${indent * u}px ${y}px`)
+  })
+  // (from the left edge itself, below the steps)
+  const tl = [`0px ${STEPS.length * u}px`, ...pts]
+  const mirrorX = (p: string) => p.replace(/^(\d+)px/, (_, x) => `calc(100% - ${x}px)`)
+  const mirrorY = (p: string) => p.replace(/ (\d+)px$/, (_, y) => ` calc(100% - ${y}px)`)
+  const tr = tl.slice().reverse().map(mirrorX)
+  const br = tl.map((p) => mirrorY(mirrorX(p)))
+  const bl = tl.slice().reverse().map(mirrorY)
+  return `polygon(${[...tl, ...tr, ...br, ...bl].join(', ')})`
+})()
+
 /** `tall`: its text two lines tall from the start (both shown even folded), and its bottom bar (format buttons, kinds, Create) always shown as a
  *  second row, as on the Dashboard over its big buttons; else one line, and the bar only while open */
 export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
@@ -172,7 +193,11 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
         }}
         onKeyDown={onKeyDown}
         // Open: moved up by the title's height while the title grows (same timing), so the text stays put
-        style={open ? { boxShadow: 'inset 0 0 0 var(--row-border-width) var(--row-border-color), var(--lift-shadow)', transform: `translateY(${-size.title}px)` } : undefined}
+        style={{
+          ...(open ? { boxShadow: 'inset 0 0 0 var(--row-border-width) var(--row-border-color), var(--lift-shadow)', transform: `translateY(${-size.title}px)` } : {}),
+          // tall (on the Dashboard): its corners stepped in pixels like the big Create buttons' under it
+          ...(tall ? { borderRadius: 0, clipPath: STEPPED_CORNERS } : {}),
+        }}
         // overflow-hidden: Create slides in from beyond the right edge
       className={`absolute inset-x-0 top-0 flex flex-col transition-[box-shadow,transform] ${ANIMATE} ${
         // Open: clips Create sliding in from the right. Folded: nothing
