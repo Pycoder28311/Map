@@ -1,36 +1,20 @@
-// The Dashboard's background (NightBackdrop.tsx), in pixel art: a cool blue-slate night base with a faint grain over all of it (the warm
-// wood, leather and parchment of the cards stand out on it), and at the top a misty sky: a soft steel-blue sky with a few stars and a pale moon, a dim vine along the top edge, two ridges of hills fading into the dark under
-// the greeting; the page's edges a little darker. Each picture is a small SVG tile of BACKDROP_PIXEL px pixels (repeated across), drawn
-// here from a fixed seed, so it is the same every time. Pure.
+// The Dashboard's background (NightBackdrop.tsx): at the top, the night sky over the distant castle (a crop of the old night picture,
+// assets/dashboard-sky.jpg: its clouds and stars, the lit castle across the valley, the river), fading into a cool blue-slate base; over
+// all of it a faint see-through pixel grain, and the page's edges a little darker. The grain is a small SVG tile of BACKDROP_PIXEL px
+// pixels, drawn here from a fixed seed, so it is the same every time. Pure.
 
 // ── The colours and sizes to change ──────────────────────────────────────────────────────────────────────────────────────────────
 export const BACKDROP = {
-  /** The page's dark base */
+  /** The page's dark base (the picture's own deep night blue) */
   base: '#151a24',
-  /** The sky at the very top, and lower down (it fades into the base) */
-  skyTop: '#4b5873',
-  skyMid: '#3a4660',
-  skyLow: '#2b3447',
-  /** The far ridge and the near one */
-  ridgeFar: '#232b3b',
-  ridgeNear: '#1a2030',
-  /** Stars (bright and dim) and the moon */
-  starBright: '#c9d2e3',
-  starDim: '#8e99ad',
-  moon: '#b4bfd2',
-  moonLight: '#d7dfec',
-  /** The vine along the top */
-  vine: '#5f6d8a',
-  leaf: '#53607b',
 } as const
-/** One pixel of the pictures on screen (px) */
+/** One pixel of the grain on screen (px) */
 export const BACKDROP_PIXEL = 4
-/** How far down the scene goes (px): the hills start at RIDGE_TOP and are dark by FADE_END (before their picture ends: no seam); the sky
- *  fades out by SKY_END */
-const RIDGE_TOP = 10
-const FADE_START = 190
-const FADE_END = 280
-const SKY_END = 330
+/** The sky picture: its width ÷ height, and where (as a share of its height) it starts fading into the base, and how much darker it is
+ *  made (so the greeting reads on it) */
+export const SKY_RATIO = 1254 / 460
+export const SKY_FADE_FROM = 0.78
+export const SKY_DIM = 0.12
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 const U = BACKDROP_PIXEL
@@ -60,66 +44,13 @@ function grain(): { image: string; size: number } {
   return { image: tile(N, N, body), size: N * U }
 }
 
-/** The vine along the top edge: a wave with a curl and a leaf now and then */
-function vine(): { image: string; w: number; h: number } {
-  const W = 96
-  const H = 17
-  let body = ''
-  for (let x = 0; x < W; x++) body += rect(x, Math.round(8 + 4 * Math.sin((x / W) * Math.PI * 4)), 1, 1, BACKDROP.vine)
-  for (let k = 0; k < 4; k++) {
-    const cx = 12 + k * 24
-    const cy = k % 2 ? 4 : 12
-    for (let a = 0; a < 7; a++) {
-      const t = (a / 7) * Math.PI * 1.6
-      body += rect(Math.round(cx + Math.cos(t) * 3), Math.round(cy + Math.sin(t) * 3), 1, 1, BACKDROP.vine)
-    }
-    body += rect(cx + 6, cy - 1, 2, 1, BACKDROP.leaf) + rect(cx + 7, cy, 1, 1, BACKDROP.leaf)
-  }
-  return { image: tile(W, H, body), w: W * U, h: H * U }
-}
-
-/** The hills, two ridges, with the stars and the moon in the sky over them */
-function ridges(): { image: string; w: number; h: number } {
-  const next = seeded(9)
-  const W = 240
-  const H = 70
-  const ridge = (x: number, base: number, amp: number, f: number, ph: number) =>
-    Math.round(base - amp * (0.6 * Math.abs(Math.sin(x / f + ph)) + 0.4 * Math.abs(Math.sin(x / (f * 0.37) + ph * 2))))
-  let body = ''
-  for (let x = 0; x < W; x++) {
-    const far = ridge(x, 62, 26, 34, 0.7)
-    body += rect(x, far, 1, H - far, BACKDROP.ridgeFar)
-    const near = ridge(x, 68, 16, 22, 2.1)
-    body += rect(x, near, 1, H - near, BACKDROP.ridgeNear)
-  }
-  for (let i = 0; i < 26; i++) body += rect(Math.floor(next() * W), Math.floor(next() * 30), 1, 1, next() < 0.3 ? BACKDROP.starBright : BACKDROP.starDim)
-  body += rect(205, 2, 4, 4, BACKDROP.moon) + rect(204, 3, 6, 2, BACKDROP.moon) + rect(205, 3, 3, 2, BACKDROP.moonLight)
-  return { image: tile(W, H, body), w: W * U, h: H * U }
-}
-
-/** The background's CSS: its layers, front to back (the vine, the grain, the darker edges, the fade under the hills, the hills, the sky) */
-export function backdropStyle(): Record<string, string> {
+/** The CSS of what lies over the picture: the grain, and the page's edges a little darker */
+export function overlayStyle(): Record<string, string> {
   const g = grain()
-  const v = vine()
-  const r = ridges()
-  const layers: { image: string; repeat: string; position: string; size: string }[] = [
-    { image: v.image, repeat: 'repeat-x', position: '0 8px', size: `${v.w}px ${v.h}px` },
-    { image: g.image, repeat: 'repeat', position: '0 0', size: `${g.size}px ${g.size}px` },
-    { image: 'radial-gradient(ellipse 80% 70% at 50% 40%, transparent 65%, rgb(0 0 0 / 0.35) 100%)', repeat: 'no-repeat', position: '0 0', size: '100% 100%' },
-    { image: `linear-gradient(to bottom, transparent ${FADE_START}px, ${BACKDROP.base} ${FADE_END}px)`, repeat: 'no-repeat', position: '0 0', size: `100% ${FADE_END}px` },
-    { image: r.image, repeat: 'repeat-x', position: `0 ${RIDGE_TOP}px`, size: `${r.w}px ${r.h}px` },
-    {
-      image: `linear-gradient(to bottom, ${BACKDROP.skyTop} 0, ${BACKDROP.skyMid} 120px, ${BACKDROP.skyLow} 170px, rgb(21 26 36 / 0) ${SKY_END}px)`,
-      repeat: 'no-repeat',
-      position: '0 0',
-      size: `100% ${SKY_END}px`,
-    },
-  ]
   return {
-    backgroundColor: BACKDROP.base,
-    backgroundImage: layers.map((l) => l.image).join(', '),
-    backgroundRepeat: layers.map((l) => l.repeat).join(', '),
-    backgroundPosition: layers.map((l) => l.position).join(', '),
-    backgroundSize: layers.map((l) => l.size).join(', '),
+    backgroundImage: [`${g.image}`, 'radial-gradient(ellipse 80% 70% at 50% 40%, transparent 65%, rgb(0 0 0 / 0.35) 100%)'].join(', '),
+    backgroundRepeat: 'repeat, no-repeat',
+    backgroundPosition: '0 0, 0 0',
+    backgroundSize: `${g.size}px ${g.size}px, 100% 100%`,
   }
 }
