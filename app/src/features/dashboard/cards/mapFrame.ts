@@ -13,12 +13,12 @@ export const FRAME = {
   /** The planks' dark outline */
   outline: '#0d0806',
   /** The wood: its two tones, its grain (darker and lighter streaks), knots, and the shadow a horizontal plank casts on a vertical one */
-  wood: '#4a3020',
-  woodAlt: '#40291b',
-  grainDark: '#2e1d11',
-  grainLight: '#5e3f28',
+  wood: '#5c3c27',
+  woodAlt: '#503421',
+  grainDark: '#3c2716',
+  grainLight: '#714c31',
   knot: '#140c06',
-  joint: '#26180d',
+  joint: '#302012',
   /** The nails at the crossings: their light top left, and the rest of their head */
   nailLight: '#9b9994',
   nail: '#494642',
