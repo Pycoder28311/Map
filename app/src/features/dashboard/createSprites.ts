@@ -10,7 +10,7 @@ export const SPRITE_W = 40
 export const SPRITE_H = 38
 /** Where each sheet of paper is on its animation's grid (x, y, width, height): the button places it by its paper */
 export const MAP_PAPER = [1, 4, 33, 28] as const
-export const ARTICLE_PAPER = [3, 5, 24, 27] as const
+export const ARTICLE_PAPER = [2, 6, 34, 23] as const
 
 type Rect = [x: number, y: number, w: number, h: number, fill: string]
 type Point = [x: number, y: number]
@@ -135,34 +135,49 @@ export function mapFrames(p: StonePalette): Rect[][] {
   return frames
 }
 
-/** A quill writing lines on a page with a folded corner: each line a wavy scribble, left to right */
+/**
+ * A quill writing in an open book: two pages spread from a sunken spine (their outer corners curving up a little), the green cover showing
+ * round them and the pages' edges stacked under them; the quill writes the left page's lines, then the right page's
+ */
 export function articleFrames(p: StonePalette): Rect[][] {
-  const [x0, y0, w, h] = ARTICLE_PAPER
-  const page: Rect[] = [
-    ...sheet(x0, y0, w, h, p, 5),
-    // the folded top right corner
-    [x0 + w - 5, y0, 5, 5, p.face],
-    [x0 + w - 5, y0, 1, 5, p.bevel],
-    [x0 + w - 5, y0 + 4, 5, 1, p.bevel],
-    [x0 + w - 4, y0 + 1, 3, 3, p.rim],
-  ]
-  // The lines: their lengths, a short last one; the writing waves a pixel up now and then, with gaps between words
-  const lengths = [12, 18, 17, 18, 16, 9]
-  const writing: Point[] = lengths.flatMap((length, row) => {
-    const y = y0 + 6 + row * 3
-    const points: Point[] = []
-    for (let i = 0; i < length; i++) {
-      if ((i + row * 2) % 6 === 5) continue
-      points.push([x0 + 3 + i, y - ((i + row) % 3 === 0 ? 1 : 0)])
-    }
-    return points
-  })
-  const frames: Rect[][] = []
-  for (let n = 2; n <= writing.length + 1; n += 2) {
-    const drawn = writing.slice(0, Math.min(n, writing.length))
-    frames.push([...page, ...drawn.map((pt) => px(pt, p.ink)), ...quill(drawn[drawn.length - 1], p)])
+  const [x0, y0, W, H] = ARTICLE_PAPER
+  const PAGE = 16
+  const SPINE = x0 + PAGE
+  const book: Rect[] = []
+  // the cover, a pixel round the pages and under them
+  book.push([x0 - 1, y0 + 2, W + 2, H, p.bevelDark])
+  // the pages' edges, stacked under the spread
+  book.push([x0, y0 + H - 1, W, 2, p.face], [x0, y0 + H, W, 1, p.bevel])
+  let n = 101
+  const next = () => (n = (n * 1103515245 + 12345) % 2147483648) / 2147483648
+  // the two pages: each column's top curves down toward the spine
+  for (let i = 0; i < W; i++) {
+    const onLeft = i < PAGE
+    const fromSpine = onLeft ? PAGE - 1 - i : i - PAGE - 2
+    if (!onLeft && fromSpine < 0) continue
+    const top = y0 + (fromSpine < 3 ? 2 : fromSpine < 8 ? 1 : 0)
+    for (let y = top; y < y0 + H - 1; y++) book.push([x0 + i, y, 1, 1, fromSpine === 0 ? p.face : next() < 0.06 ? p.face : p.rim])
   }
-  const done = [...page, ...writing.map((pt) => px(pt, p.ink))]
+  // the spine, sunken in shade
+  book.push([SPINE, y0 + 2, 2, H - 3, p.bevel])
+  // The lines: on the left page, then the right; the writing waves a pixel up now and then, with gaps between words
+  const lines = (from: number, lengths: number[]): Point[] =>
+    lengths.flatMap((length, row) => {
+      const y = y0 + 5 + row * 3
+      const points: Point[] = []
+      for (let i = 0; i < length; i++) {
+        if ((i + row * 2) % 5 === 4) continue
+        points.push([from + i, y - ((i + row) % 3 === 0 ? 1 : 0)])
+      }
+      return points
+    })
+  const writing = [...lines(x0 + 2, [11, 12, 10, 12, 11, 6]), ...lines(SPINE + 3, [11, 11, 12, 10, 12, 5])]
+  const frames: Rect[][] = []
+  for (let k = 2; k <= writing.length + 1; k += 2) {
+    const drawn = writing.slice(0, Math.min(k, writing.length))
+    frames.push([...book, ...drawn.map((pt) => px(pt, p.ink)), ...quill(drawn[drawn.length - 1], p)])
+  }
+  const done = [...book, ...writing.map((pt) => px(pt, p.ink))]
   for (let i = 0; i < HOLD; i++) frames.push(done)
   return frames
 }
