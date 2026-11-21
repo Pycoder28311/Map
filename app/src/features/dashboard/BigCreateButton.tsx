@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { openCreate } from '../create/openCreate'
 import PixelRects from './cards/PixelRects'
 import { ARTICLE_PAPER, articleFrames, MAP_PAPER, mapFrames, SPRITE_H, SPRITE_W } from './createSprites'
+import { mapFacePixels } from './mapFace'
 import { STONE_BELOW_FACE, STONE_GREEN, STONE_PIXEL, STONE_PRESS, stonePixels, type StonePalette } from './stoneButton'
 
 /** The buttons' size in pixels of the drawing (STONE_PIXEL px each): 16:7, 288 × 126px */
@@ -53,8 +54,8 @@ function useFrame(count: number): number {
 
 /**
  * A big Create button of the Dashboard: a stone slab in pixel art (stoneButton.ts: its edges copied from the reference), 16:7. On the left
- * half of its face a little looping pixel animation in the slab's own colours shows what it makes (createSprites.ts); on the right half
- * its words, in two lines, in the blackletter pixel font. Its face (and all on it) sinks into the slab's thickness while pressed and is a
+ * half of its face a little looping pixel animation in the slab's own colours shows what it makes (createSprites.ts), or, for the map,
+ * the whole face inside the rim is a pixel map (mapFace.ts); on the right half its words, in two lines, in the blackletter pixel font. Its face (and all on it) sinks into the slab's thickness while pressed and is a
  * touch lighter on hover. It opens the Create modal (openCreate) on `kind`'s tab. Narrower on a small screen (its pixels scale down).
  */
 export default function BigCreateButton({ lines, art, kind, palette = STONE_GREEN }: Props) {
@@ -63,6 +64,8 @@ export default function BigCreateButton({ lines, art, kind, palette = STONE_GREE
   const { face, base } = useMemo(() => stonePixels(width, height, palette), [width, height, palette])
   const frames = useMemo(() => (art === 'map' ? mapFrames(palette) : articleFrames(palette)), [art, palette])
   const frame = useFrame(frames.length)
+  // The map button's whole face, inside its light rim, is a map (mapFace.ts)
+  const map = useMemo(() => (art === 'map' ? mapFacePixels(3, 3, width - 7, height - STONE_BELOW_FACE - 2) : null), [art, width, height])
   const pctX = (n: number) => `${(n / width) * 100}%`
   const pctY = (n: number) => `${(n / height) * 100}%`
   const faceRows = height - STONE_BELOW_FACE
@@ -82,15 +85,27 @@ export default function BigCreateButton({ lines, art, kind, palette = STONE_GREE
         style={{ ['--stone-press' as string]: pctY(STONE_PRESS) }}
       >
         <PixelRects rects={face} width={width} height={height} />
-        {/* What it makes, drawing itself */}
-        <span aria-hidden className="absolute" style={{ left: pctX(spriteX), top: pctY(spriteY), width: pctX(SPRITE_W), height: pctY(SPRITE_H) }}>
-          {/* (the pencil or quill may reach past its box: not clipped) */}
-          <PixelRects rects={frames[frame]} width={SPRITE_W} height={SPRITE_H} className="overflow-visible" />
-        </span>
+        {map ? (
+          // The map button: its face a map, land on the left and sea with a big island on the right
+          <PixelRects rects={map} width={width} height={height} />
+        ) : (
+          // What it makes, drawing itself (the quill may reach past its box: not clipped)
+          <span aria-hidden className="absolute" style={{ left: pctX(spriteX), top: pctY(spriteY), width: pctX(SPRITE_W), height: pctY(SPRITE_H) }}>
+            <PixelRects rects={frames[frame]} width={SPRITE_W} height={SPRITE_H} className="overflow-visible" />
+          </span>
+        )}
         <span
           aria-hidden
           className="absolute flex flex-col items-start justify-center font-(family-name:--font-display) text-[clamp(1.5rem,5vw,2.6rem)] leading-[0.95] select-none"
-          style={{ left: pctX(width / 2 - 2), top: 0, width: pctX(width / 2 - 4), height: pctY(faceRows), color: palette.ink }}
+          style={{
+            left: pctX(width / 2 - 2),
+            top: 0,
+            width: pctX(width / 2 - 4),
+            height: pctY(faceRows),
+            color: palette.ink,
+            // on the map, a light outline so the words read over the sea and the island
+            textShadow: map ? '0 0 2px rgb(236 242 222 / 0.95), 0 0 6px rgb(236 242 222 / 0.6)' : undefined,
+          }}
         >
           <span>{lines[0]}</span>
           <span>{lines[1]}</span>
