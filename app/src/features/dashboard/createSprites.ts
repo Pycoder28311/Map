@@ -67,9 +67,8 @@ function quill([x, y]: Point, p: StonePalette): Rect[] {
 }
 
 /**
- * A sheet of old paper that blends into the button: its face in the button's light rim colour, lightly speckled, its edges dissolving
- * into the button's face in a dither (every other pixel on its outermost ring, three in four on the next), so it has no hard border; the
- * same speckles every time (`seed`)
+ * A sheet of old paper on the button: its face in the button's light rim colour, lightly speckled inside a plain edge (no fade); the same
+ * speckles every time (`seed`)
  */
 function sheet(x: number, y: number, w: number, h: number, p: StonePalette, seed = 1): Rect[] {
   let n = seed * 7919
@@ -79,9 +78,7 @@ function sheet(x: number, y: number, w: number, h: number, p: StonePalette, seed
     for (let i = 0; i < w; i++) {
       const ring = Math.min(i, j, w - 1 - i, h - 1 - j)
       const roll = next()
-      if (ring === 0 && (i + j) % 2 === 1) continue
-      if (ring === 1 && (i + 2 * j) % 4 === 0) continue
-      rects.push([x + i, y + j, 1, 1, ring > 1 && roll < 0.07 ? p.face : p.rim])
+      rects.push([x + i, y + j, 1, 1, ring > 0 && roll < 0.07 ? p.face : p.rim])
     }
   }
   return rects

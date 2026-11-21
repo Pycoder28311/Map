@@ -6,7 +6,7 @@
 // ── The colours and sizes to change ──────────────────────────────────────────────────────────────────────────────────────────────
 export const BACKDROP = {
   /** The page's dark base: a deep night blue warmed toward brown */
-  base: '#1d1a1e',
+  base: '#211c1c',
 } as const
 /** One pixel of the grain on screen (px) */
 export const BACKDROP_PIXEL = 4
