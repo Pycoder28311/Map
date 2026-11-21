@@ -1,27 +1,27 @@
-// The Dashboard's background (NightBackdrop.tsx), in pixel art: a warm dark base with a faint grain over all of it, and at the top a misty
-// dusk: a soft mauve sky with a few stars and a pale moon, a dim vine along the top edge, two ridges of hills fading into the dark under
+// The Dashboard's background (NightBackdrop.tsx), in pixel art: a cool blue-slate night base with a faint grain over all of it (the warm
+// wood, leather and parchment of the cards stand out on it), and at the top a misty sky: a soft steel-blue sky with a few stars and a pale moon, a dim vine along the top edge, two ridges of hills fading into the dark under
 // the greeting; the page's edges a little darker. Each picture is a small SVG tile of BACKDROP_PIXEL px pixels (repeated across), drawn
 // here from a fixed seed, so it is the same every time. Pure.
 
 // ── The colours and sizes to change ──────────────────────────────────────────────────────────────────────────────────────────────
 export const BACKDROP = {
   /** The page's dark base */
-  base: '#201719',
+  base: '#151a24',
   /** The sky at the very top, and lower down (it fades into the base) */
-  skyTop: '#6a5761',
-  skyMid: '#5a4852',
-  skyLow: '#47383f',
+  skyTop: '#4b5873',
+  skyMid: '#3a4660',
+  skyLow: '#2b3447',
   /** The far ridge and the near one */
-  ridgeFar: '#382a31',
-  ridgeNear: '#2a1f24',
+  ridgeFar: '#232b3b',
+  ridgeNear: '#1a2030',
   /** Stars (bright and dim) and the moon */
-  starBright: '#b8a9b0',
-  starDim: '#8a7a82',
-  moon: '#a89aa0',
-  moonLight: '#c4b8bd',
+  starBright: '#c9d2e3',
+  starDim: '#8e99ad',
+  moon: '#b4bfd2',
+  moonLight: '#d7dfec',
   /** The vine along the top */
-  vine: '#8a7480',
-  leaf: '#7a6470',
+  vine: '#5f6d8a',
+  leaf: '#53607b',
 } as const
 /** One pixel of the pictures on screen (px) */
 export const BACKDROP_PIXEL = 4
@@ -109,7 +109,7 @@ export function backdropStyle(): Record<string, string> {
     { image: `linear-gradient(to bottom, transparent ${FADE_START}px, ${BACKDROP.base} ${FADE_END}px)`, repeat: 'no-repeat', position: '0 0', size: `100% ${FADE_END}px` },
     { image: r.image, repeat: 'repeat-x', position: `0 ${RIDGE_TOP}px`, size: `${r.w}px ${r.h}px` },
     {
-      image: `linear-gradient(to bottom, ${BACKDROP.skyTop} 0, ${BACKDROP.skyMid} 120px, ${BACKDROP.skyLow} 170px, rgb(32 23 25 / 0) ${SKY_END}px)`,
+      image: `linear-gradient(to bottom, ${BACKDROP.skyTop} 0, ${BACKDROP.skyMid} 120px, ${BACKDROP.skyLow} 170px, rgb(21 26 36 / 0) ${SKY_END}px)`,
       repeat: 'no-repeat',
       position: '0 0',
       size: `100% ${SKY_END}px`,

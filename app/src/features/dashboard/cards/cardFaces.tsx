@@ -72,7 +72,7 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
           <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_0_18px_4px_rgb(25_12_4/0.6)]" />
         </div>
         <PixelRects rects={paperMarks(String(item.id))} width={FRAME_SIZE} height={FRAME_SIZE} />
-        <PixelRects rects={FRAME_PIXELS} width={FRAME_SIZE} height={FRAME_SIZE} className="[filter:drop-shadow(0_3px_0_rgb(0_0_0/0.22))]" />
+        <PixelRects rects={FRAME_PIXELS} width={FRAME_SIZE} height={FRAME_SIZE} className="[filter:drop-shadow(0_4px_0_rgb(0_0_0/0.5))_drop-shadow(0_0_8px_rgb(0_0_0/0.35))]" />
         {/* The name on a little wooden plank (WoodSign), centred on the frame's bottom plank */}
         <WoodSign title={title} icon={Icon} className="absolute left-1/2 max-w-[85%] -translate-x-1/2 -translate-y-1/2" style={{ top: `${(BOTTOM_PLANK_MIDDLE / FRAME_SIZE) * 100}%` }} />
         {marks}
@@ -88,7 +88,7 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
       // pages and a ribbon along the bottom. On hover it lifts a little off the shelf
       <div {...box} className={`group/card relative shrink-0 snap-start text-start ${BOOK_SIZE} ${className}`} style={{ color: BOOK.ink }}>
         <div className="absolute inset-0 transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none">
-          <BookArt className="[filter:drop-shadow(0_3px_0_rgb(0_0_0/0.22))]" />
+          <BookArt className="[filter:drop-shadow(0_4px_0_rgb(0_0_0/0.5))_drop-shadow(0_0_8px_rgb(0_0_0/0.35))]" />
           {/* The picture, filling its box inside the one-pixel outline */}
           <div className="overflow-hidden" style={{ ...bookAt(frame.x + 1, frame.y + 1, frame.w - 2, frame.h - 2), backgroundColor: BOOK.picture }}>
             {src ? (
