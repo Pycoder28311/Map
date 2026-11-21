@@ -139,15 +139,15 @@ export function mapFrames(p: StonePalette): Rect[][] {
  * A quill writing in an open book, in its own pastel colours (BOOK_ART): two off-white pages spread from a sunken spine (their outer
  * corners curving up a little), the brown cover showing round them and the pages' edges stacked under them; the quill writes the left page's lines, then the right page's
  */
-/** The open book's own colours: faint pastel off-white pages, a soft faded brown cover, a soft brown ink */
+/** The open book's own colours: faint pastel pages, cover and ink, between off-white and brown and the button's green */
 export const BOOK_ART = {
-  page: '#ece6da',
-  speck: '#e2dace',
-  spine: '#d3c5b0',
-  edge: '#ddd3c2',
-  edgeShade: '#c2b29b',
-  cover: '#a8917a',
-  ink: '#6a5a4a',
+  page: '#e4e8cf',
+  speck: '#d8ddc0',
+  spine: '#bfc5a0',
+  edge: '#d4d9b8',
+  edgeShade: '#aab08a',
+  cover: '#8e9068',
+  ink: '#545a3c',
 } as const
 
 export function articleFrames(p: StonePalette): Rect[][] {

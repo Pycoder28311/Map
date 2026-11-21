@@ -120,11 +120,11 @@ export default function BigCreateButton({ lines, art, kind, palette = STONE_GREE
         )}
         <span
           aria-hidden
-          className="absolute flex flex-col items-start justify-center font-(family-name:--font-display) text-[clamp(1.5rem,5vw,2.6rem)] leading-[0.95] select-none"
+          className="absolute flex flex-col items-start justify-center font-(family-name:--font-display) text-[clamp(1.75rem,6vw,3.1rem)] leading-[0.9] select-none"
           style={{
-            left: pctX(width / 2 - 2),
+            left: pctX(width / 2 - 3),
             top: 0,
-            width: pctX(width / 2 - 4),
+            width: pctX(width / 2 - 2),
             height: pctY(faceRows),
             color: palette.ink,
             // on the map, a light outline so the words read over the land

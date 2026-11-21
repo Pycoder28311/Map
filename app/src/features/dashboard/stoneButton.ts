@@ -20,10 +20,10 @@ export const STONE: StonePalette = {
   ink: '#2a1f22',
 }
 
-/** Mossy green stone, the same shades of light and dark as the reference's: the Dashboard's Create buttons */
+/** Green stone, the face the Create map button's grass (mapFace.ts), so both Create buttons are the same green */
 export const STONE_GREEN: StonePalette = {
-  rim: '#a9c98b',
-  face: '#86ad67',
+  rim: '#c4de98',
+  face: '#a8c872',
   bevel: '#64874c',
   bevelDark: '#4a683b',
   depth: '#2f4429',
