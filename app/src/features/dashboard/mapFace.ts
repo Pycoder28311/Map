@@ -1,6 +1,6 @@
 // The Create map button's face as a pixel-art map (BigCreateButton.tsx), filling the face inside its light rim: the sea over all its left
-// part (from the left edge, full height; a few wave marks), blending through shallows and a beach into plain green land on the right
-// (only a faint lighter speck now and then), and a small island in the sea's middle (shallows, a beach, grass, two snowy mountains), open water all round it. While hovered, a pencil draws a dashed
+// part (from the left edge, full height; a few wave marks), blending through shallows and a beach to a drawn coastline and plain golden land on the right
+// (only a faint lighter speck now and then), and a small golden island in the sea's middle (shallows, a beach, its coastline, two snowy mountains), open water all round it. While hovered, a pencil draws a dashed
 // route across the island to an X (mapPencilFrames). On the button's pixel grid; the same every time. Pure.
 
 import type { StonePalette } from './stoneButton'
@@ -8,9 +8,12 @@ import { pencil, through } from './createSprites'
 
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const MAP_FACE = {
-  grass: '#a8c872',
-  grassLight: '#b4d17f',
-  sand: '#d8c88e',
+  /** The land and the island: the button's gold (stoneButton.ts STONE_GOLD), a lighter speck now and then */
+  grass: '#e8b84a',
+  grassLight: '#f0c968',
+  /** The pale beach along the coast, and the coastline drawn darker in the gold */
+  sand: '#f5dc9a',
+  coast: '#b8842c',
   shallow: '#8cc4cf',
   sea: '#5c9cbc',
   wave: '#86bfd6',
@@ -51,10 +54,12 @@ function layout(x0: number, y0: number, x1: number, y1: number) {
   return { w, h, sea, cx, cy, island }
 }
 
-/** The colour at `t` along the shore: deep sea up to 0.7, then smoothly through the shallows (0.9) and the beach (1.03) to the grass
- *  (1.12), in steps of a few colours so it stays pixel art */
-const STOPS: [number, string][] = [[0.7, MAP_FACE.sea], [0.9, MAP_FACE.shallow], [1.0, MAP_FACE.sand], [1.06, MAP_FACE.sand], [1.12, MAP_FACE.grass]]
+/** The colour at `t` along the shore: deep sea up to 0.7, then smoothly through the shallows (0.9) to a pale beach, a darker coastline
+ * (1.0) and the golden land (1.06), in steps of a few colours so it stays pixel art */
+const STOPS: [number, string][] = [[0.7, MAP_FACE.sea], [0.9, MAP_FACE.shallow], [0.97, MAP_FACE.sand], [1.0, MAP_FACE.sand], [1.06, MAP_FACE.grass], [1.12, MAP_FACE.grass]]
 function ramp(t: number): string {
+  // the coastline: a darker line in the gold just inland of the beach, a pixel or so wide, as on a drawn map
+  if (t >= 1.0 && t < 1.035) return MAP_FACE.coast
   if (t <= STOPS[0][0]) return STOPS[0][1]
   for (let k = 1; k < STOPS.length; k++) {
     const [t1, c1] = STOPS[k]
