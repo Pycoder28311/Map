@@ -13,25 +13,25 @@ export const BOOK = {
   /** The hard outline round everything */
   outline: '#0d0806',
   /** The back cover, seen along the left, its ridges and their shade, and its stitches */
-  spine: '#301a11',
-  ridge: '#583322',
+  spine: '#41261b',
+  ridge: '#71442f',
   ridgeShade: '#100905',
   stitch: '#6e5f4c',
   /** The front cover: its face, the light line along its top and the shade along its right and bottom */
-  cover: '#4a271c',
-  coverLight: '#5b3325',
-  coverShade: '#371c13',
+  cover: '#603628',
+  coverLight: '#754433',
+  coverShade: '#49281d',
   /** The faint shapes on the cover: its grain (darker and lighter streaks), small diamonds, scratches and worn specks */
-  grainDark: '#3f2118',
-  grainLight: '#542e22',
-  motif: '#522c21',
-  scratch: '#653a2a',
-  wear: '#6e4230',
+  grainDark: '#532e23',
+  grainLight: '#6c3e2f',
+  motif: '#6a3c2e',
+  scratch: '#814d39',
+  wear: '#8c5741',
   /** The debossed border round the cover: its pressed line and the light line beside it */
-  deboss: '#30180f',
-  emboss: '#583124',
+  deboss: '#412318',
+  emboss: '#714232',
   /** The hinge, where the cover meets the spine, and its rivets */
-  hinge: '#371c13',
+  hinge: '#49281d',
   rivet: '#8d8b86',
   rivetShade: '#3b3936',
   /** The bands' dashes (one pixel tall, a muted stitch close to the leather) and the groove they sit in */
