@@ -55,16 +55,16 @@ export default function RowHeader({ name, reflowId, onRename, onOpen, sort, onSo
               if (next && next !== name) onRename(next)
               setEditing(false)
             }}
-            className="min-w-0 flex-1 rounded-(--corner-sm) bg-transparent text-title outline-2 outline-accent [field-sizing:content]"
+            className="min-w-0 flex-1 rounded-(--corner-sm) bg-transparent text-title font-(family-name:--font-pixel) font-medium tracking-wide outline-2 outline-accent [field-sizing:content]"
           />
         ) : (
           <>
             {onOpen ? (
-              <button type="button" onClick={onOpen} title={`Open ${name}`} className="min-w-0 cursor-pointer truncate rounded-(--corner-sm) text-start text-title hover:underline focus-visible:outline-2 focus-visible:outline-accent">
+              <button type="button" onClick={onOpen} title={`Open ${name}`} className="min-w-0 cursor-pointer truncate rounded-(--corner-sm) text-start text-title font-(family-name:--font-pixel) font-medium tracking-wide hover:underline focus-visible:outline-2 focus-visible:outline-accent">
                 {name}
               </button>
             ) : (
-              <h2 className="min-w-0 truncate text-title">{name}</h2>
+              <h2 className="min-w-0 truncate text-title font-(family-name:--font-pixel) font-medium tracking-wide">{name}</h2>
             )}
             {/* ✎ on the name's right, on hover: renames it in place */}
             {onRename && (

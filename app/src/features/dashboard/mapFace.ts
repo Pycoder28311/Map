@@ -1,6 +1,6 @@
-// The Create map button's face as a pixel-art map (BigCreateButton.tsx), filling the face inside its light rim: plain green land (only a
-// faint lighter speck now and then) with a bay of sea on its left, land all round it (a beach, shallows, a few wave marks), and a small
-// island in the bay's middle (shallows, a beach, grass, two snowy mountains), open water all round it. While hovered, a pencil draws a dashed
+// The Create map button's face as a pixel-art map (BigCreateButton.tsx), filling the face inside its light rim: the sea over all its left
+// part (from the left edge, full height; a few wave marks), blending through shallows and a beach into plain green land on the right
+// (only a faint lighter speck now and then), and a small island in the sea's middle (shallows, a beach, grass, two snowy mountains), open water all round it. While hovered, a pencil draws a dashed
 // route across the island to an X (mapPencilFrames). On the button's pixel grid; the same every time. Pure.
 
 import type { StonePalette } from './stoneButton'
@@ -34,17 +34,12 @@ const scatter = (i: number, j: number) => {
 function layout(x0: number, y0: number, x1: number, y1: number) {
   const w = x1 - x0 + 1
   const h = y1 - y0 + 1
-  // The sea: a rounded box on the left filling nearly all of it (about a pixel of land left along the rim, all round it), its right
-  // shore short of the words; a little uneven
+  // The sea: all of the left part, from the face's left edge and its full height, to a wavering shore short of the words; 1 on the shore
+  // line (below 1 the sea, above it the beach and the land: 0.03 a pixel, so the colours blend over a few pixels either side)
   const sx = 20.5
   const sy = (h - 1) / 2
-  const rx = 17.6
-  const ry = (h - 2.4) / 2 / 1.12
-  const sea = (i: number, j: number) => {
-    const a = Math.atan2(j - sy, i - sx)
-    const r = 1 + 0.025 * Math.sin(5 * a + 1.1) + 0.015 * Math.sin(9 * a + 0.3)
-    return ((Math.abs(i - sx) / (rx * r)) ** 4 + (Math.abs(j - sy) / (ry * r)) ** 4) ** 0.25
-  }
+  const shore = (j: number) => 37 + 1.6 * Math.sin(j / 3.2 + 0.4) + 0.9 * Math.sin(j / 1.6 + 2)
+  const sea = (i: number, _j: number) => 1 + (i - shore(_j)) * 0.03
   // The island: small, in the sea's middle, a ring of open water all round it
   const cx = Math.round(sx)
   const cy = Math.round(sy)
