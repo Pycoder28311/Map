@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import sky from '../../assets/dashboard-sky.jpg'
-import { BACKDROP, horizonStyle, lanternGlow, SKY_DIM, SKY_FADE_FROM, SKY_RATIO, VIGNETTE, floorStyle } from './nightBackdrop'
+import { BACKDROP, compassRose, floorStyle, horizonStyle, lanternGlow, SKY_DIM, SKY_FADE_FROM, SKY_RATIO, SURFACE, VIGNETTE } from './nightBackdrop'
 
 /** Where the lantern's light is centred (px down the page): on the note input and the Create buttons */
 const LANTERN_AT = 560
@@ -13,12 +13,20 @@ const LANTERN_AT = 560
  */
 export default function NightBackdrop() {
   const floor = useMemo(() => floorStyle(), [])
+  const rose = useMemo(() => compassRose(), [])
   const horizon = useMemo(() => horizonStyle(), [])
   const fade = `linear-gradient(to bottom, black ${SKY_FADE_FROM * 100}%, transparent 100%)`
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 hidden dark:block" style={{ backgroundColor: BACKDROP.base }}>
       {/* The slate floor, under the sky */}
       <div className="absolute inset-0" style={floor} />
+      {/* On the parchment, a faint compass rose on the right, under the sky */}
+      {SURFACE === 'parchment' && (
+        <div
+          className="absolute right-[14%]"
+          style={{ top: 1180, width: rose.size, height: rose.size, backgroundImage: rose.image, backgroundSize: '100% 100%' }}
+        />
+      )}
       {/* The lantern's light on the floor */}
       <div className="absolute inset-0" style={{ backgroundImage: lanternGlow(LANTERN_AT) }} />
       {/* The sky, ending at the horizon: the hills' silhouette lies over its fading foot, solid below into the floor */}

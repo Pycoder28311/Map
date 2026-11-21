@@ -4,11 +4,11 @@
 // BACKDROP_PIXEL px pixels, drawn here from a fixed seed, so it is the same every time. Pure.
 
 // ── The colours and sizes to change ──────────────────────────────────────────────────────────────────────────────────────────────
-/** Which floor lies under the sky: a dark green felt (a war table's), or a dark slate floor */
-export const SURFACE: 'felt' | 'slate' = 'felt'
+/** Which floor lies under the sky: dark old parchment (a giant map under everything), dark green felt (a war table's), or dark slate */
+export const SURFACE: 'parchment' | 'felt' | 'slate' = 'parchment'
 
 /** Each floor's dark base colour */
-const BASES = { felt: '#14201a', slate: '#1a1c20' } as const
+const BASES = { parchment: '#221d16', felt: '#14201a', slate: '#1a1c20' } as const
 
 export const BACKDROP = {
   /** The page's dark base: the floor's (deep bottle green felt, or cool charcoal slate); warm cards and brass stand out on either */
@@ -130,9 +130,75 @@ function felt(): { image: string; w: number; h: number } {
   return { image: tile(N, N, body), w: N * U, h: N * U }
 }
 
-/** The CSS of the floor under the sky picture (SURFACE: felt or slate) */
+/**
+ * Dark old parchment, faint and see-through (so the base's colour shows through), like a giant map lying under everything: soft blotches a
+ * little lighter and darker, a fold across it each way (a dark crease and a light ridge beside it), and faint contour lines looping round
+ * a few hills; the same every time (a fixed seed)
+ */
+function parchment(): { image: string; w: number; h: number } {
+  const next = seeded(51)
+  const W = 160
+  const H = 120
+  let body = ''
+  // blotches: soft round stains, lighter or darker, each a few rings fading out (they wrap round the tile's edges)
+  for (let k = 0; k < 14; k++) {
+    const cx = next() * W
+    const cy = next() * H
+    const r = 5 + next() * 12
+    const light = next() < 0.55
+    for (let y = Math.floor(cy - r); y <= cy + r; y++)
+      for (let x = Math.floor(cx - r); x <= cx + r; x++) {
+        const d = Math.hypot(x - cx, y - cy) / r
+        if (d > 1 || next() > 0.55 * (1 - d)) continue
+        body += rect(((x % W) + W) % W, ((y % H) + H) % H, 1, 1, light ? 'rgb(255 230 180 / 0.035)' : 'rgb(0 0 0 / 0.08)')
+      }
+  }
+  // contour lines: faint uneven loops round a few hills
+  for (const [cx, cy, rings] of [[42, 34, 3], [118, 82, 4], [130, 22, 2]]) {
+    for (let ring = 1; ring <= rings; ring++) {
+      const r = ring * 5
+      for (let a = 0; a < 360; a += 3) {
+        const t = (a * Math.PI) / 180
+        const rr = r * (1 + 0.18 * Math.sin(3 * t + cx) + 0.1 * Math.sin(5 * t + cy))
+        if ((a / 3) % 7 === 6) continue
+        body += rect(Math.round(cx + rr * Math.cos(t)), Math.round(cy + rr * 0.7 * Math.sin(t)), 1, 1, 'rgb(255 225 170 / 0.05)')
+      }
+    }
+  }
+  // the folds: a dark crease and a light ridge beside it, across and down
+  body += rect(0, 59, W, 1, 'rgb(0 0 0 / 0.16)') + rect(0, 60, W, 1, 'rgb(255 230 185 / 0.035)')
+  body += rect(79, 0, 1, H, 'rgb(0 0 0 / 0.16)') + rect(80, 0, 1, H, 'rgb(255 230 185 / 0.035)')
+  return { image: tile(W, H, body), w: W * U, h: H * U }
+}
+
+/** A faint compass rose drawn on the parchment (one, on the right of the page under the sky): four long points and four short ones round a
+ *  ring, a little lighter than the parchment */
+export function compassRose(): { image: string; size: number } {
+  const N = 41
+  const c = 20
+  const ink = 'rgb(255 225 170 / 0.09)'
+  let body = ''
+  // the ring
+  for (let a = 0; a < 360; a += 4) {
+    const t = (a * Math.PI) / 180
+    body += rect(Math.round(c + 9 * Math.cos(t)), Math.round(c + 9 * Math.sin(t)), 1, 1, ink)
+  }
+  // the points: long ones north, south, east, west; short ones between
+  for (let k = 0; k < 8; k++) {
+    const t = (k * Math.PI) / 4
+    const len = k % 2 === 0 ? 19 : 11
+    for (let d = 0; d <= len; d++) {
+      const w = Math.max(0, Math.round((1 - d / len) * (k % 2 === 0 ? 2.5 : 1.5)))
+      for (let side = -w; side <= w; side++)
+        body += rect(Math.round(c + d * Math.cos(t) - side * Math.sin(t)), Math.round(c + d * Math.sin(t) + side * Math.cos(t)), 1, 1, ink)
+    }
+  }
+  return { image: tile(N, N, body), size: N * U }
+}
+
+/** The CSS of the floor under the sky picture (SURFACE: parchment, felt or slate) */
 export function floorStyle(): Record<string, string> {
-  const g = SURFACE === 'felt' ? felt() : flagstones()
+  const g = SURFACE === 'parchment' ? parchment() : SURFACE === 'felt' ? felt() : flagstones()
   return { backgroundImage: g.image, backgroundRepeat: 'repeat', backgroundSize: `${g.w}px ${g.h}px` }
 }
 
