@@ -6,10 +6,10 @@
 // ── The colours and sizes to change ──────────────────────────────────────────────────────────────────────────────────────────────
 export const BACKDROP = {
   /** The page's dark base: a deep night blue warmed toward brown */
-  base: '#211c1c',
+  base: '#2c2420',
 } as const
 /** One pixel of the wooden surface on screen (px) */
-export const BACKDROP_PIXEL = 4
+export const BACKDROP_PIXEL = 5
 /** The sky picture: its width ÷ height, and where (as a share of its height) it starts fading into the base, and how much darker it is
  *  made (so the greeting reads on it) */
 export const SKY_RATIO = 1254 / 460
@@ -44,12 +44,12 @@ function wood(): { image: string; w: number; h: number } {
   for (let b = 0; b < BOARDS; b++) {
     const top = b * BOARD
     // the board's tone, a little different from its neighbours'
-    body += rect(0, top, W, BOARD, b % 2 ? 'rgb(255 200 150 / 0.025)' : 'rgb(0 0 0 / 0.05)')
+    body += rect(0, top, W, BOARD, b % 2 ? 'rgb(255 205 160 / 0.04)' : 'rgb(0 0 0 / 0.05)')
     // grain streaks along it
     for (let row = top; row < top + BOARD - 1; row++) {
       for (let x = Math.floor(next() * 8); x < W; x += 6 + Math.floor(next() * 14)) {
         const length = Math.min(4 + Math.floor(next() * 14), W - x)
-        body += rect(x, row, length, 1, next() < 0.65 ? 'rgb(0 0 0 / 0.14)' : 'rgb(255 215 175 / 0.05)')
+        body += rect(x, row, length, 1, next() < 0.65 ? 'rgb(0 0 0 / 0.14)' : 'rgb(255 218 180 / 0.07)')
       }
     }
     // a knot now and then: a dark ring with a darker heart
