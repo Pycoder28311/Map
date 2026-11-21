@@ -34,13 +34,16 @@ const scatter = (i: number, j: number) => {
 function layout(x0: number, y0: number, x1: number, y1: number) {
   const w = x1 - x0 + 1
   const h = y1 - y0 + 1
-  // The sea: an uneven oval on the left, land all round it (so the button's rim always lies on land), well short of the words
-  const sx = w * 0.225
-  const sy = h * 0.5
+  // The sea: a rounded box on the left filling nearly all of it (a pixel or two of land left along the rim, all round it), its right
+  // shore short of the words; a little uneven
+  const sx = 20.5
+  const sy = (h - 1) / 2
+  const rx = 17
+  const ry = (h - 4) / 2 / 1.12
   const sea = (i: number, j: number) => {
     const a = Math.atan2(j - sy, i - sx)
-    const r = 1 + 0.08 * Math.sin(3 * a + 1.1) + 0.05 * Math.sin(5 * a + 0.3)
-    return Math.hypot((i - sx) / (w * 0.19 * r), (j - sy) / (h * 0.43 * r))
+    const r = 1 + 0.025 * Math.sin(5 * a + 1.1) + 0.015 * Math.sin(9 * a + 0.3)
+    return ((Math.abs(i - sx) / (rx * r)) ** 4 + (Math.abs(j - sy) / (ry * r)) ** 4) ** 0.25
   }
   // The island: small, in the sea's middle, a ring of open water all round it
   const cx = Math.round(sx)

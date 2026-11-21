@@ -136,18 +136,29 @@ export function mapFrames(p: StonePalette): Rect[][] {
 }
 
 /**
- * A quill writing in an open book: two pages spread from a sunken spine (their outer corners curving up a little), the green cover showing
- * round them and the pages' edges stacked under them; the quill writes the left page's lines, then the right page's
+ * A quill writing in an open book, in its own pastel colours (BOOK_ART): two off-white pages spread from a sunken spine (their outer
+ * corners curving up a little), the brown cover showing round them and the pages' edges stacked under them; the quill writes the left page's lines, then the right page's
  */
+/** The open book's own colours: pastel off-white pages and a soft brown cover */
+export const BOOK_ART = {
+  page: '#f4ecdc',
+  speck: '#e6d9bf',
+  spine: '#cdb48f',
+  edge: '#e2d2b2',
+  edgeShade: '#b99d74',
+  cover: '#8c6a48',
+  ink: '#3a2a1c',
+} as const
+
 export function articleFrames(p: StonePalette): Rect[][] {
   const [x0, y0, W, H] = ARTICLE_PAPER
   const PAGE = 16
   const SPINE = x0 + PAGE
   const book: Rect[] = []
   // the cover, a pixel round the pages and under them
-  book.push([x0 - 1, y0 + 2, W + 2, H, p.bevelDark])
+  book.push([x0 - 1, y0 + 2, W + 2, H, BOOK_ART.cover])
   // the pages' edges, stacked under the spread
-  book.push([x0, y0 + H - 1, W, 2, p.face], [x0, y0 + H, W, 1, p.bevel])
+  book.push([x0, y0 + H - 1, W, 2, BOOK_ART.edge], [x0, y0 + H, W, 1, BOOK_ART.edgeShade])
   let n = 101
   const next = () => (n = (n * 1103515245 + 12345) % 2147483648) / 2147483648
   // the two pages: each column's top curves down toward the spine
@@ -156,10 +167,10 @@ export function articleFrames(p: StonePalette): Rect[][] {
     const fromSpine = onLeft ? PAGE - 1 - i : i - PAGE - 2
     if (!onLeft && fromSpine < 0) continue
     const top = y0 + (fromSpine < 3 ? 2 : fromSpine < 8 ? 1 : 0)
-    for (let y = top; y < y0 + H - 1; y++) book.push([x0 + i, y, 1, 1, fromSpine === 0 ? p.face : next() < 0.06 ? p.face : p.rim])
+    for (let y = top; y < y0 + H - 1; y++) book.push([x0 + i, y, 1, 1, fromSpine === 0 ? BOOK_ART.speck : next() < 0.06 ? BOOK_ART.speck : BOOK_ART.page])
   }
   // the spine, sunken in shade
-  book.push([SPINE, y0 + 2, 2, H - 3, p.bevel])
+  book.push([SPINE, y0 + 2, 2, H - 3, BOOK_ART.spine])
   // The lines: on the left page, then the right; the writing waves a pixel up now and then, with gaps between words
   const lines = (from: number, lengths: number[]): Point[] =>
     lengths.flatMap((length, row) => {
@@ -175,9 +186,9 @@ export function articleFrames(p: StonePalette): Rect[][] {
   const frames: Rect[][] = []
   for (let k = 2; k <= writing.length + 1; k += 2) {
     const drawn = writing.slice(0, Math.min(k, writing.length))
-    frames.push([...book, ...drawn.map((pt) => px(pt, p.ink)), ...quill(drawn[drawn.length - 1], p)])
+    frames.push([...book, ...drawn.map((pt) => px(pt, BOOK_ART.ink)), ...quill(drawn[drawn.length - 1], p)])
   }
-  const done = [...book, ...writing.map((pt) => px(pt, p.ink))]
+  const done = [...book, ...writing.map((pt) => px(pt, BOOK_ART.ink))]
   for (let i = 0; i < HOLD; i++) frames.push(done)
   return frames
 }
