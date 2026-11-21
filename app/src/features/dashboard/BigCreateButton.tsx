@@ -8,11 +8,14 @@ import { STONE_BELOW_FACE, STONE_GREEN, STONE_PIXEL, STONE_PRESS, stonePixels, t
 export const BIG_BUTTON_W = 96
 export const BIG_BUTTON_H = 42
 
-/** Where each animation sits on the face (pixels of the drawing): its paper centred on the face's height, as far from the face's left
- *  edge as from its top */
+/** How thick the face's light rim is along its top and left (pixels of the drawing): the drawings keep clear of it */
+const RIM = 3
+/** Where each animation sits on the face (pixels of the drawing): its paper centred between the light rim and the bottom bevel, as far from
+ *  the rim on the left as above and below, so it stands apart from the button's edges */
 function spriteAt(paper: readonly [number, number, number, number]): [x: number, y: number] {
   const [px, py, , ph] = paper
-  const margin = Math.floor((BIG_BUTTON_H - STONE_BELOW_FACE - ph) / 2)
+  const inner = BIG_BUTTON_H - STONE_BELOW_FACE - RIM
+  const margin = RIM + Math.max(1, Math.floor((inner - ph) / 2))
   return [margin - px, margin - py]
 }
 const SPRITE_AT: Record<'map' | 'article', [x: number, y: number]> = { map: spriteAt(MAP_PAPER), article: spriteAt(ARTICLE_PAPER) }

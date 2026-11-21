@@ -10,7 +10,7 @@ export const SPRITE_W = 40
 export const SPRITE_H = 38
 /** Where each sheet of paper is on its animation's grid (x, y, width, height): the button places it by its paper */
 export const MAP_PAPER = [1, 4, 33, 28] as const
-export const ARTICLE_PAPER = [3, 5, 27, 31] as const
+export const ARTICLE_PAPER = [3, 5, 24, 27] as const
 
 type Rect = [x: number, y: number, w: number, h: number, fill: string]
 type Point = [x: number, y: number]
@@ -147,9 +147,9 @@ export function articleFrames(p: StonePalette): Rect[][] {
     [x0 + w - 4, y0 + 1, 3, 3, p.rim],
   ]
   // The lines: their lengths, a short last one; the writing waves a pixel up now and then, with gaps between words
-  const lengths = [14, 21, 20, 21, 19, 21, 18, 10]
+  const lengths = [12, 18, 17, 18, 16, 9]
   const writing: Point[] = lengths.flatMap((length, row) => {
-    const y = y0 + 7 + row * 3
+    const y = y0 + 6 + row * 3
     const points: Point[] = []
     for (let i = 0; i < length; i++) {
       if ((i + row * 2) % 6 === 5) continue
