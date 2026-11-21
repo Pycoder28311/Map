@@ -66,8 +66,7 @@ function useFrame(count: number): number {
 /**
  * A big Create button of the Dashboard: a stone slab in pixel art (stoneButton.ts: its edges copied from the reference), 16:7. On the left
  * half of its face a little looping pixel animation in the slab's own colours shows what it makes (createSprites.ts), or, for the map,
- * the whole face inside the rim is a pixel map (mapFace.ts); a half see-through green veil over the drawing; its words, in two lines,
- * centred on the face, in the blackletter pixel font. Its face (and all on it) sinks into the slab's thickness while pressed and is a
+ * the whole face inside the rim is a pixel map (mapFace.ts); on the right half its words, in two lines, in the blackletter pixel font. Its face (and all on it) sinks into the slab's thickness while pressed and is a
  * touch lighter on hover. It opens the Create modal (openCreate) on `kind`'s tab. Narrower on a small screen (its pixels scale down).
  */
 export default function BigCreateButton({ lines, art, kind, palette = STONE_GREEN }: Props) {
@@ -108,7 +107,7 @@ export default function BigCreateButton({ lines, art, kind, palette = STONE_GREE
       >
         <PixelRects rects={face} width={width} height={height} />
         {map ? (
-          // The map button: its face a map, the sea (and an island in it) on its left, land on its right
+          // The map button: its face a map, land with a bay of sea (and an island in it) on its left
           <>
             <PixelRects rects={map} width={width} height={height} />
             {pencilFrame !== null && <PixelRects rects={pencilFrames[pencilFrame]} width={width} height={height} className="overflow-visible" />}
@@ -119,23 +118,17 @@ export default function BigCreateButton({ lines, art, kind, palette = STONE_GREE
             <PixelRects rects={frames[frame]} width={SPRITE_W} height={SPRITE_H} className="overflow-visible" />
           </span>
         )}
-        {/* A green veil over the drawing (half see-through), so the words lie on the button's own green */}
         <span
           aria-hidden
-          className="absolute"
-          style={{ left: pctX(3), top: pctY(3), width: pctX(width - 9), height: pctY(faceRows - 4), backgroundColor: palette.face, opacity: 0.5 }}
-        />
-        {/* The words, centred on the face, with a light outline so they read over the drawing */}
-        <span
-          aria-hidden
-          className="absolute flex flex-col items-center justify-center text-center font-(family-name:--font-display) text-[clamp(1.75rem,6vw,3.1rem)] leading-[0.9] select-none"
+          className="absolute flex flex-col items-start justify-center font-(family-name:--font-display) text-[clamp(1.75rem,6vw,3.1rem)] leading-[0.9] select-none"
           style={{
-            left: 0,
+            left: pctX(width / 2 - 3),
             top: 0,
-            width: pctX(width - 4),
+            width: pctX(width / 2 - 2),
             height: pctY(faceRows),
             color: palette.ink,
-            textShadow: '0 0 2px rgb(236 242 222 / 0.95), 0 0 6px rgb(236 242 222 / 0.6)',
+            // on the map, a light outline so the words read over the land
+            textShadow: map ? '0 0 2px rgb(236 242 222 / 0.95), 0 0 6px rgb(236 242 222 / 0.6)' : undefined,
           }}
         >
           <span>{lines[0]}</span>
