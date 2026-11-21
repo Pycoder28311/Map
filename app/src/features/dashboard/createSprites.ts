@@ -6,10 +6,10 @@
 
 import type { StonePalette } from './stoneButton'
 
-export const SPRITE_W = 46
+export const SPRITE_W = 40
 export const SPRITE_H = 38
 /** Where each sheet of paper is on its animation's grid (x, y, width, height): the button places it by its paper */
-export const MAP_PAPER = [1, 1, 44, 35] as const
+export const MAP_PAPER = [1, 4, 33, 28] as const
 export const ARTICLE_PAPER = [3, 5, 27, 31] as const
 
 type Rect = [x: number, y: number, w: number, h: number, fill: string]
@@ -66,20 +66,12 @@ function quill([x, y]: Point, p: StonePalette): Rect[] {
   return rects
 }
 
-/** A 4 × 4 ordered dither: which pixels of a ring show, so a fade reads as an even gradient rather than noise */
-const BAYER = [
-  [0, 8, 2, 10],
-  [12, 4, 14, 6],
-  [3, 11, 1, 9],
-  [15, 7, 13, 5],
-]
-
 /**
- * A sheet of old paper that blends into the button: its face in the button's light rim colour, lightly speckled, its edges fading into
- * the button's face over `fade` rings of pixels (an ordered dither, each ring further in a little fuller), so it has no border; the same
- * speckles every time (`seed`)
+ * A sheet of old paper that blends into the button: its face in the button's light rim colour, lightly speckled, its edges dissolving
+ * into the button's face in a dither (every other pixel on its outermost ring, three in four on the next), so it has no hard border; the
+ * same speckles every time (`seed`)
  */
-function sheet(x: number, y: number, w: number, h: number, p: StonePalette, seed = 1, fade = 2): Rect[] {
+function sheet(x: number, y: number, w: number, h: number, p: StonePalette, seed = 1): Rect[] {
   let n = seed * 7919
   const next = () => (n = (n * 1103515245 + 12345) % 2147483648) / 2147483648
   const rects: Rect[] = []
@@ -87,31 +79,9 @@ function sheet(x: number, y: number, w: number, h: number, p: StonePalette, seed
     for (let i = 0; i < w; i++) {
       const ring = Math.min(i, j, w - 1 - i, h - 1 - j)
       const roll = next()
-      if (ring < fade && BAYER[j % 4][i % 4] >= ((ring + 1) / (fade + 1)) * 16) continue
-      rects.push([x + i, y + j, 1, 1, ring >= fade && roll < 0.07 ? p.face : p.rim])
-    }
-  }
-  return rects
-}
-
-/**
- * A sheet of old paper that melts into the button in pixels (an ordered dither): its top, left and bottom edges over `edge` rings, its
- * right side over a long `right` columns, so it reads as a pixel gradient into the button's face; lightly speckled; the same speckles
- * every time (`seed`)
- */
-function ditheredSheet(x: number, y: number, w: number, h: number, p: StonePalette, seed: number, edge: number, right: number): Rect[] {
-  let n = seed * 7919
-  const next = () => (n = (n * 1103515245 + 12345) % 2147483648) / 2147483648
-  const rects: Rect[] = []
-  for (let j = 0; j < h; j++) {
-    for (let i = 0; i < w; i++) {
-      // How much paper is left here (0 none, 1 all): the nearer the top, left or bottom edge, or the further right, the less
-      const fromEdge = Math.min(1, (Math.min(i, j, h - 1 - j) + 1) / (edge + 1))
-      const fromRight = Math.min(1, (w - i) / (right + 1))
-      const density = Math.min(fromEdge, fromRight)
-      const roll = next()
-      if (BAYER[j % 4][i % 4] >= density * 16) continue
-      rects.push([x + i, y + j, 1, 1, roll < 0.07 * density ? p.face : p.rim])
+      if (ring === 0 && (i + j) % 2 === 1) continue
+      if (ring === 1 && (i + 2 * j) % 4 === 0) continue
+      rects.push([x + i, y + j, 1, 1, ring > 1 && roll < 0.07 ? p.face : p.rim])
     }
   }
   return rects
@@ -129,14 +99,13 @@ function inside([x, y]: Point, corners: Point[]): boolean {
 }
 
 /**
- * A pencil drawing a little map on an old sheet (speckled, a fold down its middle, ripples on its sea, melting into the button in
- * pixels at its edges, over a long way on its right): first an island's coast; then the island is shaded in, with two little mountains on it; then a dashed
- * route from it to an X
+ * A pencil drawing a little map on an old sheet (speckled, a fold down its middle, ripples on its sea): first an island's coast; then the
+ * island is shaded in, with two little mountains on it; then a dashed route from it to an X
  */
 export function mapFrames(p: StonePalette): Rect[][] {
   const [sx, sy, sw, sh] = MAP_PAPER
   const paper: Rect[] = [
-    ...ditheredSheet(sx, sy, sw, sh, p, 3, 4, 24),
+    ...sheet(sx, sy, sw, sh, p, 3),
     // the fold
     [sx + 16, sy + 1, 1, sh - 2, p.face],
     // ripples on the sea

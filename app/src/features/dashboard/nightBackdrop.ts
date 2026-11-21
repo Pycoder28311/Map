@@ -1,12 +1,12 @@
 // The Dashboard's background (NightBackdrop.tsx): at the top, the night sky over the distant castle (a crop of the old night picture,
-// assets/dashboard-sky.jpg: its clouds and stars, the lit castle across the valley, the river), fading into a cool blue-slate base; over
+// assets/dashboard-sky.jpg: its clouds and stars, the lit castle across the valley, the river), fading into a dark base warmed toward brown; over
 // all of it a faint see-through pixel grain, and the page's edges a little darker. The grain is a small SVG tile of BACKDROP_PIXEL px
 // pixels, drawn here from a fixed seed, so it is the same every time. Pure.
 
 // ── The colours and sizes to change ──────────────────────────────────────────────────────────────────────────────────────────────
 export const BACKDROP = {
-  /** The page's dark base (the picture's own deep night blue) */
-  base: '#151a24',
+  /** The page's dark base: a deep night blue warmed toward brown */
+  base: '#1d1a1e',
 } as const
 /** One pixel of the grain on screen (px) */
 export const BACKDROP_PIXEL = 4
@@ -38,8 +38,8 @@ function grain(): { image: string; size: number } {
     for (let x = 0; x < N; x++) {
       const roll = next()
       if (roll < 0.14) body += rect(x, y, 1, 1, 'rgb(0 0 0 / 0.13)')
-      else if (roll < 0.24) body += rect(x, y, 1, 1, 'rgb(255 235 245 / 0.045)')
-      else if (roll < 0.27) body += rect(x, y, 2, 1, 'rgb(0 0 0 / 0.08)')
+      else if (roll < 0.24) body += rect(x, y, 1, 1, 'rgb(255 220 190 / 0.05)')
+      else if (roll < 0.27) body += rect(x, y, 2, 1, 'rgb(40 20 8 / 0.12)')
     }
   return { image: tile(N, N, body), size: N * U }
 }
