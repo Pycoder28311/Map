@@ -4,9 +4,15 @@
 // BACKDROP_PIXEL px pixels, drawn here from a fixed seed, so it is the same every time. Pure.
 
 // ── The colours and sizes to change ──────────────────────────────────────────────────────────────────────────────────────────────
+/** Which floor lies under the sky: a dark green felt (a war table's), or a dark slate floor */
+export const SURFACE: 'felt' | 'slate' = 'felt'
+
+/** Each floor's dark base colour */
+const BASES = { felt: '#14201a', slate: '#1a1c20' } as const
+
 export const BACKDROP = {
-  /** The page's dark base: cool charcoal slate (warm cards and brass stand out on it) */
-  base: '#1a1c20',
+  /** The page's dark base: the floor's (deep bottle green felt, or cool charcoal slate); warm cards and brass stand out on either */
+  base: BASES[SURFACE],
 } as const
 /** One pixel of the floor and the horizon on screen (px) */
 export const BACKDROP_PIXEL = 5
@@ -105,9 +111,28 @@ export function horizonStyle(): Record<string, string> {
 }
 
 
-/** The CSS of the slate floor (under the sky picture, which fades into it) */
+/**
+ * Dark green felt, faint and see-through (so the base's colour shows through): a fine woven crosshatch (lighter threads one way, darker
+ * the other) with stray lighter fibres, almost flat, like the cloth on a war table
+ */
+function felt(): { image: string; w: number; h: number } {
+  const next = seeded(33)
+  const N = 32
+  let body = ''
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++) {
+      const roll = next()
+      if ((x + y) % 4 === 0) body += rect(x, y, 1, 1, 'rgb(170 225 190 / 0.035)')
+      else if ((x - y + N) % 4 === 2) body += rect(x, y, 1, 1, 'rgb(0 0 0 / 0.09)')
+      if (roll < 0.025) body += rect(x, y, 1, 1, 'rgb(190 235 205 / 0.06)')
+      else if (roll < 0.05) body += rect(x, y, 1, 1, 'rgb(0 0 0 / 0.12)')
+    }
+  return { image: tile(N, N, body), w: N * U, h: N * U }
+}
+
+/** The CSS of the floor under the sky picture (SURFACE: felt or slate) */
 export function floorStyle(): Record<string, string> {
-  const g = flagstones()
+  const g = SURFACE === 'felt' ? felt() : flagstones()
   return { backgroundImage: g.image, backgroundRepeat: 'repeat', backgroundSize: `${g.w}px ${g.h}px` }
 }
 
