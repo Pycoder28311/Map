@@ -1,4 +1,5 @@
 import type { Editor } from '@tiptap/react'
+import { dogEar, PAPER_STAINS, paperOutline, PARCHMENT, PARCHMENT_INK, pixelOutline } from '../../components/ui/pixel/paperSheet'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react'
 import Button from '../../components/ui/buttons/Button'
 import RichTextToolbar from '../../components/ui/editors/RichTextToolbar'
@@ -33,58 +34,15 @@ const FIELD = 'w-full resize-none bg-transparent px-4 text-fg outline-none place
  * Opening, Create slides in at the bottom right, with the format buttons on the left. Create (or Ctrl/⌘+Enter) makes the note
  * on the server (and says so if it could not); a click outside or Esc folds the card back, keeping the draft.
  */
-/** The tall box's own colours: a sheet of muted, aged parchment (a little darker than the Create article book's pages, so it does not glare) with a dark leather-brown border, its words in
- *  dark ink, its placeholder in faded ink, its bar's words brown, and the darker aged edge inside its border */
-const TALL = {
-  bg: '#bcae90',
-  border: '#5e4a33',
-  fg: '#2e2118',
-  subtle: '#4e3f2e',
-  muted: '#5e4a33',
-  line: '#9c8c6e',
-  edge: 'inset 0 0 22px rgb(94 70 44 / 0.4)',
-} as const
+/** The tall box's colours: a sheet of muted, aged parchment (paperSheet.ts) */
+const TALL = PARCHMENT
 /** The tall box's pixels (px): its worn edge, its dog-ear and its border are drawn in steps of this, like the pixel art round it */
 const PX = 2
 /** The tall box's paper corners: square, as a sheet's, the top right one folded over (a dog-ear this many px along each edge) */
 const FOLD = 8 * PX
-/**
- * The sheet's outline, in pixel steps: square corners, the dog-ear cut off the top right as a staircase, and its edges worn as old
- * paper's: along each edge, runs of the paper's pixels, some a pixel in (now and then two), from a fixed seed so the same every time
- */
-const PAPER_CORNERS = (() => {
-  let seed = 11
-  const next = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648
-  const depth = () => (next() < 0.06 ? 2 * PX : next() < 0.3 ? PX : 0)
-  // n runs along an edge: each run's start and end (fractions of the edge) and how far in it is worn
-  const runs = (n: number) => Array.from({ length: n }, (_, i) => ({ from: i / n, to: (i + 1) / n, d: depth() }))
-  const pts: string[] = []
-  // top, left to right, up to the dog-ear
-  for (const r of runs(48)) pts.push(`calc(${r.from * 100}% - ${r.from * FOLD}px) ${r.d}px`, `calc(${r.to * 100}% - ${r.to * FOLD}px) ${r.d}px`)
-  // the dog-ear's staircase, from the top edge down to the right edge
-  for (let k = 0; k < FOLD / PX; k++) pts.push(`calc(100% - ${FOLD - (k + 1) * PX}px) ${k * PX}px`, `calc(100% - ${FOLD - (k + 1) * PX}px) ${(k + 1) * PX}px`)
-  // right, top to bottom
-  for (const r of runs(8)) pts.push(`calc(100% - ${r.d}px) calc(${FOLD * (1 - r.from)}px + ${r.from * 100}%)`, `calc(100% - ${r.d}px) calc(${FOLD * (1 - r.to)}px + ${r.to * 100}%)`)
-  // bottom, right to left
-  for (const r of runs(50)) pts.push(`${(1 - r.from) * 100}% calc(100% - ${r.d}px)`, `${(1 - r.to) * 100}% calc(100% - ${r.d}px)`)
-  // left, bottom to top
-  for (const r of runs(8)) pts.push(`${r.d}px ${(1 - r.from) * 100}%`, `${r.d}px ${(1 - r.to) * 100}%`)
-  return `polygon(${pts.join(', ')})`
-})()
-/** Age on the sheet: a few faint brown stains near its edges and corners, over its colour */
-const PAPER_STAINS = [
-  'radial-gradient(ellipse 90px 40px at 6% 92%, rgb(110 80 45 / 0.22), transparent 70%)',
-  'radial-gradient(ellipse 70px 30px at 38% 4%, rgb(110 80 45 / 0.14), transparent 70%)',
-  'radial-gradient(ellipse 120px 45px at 82% 100%, rgb(110 80 45 / 0.18), transparent 70%)',
-  'radial-gradient(circle 26px at 97% 55%, rgb(110 80 45 / 0.16), transparent 70%)',
-].join(', ')
-/** The dog-ear: the folded-over corner's back, darker parchment, lying on the sheet below the fold: the staircase under the cut */
-const DOG_EAR = (() => {
-  const pts = ['0 0']
-  for (let k = 0; k < FOLD / PX; k++) pts.push(`${(k + 1) * PX}px ${k * PX}px`, `${(k + 1) * PX}px ${(k + 1) * PX}px`)
-  pts.push(`0 ${FOLD}px`)
-  return `polygon(${pts.join(', ')})`
-})()
+/** The sheet's outline in pixel steps, its edges worn, the dog-ear cut off the top right */
+const PAPER_CORNERS = paperOutline({ px: PX, fold: FOLD, seed: 11, across: 48, down: 8 })
+const DOG_EAR = dogEar(PX, FOLD)
 
 /** `tall`: notes only (no Note / Article choice), its text two lines tall from the start (both shown even folded), and its bottom bar (format
  *  buttons, Create) always shown as a second row; a sheet of parchment with square corners, the top right one folded over, as on the Dashboard over its big buttons; else one line, and the bar only while open */
@@ -216,7 +174,7 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
       style={{
         height: size.folded || undefined,
         // tall: its border drawn round its worn paper edge and the dog-ear's steps (an outline a pixel (PX) wide that follows the clipped shape)
-        filter: tall ? `drop-shadow(${PX}px 0 0 ${TALL.border}) drop-shadow(-${PX}px 0 0 ${TALL.border}) drop-shadow(0 ${PX}px 0 ${TALL.border}) drop-shadow(0 -${PX}px 0 ${TALL.border})` : undefined,
+        filter: tall ? pixelOutline(PX, TALL.border) : undefined,
       }}
       className={`relative ${open ? 'z-30' : ''}`}
     >
@@ -250,15 +208,7 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
                 ['--input-bg' as string]: TALL.bg,
                 ['--input-bg-now' as string]: TALL.bg,
                 ['--row-border-width' as string]: '0px',
-                ['--fg' as string]: TALL.fg,
-                ['--fg-subtle' as string]: TALL.subtle,
-                ['--fg-muted' as string]: TALL.muted,
-                ['--line' as string]: TALL.line,
-                // (the theme's colour tokens are resolved at the page's root: set here too, so the words and the placeholder take the ink)
-                ['--color-fg' as string]: TALL.fg,
-                ['--color-fg-subtle' as string]: TALL.subtle,
-                ['--color-fg-muted' as string]: TALL.muted,
-                ['--color-line' as string]: TALL.line,
+                ...PARCHMENT_INK,
               } as CSSProperties)
             : {}),
         }}
@@ -273,7 +223,7 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
           <div
             aria-hidden
             className="pointer-events-none absolute top-0 right-0 z-10"
-            style={{ width: FOLD, height: FOLD, backgroundColor: '#8f8064', clipPath: DOG_EAR }}
+            style={{ width: FOLD, height: FOLD, backgroundColor: TALL.fold, clipPath: DOG_EAR }}
           />
         )}
         {/* The title, growing on top; out of the tab order while folded */}

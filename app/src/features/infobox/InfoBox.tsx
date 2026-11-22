@@ -11,7 +11,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core'
 import { createPortal } from 'react-dom'
-import { Fragment, useLayoutEffect, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react'
+import { Fragment, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type ReactNode } from 'react'
 import {
   LuAlignJustify,
   LuAlignLeft,
@@ -33,14 +33,13 @@ import {
 } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
-import Card from '../../components/ui/Card'
 import TextAreaField from '../../components/ui/fields/TextAreaField'
 import type { PlainIcon } from '../../components/ui/icons/IconSlot'
 import SideMenu from '../../components/ui/overlays/SideMenu'
 import IconMenu from '../../components/ui/tree/IconMenu'
 import { BackgroundPointerSensor, followPointer, startsOnBackground, swallowClickAfterDrag } from '../../lib/dnd'
 import { ICON_SHOW } from '../../components/ui/tree/treeIconStyles'
-import { paperEdgePolygon } from '../dashboard/cards/paperEdge'
+import { dogEar, PAPER_STAINS, paperOutline, PARCHMENT, PARCHMENT_INK, pixelOutline } from '../../components/ui/pixel/paperSheet'
 import {
   changeKind,
   emptyRow,
@@ -80,9 +79,14 @@ const OTHER = TYPES.filter((t) => !QUICK.some((q) => q.type === t.value))
 const INPUT = 'min-w-0 bg-transparent text-fg outline-none placeholder:text-fg-subtle'
 // Each row is a block of its own on the box's background, a gap (with the + in it) between two blocks
 const noop = () => {}
-/** The box's cracked edge: uneven, with a few small cuts, like the map cards' but gentler (the same every time) */
-const EDGE = paperEdgePolygon('article-info', 3, 5)
-const ROW = 'group/row relative flex flex-col gap-1 rounded-(--corner-sm) bg-fill-strong px-2 py-1.5'
+/** The article's box is a card of old parchment (paperSheet.ts): its pixel (px), its dog-ear (px along each edge) and its worn outline */
+const PX = 2
+const FOLD = 8 * PX
+const SHEET = paperOutline({ px: PX, fold: FOLD, seed: 5, across: 16, down: 28, wear: 1 })
+const SHEET_EAR = dogEar(PX, FOLD)
+// On the parchment (.ui-info-paper) a row is ruled off from the next by a line, as in a ledger, with no block of its own
+const ROW =
+  'group/row relative flex flex-col gap-1 rounded-(--corner-sm) bg-fill-strong px-2 py-1.5 [.ui-info-paper_&]:rounded-none [.ui-info-paper_&]:border-b [.ui-info-paper_&]:border-[#9c8c6e] [.ui-info-paper_&]:bg-transparent'
 
 type Props = {
   value: Infobox
@@ -125,11 +129,11 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError,
   }
 
   return (
-    // The box clips itself to the cracked edge; its wrapper draws the outline along that shape. While a preview shows it is that much taller, but its
+    // The box clips itself to the parchment's worn edge; its wrapper draws the outline along that shape (and its shadow on the page). While a preview shows it is that much taller, but its
     // place in the text is not: a negative margin takes the extra height back, so the text beside it stays where it is (in a form it
     // does push what is under it down: the description makes room for it)
     // A reader's box is inert: shown as it is, nothing in it reacts
-    <div className={cracked ? 'ui-crack' : undefined} style={{ marginBottom: cracked ? -extra : 0 }} inert={readOnly || undefined}>
+    <div style={{ marginBottom: cracked ? -extra : 0, filter: cracked ? `${pixelOutline(PX, PARCHMENT.border)} drop-shadow(0 4px 0 rgb(0 0 0 / 0.35))` : undefined }} inert={readOnly || undefined}>
       {/* (a point's or an object's form has no box around its sections: they stand on the form itself) */}
       <Frame boxed={cracked}>
         {(!readOnly || value.image) && <Picture image={value.image} onChange={(image) => onChange({ ...value, image })} onUploadImage={onUploadImage} onUploadError={onUploadError} flat={!cracked} />}
@@ -225,13 +229,31 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError,
   )
 }
 
-/** The article's box around the sections (muted, with the cracked edge), or nothing around them */
+/**
+ * The article's box around the sections, or nothing around them: a card of old parchment, its edges worn in pixel steps, its top right corner
+ * folded over, a few stains of age; its words in dark ink, its rows ruled off by lines (ROW), its picture in a dark wooden frame (Picture)
+ */
 function Frame({ boxed, children }: { boxed: boolean; children: ReactNode }) {
   if (!boxed) return <div className="flex flex-col">{children}</div>
   return (
-    <Card variant="muted" radius={0} className="flex flex-col p-base" style={{ clipPath: EDGE }}>
+    <div
+      // its buttons (Add picture, Add info, a row's ⋯) in brown ink with nothing behind them, darker when hovered, their brackets leather
+      className="ui-info-paper relative flex flex-col p-base [&_button]:[--btn-bg:transparent] [&_button]:[--btn-hover-bg:rgb(94_70_44/0.12)] [&_button]:[--btn-text:#5e4a33] [&_button]:[--btn-hover-text:#2e2118] [&_button]:[--btn-bracket-color:#7a5a36]"
+      style={
+        {
+          clipPath: SHEET,
+          backgroundColor: PARCHMENT.bg,
+          backgroundImage: PAPER_STAINS,
+          boxShadow: PARCHMENT.edge,
+          ...PARCHMENT_INK,
+          '--color-fill': 'rgb(94 70 44 / 0.1)',
+          '--color-fill-strong': 'rgb(94 70 44 / 0.14)',
+        } as CSSProperties
+      }
+    >
+      <div aria-hidden className="pointer-events-none absolute top-0 right-0 z-10" style={{ width: FOLD, height: FOLD, backgroundColor: PARCHMENT.fold, clipPath: SHEET_EAR }} />
       {children}
-    </Card>
+    </div>
   )
 }
 
@@ -267,7 +289,8 @@ function Picture({
       onDragOver={(e) => e.preventDefault()}
       onDrop={drop}
       // (flat: half as tall, a point's or an object's form)
-      className={`group/picture relative overflow-hidden rounded-(--card-radius) bg-fill-strong ${flat ? 'aspect-[2/1]' : 'aspect-square'}`}
+      // On the parchment: in a dark wooden frame, square
+      className={`group/picture relative overflow-hidden rounded-(--card-radius) bg-fill-strong [.ui-info-paper_&]:rounded-none [.ui-info-paper_&]:border-4 [.ui-info-paper_&]:border-[#4a3c31] [.ui-info-paper_&]:bg-[#a89878] [.ui-info-paper_&]:shadow-[inset_0_0_0_2px_#2a221d] ${flat ? 'aspect-[2/1]' : 'aspect-square'}`}
     >
       {image ? (
         <>
