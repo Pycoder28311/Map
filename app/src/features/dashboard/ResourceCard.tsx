@@ -119,11 +119,11 @@ export default function ResourceCard({ resource, item, menu, onOpen, place, cont
   const open = look === 'image' && (
     <div
       onClick={(e) => e.stopPropagation()}
-      className="absolute transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none"
+      // a light line round it, and more room inside it
+      className="absolute flex shadow-[0_0_0_2px_#b9b2a6] transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none [&_button]:[--btn-pad-x:14px] [&_button]:[--btn-pad-y:6px]"
       style={ON_COVER}
     >
-      {/* a light line round it, and more room inside */}
-      <Button variant="secondary" size="xs" onClick={onOpen} className="shadow-[0_0_0_2px_#b9b2a6]! [--btn-pad-x:14px]! [--btn-pad-y:6px]!">
+      <Button variant="secondary" size="xs" onClick={onOpen}>
         Open
       </Button>
     </div>
