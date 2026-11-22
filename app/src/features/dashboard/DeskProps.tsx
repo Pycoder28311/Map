@@ -23,11 +23,10 @@ type Prop = {
   glow?: boolean
 }
 
-// Where each lies on the table: the candle beside the Create buttons, the scroll beside the first row of
-// cards, lower down the map's corner on the left and a sundial on the right, each half off the page
+// Where each lies on the table: the candle beside the Create buttons, its foot level with theirs; lower down, the map's corner on the left
+// and a sundial on the right, each half off the page
 const PROPS: Prop[] = [
-  { name: 'candle', side: 'left', beside: 'input', top: -110, glow: true },
-  { name: 'scroll', side: 'right', beside: 'cards', top: 230 },
+  { name: 'candle', side: 'left', beside: 'input', top: -50, glow: true },
   { name: 'map', side: 'left', beside: 'cards', top: 470, past: 110 },
   { name: 'sundial', side: 'right', beside: 'cards', top: 520, past: 30 },
 ]
@@ -64,8 +63,8 @@ function Sprite({ name }: { name: DeskSpriteName }) {
 }
 
 /**
- * Things lying on the Dashboard's desk in its margins (deskProps.ts): a candle with its own small glow, a
- * rolled scroll, and the corner of an old map and a bronze sundial coming in from off the page. Behind the content and faint; only on wide
+ * Things lying on the Dashboard's desk in its margins (deskProps.ts): a candle with its own small glow,
+ * the corner of an old map and a bronze sundial coming in from off the page. Behind the content and faint; only on wide
  * screens (lg; those beside the cards 2xl), where there is room beside the middle; the page (NightBackdrop) cuts what goes past its edges. Part of NightBackdrop (LOOK 'desk').
  */
 export default function DeskProps() {

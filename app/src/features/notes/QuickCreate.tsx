@@ -36,8 +36,17 @@ const FIELD = 'w-full resize-none bg-transparent px-4 text-fg outline-none place
 /** The big Create buttons' corners (features/dashboard/stoneButton.ts: their rows step in 4, 2, 2, 1, 1 of their 3px pixels at each corner),
  *  as a clip-path for the tall box, so the two match */
 const STEPS = [4, 2, 2, 1, 1]
-/** The tall box's own colours: a much lighter warm stone, its border, and its faint and muted words */
-const TALL = { bg: '#5a524b', border: '#8c8178', subtle: '#bdb3a9', muted: '#d6cdc4' } as const
+/** The tall box's own colours: a sheet of parchment (like the Create article book's pages) with a dark leather-brown border, its words in
+ *  dark ink, its placeholder in faded ink, its bar's words brown, and the darker aged edge inside its border */
+const TALL = {
+  bg: '#e9dcbf',
+  border: '#7a5a36',
+  fg: '#2e2118',
+  subtle: '#8f7a5c',
+  muted: '#5e4a33',
+  line: '#c9b48e',
+  edge: 'inset 0 0 22px rgb(122 90 54 / 0.35)',
+} as const
 const STEPPED_CORNERS = (() => {
   const u = 3
   const pts: string[] = []
@@ -211,12 +220,20 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
             ? ({
                 borderRadius: 0,
                 clipPath: STEPPED_CORNERS,
-                // a much lighter box (its border drawn round the steps by the wrapper instead), its faint words lighter to match
+                // parchment (its border drawn round the steps by the wrapper instead), its words in ink, its edge aged
+                boxShadow: TALL.edge,
                 ['--input-bg' as string]: TALL.bg,
                 ['--input-bg-now' as string]: TALL.bg,
                 ['--row-border-width' as string]: '0px',
+                ['--fg' as string]: TALL.fg,
                 ['--fg-subtle' as string]: TALL.subtle,
                 ['--fg-muted' as string]: TALL.muted,
+                ['--line' as string]: TALL.line,
+                // (the theme's colour tokens are resolved at the page's root: set here too, so the words and the placeholder take the ink)
+                ['--color-fg' as string]: TALL.fg,
+                ['--color-fg-subtle' as string]: TALL.subtle,
+                ['--color-fg-muted' as string]: TALL.muted,
+                ['--color-line' as string]: TALL.line,
               } as CSSProperties)
             : {}),
         }}
@@ -292,7 +309,12 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
 
         {/* The format buttons, at the bottom left of the open card */}
         <div inert={!bar} className={`absolute bottom-1 left-2 transition-opacity ${ANIMATE} ${bar ? `opacity-100 ${AFTER_GROW}` : 'opacity-0'}`}>
-          <RichTextToolbar editor={editor} only={['bold', 'italic', 'size']} />
+          <RichTextToolbar
+            editor={editor}
+            only={['bold', 'italic', 'size']}
+            // tall (parchment): its buttons in brown ink, darker when hovered, their brackets the border's leather
+            className={tall ? '[&_.ui-btn-shade]:[--btn-bracket-color:#7a5a36] [&_.ui-btn-shade]:[--btn-hover-text:#2e2118] [&_.ui-btn-shade]:[--btn-text:#5e4a33]' : ''}
+          />
         </div>
 
         <div
