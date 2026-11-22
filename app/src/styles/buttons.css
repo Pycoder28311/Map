@@ -1276,52 +1276,18 @@
     height: var(--btn-icon-size);
   }
 
-  /* C8. Leather (variant "leather"): a tab of light brown leather, like a gold game button in leather. Two tones (the top half lighter,
-     the bottom half in shade), a fine pixel grain over it, a lit line along its top and a shaded one along its bottom inside, a thin
-     light line inside a dark brown edge two pixels thick, its corners rounded in a pixel step; the words cream in the pixel font with a dark
-     shadow. Hovered: a little lighter; pressed: it sinks a pixel. Its colours are the --leather-* below */
-  .ui-btn-leather {
-    --leather: #a8683d;
-    --leather-hover: #b87749;
-    --leather-light: #cf9260;
-    --leather-shade: #7f4a2a;
-    --leather-edge: #3a1f0f;
-    --leather-line: rgb(255 226 180 / 0.35);
-    --btn-text: #f6e9cf;
-    --btn-hover-text: #fff8e8;
-    --btn-bg: var(--leather);
-    --btn-hover-bg: var(--leather-hover);
-    --btn-font: var(--font-pixel);
-    --btn-font-weight: 600;
-    --btn-letter-spacing: 0.5px;
-    /* (inside its frame, two of its pixels thick) */
-    --btn-pad-x: 10px;
-    --btn-pad-y: 0px;
-    /* its pixel: the Dashboard cards' and the page's pixel art (dashboard/cards: 3.75px); its grain, its frame and its corners' step are in it.
-       The grain: a few darker and lighter pixels on a small tile, so the leather is not flat */
-    --leather-px: 3.75px;
-    --leather-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' shape-rendering='crispEdges'%3E%3Cpath fill='rgba(60,25,8,0.22)' d='M1 1h2v1h-2zM7 2h1v1h-1zM4 5h2v1h-2zM10 6h1v1h-1zM0 4h1v1h-1z'/%3E%3Cpath fill='rgba(255,220,170,0.16)' d='M5 0h1v1h-1zM9 3h2v1h-2zM2 6h1v1h-1zM7 7h1v1h-1z'/%3E%3C/svg%3E");
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-shadow: 0 2px 0 rgb(40 18 6 / 0.75);
-    background:
-      var(--leather-grain) 0 0 / calc(var(--leather-px) * 12) calc(var(--leather-px) * 8) repeat,
-      linear-gradient(to bottom, transparent 50%, rgb(70 30 10 / 0.22) 50%),
-      var(--_bg);
-    /* its frame in its pixels (a 5 × 5 drawing, its corners kept, its middle stretched), two of them thick: the dark edge with its corners
-       rounded in a pixel step, the lit line along its top, the shade along its bottom, a light line down its sides (the --leather-edge,
-       -light, -shade and -line colours, written into the drawing). The corners outside the step are cut off the leather (clip-path) */
-    --_p: var(--leather-px);
-    min-height: calc(var(--_p) * 8);
-    border: calc(var(--_p) * 2) solid transparent;
-    border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='5' height='5' shape-rendering='crispEdges'><path fill='%233a1f0f' d='M1 0h3v1h-3zM1 4h3v1h-3zM0 1h1v3h-1zM4 1h1v3h-1z'/><path fill='%23cf9260' d='M1 1h3v1h-3z'/><path fill='%237f4a2a' d='M1 3h3v1h-3z'/><path fill='rgba(255,226,180,0.35)' d='M1 2h1v1h-1zM3 2h1v1h-1z'/></svg>") 2 / calc(var(--_p) * 2) stretch;
-    clip-path: polygon(var(--_p) 0, calc(100% - var(--_p)) 0, calc(100% - var(--_p)) var(--_p), 100% var(--_p), 100% calc(100% - var(--_p)), calc(100% - var(--_p)) calc(100% - var(--_p)), calc(100% - var(--_p)) 100%, var(--_p) 100%, var(--_p) calc(100% - var(--_p)), 0 calc(100% - var(--_p)), 0 var(--_p), var(--_p) var(--_p));
-    transition: background-color 0.15s ease-out, color 0.15s ease-out;
+  /* C8. Wood (variant "wood"): the "Sort by" button's look exactly (Shade framed: its pixel frame, panel, label in the pixel font, press),
+     in wood: the frame's grey metal redrawn in browns (the same drawing, its colours swapped), a wooden panel, cream words. The variant
+     is ui-btn-shade with this class, so every rule of the framed Shade applies and only its colours change here */
+  .ui-btn-shade.ui-btn-wood:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend) {
+    --cancel-frame: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='19' height='19' viewBox='0 0 19 19' shape-rendering='crispEdges'><path fill='%231a0b05' d='M6 0h7v1h-7zM5 1h1v1h-1zM13 1h1v1h-1zM4 2h1v1h-1zM7 2h5v1h-5zM14 2h1v1h-1zM3 3h1v1h-1zM6 3h1v1h-1zM12 3h1v1h-1zM15 3h1v1h-1zM2 4h1v1h-1zM5 4h1v1h-1zM13 4h1v1h-1zM16 4h1v1h-1zM2 5h1v1h-1zM5 5h1v1h-1zM13 5h1v1h-1zM16 5h1v1h-1zM2 6h1v1h-1zM5 6h1v1h-1zM13 6h1v1h-1zM16 6h1v1h-1zM2 7h1v1h-1zM5 7h1v1h-1zM13 7h1v1h-1zM16 7h1v1h-1zM2 8h1v1h-1zM5 8h1v1h-1zM13 8h1v1h-1zM16 8h1v1h-1zM2 9h1v1h-1zM5 9h1v1h-1zM13 9h1v1h-1zM16 9h1v1h-1zM2 10h1v1h-1zM5 10h1v1h-1zM13 10h1v1h-1zM16 10h1v1h-1zM2 11h1v1h-1zM5 11h1v1h-1zM13 11h1v1h-1zM16 11h1v1h-1zM2 12h1v1h-1zM5 12h1v1h-1zM13 12h1v1h-1zM16 12h1v1h-1zM2 13h1v1h-1zM5 13h1v1h-1zM13 13h1v1h-1zM16 13h1v1h-1zM3 14h1v1h-1zM6 14h1v1h-1zM12 14h1v1h-1zM15 14h1v1h-1zM4 15h1v1h-1zM7 15h5v1h-5zM14 15h1v1h-1zM5 16h1v1h-1zM13 16h1v1h-1zM6 17h7v1h-7z'/><path fill='%23c98a54' d='M6 1h7v1h-7zM5 2h1v1h-1zM13 2h1v1h-1zM4 3h1v1h-1zM14 3h1v1h-1zM3 4h1v1h-1zM15 4h1v1h-1zM3 5h1v1h-1zM15 5h1v1h-1zM3 6h1v1h-1zM15 6h1v1h-1zM3 7h1v1h-1zM15 7h1v1h-1zM3 8h1v1h-1zM15 8h1v1h-1z'/><path fill='%23a8683d' d='M6 2h1v1h-1zM12 2h1v1h-1zM5 3h1v1h-1zM13 3h1v1h-1zM4 4h1v1h-1zM14 4h1v1h-1zM4 5h1v1h-1zM14 5h1v1h-1zM4 6h1v1h-1zM14 6h1v1h-1zM4 7h1v1h-1zM14 7h1v1h-1zM4 8h1v1h-1zM14 8h1v1h-1z'/><path fill='rgba(255,255,255,0.14)' d='M7 3h5v1h-5zM6 4h1v1h-1zM12 4h1v1h-1zM6 5h1v1h-1zM12 5h1v1h-1zM6 6h1v1h-1zM12 6h1v1h-1zM6 7h1v1h-1zM12 7h1v1h-1zM6 8h1v1h-1zM12 8h1v1h-1zM6 9h1v1h-1zM12 9h1v1h-1zM6 10h1v1h-1zM12 10h1v1h-1zM6 11h1v1h-1zM12 11h1v1h-1zM6 12h1v1h-1zM12 12h1v1h-1zM6 13h1v1h-1zM12 13h1v1h-1zM7 14h5v1h-5z'/><path fill='rgba(0,0,0,0.22)' d='M7 4h1v1h-1zM11 4h1v1h-1zM7 5h1v1h-1zM11 5h1v1h-1zM7 6h1v1h-1zM11 6h1v1h-1zM7 7h1v1h-1zM11 7h1v1h-1zM7 8h1v1h-1zM11 8h1v1h-1zM7 9h1v1h-1zM11 9h1v1h-1zM7 10h1v1h-1zM11 10h1v1h-1zM7 11h1v1h-1zM11 11h1v1h-1zM7 12h1v1h-1zM11 12h1v1h-1zM7 13h1v1h-1zM11 13h1v1h-1z'/><path fill='%237f4a2a' d='M3 9h1v1h-1zM15 9h1v1h-1zM3 10h1v1h-1zM15 10h1v1h-1zM3 11h1v1h-1zM15 11h1v1h-1zM3 12h1v1h-1zM15 12h1v1h-1zM3 13h1v1h-1zM15 13h1v1h-1zM4 14h1v1h-1zM14 14h1v1h-1zM5 15h1v1h-1zM13 15h1v1h-1z'/><path fill='%235a3219' d='M4 9h1v1h-1zM14 9h1v1h-1zM4 10h1v1h-1zM14 10h1v1h-1zM4 11h1v1h-1zM14 11h1v1h-1zM4 12h1v1h-1zM14 12h1v1h-1zM4 13h1v1h-1zM14 13h1v1h-1zM5 14h1v1h-1zM13 14h1v1h-1zM6 15h1v1h-1zM12 15h1v1h-1z'/><path fill='rgba(0,0,0,0.35)' d='M2 14h1v1h-1zM16 14h1v1h-1zM3 15h1v1h-1zM15 15h1v1h-1zM4 16h1v1h-1zM14 16h1v1h-1zM5 17h1v1h-1zM13 17h1v1h-1zM6 18h7v1h-7z'/><path fill='%236b3d20' d='M6 16h7v1h-7z'/></svg>");
+    --btn-bg: #8a5530;
+    --btn-hover-bg: #9c6239;
+    --btn-text: #f1e3c4;
+    --btn-hover-text: #fff6e0;
   }
 
-  .ui-btn-leather:active:not(:disabled) {
-    transform: translateY(1px);
+  .ui-btn-shade.ui-btn-wood:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):active:not(:disabled) {
+    --_bg: #74441f;
   }
 }
