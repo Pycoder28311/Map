@@ -36,16 +36,16 @@ const FIELD = 'w-full resize-none bg-transparent px-4 text-fg outline-none place
 /** The big Create buttons' corners (features/dashboard/stoneButton.ts: their rows step in 4, 2, 2, 1, 1 of their 3px pixels at each corner),
  *  as a clip-path for the tall box, so the two match */
 const STEPS = [4, 2, 2, 1, 1]
-/** The tall box's own colours: a sheet of parchment (like the Create article book's pages) with a dark leather-brown border, its words in
+/** The tall box's own colours: a sheet of muted, aged parchment (a little darker than the Create article book's pages, so it does not glare) with a dark leather-brown border, its words in
  *  dark ink, its placeholder in faded ink, its bar's words brown, and the darker aged edge inside its border */
 const TALL = {
-  bg: '#e9dcbf',
-  border: '#7a5a36',
+  bg: '#bcae90',
+  border: '#5e4a33',
   fg: '#2e2118',
-  subtle: '#8f7a5c',
+  subtle: '#6b5a44',
   muted: '#5e4a33',
-  line: '#c9b48e',
-  edge: 'inset 0 0 22px rgb(122 90 54 / 0.35)',
+  line: '#9c8c6e',
+  edge: 'inset 0 0 22px rgb(94 70 44 / 0.4)',
 } as const
 const STEPPED_CORNERS = (() => {
   const u = 3

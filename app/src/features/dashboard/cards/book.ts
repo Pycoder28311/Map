@@ -10,37 +10,37 @@ import type { CSSProperties } from 'react'
 
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const BOOK = {
-  /** The outline round everything: a dark brown like the desk's seams, so the book sits into the desk */
-  outline: '#2a1d15',
+  /** The outline round everything: a mid-dark brown, close to the desk, so the book sits into it */
+  outline: '#4a3423',
   /** The back cover, seen along the left, its ridges and their shade, and its stitches */
-  spine: '#41261b',
-  ridge: '#71442f',
-  ridgeShade: '#100905',
+  spine: '#3a251b',
+  ridge: '#62412f',
+  ridgeShade: '#2e2016',
   stitch: '#6e5f4c',
   /** The front cover: its face, the light line along its top and the shade along its right and bottom */
-  cover: '#603628',
-  coverLight: '#754433',
-  coverShade: '#49281d',
+  cover: '#523426',
+  coverLight: '#633f2f',
+  coverShade: '#40271c',
   /** The faint shapes on the cover: its grain (darker and lighter streaks), small diamonds, scratches and worn specks */
-  grainDark: '#532e23',
-  grainLight: '#6c3e2f',
-  motif: '#6a3c2e',
-  scratch: '#814d39',
-  wear: '#8c5741',
+  grainDark: '#472c21',
+  grainLight: '#5c3c2d',
+  motif: '#5a3a2c',
+  scratch: '#6c4834',
+  wear: '#735039',
   /** The debossed border round the cover: its pressed line and the light line beside it */
   deboss: '#412318',
-  emboss: '#714232',
+  emboss: '#61402f',
   /** The hinge, where the cover meets the spine, and its rivets (dull brass, like its gold) */
   hinge: '#49281d',
-  rivet: '#7b6436',
-  rivetShade: '#463719',
+  rivet: '#5e4c30',
+  rivetShade: '#3a2d1a',
   /** The bands' dashes (one pixel tall, a muted stitch close to the leather) and the groove they sit in */
   band: '#5c4836',
-  groove: '#170d08',
+  groove: '#3a2819',
   /** The metal corners */
-  gold: '#7b6436',
-  goldDeep: '#463719',
-  goldLight: '#a68e57',
+  gold: '#5e4c30',
+  goldDeep: '#3a2d1a',
+  goldLight: '#7d6a48',
   /** The pages' edge: its light line on top, the lines between the pages, and its shaded line below */
   pages: '#b6a585',
   pagesLight: '#c9bb9a',
