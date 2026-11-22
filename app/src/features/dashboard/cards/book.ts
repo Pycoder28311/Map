@@ -13,29 +13,29 @@ export const BOOK = {
   /** The outline round everything: a mid-dark brown, close to the desk, so the book sits into it */
   outline: '#4a3423',
   /** The back cover, seen along the left, its ridges and their shade, and its stitches */
-  spine: '#3a251b',
-  ridge: '#62412f',
+  spine: '#2b221e',
+  ridge: '#483a33',
   ridgeShade: '#2e2016',
   stitch: '#6e5f4c',
   /** The front cover: its face, the light line along its top and the shade along its right and bottom */
-  cover: '#523426',
-  coverLight: '#633f2f',
-  coverShade: '#40271c',
+  cover: '#3c302a',
+  coverLight: '#493a33',
+  coverShade: '#2f241f',
   /** The faint shapes on the cover: its grain (darker and lighter streaks), small diamonds, scratches and worn specks */
-  grainDark: '#472c21',
-  grainLight: '#5c3c2d',
-  motif: '#5a3a2c',
-  scratch: '#6c4834',
-  wear: '#735039',
+  grainDark: '#342924',
+  grainLight: '#443730',
+  motif: '#43352f',
+  scratch: '#504138',
+  wear: '#55473d',
   /** The debossed border round the cover: its pressed line and the light line beside it */
-  deboss: '#412318',
-  emboss: '#61402f',
+  deboss: '#2f221d',
+  emboss: '#483a33',
   /** The hinge, where the cover meets the spine, and its rivets (dull brass, like its gold) */
-  hinge: '#49281d',
+  hinge: '#352722',
   rivet: '#5e4c30',
   rivetShade: '#3a2d1a',
   /** The bands' dashes (one pixel tall, a muted stitch close to the leather) and the groove they sit in */
-  band: '#5c4836',
+  band: '#463e36',
   groove: '#3a2819',
   /** The metal corners */
   gold: '#5e4c30',

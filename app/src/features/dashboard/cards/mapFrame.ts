@@ -13,12 +13,12 @@ export const FRAME = {
   /** The planks' outline: a mid-dark brown, close to the desk, so the frame sits into it */
   outline: '#4a3423',
   /** The wood: its two tones, its grain (darker and lighter streaks), knots, and the shadow a horizontal plank casts on a vertical one */
-  wood: '#4e3828',
-  woodAlt: '#45311f',
-  grainDark: '#3a2a1c',
-  grainLight: '#5e4430',
+  wood: '#3a312a',
+  woodAlt: '#332a22',
+  grainDark: '#2b241e',
+  grainLight: '#463b33',
   knot: '#2a1d15',
-  joint: '#33241a',
+  joint: '#26201b',
   /** The nails at the crossings, dull aged iron: their light top left, and the rest of their head */
   nailLight: '#76654c',
   nail: '#4e3f2e',
