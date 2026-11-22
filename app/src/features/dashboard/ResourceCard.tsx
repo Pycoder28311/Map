@@ -25,9 +25,9 @@ const ON_PICTURE = {
   right: `${((BOOK_W - (BOOK_FRAME.x + BOOK_FRAME.w - 2)) / BOOK_W) * 100}%`,
   top: `${((BOOK_FRAME.y + 2) / BOOK_H) * 100}%`,
 } as const
-/** A book's Open: at the bottom right inside the cover's border (book.ts BOOK_INNER), a pixel of the drawing from its lines */
+/** A book's Open: at the bottom inside the cover's border (book.ts BOOK_INNER), a pixel of the drawing from its line, centred across the border */
 const ON_COVER = {
-  right: `${((BOOK_W - (BOOK_INNER.right - 1)) / BOOK_W) * 100}%`,
+  left: `${((BOOK_INNER.left + BOOK_INNER.right + 1) / 2 / BOOK_W) * 100}%`,
   bottom: `${((BOOK_H - (BOOK_INNER.bottom - 1)) / BOOK_H) * 100}%`,
 } as const
 
@@ -115,14 +115,14 @@ export default function ResourceCard({ resource, item, menu, onOpen, place, cont
       )}
     </div>
   )
-  // A book's Open: a leather button (the leather variant) on its cover (opens it, as a click on the card does)
+  // A book's Open: a gold button (the golden variant) on its cover, centred at its bottom (opens it, as a click on the card does)
   const open = look === 'image' && (
     <div
       onClick={(e) => e.stopPropagation()}
-      className="absolute flex transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none"
+      className="absolute flex -translate-x-1/2 transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none"
       style={ON_COVER}
     >
-      <Button variant="leather" size="xs" onClick={onOpen}>
+      <Button variant="golden" onClick={onOpen}>
         Open
       </Button>
     </div>

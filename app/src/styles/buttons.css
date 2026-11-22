@@ -1276,48 +1276,53 @@
     height: var(--btn-icon-size);
   }
 
-  /* C8. Leather (variant "leather"): a tab of light brown leather, like a gold game button in leather. Two tones (the top half lighter,
-     the bottom half in shade), a fine pixel grain over it, a lit line along its top and a shaded one along its bottom inside, a thin
-     light line inside a dark brown edge two pixels thick, its corners cut by a pixel; the words cream in the pixel font with a dark
-     shadow. Hovered: a little lighter; pressed: it sinks a pixel. Its colours are the --leather-* below */
-  .ui-btn-leather {
-    --leather: #a8683d;
-    --leather-hover: #b87749;
-    --leather-light: #cf9260;
-    --leather-shade: #7f4a2a;
-    --leather-edge: #3a1f0f;
-    --leather-line: rgb(255 226 180 / 0.35);
-    --btn-text: #f6e9cf;
-    --btn-hover-text: #fff8e8;
-    --btn-bg: var(--leather);
-    --btn-hover-bg: var(--leather-hover);
-    --btn-font: var(--font-pixel);
-    --btn-font-weight: 600;
+  /* C8. Golden (variant "golden"): a gold game button. Inside a dark brown outline, a cream rim along its top and sides; its face gold, lit
+     along the top, a darker amber band across its lower part; along its bottom a light gold line and a dark brown shade; its corners cut
+     by a pixel; its words dark brown, in a bold serif. Hovered: a little brighter; pressed: it sinks a pixel. Its colours are the --golden-* below */
+  .ui-btn-golden {
+    --golden-outline: #2a140e;
+    --golden-rim: #ecd6a4;
+    --golden-rim-side: #dcc08a;
+    --golden-glint: #fde39a;
+    --golden-face: #e1ae38;
+    --golden-band: #c27e2e;
+    --golden-foot-light: #f2d47a;
+    --golden-foot: #6b3a12;
+    --btn-text: #3a1a08;
+    --btn-hover-text: #2a1004;
+    --btn-font: Georgia, 'Times New Roman', serif;
+    --btn-font-size: 15px;
+    --btn-font-weight: 700;
     --btn-letter-spacing: 0.5px;
-    --btn-pad-x: 10px;
-    --btn-pad-y: 4px;
-    /* the grain: a few darker and lighter pixels on a small tile, so the leather is not flat */
-    --leather-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' shape-rendering='crispEdges'%3E%3Cpath fill='rgba(60,25,8,0.22)' d='M1 1h2v1h-2zM7 2h1v1h-1zM4 5h2v1h-2zM10 6h1v1h-1zM0 4h1v1h-1z'/%3E%3Cpath fill='rgba(255,220,170,0.16)' d='M5 0h1v1h-1zM9 3h2v1h-2zM2 6h1v1h-1zM7 7h1v1h-1z'/%3E%3C/svg%3E");
+    --btn-line-height: 1.2;
+    --btn-pad-x: 18px;
+    --btn-pad-y: 5px;
+    --_face: var(--golden-face);
+    --_band: var(--golden-band);
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    text-shadow: 0 2px 0 rgb(40 18 6 / 0.75);
-    background:
-      var(--leather-grain) 0 0 / 12px 8px repeat,
-      linear-gradient(to bottom, transparent 50%, rgb(70 30 10 / 0.22) 50%),
-      var(--_bg);
-    border: 2px solid var(--leather-edge);
+    min-width: 64px;
+    text-shadow: 0 1px 0 rgb(255 235 170 / 0.45);
+    background: linear-gradient(to bottom, var(--golden-glint) 0 4px, var(--_face) 4px 55%, var(--_band) 55%);
+    border: 2px solid var(--golden-outline);
     box-shadow:
-      inset 0 2px 0 var(--leather-light),
-      inset 0 -2px 0 var(--leather-shade),
-      inset 0 0 0 1px var(--leather-line);
+      inset 0 2px 0 var(--golden-rim),
+      inset 2px 0 0 var(--golden-rim-side),
+      inset -2px 0 0 var(--golden-rim-side),
+      inset 0 -2px 0 var(--golden-foot),
+      inset 0 -4px 0 var(--golden-foot-light);
     /* the corners cut by a pixel, as a pixel button's */
     clip-path: polygon(2px 0, calc(100% - 2px) 0, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 0 calc(100% - 2px), 0 2px);
-    transition: background-color 0.15s ease-out, color 0.15s ease-out;
   }
 
-  .ui-btn-leather:active:not(:disabled) {
+  .ui-btn-golden:hover:not(:disabled) {
+    --_face: #eab944;
+    --_band: #cc8934;
+  }
+
+  .ui-btn-golden:active:not(:disabled) {
     transform: translateY(1px);
   }
 }
