@@ -45,9 +45,9 @@ const TALL = {
   edge: 'inset 0 0 22px rgb(94 70 44 / 0.4)',
 } as const
 /** The tall box's pixels (px): its worn edge, its dog-ear and its border are drawn in steps of this, like the pixel art round it */
-const PX = 3
+const PX = 2
 /** The tall box's paper corners: square, as a sheet's, the top right one folded over (a dog-ear this many px along each edge) */
-const FOLD = 6 * PX
+const FOLD = 8 * PX
 /**
  * The sheet's outline, in pixel steps: square corners, the dog-ear cut off the top right as a staircase, and its edges worn as old
  * paper's: along each edge, runs of the paper's pixels, some a pixel in (now and then two), from a fixed seed so the same every time
@@ -346,7 +346,7 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
             editor={editor}
             only={['bold', 'italic', 'size']}
             // tall (parchment): its buttons in brown ink, darker when hovered, their brackets the border's leather
-            className={tall ? '[&_.ui-btn-shade]:[--btn-bracket-color:#7a5a36] [&_.ui-btn-shade]:[--btn-hover-text:#2e2118] [&_.ui-btn-shade]:[--btn-text:#5e4a33]' : ''}
+            className={tall ? '[&_button]:[--btn-bracket-color:#7a5a36] [&_button]:[--btn-hover-text:#2e2118] [&_button]:[--btn-text:#5e4a33]' : ''}
           />
         </div>
 

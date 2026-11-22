@@ -33,9 +33,9 @@ function Count({ n }: { n: number }) {
  */
 export default function RoundTools({ zoomed, onZoom, open, onToggle, messages, notes }: Props) {
   return (
-    // As tall as the body, on its left line; the column inside stays near the view's top
+    // As tall as the body, on its left line, starting under the title's ribbon (ArticleTitle); the column inside stays near the view's top
     <div className="pointer-events-none absolute inset-y-0 start-0 z-30 -translate-x-1/2">
-      <div className="pointer-events-auto sticky top-20 mt-[calc(var(--banner-h,11rem)+1rem)] flex flex-col gap-2 transition-[margin] duration-300 ease-out motion-reduce:transition-none">
+      <div className="pointer-events-auto sticky top-20 mt-[calc(var(--banner-h,11rem)+5.5rem)] flex flex-col gap-2 transition-[margin] duration-300 ease-out motion-reduce:transition-none">
         <IconButton round className={BIG} icon={zoomed ? LuMinimize2 : LuMaximize2} label={zoomed ? 'Leave the zoom (Esc)' : 'Zoom: the article fills the window'} aria-pressed={zoomed} onClick={onZoom} />
         <IconButton round className={BIG} icon={LuListTree} label="Contents" aria-pressed={open.has('contents')} onClick={() => onToggle('contents')} />
         <span className="relative">

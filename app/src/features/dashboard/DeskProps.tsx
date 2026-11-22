@@ -13,11 +13,13 @@ const OPACITY = 0.45
 type Prop = {
   name: DeskSpriteName
   side: 'left' | 'right'
-  /** what it sits beside (HALF) */
-  beside: keyof typeof HALF
+  /** what it sits beside (HALF); none: it lies at the page's edge (`past`) */
+  beside?: keyof typeof HALF
+  /** only on very wide screens (2xl), where what is in the middle leaves room for it */
+  wide?: boolean
   /** px down from where the sky picture ends (the table, below the horizon) */
   top: number
-  /** px past the page's edge it may go (it is cut there): the map's corner peeks in from off the desk */
+  /** px past the page's edge it may go (it is cut there): the map's corner peeks in from off the desk; negative, that far in from it */
   past?: number
   /** how far it stays from what it sits beside (px), if not GAP */
   gap?: number
@@ -27,11 +29,22 @@ type Prop = {
 
 // Where each lies on the table: the candle beside the Create buttons, its foot level with theirs; lower down, the map's corner on the left
 // and a sundial on the right, each half off the page
-const PROPS: Prop[] = [
-  { name: 'candle', side: 'left', beside: 'input', top: -50, gap: 130, glow: true },
-  { name: 'map', side: 'left', beside: 'cards', top: 470, past: 110 },
-  { name: 'sundial', side: 'right', beside: 'cards', top: 520, past: 30 },
-]
+// On an article's page, other things: an inkwell with its quill at the left, a compass and a rolled scroll at the right, each at the page's
+// edge beside the article
+const PROPS = {
+  dashboard: [
+    { name: 'candle', side: 'left', beside: 'input', top: -50, gap: 130, glow: true },
+    { name: 'map', side: 'left', beside: 'cards', wide: true, top: 470, past: 110 },
+    { name: 'sundial', side: 'right', beside: 'cards', wide: true, top: 520, past: 30 },
+  ],
+  article: [
+    { name: 'inkwell', side: 'left', top: 60, past: -6 },
+    { name: 'compass', side: 'right', top: -40, past: 24 },
+    { name: 'scroll', side: 'right', top: 250, past: 70 },
+  ],
+} satisfies Record<string, Prop[]>
+
+export type DeskPropsSet = keyof typeof PROPS
 
 /** One prop as an SVG, its pixels crisp, with a hard pixel shadow on the table down and to its right */
 function Sprite({ name }: { name: DeskSpriteName }) {
@@ -69,17 +82,17 @@ function Sprite({ name }: { name: DeskSpriteName }) {
  * the corner of an old map and a bronze sundial coming in from off the page. Behind the content and faint; only on wide
  * screens (lg; those beside the cards 2xl), where there is room beside the middle; the page (NightBackdrop) cuts what goes past its edges. Part of NightBackdrop (LOOK 'desk').
  */
-export default function DeskProps() {
+export default function DeskProps({ set = 'dashboard' }: { set?: DeskPropsSet }) {
   return (
     // As wide as the page and as tall as the sky picture (NightBackdrop), so the props' `top` is measured from where the table begins
     <div className="absolute inset-x-0 top-0 hidden lg:block" style={{ aspectRatio: String(SKY_RATIO), opacity: OPACITY }}>
-      {PROPS.map(({ name, side, beside, top, past = 0, gap = GAP, glow }) => {
+      {(PROPS[set] as Prop[]).map(({ name, side, beside, wide, top, past = 0, gap = GAP, glow }) => {
         const width = DESK_SPRITES[name][0].length * BACKDROP_PIXEL
-        const edge = past ? `${-past}px` : `max(12px, calc(50% - ${HALF[beside]}rem - ${gap + width}px))`
+        const edge = beside && !past ? `max(12px, calc(50% - ${HALF[beside]}rem - ${gap + width}px))` : `${-past}px`
         const style: CSSProperties = { top: `calc(100% + ${top}px)`, [side]: edge }
         return (
-          // the ones beside the cards only on very wide screens (2xl): on narrower ones the cards would cover them
-          <div key={name} className={`absolute ${beside === 'cards' ? 'hidden 2xl:block' : ''}`} style={style}>
+          // the wide ones only on very wide screens (2xl): on narrower ones the cards would cover them
+          <div key={name} className={`absolute ${wide ? 'hidden 2xl:block' : ''}`} style={style}>
             {glow && (
               <div
                 className="absolute"

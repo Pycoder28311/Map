@@ -19,6 +19,13 @@ import ArticleBanner from './ArticleBanner'
 import ArticleTitle from './ArticleTitle'
 import { BANNER_HEIGHT } from './pageConfig'
 
+/**
+ * The text's box in the dark theme, on the desk (NightBackdrop): a thick frame of dark, brownish wood with a fine dark line outside it and a
+ * lit bevel inside it, square, and its grey a very little warmer (its own surface colour, which the toolbar's bar and the fields in it take too)
+ */
+const FRAME =
+  'dark:rounded-none dark:border-4 dark:border-[#4a3c31] dark:[--color-surface:#201c1a] dark:shadow-[0_0_0_2px_#100c0a,inset_0_0_0_2px_#2a221d,inset_0_0_0_3px_#5c4b3c]'
+
 type Props = {
   resource: AnyResource
   /** The values the fields open on (not followed afterwards) */
@@ -92,7 +99,7 @@ export default function ArticleBody(props: Props) {
       <div className="flex min-w-0 flex-1 flex-col">
         {/* The text's parent box: it takes all the height there is and has a border (none on top: the banner reaches the top of the page). Inside it,
             from the top: the banner across it, where the article is, then the title (with the actions at its right end), the toolbar and the text */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-(--card-radius) border border-t-0 border-line bg-surface">
+        <div className={`flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-(--card-radius) border border-t-0 border-line bg-surface ${FRAME}`}>
           <ArticleBanner
             image={infobox.banner ?? null}
             onChange={(banner) => setInfoboxField({ ...infobox, banner })}

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import sky from '../../assets/dashboard-sky.jpg'
-import DeskProps from './DeskProps'
+import DeskProps, { type DeskPropsSet } from './DeskProps'
 import { BACKDROP, horizonStyle, LOOK, lanternGlow, SKY_DIM, SKY_FADE_FROM, SKY_RATIO, VIGNETTE, woodStyle } from './nightBackdrop'
 
 /** Where the lantern's light is centred (px down the page): on the note input and the Create buttons */
@@ -11,9 +11,10 @@ const LANTERN_AT = 560
  * wide as the page and a little darkened, ending at a dark horizon of hills and trees; below it a dark wooden table, a lantern's warm
  * light pooled on it round the input and the Create buttons, a few things lying on it in the margins (DeskProps, with LOOK 'desk'); the
  * page's corners darker. It fills its parent (the page, `relative`)
- * behind the content, which follows it in the page; the light theme keeps its plain background.
+ * behind the content, which follows it in the page; the light theme keeps its plain background. Also behind an article's page (ArticlePanel),
+ * with other things on the desk.
  */
-export default function NightBackdrop() {
+export default function NightBackdrop({ props = 'dashboard' }: { /** which things lie on the desk: the Dashboard's, or an article page's */ props?: DeskPropsSet }) {
   const wood = useMemo(() => woodStyle(), [])
   const horizon = useMemo(() => horizonStyle(), [])
   const fade = `linear-gradient(to bottom, black ${SKY_FADE_FROM * 100}%, transparent 100%)`
@@ -41,7 +42,7 @@ export default function NightBackdrop() {
         />
       </div>
       {/* The things on the desk, in the margins (LOOK 'desk') */}
-      {LOOK === 'desk' && <DeskProps />}
+      {LOOK === 'desk' && <DeskProps set={props} />}
       <div className="absolute inset-0" style={{ backgroundImage: VIGNETTE }} />
     </div>
   )
