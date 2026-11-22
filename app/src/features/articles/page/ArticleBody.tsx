@@ -25,7 +25,7 @@ import { BANNER_HEIGHT } from './pageConfig'
  * bar and the fields in them take too)
  */
 const FRAME =
-  'dark:rounded-none dark:border-4 dark:border-[#4a3c31] dark:[--color-surface:#251e1a] dark:shadow-[0_0_0_2px_#100c0a,inset_0_0_0_2px_#2a221d,inset_0_0_0_3px_#5c4b3c]'
+  'dark:rounded-none dark:border-4 dark:border-[#4a3c31] dark:[--color-surface:#2b211b] dark:shadow-[0_0_0_2px_#100c0a,inset_0_0_0_2px_#2a221d,inset_0_0_0_3px_#5c4b3c]'
 
 type Props = {
   resource: AnyResource

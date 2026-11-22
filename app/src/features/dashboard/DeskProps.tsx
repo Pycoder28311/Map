@@ -29,18 +29,11 @@ type Prop = {
 
 // Where each lies on the table: the candle beside the Create buttons, its foot level with theirs; lower down, the map's corner on the left
 // and a sundial on the right, each half off the page
-// On an article's page, other things: an inkwell with its quill at the left, a compass and a rolled scroll at the right, each at the page's
-// edge beside the article
 const PROPS = {
   dashboard: [
     { name: 'candle', side: 'left', beside: 'input', top: -50, gap: 130, glow: true },
     { name: 'map', side: 'left', beside: 'cards', wide: true, top: 470, past: 110 },
     { name: 'sundial', side: 'right', beside: 'cards', wide: true, top: 520, past: 30 },
-  ],
-  article: [
-    { name: 'inkwell', side: 'left', top: 60, past: -6 },
-    { name: 'compass', side: 'right', top: -40, past: 24 },
-    { name: 'scroll', side: 'right', top: 250, past: 70 },
   ],
 } satisfies Record<string, Prop[]>
 
