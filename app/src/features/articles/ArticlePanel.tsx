@@ -29,9 +29,9 @@ export default function ArticlePanel({ id }: PanelProps) {
     return found.resource === 'articles' ? <StarterArticle resource={resource} starter={found} /> : <p className="p-4 text-body text-fg-muted">Not found.</p>
   }
   return (
-    // The Dashboard's table behind it (dark theme), darker, with no sky and nothing on it; down over the page's padding at its foot (PanelPage)
+    // The Dashboard's table behind it (dark theme), as lit as there, with no sky and nothing on it; down over the page's padding at its foot (PanelPage)
     <div className="relative -mb-20 min-h-full pb-20">
-      <NightBackdrop props={null} sky={false} dim={0.6} />
+      <NightBackdrop props={null} sky={false} />
       <ResourceItemGate key={id} resource={resource} id={id}>
         {(item) => <ArticlePage key={item.id} resource={resource} item={item} focusField={peekFocus(resource.name, id)} />}
       </ResourceItemGate>
