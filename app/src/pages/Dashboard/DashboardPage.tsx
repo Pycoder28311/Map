@@ -12,8 +12,8 @@ import DashboardSections from '../../features/dashboard/DashboardSections'
 import QuickCreate from '../../features/notes/QuickCreate'
 import { authClient } from '../../lib/auth-client'
 
-/** The two big Create buttons side by side (px): their width each and the gap between them (gap-6). The note input is as wide */
-const TWO_BUTTONS = 2 * BIG_BUTTON_W * STONE_PIXEL + 24
+/** The two big Create buttons side by side (px): their width each and the gap between them (gap-3). The note input is as wide */
+const TWO_BUTTONS = 2 * BIG_BUTTON_W * STONE_PIXEL + 12
 /** How far in from the buttons' outer edges the note input stops, on each side (px) */
 const INPUT_INSET = 32
 /** How much shorter the note input is at its top (px; QuickCreate's tall box is this much shorter): its top comes down, its bottom stays */
@@ -74,7 +74,7 @@ export default function DashboardPage() {
                         </div>
                     </div>
                     {/* The two big Create buttons, side by side under the input (they open the Create modal on its Article and Map tabs) */}
-                    <div className="mx-auto flex w-full items-start justify-center gap-6" style={{ maxWidth: TWO_BUTTONS }}>
+                    <div className="mx-auto flex w-full items-start justify-center gap-3" style={{ maxWidth: TWO_BUTTONS }}>
                         <BigCreateButton lines={['Create', 'article']} art="article" kind="articles" />
                         <BigCreateButton lines={['Create', 'map']} art="map" kind="maps" />
                     </div>

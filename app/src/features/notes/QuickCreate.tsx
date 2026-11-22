@@ -44,20 +44,32 @@ const TALL = {
   line: '#9c8c6e',
   edge: 'inset 0 0 22px rgb(94 70 44 / 0.4)',
 } as const
+/** The tall box's pixels (px): its worn edge, its dog-ear and its border are drawn in steps of this, like the pixel art round it */
+const PX = 3
 /** The tall box's paper corners: square, as a sheet's, the top right one folded over (a dog-ear this many px along each edge) */
-const FOLD = 18
-/** The sheet's outline: square corners, the dog-ear cut off the top right, and its edges worn, as old paper's: each edge nibbled a pixel
- *  or two in at points along it, now and then a deeper nick (from a fixed seed, so the same every time) */
+const FOLD = 6 * PX
+/**
+ * The sheet's outline, in pixel steps: square corners, the dog-ear cut off the top right as a staircase, and its edges worn as old
+ * paper's: along each edge, runs of the paper's pixels, some a pixel in (now and then two), from a fixed seed so the same every time
+ */
 const PAPER_CORNERS = (() => {
   let seed = 11
   const next = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648
-  const wear = () => (next() < 0.08 ? 1.6 + next() : next()).toFixed(1)
-  const along = (n: number) => Array.from({ length: n - 1 }, (_, i) => (i + 1) / n)
-  const top = along(36).map((f) => `calc(${f * 100}% - ${f * FOLD}px) ${wear()}px`)
-  const right = along(6).map((f) => `calc(100% - ${wear()}px) calc(${FOLD * (1 - f)}px + ${f * 100}%)`)
-  const bottom = along(40).map((f) => `calc(${(1 - f) * 100}%) calc(100% - ${wear()}px)`)
-  const left = along(6).map((f) => `${wear()}px ${(1 - f) * 100}%`)
-  return `polygon(0 0, ${top.join(', ')}, calc(100% - ${FOLD}px) 0, 100% ${FOLD}px, ${right.join(', ')}, 100% 100%, ${bottom.join(', ')}, 0 100%, ${left.join(', ')})`
+  const depth = () => (next() < 0.06 ? 2 * PX : next() < 0.3 ? PX : 0)
+  // n runs along an edge: each run's start and end (fractions of the edge) and how far in it is worn
+  const runs = (n: number) => Array.from({ length: n }, (_, i) => ({ from: i / n, to: (i + 1) / n, d: depth() }))
+  const pts: string[] = []
+  // top, left to right, up to the dog-ear
+  for (const r of runs(48)) pts.push(`calc(${r.from * 100}% - ${r.from * FOLD}px) ${r.d}px`, `calc(${r.to * 100}% - ${r.to * FOLD}px) ${r.d}px`)
+  // the dog-ear's staircase, from the top edge down to the right edge
+  for (let k = 0; k < FOLD / PX; k++) pts.push(`calc(100% - ${FOLD - (k + 1) * PX}px) ${k * PX}px`, `calc(100% - ${FOLD - (k + 1) * PX}px) ${(k + 1) * PX}px`)
+  // right, top to bottom
+  for (const r of runs(8)) pts.push(`calc(100% - ${r.d}px) calc(${FOLD * (1 - r.from)}px + ${r.from * 100}%)`, `calc(100% - ${r.d}px) calc(${FOLD * (1 - r.to)}px + ${r.to * 100}%)`)
+  // bottom, right to left
+  for (const r of runs(50)) pts.push(`${(1 - r.from) * 100}% calc(100% - ${r.d}px)`, `${(1 - r.to) * 100}% calc(100% - ${r.d}px)`)
+  // left, bottom to top
+  for (const r of runs(8)) pts.push(`${r.d}px ${(1 - r.from) * 100}%`, `${r.d}px ${(1 - r.to) * 100}%`)
+  return `polygon(${pts.join(', ')})`
 })()
 /** Age on the sheet: a few faint brown stains near its edges and corners, over its colour */
 const PAPER_STAINS = [
@@ -66,8 +78,13 @@ const PAPER_STAINS = [
   'radial-gradient(ellipse 120px 45px at 82% 100%, rgb(110 80 45 / 0.18), transparent 70%)',
   'radial-gradient(circle 26px at 97% 55%, rgb(110 80 45 / 0.16), transparent 70%)',
 ].join(', ')
-/** The dog-ear: the folded-over corner's back, a darker, shaded parchment, lying on the sheet below the fold */
-const DOG_EAR = 'linear-gradient(to bottom left, #a3937300 50%, #8f8064 50%, #a39373 100%)'
+/** The dog-ear: the folded-over corner's back, darker parchment, lying on the sheet below the fold: the staircase under the cut */
+const DOG_EAR = (() => {
+  const pts = ['0 0']
+  for (let k = 0; k < FOLD / PX; k++) pts.push(`${(k + 1) * PX}px ${k * PX}px`, `${(k + 1) * PX}px ${(k + 1) * PX}px`)
+  pts.push(`0 ${FOLD}px`)
+  return `polygon(${pts.join(', ')})`
+})()
 
 /** `tall`: notes only (no Note / Article choice), its text two lines tall from the start (both shown even folded), and its bottom bar (format
  *  buttons, Create) always shown as a second row; a sheet of parchment with square corners, the top right one folded over, as on the Dashboard over its big buttons; else one line, and the bar only while open */
@@ -198,8 +215,8 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
       ref={rootRef}
       style={{
         height: size.folded || undefined,
-        // tall: its border drawn round its paper corners and the dog-ear's edge (a 2px outline that follows the clipped shape)
-        filter: tall ? `drop-shadow(2px 0 0 ${TALL.border}) drop-shadow(-2px 0 0 ${TALL.border}) drop-shadow(0 2px 0 ${TALL.border}) drop-shadow(0 -2px 0 ${TALL.border})` : undefined,
+        // tall: its border drawn round its worn paper edge and the dog-ear's steps (an outline a pixel (PX) wide that follows the clipped shape)
+        filter: tall ? `drop-shadow(${PX}px 0 0 ${TALL.border}) drop-shadow(-${PX}px 0 0 ${TALL.border}) drop-shadow(0 ${PX}px 0 ${TALL.border}) drop-shadow(0 -${PX}px 0 ${TALL.border})` : undefined,
       }}
       className={`relative ${open ? 'z-30' : ''}`}
     >
@@ -256,7 +273,7 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
           <div
             aria-hidden
             className="pointer-events-none absolute top-0 right-0 z-10"
-            style={{ width: FOLD, height: FOLD, backgroundImage: DOG_EAR, filter: 'drop-shadow(-2px 2px 1px rgb(60 40 20 / 0.35))' }}
+            style={{ width: FOLD, height: FOLD, backgroundColor: '#8f8064', clipPath: DOG_EAR }}
           />
         )}
         {/* The title, growing on top; out of the tab order while folded */}
@@ -278,7 +295,7 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
 
         {/* Folded, the text shows its first line only (its first two when `tall`, and it is two lines tall from the start, less 12px: 4 of its padding above and 8 of its height); open, it grows with its lines. Folded, the Note / Article button is at its right, a dropdown
             like the rows' Sort by, as far from the right edge as from the top and bottom (out of the way once open: the two buttons are beside Create) */}
-        <div ref={rowRef} className={`${FIELD} relative flex items-start ${tall ? 'pt-2 pb-3' : 'py-3'} text-body`}>
+        <div ref={rowRef} className={`${tall ? FIELD.replace('px-4', 'px-2.5') : FIELD} relative flex items-start ${tall ? 'pt-2 pb-1 text-[1.1875rem]' : 'py-3 text-body'}`}>
           <div
             style={{ marginInlineEnd: bar ? 0 : kindBox.width + kindBox.gap - 16 + 8 }}
             className={`${tall ? 'min-h-[calc(2lh-8px)]' : 'min-h-[1lh]'} min-w-0 flex-1 transition-[margin] ${ANIMATE} ${open ? 'max-h-[50vh] overflow-y-auto' : tall ? 'max-h-[calc(2lh-8px)] overflow-hidden' : 'max-h-[1lh] overflow-hidden'}`}
@@ -319,12 +336,12 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
         {/* The bottom part, growing below (Create lies over it) */}
         <div className={`${GROW} ${bar ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
           <div className="min-h-0 overflow-hidden">
-            <div className={tall ? 'h-14' : 'h-11'} />
+            <div className={tall ? 'h-10' : 'h-11'} />
           </div>
         </div>
 
-        {/* The format buttons, at the bottom left of the open card (tall: as far up from its bottom as Create, see below) */}
-        <div inert={!bar} className={`absolute ${tall ? 'bottom-5 left-4' : 'bottom-1 left-2'} transition-opacity ${ANIMATE} ${bar ? `opacity-100 ${AFTER_GROW}` : 'opacity-0'}`}>
+        {/* The format buttons, at the bottom left of the open card (tall: as far up from its bottom as Create) */}
+        <div inert={!bar} className={`absolute ${tall ? 'bottom-2 left-1' : 'bottom-1 left-2'} transition-opacity ${ANIMATE} ${bar ? `opacity-100 ${AFTER_GROW}` : 'opacity-0'}`}>
           <RichTextToolbar
             editor={editor}
             only={['bold', 'italic', 'size']}
@@ -333,11 +350,10 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
           />
         </div>
 
-        {/* Create (and the kinds), at the bottom right; tall: 20px in from the right and the bottom, as far as the sheet is from the big
-            Create buttons under it (DashboardPage's gap-5) */}
+        {/* Create (and the kinds), at the bottom right (tall: 8px in from the right and the bottom) */}
         <div
           inert={!bar}
-          className={`absolute ${tall ? 'right-5 bottom-5' : 'right-1 bottom-1'} ${
+          className={`absolute ${tall ? 'right-2 bottom-2' : 'right-1 bottom-1'} ${
             bar ? `translate-x-0 opacity-100 transition-[translate,opacity] ${ANIMATE} ${AFTER_GROW}` : 'translate-x-[calc(100%+1rem)] opacity-0'
           }`}
         >
