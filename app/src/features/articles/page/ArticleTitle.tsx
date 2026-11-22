@@ -18,14 +18,14 @@ type Props = {
 const PX = 4
 /** The ribbon's height (px): a little taller than the title input (TitleInput xl, h-14) */
 const HEIGHT = 68
-/** How deep the swallowtail cut into its left end is (px) */
+/** How deep the swallowtail cut into its right end is (px) */
 const NOTCH = 6 * PX
 /** Its outline's thickness (px) */
 const BORDER = 4
-/** The ribbon's cloth: dark red leather, as the books' (cards/book.ts), plain, with one thick dark outline */
+/** The ribbon's cloth: dark red leather, as the books' (cards/book.ts), plain, with one thick gold outline */
 const RIBBON = {
   cloth: '#7e3922',
-  outline: '#1a0b06',
+  outline: '#c9a14a',
   /** its back, seen where it folds round the frame's edge */
   back: '#3e180c',
   text: '#f1e3c4',
@@ -33,29 +33,27 @@ const RIBBON = {
   shade: '#4d1f11',
 } as const
 
-/** The ribbon's shape: square at its right (where it comes out from the frame), a swallowtail cut into its left end, in pixel steps */
+/** The ribbon's shape: square at its left (where it comes out from the frame), a swallowtail cut into its right end, in pixel steps */
 function ribbonShape() {
   const steps = HEIGHT / 2 / PX
-  // the row k pixels from the top (and the same from the bottom) is cut this far in from the left
-  const cut = (k: number) => `${Math.round((k * NOTCH) / (steps - 1))}px`
-  const pts = ['100% 0', '100% 100%']
-  for (let k = 0; k < steps; k++) pts.push(`${cut(k)} ${HEIGHT - k * PX}px`, `${cut(k)} ${HEIGHT - (k + 1) * PX}px`)
-  for (let k = steps - 1; k >= 0; k--) pts.push(`${cut(k)} ${(k + 1) * PX}px`, `${cut(k)} ${k * PX}px`)
+  // the row k pixels from the top (and the same from the bottom) is cut this far in from the right
+  const cut = (k: number) => `calc(100% - ${Math.round((k * NOTCH) / (steps - 1))}px)`
+  const pts = ['0 0']
+  for (let k = 0; k < steps; k++) pts.push(`${cut(k)} ${k * PX}px`, `${cut(k)} ${(k + 1) * PX}px`)
+  for (let k = steps - 1; k >= 0; k--) pts.push(`${cut(k)} ${HEIGHT - (k + 1) * PX}px`, `${cut(k)} ${HEIGHT - k * PX}px`)
+  pts.push('0 100%')
   return `polygon(${pts.join(', ')})`
 }
 const SHAPE = ribbonShape()
-/** Its fold under its right end: the ribbon's back going round the frame's edge, a pixel staircase */
+/** Its fold under its left end: the ribbon's back going round the frame's edge, a pixel staircase */
 const FOLD_W = 3 * PX
-const FOLD = `polygon(0 0, ${FOLD_W}px 0, ${[...Array(FOLD_W / PX).keys()]
-  .reverse()
-  .flatMap((k) => [`${k * PX}px ${FOLD_W - k * PX}px`, `${k * PX}px ${FOLD_W - (k + 1) * PX}px`])
-  .join(', ')}, 0 0)`
+const FOLD = `polygon(${[...Array(FOLD_W / PX).keys()].flatMap((k) => [`${k * PX}px ${k * PX}px`, `${(k + 1) * PX}px ${k * PX}px`]).join(', ')}, ${FOLD_W}px 0, ${FOLD_W}px ${FOLD_W}px, 0 ${FOLD_W}px, 0 0)`
 /** Its outline all round its shape, and its shadow on the page under it */
 const OUTLINE = `drop-shadow(${BORDER}px 0 0 ${RIBBON.outline}) drop-shadow(-${BORDER}px 0 0 ${RIBBON.outline}) drop-shadow(0 ${BORDER}px 0 ${RIBBON.outline}) drop-shadow(0 -${BORDER}px 0 ${RIBBON.outline}) drop-shadow(0 ${PX}px 0 rgb(0 0 0 / 0.35))`
 
 /**
- * The title on a cloth ribbon (a banner) that comes in from the right: out from the text box's frame, its back showing where it folds round
- * the frame's edge, its left end cut as a swallowtail. As wide as the title's words
+ * The title on a cloth ribbon (a banner) that comes in from the left: out from the text box's frame, its back showing where it folds round
+ * the frame's edge, the title on it where the text begins, its right end cut as a swallowtail, a thick gold outline round it. As wide as the title's words
  */
 export default function ArticleTitle({ start, readOnly, placeholder, autoFocus, onChange }: Props) {
   const [title, setTitle] = useState(start)
@@ -80,17 +78,18 @@ export default function ArticleTitle({ start, readOnly, placeholder, autoFocus, 
       el.removeEventListener('transitionend', measure)
     }
   }, [shown])
-  // It starts at the box's inner edge on the right, back over the page's right padding
+  // It starts at the box's inner edge: back over the page's left padding (an editor's has room for the sections' ⠿), the title where the text begins
+  const [pull, pad] = readOnly ? ['-ms-4', 'ps-4'] : ['-ms-11', 'ps-11']
   return (
-    <div className="relative ms-auto -me-4 flex min-w-0 max-w-full" style={{ marginBottom: FOLD_W }}>
-      <div aria-hidden className="absolute right-0 top-full" style={{ width: FOLD_W, height: FOLD_W, background: RIBBON.back, clipPath: FOLD }} />
+    <div className={`relative flex min-w-0 max-w-full ${pull}`} style={{ marginBottom: FOLD_W }}>
+      <div aria-hidden className="absolute left-0 top-full" style={{ width: FOLD_W, height: FOLD_W, background: RIBBON.back, clipPath: FOLD }} />
       <div className="flex min-w-0 max-w-full" style={{ filter: OUTLINE }}>
         <div
-          className="flex min-w-0 max-w-full items-center pe-4"
+          className={`flex min-w-0 max-w-full items-center ${pad}`}
           style={
             {
               height: HEIGHT,
-              paddingLeft: NOTCH + 16,
+              paddingRight: NOTCH + 16,
               background: RIBBON.cloth,
               clipPath: SHAPE,
               '--color-fg': RIBBON.text,

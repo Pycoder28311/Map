@@ -112,9 +112,7 @@ export default function ArticleBody(props: Props) {
           <div className="relative z-10 -mt-3.5 px-4 pb-1 empty:hidden">{props.folders}</div>
           {/* An editor's page has room at the left for the sections' ⠿ */}
           <div className={`relative flex flex-1 flex-col gap-2 p-4 pt-1 ${readOnly ? '' : 'ps-11'}`}>
-            {/* Info / Share / ⋯ at the left; the title on its ribbon, which comes in from the right */}
             <div className="flex items-center gap-3">
-              <div className="shrink-0">{props.actions}</div>
               <ArticleTitle
                 start={start.title ?? ''}
                 readOnly={readOnly}
@@ -122,6 +120,7 @@ export default function ArticleBody(props: Props) {
                 autoFocus={!readOnly && (focusField === 'title' || (focusField === undefined && !start.title))}
                 onChange={(title) => change('title', title)}
               />
+              <div className="ms-auto shrink-0">{props.actions}</div>
             </div>
             {props.toolbar}
             {/* The Info box floats at the text's top right so the text flows around it, like an encyclopedia's; it is not part of the text (saved in `infobox`) */}
