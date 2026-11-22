@@ -1276,37 +1276,50 @@
     height: var(--btn-icon-size);
   }
 
-  /* C8. Golden (variant "golden"): a gold game button, drawn from a picture of one (assets/buttons/golden.png, 210 × 74, its words taken
-     out): its dark outline with cut corners, the cream frame with a notch at the middle of each side, the gold face with a darker band
-     across its lower half. Its ends are kept as they are, 16px of the picture each, and its middle stretches to the words' width; it is
-     the picture's height at half its size (37px). Its words dark brown in a bold serif. Hovered: a little brighter; pressed: it sinks a pixel */
+  /* C8. Golden (variant "golden"): a gold game button. Inside a dark brown outline, a cream rim along its top and sides; its face gold, lit
+     along the top, a darker amber band across its lower part; along its bottom a light gold line and a dark brown shade; its corners cut
+     by a pixel; its words dark brown, in a bold serif. Hovered: a little brighter; pressed: it sinks a pixel. Its colours are the --golden-* below */
   .ui-btn-golden {
-    --btn-text: #2a1208;
-    --btn-hover-text: #1c0b03;
-    --btn-font: 'Almendra', Georgia, 'Times New Roman', serif;
-    --btn-font-size: 17px;
+    --golden-outline: #2a140e;
+    --golden-rim: #ecd6a4;
+    --golden-rim-side: #dcc08a;
+    --golden-glint: #fde39a;
+    --golden-face: #e1ae38;
+    --golden-band: #c27e2e;
+    --golden-foot-light: #f2d47a;
+    --golden-foot: #6b3a12;
+    --btn-text: #3a1a08;
+    --btn-hover-text: #2a1004;
+    --btn-font: Georgia, 'Times New Roman', serif;
+    --btn-font-size: 15px;
     --btn-font-weight: 700;
     --btn-letter-spacing: 0.5px;
-    --btn-line-height: 1;
-    --btn-pad-x: 14px;
-    --btn-pad-y: 0px;
+    --btn-line-height: 1.2;
+    --btn-pad-x: 18px;
+    --btn-pad-y: 5px;
+    --_face: var(--golden-face);
+    --_band: var(--golden-band);
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-sizing: border-box;
-    height: 37px;
-    min-width: 72px;
-    padding-bottom: 2px;
-    border-style: solid;
-    border-width: 0 8px;
-    border-image: url('../assets/buttons/golden.png') 0 16 fill / 0 8px stretch;
-    background: none;
-    transition: filter 0.15s ease-out;
+    min-width: 64px;
+    text-shadow: 0 1px 0 rgb(255 235 170 / 0.45);
+    background: linear-gradient(to bottom, var(--golden-glint) 0 4px, var(--_face) 4px 55%, var(--_band) 55%);
+    border: 2px solid var(--golden-outline);
+    box-shadow:
+      inset 0 2px 0 var(--golden-rim),
+      inset 2px 0 0 var(--golden-rim-side),
+      inset -2px 0 0 var(--golden-rim-side),
+      inset 0 -2px 0 var(--golden-foot),
+      inset 0 -4px 0 var(--golden-foot-light);
+    /* the corners cut by a pixel, as a pixel button's */
+    clip-path: polygon(2px 0, calc(100% - 2px) 0, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 0 calc(100% - 2px), 0 2px);
   }
 
   .ui-btn-golden:hover:not(:disabled) {
-    filter: brightness(1.08);
+    --_face: #eab944;
+    --_band: #cc8934;
   }
 
   .ui-btn-golden:active:not(:disabled) {
