@@ -75,7 +75,7 @@ export default function ArticleBanner({ image, onChange, onUploadImage, onUpload
       ) : (
         <div className="ui-crack" style={{ height: `calc(9rem + ${REACH}px)` }}>
           <div style={{ clipPath: CLIP }} className="size-full bg-fill">
-            <Button variant="ghost" icon={LuImagePlus} disabled={busy} onClick={() => picker.current?.click()} className="w-full justify-center" style={{ height: `calc(100% - ${REACH}px)` }}>
+            <Button variant="ghost" plain icon={LuImagePlus} disabled={busy} onClick={() => picker.current?.click()} className="w-full justify-center" style={{ height: `calc(100% - ${REACH}px)` }}>
               {busy ? 'Uploading…' : 'Add banner image'}
             </Button>
           </div>

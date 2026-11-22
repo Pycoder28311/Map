@@ -278,7 +278,7 @@ function Picture({
           </div>
         </>
       ) : (
-        <Button variant="ghost" icon={LuImagePlus} disabled={busy} onClick={() => picker.current?.click()} className="size-full justify-center">
+        <Button variant="ghost" plain icon={LuImagePlus} disabled={busy} onClick={() => picker.current?.click()} className="size-full justify-center">
           {busy ? 'Uploading…' : 'Add picture'}
         </Button>
       )}

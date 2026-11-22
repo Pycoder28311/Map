@@ -20,11 +20,12 @@ import ArticleTitle from './ArticleTitle'
 import { BANNER_HEIGHT } from './pageConfig'
 
 /**
- * The text's box in the dark theme, on the desk (NightBackdrop): a thick frame of dark, brownish wood with a fine dark line outside it and a
- * lit bevel inside it, square, and its grey a very little warmer (its own surface colour, which the toolbar's bar and the fields in it take too)
+ * The text's box and the comments' box under it in the dark theme, on the desk (NightBackdrop): a thick frame of dark, brownish wood with a
+ * fine dark line outside it and a lit bevel inside it, square, and their grey a little brownish (their own surface colour, which the toolbar's
+ * bar and the fields in them take too)
  */
 const FRAME =
-  'dark:rounded-none dark:border-4 dark:border-[#4a3c31] dark:[--color-surface:#201c1a] dark:shadow-[0_0_0_2px_#100c0a,inset_0_0_0_2px_#2a221d,inset_0_0_0_3px_#5c4b3c]'
+  'dark:rounded-none dark:border-4 dark:border-[#4a3c31] dark:[--color-surface:#251e1a] dark:shadow-[0_0_0_2px_#100c0a,inset_0_0_0_2px_#2a221d,inset_0_0_0_3px_#5c4b3c]'
 
 type Props = {
   resource: AnyResource
@@ -158,10 +159,11 @@ export default function ArticleBody(props: Props) {
                 />
               </div>
             ) : null}
-            <div className="mt-4">{props.comments}</div>
-            <div className="mt-auto">{props.footer}</div>
+            <div className="mt-auto pt-4">{props.footer}</div>
           </div>
         </div>
+        {/* The comments in their own box under it, apart */}
+        {props.comments && <div className={`mt-4 rounded-(--card-radius) border border-line bg-surface p-4 ${FRAME}`}>{props.comments}</div>}
       </div>
     </div>
   )
