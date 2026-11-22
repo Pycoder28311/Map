@@ -19,6 +19,8 @@ type Prop = {
   top: number
   /** px past the page's edge it may go (it is cut there): the map's corner peeks in from off the desk */
   past?: number
+  /** how far it stays from what it sits beside (px), if not GAP */
+  gap?: number
   /** a candle's own small glow round its flame */
   glow?: boolean
 }
@@ -26,7 +28,7 @@ type Prop = {
 // Where each lies on the table: the candle beside the Create buttons, its foot level with theirs; lower down, the map's corner on the left
 // and a sundial on the right, each half off the page
 const PROPS: Prop[] = [
-  { name: 'candle', side: 'left', beside: 'input', top: -50, glow: true },
+  { name: 'candle', side: 'left', beside: 'input', top: -50, gap: 130, glow: true },
   { name: 'map', side: 'left', beside: 'cards', top: 470, past: 110 },
   { name: 'sundial', side: 'right', beside: 'cards', top: 520, past: 30 },
 ]
@@ -71,9 +73,9 @@ export default function DeskProps() {
   return (
     // As wide as the page and as tall as the sky picture (NightBackdrop), so the props' `top` is measured from where the table begins
     <div className="absolute inset-x-0 top-0 hidden lg:block" style={{ aspectRatio: String(SKY_RATIO), opacity: OPACITY }}>
-      {PROPS.map(({ name, side, beside, top, past = 0, glow }) => {
+      {PROPS.map(({ name, side, beside, top, past = 0, gap = GAP, glow }) => {
         const width = DESK_SPRITES[name][0].length * BACKDROP_PIXEL
-        const edge = past ? `${-past}px` : `max(12px, calc(50% - ${HALF[beside]}rem - ${GAP + width}px))`
+        const edge = past ? `${-past}px` : `max(12px, calc(50% - ${HALF[beside]}rem - ${gap + width}px))`
         const style: CSSProperties = { top: `calc(100% + ${top}px)`, [side]: edge }
         return (
           // the ones beside the cards only on very wide screens (2xl): on narrower ones the cards would cover them

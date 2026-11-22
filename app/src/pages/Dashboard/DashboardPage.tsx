@@ -64,9 +64,9 @@ export default function DashboardPage() {
                     </>
                 )}
                 {/* The input and the Create buttons share one narrower width, centred over the sections */}
-                <div className="mx-auto flex w-full max-w-[54rem] flex-col gap-xl">
+                <div className="mx-auto flex w-full max-w-[54rem] flex-col gap-5">
                     {/* A greeting, then the page's main input and the Create buttons, near the top of the screen */}
-                    <div className="mt-[4vh] flex flex-col items-center gap-12">
+                    <div className="mt-[4vh] flex flex-col items-center gap-6">
                         <h1 className="text-center text-5xl font-semibold tracking-tight">Hello{firstName ? `, ${firstName}` : ''}</h1>
                         {/* A little narrower than the two Create buttons under it (INPUT_INSET in from each side) */}
                         <div className="relative w-full" style={{ maxWidth: TWO_BUTTONS - 2 * INPUT_INSET - BUTTON_SHADOW, left: -BUTTON_SHADOW / 2, marginTop: INPUT_LOWER }}>

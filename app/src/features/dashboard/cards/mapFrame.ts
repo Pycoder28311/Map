@@ -10,18 +10,18 @@ import { seededRandom } from '../../../lib/seededRandom'
 
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const FRAME = {
-  /** The planks' dark outline */
-  outline: '#0d0806',
+  /** The planks' outline: a dark brown like the desk's seams, so the frame sits into the desk */
+  outline: '#2a1d15',
   /** The wood: its two tones, its grain (darker and lighter streaks), knots, and the shadow a horizontal plank casts on a vertical one */
-  wood: '#764f36',
-  woodAlt: '#68452e',
+  wood: '#5a3f2c',
+  woodAlt: '#503826',
   grainDark: '#4f3621',
-  grainLight: '#906342',
+  grainLight: '#6e4c33',
   knot: '#140c06',
   joint: '#412d1c',
-  /** The nails at the crossings: their light top left, and the rest of their head */
-  nailLight: '#9b9994',
-  nail: '#494642',
+  /** The nails at the crossings, dull aged iron: their light top left, and the rest of their head */
+  nailLight: '#8a7658',
+  nail: '#5c4a36',
   /** The backing behind the paper (what shows through its tears and cracks) */
   backing: '#0a0604',
   /** The paper: its colour, speckles a little darker and lighter (and its stains), and its aged edge */

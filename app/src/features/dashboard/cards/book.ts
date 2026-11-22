@@ -10,8 +10,8 @@ import type { CSSProperties } from 'react'
 
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const BOOK = {
-  /** The hard outline round everything */
-  outline: '#0d0806',
+  /** The outline round everything: a dark brown like the desk's seams, so the book sits into the desk */
+  outline: '#2a1d15',
   /** The back cover, seen along the left, its ridges and their shade, and its stitches */
   spine: '#41261b',
   ridge: '#71442f',
@@ -30,10 +30,10 @@ export const BOOK = {
   /** The debossed border round the cover: its pressed line and the light line beside it */
   deboss: '#412318',
   emboss: '#714232',
-  /** The hinge, where the cover meets the spine, and its rivets */
+  /** The hinge, where the cover meets the spine, and its rivets (dull brass, like its gold) */
   hinge: '#49281d',
-  rivet: '#8d8b86',
-  rivetShade: '#3b3936',
+  rivet: '#7b6436',
+  rivetShade: '#463719',
   /** The bands' dashes (one pixel tall, a muted stitch close to the leather) and the groove they sit in */
   band: '#5c4836',
   groove: '#170d08',

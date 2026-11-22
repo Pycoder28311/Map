@@ -260,9 +260,9 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
           </div>
         </div>
 
-        {/* Folded, the text shows its first line only (its first two when `tall`, and it is two lines tall from the start, less 16px: 8 of its padding above and 8 of its height); open, it grows with its lines. Folded, the Note / Article button is at its right, a dropdown
+        {/* Folded, the text shows its first line only (its first two when `tall`, and it is two lines tall from the start, less 12px: 4 of its padding above and 8 of its height); open, it grows with its lines. Folded, the Note / Article button is at its right, a dropdown
             like the rows' Sort by, as far from the right edge as from the top and bottom (out of the way once open: the two buttons are beside Create) */}
-        <div ref={rowRef} className={`${FIELD} relative flex items-start ${tall ? 'pt-1 pb-3' : 'py-3'} text-body`}>
+        <div ref={rowRef} className={`${FIELD} relative flex items-start ${tall ? 'pt-2 pb-3' : 'py-3'} text-body`}>
           <div
             style={{ marginInlineEnd: bar ? 0 : kindBox.width + kindBox.gap - 16 + 8 }}
             className={`${tall ? 'min-h-[calc(2lh-8px)]' : 'min-h-[1lh]'} min-w-0 flex-1 transition-[margin] ${ANIMATE} ${open ? 'max-h-[50vh] overflow-y-auto' : tall ? 'max-h-[calc(2lh-8px)] overflow-hidden' : 'max-h-[1lh] overflow-hidden'}`}
