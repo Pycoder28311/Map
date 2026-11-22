@@ -33,9 +33,6 @@ const FIELD = 'w-full resize-none bg-transparent px-4 text-fg outline-none place
  * Opening, Create slides in at the bottom right, with the format buttons on the left. Create (or Ctrl/⌘+Enter) makes the note
  * on the server (and says so if it could not); a click outside or Esc folds the card back, keeping the draft.
  */
-/** The big Create buttons' corners (features/dashboard/stoneButton.ts: their rows step in 4, 2, 2, 1, 1 of their 3px pixels at each corner),
- *  as a clip-path for the tall box, so the two match */
-const STEPS = [4, 2, 2, 1, 1]
 /** The tall box's own colours: a sheet of muted, aged parchment (a little darker than the Create article book's pages, so it does not glare) with a dark leather-brown border, its words in
  *  dark ink, its placeholder in faded ink, its bar's words brown, and the darker aged edge inside its border */
 const TALL = {
@@ -47,26 +44,14 @@ const TALL = {
   line: '#9c8c6e',
   edge: 'inset 0 0 22px rgb(94 70 44 / 0.4)',
 } as const
-const STEPPED_CORNERS = (() => {
-  const u = 3
-  const pts: string[] = []
-  // top left, from the left edge up to the top edge
-  STEPS.slice().reverse().forEach((indent, k) => {
-    const y = (STEPS.length - 1 - k) * u
-    pts.push(`${indent * u}px ${y + u}px`, `${indent * u}px ${y}px`)
-  })
-  // (from the left edge itself, below the steps)
-  const tl = [`0px ${STEPS.length * u}px`, ...pts]
-  const mirrorX = (p: string) => p.replace(/^(\d+)px/, (_, x) => `calc(100% - ${x}px)`)
-  const mirrorY = (p: string) => p.replace(/ (\d+)px$/, (_, y) => ` calc(100% - ${y}px)`)
-  const tr = tl.slice().reverse().map(mirrorX)
-  const br = tl.map((p) => mirrorY(mirrorX(p)))
-  const bl = tl.slice().reverse().map(mirrorY)
-  return `polygon(${[...tl, ...tr, ...br, ...bl].join(', ')})`
-})()
+/** The tall box's paper corners: square, as a sheet's, the top right one folded over (a dog-ear this many px along each edge) */
+const FOLD = 18
+const PAPER_CORNERS = `polygon(0 0, calc(100% - ${FOLD}px) 0, 100% ${FOLD}px, 100% 100%, 0 100%)`
+/** The dog-ear: the folded-over corner's back, a darker, shaded parchment, lying on the sheet below the fold */
+const DOG_EAR = 'linear-gradient(to bottom left, #a3937300 50%, #8f8064 50%, #a39373 100%)'
 
 /** `tall`: notes only (no Note / Article choice), its text two lines tall from the start (both shown even folded), and its bottom bar (format
- *  buttons, Create) always shown as a second row; lighter, its corners stepped like the Create buttons', as on the Dashboard over its big buttons; else one line, and the bar only while open */
+ *  buttons, Create) always shown as a second row; a sheet of parchment with square corners, the top right one folded over, as on the Dashboard over its big buttons; else one line, and the bar only while open */
 export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
   const rootRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLInputElement>(null)
@@ -194,7 +179,7 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
       ref={rootRef}
       style={{
         height: size.folded || undefined,
-        // tall: its border drawn round its stepped corners (a 2px outline that follows the clipped shape)
+        // tall: its border drawn round its paper corners and the dog-ear's edge (a 2px outline that follows the clipped shape)
         filter: tall ? `drop-shadow(2px 0 0 ${TALL.border}) drop-shadow(-2px 0 0 ${TALL.border}) drop-shadow(0 2px 0 ${TALL.border}) drop-shadow(0 -2px 0 ${TALL.border})` : undefined,
       }}
       className={`relative ${open ? 'z-30' : ''}`}
@@ -215,11 +200,13 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
         // Open: moved up by the title's height while the title grows (same timing), so the text stays put
         style={{
           ...(open ? { boxShadow: 'inset 0 0 0 var(--row-border-width) var(--row-border-color), var(--lift-shadow)', transform: `translateY(${-size.title}px)` } : {}),
-          // tall (on the Dashboard): its corners stepped in pixels like the big Create buttons' under it
+          // tall (on the Dashboard): square paper corners, the top right one cut off where it is folded over
           ...(tall
             ? ({
                 borderRadius: 0,
-                clipPath: STEPPED_CORNERS,
+                clipPath: PAPER_CORNERS,
+                // (no pixel-corner marks of the fields' look: a sheet's corners are plain)
+                backgroundImage: 'none',
                 // parchment (its border drawn round the steps by the wrapper instead), its words in ink, its edge aged
                 boxShadow: TALL.edge,
                 ['--input-bg' as string]: TALL.bg,
@@ -243,6 +230,14 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
         open ? 'overflow-hidden' : ''
       }`}
       >
+        {/* tall: the dog-ear's back, the corner folded down onto the sheet (a little shadow under its edge) */}
+        {tall && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute top-0 right-0 z-10"
+            style={{ width: FOLD, height: FOLD, backgroundImage: DOG_EAR, filter: 'drop-shadow(-2px 2px 1px rgb(60 40 20 / 0.35))' }}
+          />
+        )}
         {/* The title, growing on top; out of the tab order while folded */}
         <div className={`${GROW} ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr] opacity-0'}`} inert={!open}>
           <div ref={titleBoxRef} className="min-h-0 overflow-hidden">
