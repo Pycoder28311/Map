@@ -10,37 +10,37 @@ import type { CSSProperties } from 'react'
 
 // ── The colours to change ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const BOOK = {
-  /** The outline round everything: a mid-dark brown, close to the desk, so the book sits into it */
-  outline: '#4a3423',
+  /** The hard outline round everything */
+  outline: '#0d0806',
   /** The back cover, seen along the left, its ridges and their shade, and its stitches */
-  spine: '#2b221e',
-  ridge: '#483a33',
-  ridgeShade: '#2e2016',
+  spine: '#562917',
+  ridge: '#954b28',
+  ridgeShade: '#100905',
   stitch: '#6e5f4c',
   /** The front cover: its face, the light line along its top and the shade along its right and bottom */
-  cover: '#3c302a',
-  coverLight: '#493a33',
-  coverShade: '#2f241f',
+  cover: '#7e3922',
+  coverLight: '#9a492d',
+  coverShade: '#612a18',
   /** The faint shapes on the cover: its grain (darker and lighter streaks), small diamonds, scratches and worn specks */
-  grainDark: '#342924',
-  grainLight: '#443730',
-  motif: '#43352f',
-  scratch: '#504138',
-  wear: '#55473d',
+  grainDark: '#6d301e',
+  grainLight: '#8e4229',
+  motif: '#8b3f28',
+  scratch: '#a95332',
+  wear: '#b75f3b',
   /** The debossed border round the cover: its pressed line and the light line beside it */
-  deboss: '#2f221d',
-  emboss: '#483a33',
-  /** The hinge, where the cover meets the spine, and its rivets (dull brass, like its gold) */
-  hinge: '#352722',
-  rivet: '#5e4c30',
-  rivetShade: '#3a2d1a',
+  deboss: '#562513',
+  emboss: '#94472c',
+  /** The hinge, where the cover meets the spine, and its rivets */
+  hinge: '#612a18',
+  rivet: '#8d8b86',
+  rivetShade: '#3b3936',
   /** The bands' dashes (one pixel tall, a muted stitch close to the leather) and the groove they sit in */
-  band: '#463e36',
-  groove: '#3a2819',
+  band: '#765437',
+  groove: '#170d08',
   /** The metal corners */
-  gold: '#5e4c30',
-  goldDeep: '#3a2d1a',
-  goldLight: '#7d6a48',
+  gold: '#a17b2f',
+  goldDeep: '#5d4413',
+  goldLight: '#c3a767',
   /** The pages' edge: its light line on top, the lines between the pages, and its shaded line below */
   pages: '#b6a585',
   pagesLight: '#c9bb9a',
