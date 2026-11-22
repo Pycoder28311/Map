@@ -7,8 +7,8 @@ import { DESK_PALETTE, DESK_SPRITES, type DeskSpriteName } from './deskProps'
 const HALF = { input: 27, cards: 32.5 } as const
 /** How far the props stay from that middle (px) */
 const GAP = 48
-/** How strongly they show: a little dimmed, so they stay in the background */
-const OPACITY = 0.8
+/** How strongly they show: faint, so they stay in the background like things in the dark at the desk's edges */
+const OPACITY = 0.45
 
 type Prop = {
   name: DeskSpriteName
@@ -21,18 +21,17 @@ type Prop = {
   past?: number
   /** a candle's own small glow round its flame */
   glow?: boolean
-  /** how strongly it shows, if fainter than the others (a big pale thing would stand out) */
-  opacity?: number
 }
 
 // Where each lies on the table: the candle and the compass beside the Create buttons, the inkwell and the scroll beside the first row of
-// cards, the map's corner lower down, half off the page
+// cards, lower down the map's corner on the left and a sundial on the right, each half off the page
 const PROPS: Prop[] = [
   { name: 'candle', side: 'left', beside: 'input', top: -110, glow: true },
   { name: 'compass', side: 'right', beside: 'input', top: -60 },
   { name: 'inkwell', side: 'left', beside: 'cards', top: 300 },
   { name: 'scroll', side: 'right', beside: 'cards', top: 230 },
-  { name: 'map', side: 'left', beside: 'cards', top: 470, past: 110, opacity: 0.55 },
+  { name: 'map', side: 'left', beside: 'cards', top: 470, past: 110 },
+  { name: 'sundial', side: 'right', beside: 'cards', top: 520, past: 30 },
 ]
 
 /** One prop as an SVG, its pixels crisp, with a hard pixel shadow on the table down and to its right */
@@ -68,17 +67,17 @@ function Sprite({ name }: { name: DeskSpriteName }) {
 
 /**
  * Things lying on the Dashboard's desk in its margins (deskProps.ts): a candle with its own small glow, a brass compass, an inkwell with a
- * quill, a rolled scroll, and the corner of an old map coming in from off the page. Behind the content, a little dimmed; only on wide
+ * quill, a rolled scroll, and the corner of an old map and a bronze sundial coming in from off the page. Behind the content and faint; only on wide
  * screens (lg; those beside the cards 2xl), where there is room beside the middle; the page (NightBackdrop) cuts what goes past its edges. Part of NightBackdrop (LOOK 'desk').
  */
 export default function DeskProps() {
   return (
     // As wide as the page and as tall as the sky picture (NightBackdrop), so the props' `top` is measured from where the table begins
     <div className="absolute inset-x-0 top-0 hidden lg:block" style={{ aspectRatio: String(SKY_RATIO), opacity: OPACITY }}>
-      {PROPS.map(({ name, side, beside, top, past = 0, glow, opacity }) => {
+      {PROPS.map(({ name, side, beside, top, past = 0, glow }) => {
         const width = DESK_SPRITES[name][0].length * BACKDROP_PIXEL
         const edge = past ? `${-past}px` : `max(12px, calc(50% - ${HALF[beside]}rem - ${GAP + width}px))`
-        const style: CSSProperties = { top: `calc(100% + ${top}px)`, [side]: edge, opacity }
+        const style: CSSProperties = { top: `calc(100% + ${top}px)`, [side]: edge }
         return (
           // the ones beside the cards only on very wide screens (2xl): on narrower ones the cards would cover them
           <div key={name} className={`absolute ${beside === 'cards' ? 'hidden 2xl:block' : ''}`} style={style}>

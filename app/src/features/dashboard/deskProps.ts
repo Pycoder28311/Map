@@ -1,5 +1,5 @@
 // The things lying on the Dashboard's desk, in its margins (DeskProps.tsx): a candle, an inkwell with a quill, a brass compass, a rolled
-// scroll and the corner of an old map. Each is a grid of letters, one per pixel ('.' is empty, the others colours of DESK_PALETTE),
+// scroll, the corner of an old map and a bronze sundial. Each is a grid of letters, one per pixel ('.' is empty, the others colours of DESK_PALETTE),
 // drawn by hand here or built from a fixed recipe, so they are the same every time. Pure.
 
 export const DESK_PALETTE: Record<string, string> = {
@@ -23,6 +23,7 @@ export const DESK_PALETTE: Record<string, string> = {
   r: '#b8382b', // red (the compass needle, the map's route)
   s: '#d5dbe3', // silver
   t: '#6b3a1e', // the scroll's ties
+  v: '#5f8f7a', // verdigris, the green on old bronze
 }
 
 /** A grid padded on the right to its widest row */
@@ -169,12 +170,56 @@ function mapSheet(): string[] {
   return rows
 }
 
+/**
+ * A bronze sundial seen from above: a round plate with a rim, an engraved ring and the hour lines fanning out over its upper half, each
+ * ending in a mark, green patina here and there, and the gnomon (its upright blade) from the middle to the top, casting a thin shadow
+ */
+function sundial(): string[] {
+  const N = 31
+  const c = (N - 1) / 2
+  let seed = 7
+  const next = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648
+  // the plate: rim, face (lighter toward the top left), green patina in a few spots near the rim, the engraved ring round the middle
+  const px: string[][] = []
+  for (let y = 0; y < N; y++) {
+    const row: string[] = []
+    for (let x = 0; x < N; x++) {
+      const d = Math.hypot(x - c, y - c)
+      if (d > 15.3) row.push('.')
+      else if (d > 14.4) row.push('k')
+      else if (d > 12.6) row.push(x + y < N - 4 ? 'h' : x + y > N + 4 ? 'G' : 'g')
+      else if (d > 11.9) row.push('G')
+      else if (Math.abs(d - 3.2) < 0.5) row.push('G')
+      else if (d > 9 && next() < 0.12) row.push('v')
+      else row.push(d < 8 && x + y < N - 2 ? 'h' : 'g')
+    }
+    px.push(row)
+  }
+  // the hour lines, from due west to due east over the top, every 15°: engraved from the ring out, a mark where each ends
+  for (let i = 0; i <= 12; i++) {
+    const a = Math.PI + (i * Math.PI) / 12
+    for (let r = 4.2; r <= 10.4; r += 0.4) {
+      const x = Math.round(c + r * Math.cos(a))
+      const y = Math.round(c + r * Math.sin(a))
+      px[y][x] = r > 9.6 ? 'k' : 'G'
+    }
+  }
+  // the gnomon: a blade from the middle to the top, lit on its left, and its thin shadow to its right
+  for (let y = c - 10; y <= c; y++) {
+    px[y][c - 1] = 'h'
+    px[y][c] = 'k'
+    if (y > c - 8) px[y][c + 1] = 'G'
+  }
+  return px.map((row) => row.join(''))
+}
+
 export const DESK_SPRITES = {
   candle,
   inkwell,
   compass: compass(),
   scroll: scroll(),
   map: mapSheet(),
+  sundial: sundial(),
 } as const
 
 export type DeskSpriteName = keyof typeof DESK_SPRITES
