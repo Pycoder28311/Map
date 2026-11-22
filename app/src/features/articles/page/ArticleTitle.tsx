@@ -89,7 +89,7 @@ export default function ArticleTitle({ start, readOnly, placeholder, autoFocus, 
           style={
             {
               height: HEIGHT,
-              paddingRight: NOTCH + 16,
+              paddingRight: NOTCH + 28,
               background: RIBBON.cloth,
               clipPath: SHAPE,
               '--color-fg': RIBBON.text,
@@ -113,7 +113,8 @@ export default function ArticleTitle({ start, readOnly, placeholder, autoFocus, 
             ref={input}
             // As wide as what is in it (measured in its own font; the placeholder while empty)
             style={width ? { width } : undefined}
-            className="min-w-0 max-w-full"
+            // In the pixel font, as the Dashboard's rows (RowHeader)
+            className="min-w-0 max-w-full font-(family-name:--font-pixel)"
           />
         </div>
       </div>
