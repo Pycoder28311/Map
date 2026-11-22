@@ -15,7 +15,9 @@ import { authClient } from '../../lib/auth-client'
 /** The two big Create buttons side by side (px): their width each and the gap between them (gap-6). The note input is as wide */
 const TWO_BUTTONS = 2 * BIG_BUTTON_W * STONE_PIXEL + 24
 /** How far in from the buttons' outer edges the note input stops, on each side (px) */
-const INPUT_INSET = 16
+const INPUT_INSET = 32
+/** How much shorter the note input is at its top (px; QuickCreate's tall box is this much shorter): its top comes down, its bottom stays */
+const INPUT_LOWER = 16
 /** The shadow and thickness each button's slab shows past its stone on its right (px: three of its pixels): the input is centred on the
  *  stone you see, so it is this much narrower and half of it further left */
 const BUTTON_SHADOW = 3 * STONE_PIXEL
@@ -67,7 +69,7 @@ export default function DashboardPage() {
                     <div className="mt-[4vh] flex flex-col items-center gap-12">
                         <h1 className="text-center text-5xl font-semibold tracking-tight">Hello{firstName ? `, ${firstName}` : ''}</h1>
                         {/* A little narrower than the two Create buttons under it (INPUT_INSET in from each side) */}
-                        <div className="relative w-full" style={{ maxWidth: TWO_BUTTONS - 2 * INPUT_INSET - BUTTON_SHADOW, left: -BUTTON_SHADOW / 2 }}>
+                        <div className="relative w-full" style={{ maxWidth: TWO_BUTTONS - 2 * INPUT_INSET - BUTTON_SHADOW, left: -BUTTON_SHADOW / 2, marginTop: INPUT_LOWER }}>
                             <QuickCreate tall />
                         </div>
                     </div>
