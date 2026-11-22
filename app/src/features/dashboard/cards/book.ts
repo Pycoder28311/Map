@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react'
 // An article's Dashboard card drawn as a pixel-art book (BookArt.tsx draws it from the pixels here): a closed tome of brown leather seen from the front (in
 // the map card's colours: its outlines, its paper),
 // its stitched spine along the left with rivets on the hinge, a cover with faint diamonds, grain, scratches, worn edges and a debossed border,
-// stitched bands ending in brass corners, its picture in a one-pixel outline, its pages and a ribbon bookmark
+// brass corners, its picture in a one-pixel outline, its pages and a ribbon bookmark
 // along the bottom. The book fills the card's box, BOOK_W × BOOK_H
 // pixels of the drawing (4:5, taller than wide, as tall as the other cards), each BOOK_PIXEL px on screen: the cards' pixel (mapFrame.ts FRAME_PIXEL). The
 // card's content (its picture, title, preview and date) is laid on the cover by cardFaces.tsx, placed on the same grid with `bookAt`.
@@ -34,9 +34,6 @@ export const BOOK = {
   hinge: '#612a18',
   rivet: '#8d8b86',
   rivetShade: '#3b3936',
-  /** The bands' dashes (one pixel tall, a muted stitch close to the leather) and the groove they sit in */
-  band: '#765437',
-  groove: '#170d08',
   /** The metal corners */
   gold: '#a17b2f',
   goldDeep: '#5d4413',
@@ -80,13 +77,20 @@ export function bookAt(x: number, y: number, w: number, h: number): CSSPropertie
   return { position: 'absolute', left: pct(x, BOOK_W), top: pct(y, BOOK_H), width: pct(w, BOOK_W), height: pct(h, BOOK_H) }
 }
 
-/** The picture's box on the cover: a one-pixel outline, the picture filling the rest; centred across the book (its middle at BOOK_W / 2) */
-export const BOOK_FRAME = { x: 7, y: 7, w: 37, h: 29 } as const
-/** The title, under the picture, above the bottom band */
-export const BOOK_TITLE = { x: 7, y: 37, w: 37, h: 11 } as const
-/** Where the bottom band is (its groove row), and the debossed border's bottom line above it */
-const BAND_LOW = B - 9
-const BORDER_LOW = B - 12
+/** The pages: three rows (a light one, one with its lines, a shaded one), between the cover's front above them and its bottom strip (two
+ *  rows, the outline under it) */
+const PAGES = B - 5
+/** The front cover's bottom row, above the pages: where its bottom corner is */
+const FRONT_LOW = PAGES - 1
+/**
+ * The debossed border on the cover (a pressed line, a light line inside it): its lines' columns and rows, two pixels in from the cover's top
+ * (under the outline) and from the front's bottom (above the pages)
+ */
+const INNER = { left: 7, right: R - 2, top: 3, bottom: FRONT_LOW - 2 } as const
+/** The picture's box: a one-pixel outline, the picture filling the rest; inside the border, a pixel from its lines (past the light line), centred in it */
+export const BOOK_FRAME = { x: INNER.left + 2, y: INNER.top + 2, w: INNER.right - INNER.left - 3, h: 29 } as const
+/** The title, under the picture, as wide as it and centred in the border */
+export const BOOK_TITLE = { x: BOOK_FRAME.x, y: BOOK_FRAME.y + BOOK_FRAME.h + 1, w: BOOK_FRAME.w, h: 11 } as const
 
 type Rect = [x: number, y: number, w: number, h: number, fill: string]
 
@@ -96,17 +100,11 @@ function seeded(start: number) {
   return () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648
 }
 
-/** A band across the cover, its groove on row `y`: a faint groove, and dashes in it one pixel tall (a muted stitch), ending by the brass corner */
-const band = (y: number): Rect[] => [
-  [9, y, R - 16, 1, BOOK.groove],
-  ...Array.from({ length: Math.floor((R - 15) / 9) }, (_, i): Rect => [9 + i * 9, y, 7, 1, BOOK.band]),
-]
-
-/** A brass corner on the cover's right corner, flush with its edges: an L two pixels thick along the top (or bottom) and down (or up) the
+/** A brass corner on the front cover's right corner (the bottom one above the pages), flush with its edges: an L two pixels thick along the top (or bottom) and down (or up) the
  *  right, lit along its outer edge, darker at its inner ends. `down`: the bottom corner */
 const corner = (down: boolean): Rect[] => {
-  // the cover's rows at the corner: its top one (1) or its bottom one (B - 1)
-  const edge = down ? B - 1 : 1
+  // the cover's rows at the corner: its top one (1) or the front's bottom one, above the pages (FRONT_LOW)
+  const edge = down ? FRONT_LOW : 1
   const along = down ? edge - 1 : edge
   const upright = down ? edge - 5 : edge
   return [
@@ -160,24 +158,24 @@ function wear(): Rect[] {
   const next = seeded(23)
   const rects: Rect[] = []
   for (let x = 8; x < R - 1; x += 2 + Math.floor(next() * 5)) rects.push([x, 2, 1 + Math.floor(next() * 2), 1, BOOK.wear])
-  for (let y = 10; y < BORDER_LOW - 2; y += 2 + Math.floor(next() * 5)) rects.push([R - 1, y, 1, 1 + Math.floor(next() * 2), BOOK.wear])
+  for (let y = 10; y < INNER.bottom - 2; y += 2 + Math.floor(next() * 5)) rects.push([R - 1, y, 1, 1 + Math.floor(next() * 2), BOOK.wear])
   return rects
 }
 
-/** The debossed border round the cover's middle: a pressed line with a light line inside it (the parts not under the picture and title) */
+/** The debossed border on the cover (INNER): a pressed line all round, a light line inside it along its top and left */
 const border = (): Rect[] => [
-  [7, 6, R - 8, 1, BOOK.deboss],
-  [7, BORDER_LOW, R - 8, 1, BOOK.deboss],
-  [7, 6, 1, BORDER_LOW - 5, BOOK.deboss],
-  [R - 2, 9, 1, BORDER_LOW - 11, BOOK.deboss],
-  [8, 7, R - 10, 1, BOOK.emboss],
-  [8, 7, 1, BORDER_LOW - 7, BOOK.emboss],
+  [INNER.left, INNER.top, INNER.right - INNER.left + 1, 1, BOOK.deboss],
+  [INNER.left, INNER.bottom, INNER.right - INNER.left + 1, 1, BOOK.deboss],
+  [INNER.left, INNER.top, 1, INNER.bottom - INNER.top + 1, BOOK.deboss],
+  [INNER.right, INNER.top, 1, INNER.bottom - INNER.top + 1, BOOK.deboss],
+  [INNER.left + 1, INNER.top + 1, INNER.right - INNER.left - 1, 1, BOOK.emboss],
+  [INNER.left + 1, INNER.top + 1, 1, INNER.bottom - INNER.top - 1, BOOK.emboss],
 ]
 
 /** The hinge's rivets: a light head with a shaded lower right */
 const rivets = (): Rect[] => [13, Math.round(BOOK_H / 2) - 4, B - 20].flatMap((y): Rect[] => [
-  [C + 1, y, 2, 2, BOOK.rivet],
-  [C + 2, y + 1, 1, 1, BOOK.rivetShade],
+  [C, y, 2, 2, BOOK.rivet],
+  [C + 1, y + 1, 1, 1, BOOK.rivetShade],
 ])
 
 /** The spine (two pixels wide): its ridges (a light line, a shade under it) and its stitches down it between them */
@@ -188,10 +186,6 @@ const spine = (): Rect[] => [
   ]),
   ...Array.from({ length: Math.floor((B - 30) / 5) }, (_, i): Rect => [1, 15 + i * 5, 1, 2, BOOK.stitch]),
 ]
-
-/** The pages: three rows (a light one, one with its lines, a shaded one), between the cover's row above them and its bottom strip (two
- *  rows, the outline under it) */
-const PAGES = B - 5
 
 /** The pages' edge: lines between the pages, broken here and there */
 function pageLines(): Rect[] {
@@ -213,8 +207,8 @@ export const BOOK_PIXELS: Rect[] = [
   [C, 1, R - C + 1, 1, BOOK.coverLight],
   [R, 1, 1, B - 1, BOOK.coverShade],
   [C, B - 1, R - C + 1, 1, BOOK.coverShade],
-  [C, 1, 3, B - 1, BOOK.hinge],
-  [C + 3, 2, 1, B - 3, BOOK.coverLight],
+  [C, 1, 2, B - 1, BOOK.hinge],
+  [C + 2, 2, 1, B - 3, BOOK.coverLight],
   ...rivets(),
   // The faint shapes on the cover
   ...diamonds(),
@@ -222,9 +216,7 @@ export const BOOK_PIXELS: Rect[] = [
   ...scratches(),
   ...wear(),
   ...border(),
-  // The bands, ending in the brass corners
-  ...band(4),
-  ...band(BAND_LOW),
+  // The brass corners
   ...corner(false),
   ...corner(true),
   // The picture's outline

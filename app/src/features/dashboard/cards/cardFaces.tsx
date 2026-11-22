@@ -73,8 +73,8 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
         </div>
         <PixelRects rects={paperMarks(String(item.id))} width={FRAME_SIZE} height={FRAME_SIZE} />
         <PixelRects rects={FRAME_PIXELS} width={FRAME_SIZE} height={FRAME_SIZE} className="[filter:drop-shadow(0_4px_0_rgb(0_0_0/0.5))_drop-shadow(0_0_8px_rgb(0_0_0/0.35))]" />
-        {/* The name on a little wooden plank (WoodSign), centred on the frame's bottom plank */}
-        <WoodSign title={title} icon={Icon} className="absolute left-1/2 max-w-[85%] -translate-x-1/2 -translate-y-1/2" style={{ top: `${(BOTTOM_PLANK_MIDDLE / FRAME_SIZE) * 100}%` }} />
+        {/* The name on a little wooden plank (WoodSign), centred on the frame's bottom plank, two of its pixels higher */}
+        <WoodSign title={title} icon={Icon} className="absolute left-1/2 max-w-[85%] -translate-x-1/2 -translate-y-1/2" style={{ top: `${((BOTTOM_PLANK_MIDDLE - 2) / FRAME_SIZE) * 100}%` }} />
         {marks}
       </div>
     )

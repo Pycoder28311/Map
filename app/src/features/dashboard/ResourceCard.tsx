@@ -14,10 +14,16 @@ import Modal from '../../components/ui/overlays/Modal'
 import type { Entry } from '../../lib/resource/reorder'
 import CardFace from './cards/cardFaces'
 import { ON_HOVER } from './cards/cardStyles'
+import { BOOK_FRAME, BOOK_H, BOOK_W } from './cards/book'
 import MapPreview from './cards/MapPreview'
 
 /** A map card's zoom and ⋯: the same square, so they line up and their hover backgrounds are the same shape */
 const CARD_BUTTON = 'flex size-8 shrink-0'
+/** A book's ⋯: in its picture's top right corner, inside the picture's outline (book.ts BOOK_FRAME), a few px in */
+const ON_PICTURE = {
+  right: `calc(${((BOOK_W - (BOOK_FRAME.x + BOOK_FRAME.w - 1)) / BOOK_W) * 100}% + 3px)`,
+  top: `calc(${((BOOK_FRAME.y + 1) / BOOK_H) * 100}% + 3px)`,
+} as const
 
 type Props = {
   resource: AnyResource
@@ -81,15 +87,21 @@ export default function ResourceCard({ resource, item, menu, onOpen, place, cont
   const card = { ref, ...listeners, ...dragAttributes, 'data-card-id': id, 'data-card-kind': resource.panelType, onClick: onOpen }
   const more = (
     // Its own button: clicking it doesn't open the card
-    <div onClick={(e) => e.stopPropagation()} className={`absolute end-2 top-2 flex ${ON_HOVER}`}>
+    // A book's sits in its picture's top right corner (and lifts with the book on hover); the others' in the card's
+    <div
+      onClick={(e) => e.stopPropagation()}
+      className={`absolute flex ${look === 'image' ? 'transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none' : 'end-2 top-2'} ${ON_HOVER}`}
+      style={look === 'image' ? ON_PICTURE : undefined}
+    >
       {look === 'map' && (
         <span className={CARD_BUTTON}>
           <IconButton icon={LuMaximize2} label={`Zoom ${title}`} onClick={() => setZoomed(true)} className="size-full! min-h-0!" />
         </span>
       )}
       {addMenu && addMenu.length > 0 && <IconMenu label={`Add to ${title}`} icon={LuPlus} groups={addMenu} />}
-      {look === 'map' ? (
-        <span className={CARD_BUTTON}>
+      {look === 'map' || look === 'image' ? (
+        // a book's: a dark square on its picture, edged in the brass of its corners
+        <span className={`${CARD_BUTTON} ${look === 'image' ? 'bg-[#110a06]/85 text-[#d9cdb4] shadow-[inset_0_0_0_2px_#a17b2f]' : ''}`}>
           <TreeMenu label={`More: ${title}`} groups={menu} fill />
         </span>
       ) : (

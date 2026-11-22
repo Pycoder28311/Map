@@ -3,21 +3,21 @@ import { pixelCorners } from '../../../components/ui/pixel/pixelSquare'
 import type { PlainIcon } from '../../../components/ui/icons/IconSlot'
 import { FRAME, FRAME_PIXEL } from './mapFrame'
 
-/** The sign's wood: a few shades lighter than the frame's, so it stands out on it */
+/** The sign's wood: the frame's own (mapFrame.ts), its grain and its dark joint along its bottom */
 const SIGN = {
-  wood: '#6e4c2f',
-  grainDark: '#583b23',
-  grainLight: '#86603d',
-  bottom: '#4a311c',
+  wood: FRAME.wood,
+  grainDark: FRAME.grainDark,
+  grainLight: FRAME.grainLight,
+  bottom: FRAME.joint,
 } as const
 
 /** One pixel of the sign (px): the frame's, so it is drawn in the same pixels */
 const U = FRAME_PIXEL
 
 /**
- * A map card's name on a little wooden plank in pixel art, in a lighter wood than the frame's (mapFrame.ts): a dark outline with its corners cut by a
- * pixel, five rows of wood (a light top row, grain streaks across the middle, a dark bottom row), a nail at each end, the name in the
- * pixel font, bone-pale with a dark shadow. As wide as its name (up to its `className`'s max width); it hangs where the card puts it.
+ * A map card's name on a little wooden plank in pixel art, in the frame's wood (mapFrame.ts): a dark outline with its corners cut by a
+ * pixel, five rows of wood (a light top row, grain streaks across the middle, a dark bottom row), a nail at each end, the name centred in
+ * the pixel font (its icon at its left, balanced by as much room at its right), bone-pale with a dark shadow. As wide as its name (up to its `className`'s max width); it hangs where the card puts it.
  * It carries `data-card-title-box` and its name `data-card-title`, like every card's title.
  */
 export default function WoodSign({ title, icon: Icon, className = '', style }: { title: string; icon: PlainIcon; className?: string; style?: CSSProperties }) {
@@ -48,11 +48,13 @@ export default function WoodSign({ title, icon: Icon, className = '', style }: {
         </span>
         <span
           data-card-title
-          className="min-w-0 truncate font-(family-name:--font-pixel) text-[15px] leading-none font-medium"
+          className="min-w-0 flex-1 truncate text-center font-(family-name:--font-pixel) text-[15px] leading-none font-medium"
           style={{ color: FRAME.paperLight, textShadow: `0 ${U / 1.5}px 0 #000` }}
         >
           {title}
         </span>
+        {/* as wide as the icon, so the name sits in the middle */}
+        <span aria-hidden className="size-3.5 shrink-0" />
         <span aria-hidden style={nail} />
       </div>
     </div>
