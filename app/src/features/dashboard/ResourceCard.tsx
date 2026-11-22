@@ -96,7 +96,8 @@ export default function ResourceCard({ resource, item, menu, onOpen, place, cont
     // A book's sits in its picture's top right corner (and lifts with the book on hover); the others' in the card's
     <div
       onClick={(e) => e.stopPropagation()}
-      className={`absolute flex ${look === 'image' ? 'transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none' : 'end-2 top-2'} ${ON_HOVER}`}
+      // (a book's always shows; the others' only on hover)
+      className={`absolute flex ${look === 'image' ? 'transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none' : `end-2 top-2 ${ON_HOVER}`}`}
       style={look === 'image' ? ON_PICTURE : undefined}
     >
       {look === 'map' && (
