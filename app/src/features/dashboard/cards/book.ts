@@ -88,8 +88,9 @@ const FRONT_LOW = PAGES - 1
  */
 export const BOOK_INNER = { left: 6, right: R - 2, top: 3, bottom: FRONT_LOW - 2 } as const
 const INNER = BOOK_INNER
-/** The picture's box: a one-pixel outline, the picture filling the rest; inside the border, a pixel from its lines (past the light line), centred in it, down to the border's middle */
-export const BOOK_FRAME = { x: INNER.left + 2, y: INNER.top + 2, w: INNER.right - INNER.left - 3, h: Math.round((INNER.top + INNER.bottom + 1) / 2) - (INNER.top + 2) } as const
+/** The picture's box: a one-pixel outline, the picture filling the rest; inside the border, a pixel from its sides (past the light line) and
+ *  right under its top line, centred across it, its foot a pixel above the border's middle */
+export const BOOK_FRAME = { x: INNER.left + 2, y: INNER.top + 1, w: INNER.right - INNER.left - 3, h: Math.round((INNER.top + INNER.bottom + 1) / 2) - (INNER.top + 2) } as const
 /** The title, under the picture, as wide as it and centred in the border: two rows of 24px words */
 export const BOOK_TITLE = { x: BOOK_FRAME.x, y: BOOK_FRAME.y + BOOK_FRAME.h + 1, w: BOOK_FRAME.w, h: 13 } as const
 

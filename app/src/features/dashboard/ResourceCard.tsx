@@ -20,10 +20,10 @@ import MapPreview from './cards/MapPreview'
 
 /** A map card's zoom and ⋯: the same square, so they line up and their hover backgrounds are the same shape */
 const CARD_BUTTON = 'flex size-8 shrink-0'
-/** A book's ⋯: in its picture's top right corner, a pixel of the drawing in from inside the picture's outline (book.ts BOOK_FRAME) */
+/** A book's ⋯: in its picture's top right corner, right in the corner inside the picture's outline (book.ts BOOK_FRAME) */
 const ON_PICTURE = {
-  right: `${((BOOK_W - (BOOK_FRAME.x + BOOK_FRAME.w - 2)) / BOOK_W) * 100}%`,
-  top: `${((BOOK_FRAME.y + 2) / BOOK_H) * 100}%`,
+  right: `${((BOOK_W - (BOOK_FRAME.x + BOOK_FRAME.w - 1)) / BOOK_W) * 100}%`,
+  top: `${((BOOK_FRAME.y + 1) / BOOK_H) * 100}%`,
 } as const
 /** A book's Open: at the bottom inside the cover's border (book.ts BOOK_INNER), a pixel of the drawing from its line, centred across the border */
 const ON_COVER = {
@@ -96,8 +96,8 @@ export default function ResourceCard({ resource, item, menu, onOpen, place, cont
     // A book's sits in its picture's top right corner (and lifts with the book on hover); the others' in the card's
     <div
       onClick={(e) => e.stopPropagation()}
-      // (a book's always shows; the others' only on hover)
-      className={`absolute flex ${look === 'image' ? 'transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none' : `end-2 top-2 ${ON_HOVER}`}`}
+      // (a book's always shows, half see-through until the pointer is on it; the others' only on hover)
+      className={`absolute flex ${look === 'image' ? 'opacity-50 transition-[translate,opacity] duration-200 ease-out group-hover/card:-translate-y-[3px] hover:opacity-100 has-[:popover-open]:opacity-100 motion-reduce:transition-none' : `end-2 top-2 ${ON_HOVER}`}`}
       style={look === 'image' ? ON_PICTURE : undefined}
     >
       {look === 'map' && (
