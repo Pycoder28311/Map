@@ -105,7 +105,7 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
           <div data-card-title-box className="flex items-center justify-center px-1 text-center" style={bookAt(BOOK_TITLE.x, BOOK_TITLE.y, BOOK_TITLE.w, BOOK_TITLE.h)}>
             <span
               data-card-title
-              className="line-clamp-2 font-(family-name:--font-pixel) text-base leading-5 font-medium"
+              className="line-clamp-2 font-(family-name:--font-pixel) text-[24px] leading-[25px] font-medium"
               style={{ textShadow: `0 2px 0 ${BOOK.inkShadow}, 0 0 6px rgb(170 40 25 / 0.45)` }}
             >
               {title}

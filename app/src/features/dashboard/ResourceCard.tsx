@@ -122,7 +122,8 @@ export default function ResourceCard({ resource, item, menu, onOpen, place, cont
       className="absolute transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none"
       style={ON_COVER}
     >
-      <Button variant="secondary" size="xs" onClick={onOpen}>
+      {/* a light line round it, and more room inside */}
+      <Button variant="secondary" size="xs" onClick={onOpen} className="shadow-[0_0_0_2px_#b9b2a6]! [--btn-pad-x:14px]! [--btn-pad-y:6px]!">
         Open
       </Button>
     </div>
