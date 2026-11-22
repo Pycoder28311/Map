@@ -9,7 +9,7 @@
 export const LOOK: 'desk' | 'quiet' = 'desk'
 
 const LOOKS = {
-  desk: { base: '#2e231b', grain: 2.6, glow: { w: 1150, h: 720, mid: 0.19, edge: 0.08 }, vignette: 0.55 },
+  desk: { base: '#45342a', grain: 2.6, glow: { w: 1150, h: 720, mid: 0.19, edge: 0.08 }, vignette: 0.45 },
   quiet: { base: '#1c1714', grain: 1, glow: { w: 620, h: 300, mid: 0.09, edge: 0.04 }, vignette: 0.5 },
 } as const
 const LOOK_NOW = LOOKS[LOOK]

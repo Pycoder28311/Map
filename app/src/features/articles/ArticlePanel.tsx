@@ -31,7 +31,7 @@ export default function ArticlePanel({ id }: PanelProps) {
   return (
     // The Dashboard's table behind it (dark theme), darker, with no sky and nothing on it; down over the page's padding at its foot (PanelPage)
     <div className="relative -mb-20 min-h-full pb-20">
-      <NightBackdrop props={null} sky={false} dim={0.4} />
+      <NightBackdrop props={null} sky={false} dim={0.6} />
       <ResourceItemGate key={id} resource={resource} id={id}>
         {(item) => <ArticlePage key={item.id} resource={resource} item={item} focusField={peekFocus(resource.name, id)} />}
       </ResourceItemGate>
