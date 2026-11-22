@@ -16,14 +16,14 @@ const U = FRAME_PIXEL
 
 /**
  * A map card's name on a little wooden plank in pixel art, in the frame's wood (mapFrame.ts): a dark outline with its corners cut by a
- * pixel, five rows of wood (a light top row, grain streaks across the middle, a dark bottom row), a nail at each end, the name centred in
+ * pixel, six rows of wood (a light top row, grain streaks across the middle, a dark bottom row), a nail at each end, the name centred in
  * the pixel font (its icon at its left, balanced by as much room at its right), bone-pale with a dark shadow. As wide as its name (up to its `className`'s max width); it hangs where the card puts it.
  * It carries `data-card-title-box` and its name `data-card-title`, like every card's title.
  */
 export default function WoodSign({ title, icon: Icon, className = '', style }: { title: string; icon: PlainIcon; className?: string; style?: CSSProperties }) {
   const outline: CSSProperties = { padding: U, backgroundColor: FRAME.outline, clipPath: pixelCorners(1), ['--pixel-square' as string]: `${U}px` }
   const wood: CSSProperties = {
-    height: 5 * U,
+    height: 6 * U,
     gap: 2 * U,
     paddingInline: U,
     backgroundColor: SIGN.wood,

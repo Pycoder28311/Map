@@ -9,20 +9,26 @@ import { useObjectDrop } from '../drag/objectDrop'
 import { PLACE_ZONE, placeDropData, type PlaceTarget, type PlaceValue } from '../drag/placeDrop'
 import { useState } from 'react'
 import { LuMaximize2, LuPlus } from 'react-icons/lu'
+import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
 import Modal from '../../components/ui/overlays/Modal'
 import type { Entry } from '../../lib/resource/reorder'
 import CardFace from './cards/cardFaces'
 import { ON_HOVER } from './cards/cardStyles'
-import { BOOK_FRAME, BOOK_H, BOOK_W } from './cards/book'
+import { BOOK_FRAME, BOOK_H, BOOK_INNER, BOOK_W } from './cards/book'
 import MapPreview from './cards/MapPreview'
 
 /** A map card's zoom and ⋯: the same square, so they line up and their hover backgrounds are the same shape */
 const CARD_BUTTON = 'flex size-8 shrink-0'
-/** A book's ⋯: in its picture's top right corner, inside the picture's outline (book.ts BOOK_FRAME), a few px in */
+/** A book's ⋯: in its picture's top right corner, a pixel of the drawing in from inside the picture's outline (book.ts BOOK_FRAME) */
 const ON_PICTURE = {
-  right: `calc(${((BOOK_W - (BOOK_FRAME.x + BOOK_FRAME.w - 1)) / BOOK_W) * 100}% + 3px)`,
-  top: `calc(${((BOOK_FRAME.y + 1) / BOOK_H) * 100}% + 3px)`,
+  right: `${((BOOK_W - (BOOK_FRAME.x + BOOK_FRAME.w - 2)) / BOOK_W) * 100}%`,
+  top: `${((BOOK_FRAME.y + 2) / BOOK_H) * 100}%`,
+} as const
+/** A book's Open: at the bottom right inside the cover's border (book.ts BOOK_INNER), a pixel of the drawing from its lines */
+const ON_COVER = {
+  right: `${((BOOK_W - (BOOK_INNER.right - 1)) / BOOK_W) * 100}%`,
+  bottom: `${((BOOK_H - (BOOK_INNER.bottom - 1)) / BOOK_H) * 100}%`,
 } as const
 
 type Props = {
@@ -101,7 +107,7 @@ export default function ResourceCard({ resource, item, menu, onOpen, place, cont
       {addMenu && addMenu.length > 0 && <IconMenu label={`Add to ${title}`} icon={LuPlus} groups={addMenu} />}
       {look === 'map' || look === 'image' ? (
         // a book's: a dark square on its picture, edged in the brass of its corners
-        <span className={`${CARD_BUTTON} ${look === 'image' ? 'bg-[#110a06]/85 text-[#d9cdb4] shadow-[inset_0_0_0_2px_#a17b2f]' : ''}`}>
+        <span className={`${CARD_BUTTON} ${look === 'image' ? 'bg-[#4a3a2e] text-[#e6dbc4] shadow-[inset_0_0_0_2px_#a17b2f]' : ''}`}>
           <TreeMenu label={`More: ${title}`} groups={menu} fill />
         </span>
       ) : (
@@ -109,8 +115,21 @@ export default function ResourceCard({ resource, item, menu, onOpen, place, cont
       )}
     </div>
   )
+  // A book's Open: a grey stone button on its cover (opens it, as a click on the card does)
+  const open = look === 'image' && (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      className="absolute transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none"
+      style={ON_COVER}
+    >
+      <Button variant="secondary" size="xs" onClick={onOpen}>
+        Open
+      </Button>
+    </div>
+  )
   const marks = (
     <>
+      {open}
       {more}
       {bar}
     </>

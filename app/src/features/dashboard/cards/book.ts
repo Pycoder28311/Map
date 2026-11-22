@@ -86,7 +86,8 @@ const FRONT_LOW = PAGES - 1
  * The debossed border on the cover (a pressed line, a light line inside it): its lines' columns and rows, two pixels in from the cover's top
  * (under the outline) and from the front's bottom (above the pages)
  */
-const INNER = { left: 7, right: R - 2, top: 3, bottom: FRONT_LOW - 2 } as const
+export const BOOK_INNER = { left: 6, right: R - 2, top: 3, bottom: FRONT_LOW - 2 } as const
+const INNER = BOOK_INNER
 /** The picture's box: a one-pixel outline, the picture filling the rest; inside the border, a pixel from its lines (past the light line), centred in it */
 export const BOOK_FRAME = { x: INNER.left + 2, y: INNER.top + 2, w: INNER.right - INNER.left - 3, h: 29 } as const
 /** The title, under the picture, as wide as it and centred in the border */
