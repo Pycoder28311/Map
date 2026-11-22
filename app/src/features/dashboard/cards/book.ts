@@ -80,10 +80,10 @@ export function bookAt(x: number, y: number, w: number, h: number): CSSPropertie
   return { position: 'absolute', left: pct(x, BOOK_W), top: pct(y, BOOK_H), width: pct(w, BOOK_W), height: pct(h, BOOK_H) }
 }
 
-/** The picture's box on the cover: a one-pixel outline, the picture filling the rest */
-export const BOOK_FRAME = { x: 10, y: 8, w: R - 13, h: 27 } as const
+/** The picture's box on the cover: a one-pixel outline, the picture filling the rest; centred across the book (its middle at BOOK_W / 2) */
+export const BOOK_FRAME = { x: 7, y: 7, w: 37, h: 29 } as const
 /** The title, under the picture, above the bottom band */
-export const BOOK_TITLE = { x: 8, y: 36, w: R - 9, h: 11 } as const
+export const BOOK_TITLE = { x: 7, y: 37, w: 37, h: 11 } as const
 /** Where the bottom band is (its groove row), and the debossed border's bottom line above it */
 const BAND_LOW = B - 9
 const BORDER_LOW = B - 12
@@ -102,16 +102,21 @@ const band = (y: number): Rect[] => [
   ...Array.from({ length: Math.floor((R - 15) / 9) }, (_, i): Rect => [9 + i * 9, y, 7, 1, BOOK.band]),
 ]
 
-/** A brass corner: an L two pixels thick along the top (or bottom) and the right, a light glint, a darker tip and inner corner. `y` its
- *  top row; `down`: the bottom one (its foot along its bottom) */
-const corner = (y: number, down: boolean): Rect[] => {
-  const edge = down ? y + 4 : y
+/** A brass corner on the cover's right corner, flush with its edges: an L two pixels thick along the top (or bottom) and down (or up) the
+ *  right, lit along its outer edge, darker at its inner ends. `down`: the bottom corner */
+const corner = (down: boolean): Rect[] => {
+  // the cover's rows at the corner: its top one (1) or its bottom one (B - 1)
+  const edge = down ? B - 1 : 1
+  const along = down ? edge - 1 : edge
+  const upright = down ? edge - 5 : edge
   return [
-    [R - 6, edge, 5, 2, BOOK.gold],
-    [R - 3, y, 2, 6, BOOK.gold],
-    [R - 6, down ? edge + 1 : edge, 1, 1, BOOK.goldLight],
-    [R - 2, down ? edge + 1 : edge, 1, 1, BOOK.goldDeep],
-    [R - 4, down ? edge - 1 : edge + 2, 1, 1, BOOK.goldDeep],
+    [R - 5, along, 6, 2, BOOK.gold],
+    [R - 1, upright, 2, 6, BOOK.gold],
+    // lit along the outer edge (the top's top row, the bottom's right column)
+    down ? [R, upright, 1, 6, BOOK.goldLight] : [R - 5, edge, 6, 1, BOOK.goldLight],
+    // darker at the inner ends of the L
+    [R - 5, down ? along : along + 1, 1, 1, BOOK.goldDeep],
+    [R - 1, down ? upright : upright + 5, 2, 1, BOOK.goldDeep],
   ]
 }
 
@@ -220,8 +225,8 @@ export const BOOK_PIXELS: Rect[] = [
   // The bands, ending in the brass corners
   ...band(4),
   ...band(BAND_LOW),
-  ...corner(2, false),
-  ...corner(BAND_LOW - 4, true),
+  ...corner(false),
+  ...corner(true),
   // The picture's outline
   [BOOK_FRAME.x, BOOK_FRAME.y, BOOK_FRAME.w, BOOK_FRAME.h, BOOK.outline],
   // The pages' edge, between the cover's bottom rows
