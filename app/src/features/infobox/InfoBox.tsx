@@ -230,7 +230,52 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError,
 /** The article's box around the sections, or nothing around them: square, a thick border of the article's frame (ArticleBody), a lighter grey than the text's box */
 function Frame({ boxed, children }: { boxed: boolean; children: ReactNode }) {
   if (!boxed) return <div className="flex flex-col">{children}</div>
-  return <div className={`ui-info-box flex flex-col border-4 border-line-strong bg-surface-muted p-base dark:border-[#4a3c31] dark:bg-[#3a3532] ${INFO_DARK}`}>{children}</div>
+  return (
+    <div className={`ui-info-box relative flex flex-col border-4 border-line-strong bg-surface-muted p-base dark:border-[#4a3c31] dark:bg-[#3a3532] ${INFO_DARK}`}>
+      {children}
+      {CORNERS.map((flip) => (
+        <GoldCorner key={flip} flip={flip} />
+      ))}
+    </div>
+  )
+}
+
+/** The gold corners' pixel (px) and colours: the brass of the book cards' corners (dashboard/cards/book.ts) */
+const CORNER_PX = 3
+const GOLD = { face: '#a17b2f', light: '#c3a767', deep: '#5d4413' } as const
+/** Which way each corner faces: the top left as drawn, the others mirrored */
+const CORNERS = ['', 'x', 'y', 'xy'] as const
+/**
+ * A gold corner over one of the box's corners, flush with its outer edge: an L two pixels thick and six long over the border and a little
+ * inside it, lit along its outer edges, darker at its inner ends. Drawn for the top left; `flip` mirrors it to the other corners
+ */
+function GoldCorner({ flip }: { flip: (typeof CORNERS)[number] }) {
+  const size = 6 * CORNER_PX
+  const right = flip.includes('x')
+  const bottom = flip.includes('y')
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 6 6"
+      width={size}
+      height={size}
+      shapeRendering="crispEdges"
+      className="pointer-events-none absolute z-20"
+      style={{
+        // over the border: the border is 4px, outside the padding box the box is placed in
+        [right ? 'right' : 'left']: -4,
+        [bottom ? 'bottom' : 'top']: -4,
+        transform: `scale(${right ? -1 : 1}, ${bottom ? -1 : 1})`,
+      }}
+    >
+      <rect x={0} y={0} width={6} height={2} fill={GOLD.face} />
+      <rect x={0} y={0} width={2} height={6} fill={GOLD.face} />
+      <rect x={0} y={0} width={6} height={1} fill={GOLD.light} />
+      <rect x={0} y={0} width={1} height={6} fill={GOLD.light} />
+      <rect x={5} y={1} width={1} height={1} fill={GOLD.deep} />
+      <rect x={1} y={5} width={1} height={1} fill={GOLD.deep} />
+    </svg>
+  )
 }
 
 /** A picture: click or drop one to add it; over it, Replace and Remove. A square */

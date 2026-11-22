@@ -22,10 +22,10 @@ import { BANNER_HEIGHT } from './pageConfig'
 /**
  * The text's box and the comments' box under it in the dark theme, on the desk (NightBackdrop): a thick frame of dark, brownish wood with a
  * fine dark line outside it and a lit bevel inside it, square, and their grey a little brownish (their own surface colour, which the toolbar's
- * bar and the fields in them take too)
+ * bar and the fields in them take too; Tailwind's colours read --surface itself: colors.css's @theme is inline)
  */
 const FRAME =
-  'dark:rounded-none dark:border-4 dark:border-[#4a3c31] dark:[--color-surface:#2b211b] dark:shadow-[0_0_0_2px_#100c0a,inset_0_0_0_2px_#2a221d,inset_0_0_0_3px_#5c4b3c]'
+  'dark:rounded-none dark:border-4 dark:border-[#4a3c31] dark:[--surface:#31271f] dark:[--color-surface:#31271f] dark:shadow-[0_0_0_2px_#100c0a,inset_0_0_0_2px_#2a221d,inset_0_0_0_3px_#5c4b3c]'
 
 type Props = {
   resource: AnyResource

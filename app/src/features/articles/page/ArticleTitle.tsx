@@ -92,8 +92,9 @@ export default function ArticleTitle({ start, readOnly, placeholder, autoFocus, 
               paddingRight: NOTCH + 28,
               background: RIBBON.cloth,
               clipPath: SHAPE,
-              '--color-fg': RIBBON.text,
-              '--color-fg-subtle': RIBBON.placeholder,
+              // (Tailwind's text-fg reads --fg itself: colors.css's @theme is inline)
+              '--fg': RIBBON.text,
+              '--fg-subtle': RIBBON.placeholder,
               textShadow: `0 2px 0 ${RIBBON.shade}`,
             } as CSSProperties
           }
