@@ -14,8 +14,8 @@ const LOOK = {
   selected: 'ui-btn-shade',
   /** Underline: a text-only action in running text (Show more, Change) */
   text: 'ui-btn-underline',
-  /** Golden: a gold game button, a dark outline and a cream rim, its words dark brown in a bold serif (a book card's Open) */
-  golden: 'ui-btn-golden',
+  /** Leather: light brown leather with a dark edge, cream words in the pixel font (a book card's Open) */
+  leather: 'ui-btn-leather',
 } as const
 
 export type ButtonVariant = keyof typeof LOOK

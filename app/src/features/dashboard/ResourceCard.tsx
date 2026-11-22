@@ -115,14 +115,14 @@ export default function ResourceCard({ resource, item, menu, onOpen, place, cont
       )}
     </div>
   )
-  // A book's Open: a gold button (the golden variant) on its cover, centred at its bottom (opens it, as a click on the card does)
+  // A book's Open: a leather button (the leather variant) on its cover, centred at its bottom (opens it, as a click on the card does)
   const open = look === 'image' && (
     <div
       onClick={(e) => e.stopPropagation()}
       className="absolute flex -translate-x-1/2 transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none"
       style={ON_COVER}
     >
-      <Button variant="golden" onClick={onOpen}>
+      <Button variant="leather" onClick={onOpen}>
         Open
       </Button>
     </div>
