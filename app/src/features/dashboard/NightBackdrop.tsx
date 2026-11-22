@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import sky from '../../assets/dashboard-sky.jpg'
-import { BACKDROP, horizonStyle, lanternGlow, SKY_DIM, SKY_FADE_FROM, SKY_RATIO, VIGNETTE, woodStyle } from './nightBackdrop'
+import DeskProps from './DeskProps'
+import { BACKDROP, horizonStyle, LOOK, lanternGlow, SKY_DIM, SKY_FADE_FROM, SKY_RATIO, VIGNETTE, woodStyle } from './nightBackdrop'
 
 /** Where the lantern's light is centred (px down the page): on the note input and the Create buttons */
 const LANTERN_AT = 560
@@ -8,7 +9,8 @@ const LANTERN_AT = 560
 /**
  * The Dashboard's background in the dark theme (nightBackdrop.ts): the night sky over the distant castle across the top of the page, as
  * wide as the page and a little darkened, ending at a dark horizon of hills and trees; below it a dark wooden table, a lantern's warm
- * light pooled on it round the input and the Create buttons; the page's corners darker. It fills its parent (the page, `relative`)
+ * light pooled on it round the input and the Create buttons, a few things lying on it in the margins (DeskProps, with LOOK 'desk'); the
+ * page's corners darker. It fills its parent (the page, `relative`)
  * behind the content, which follows it in the page; the light theme keeps its plain background.
  */
 export default function NightBackdrop() {
@@ -16,7 +18,7 @@ export default function NightBackdrop() {
   const horizon = useMemo(() => horizonStyle(), [])
   const fade = `linear-gradient(to bottom, black ${SKY_FADE_FROM * 100}%, transparent 100%)`
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 hidden dark:block" style={{ backgroundColor: BACKDROP.base }}>
+    <div aria-hidden className="pointer-events-none absolute inset-0 hidden overflow-hidden dark:block" style={{ backgroundColor: BACKDROP.base }}>
       {/* The wooden table, under the sky */}
       <div className="absolute inset-0" style={wood} />
       {/* The lantern's light on the table */}
@@ -38,6 +40,8 @@ export default function NightBackdrop() {
           style={{ top: `calc(${SKY_FADE_FROM * 100 - 4}% + ${horizon.height})`, backgroundImage: `linear-gradient(${BACKDROP.base}, ${BACKDROP.base} 40%, transparent)` }}
         />
       </div>
+      {/* The things on the desk, in the margins (LOOK 'desk') */}
+      {LOOK === 'desk' && <DeskProps />}
       <div className="absolute inset-0" style={{ backgroundImage: VIGNETTE }} />
     </div>
   )
