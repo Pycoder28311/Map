@@ -78,6 +78,12 @@ const OTHER = TYPES.filter((t) => !QUICK.some((q) => q.type === t.value))
 const INPUT = 'min-w-0 bg-transparent text-fg outline-none placeholder:text-fg-subtle'
 // Each row is a block of its own on the box's background, a gap (with the + in it) between two blocks
 const noop = () => {}
+/**
+ * In the dark theme, the article's box in warm greys: its rows and picture a step lighter than the box, its buttons' words (Add picture, Add
+ * info) muted gold, brighter when hovered, as the title's ribbon (ArticleTitle)
+ */
+const INFO_DARK =
+  'dark:[--color-fill:#46403b] dark:[--color-fill-strong:#46403b] dark:[--fill:#46403b] dark:[--fill-strong:#46403b] dark:[&_button]:[--btn-bg:transparent] dark:[&_button]:[--btn-text:#b8975a] dark:[&_button]:[--btn-hover-text:#d9b56a]'
 const ROW = 'group/row relative flex flex-col gap-1 rounded-(--corner-sm) bg-fill-strong px-2 py-1.5'
 
 type Props = {
@@ -224,7 +230,7 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError,
 /** The article's box around the sections, or nothing around them: square, a thick border of the article's frame (ArticleBody), a lighter grey than the text's box */
 function Frame({ boxed, children }: { boxed: boolean; children: ReactNode }) {
   if (!boxed) return <div className="flex flex-col">{children}</div>
-  return <div className="flex flex-col border-4 border-line-strong bg-surface-muted p-base dark:border-[#4a3c31] dark:bg-[#3a3532]">{children}</div>
+  return <div className={`ui-info-box flex flex-col border-4 border-line-strong bg-surface-muted p-base dark:border-[#4a3c31] dark:bg-[#3a3532] ${INFO_DARK}`}>{children}</div>
 }
 
 /** A picture: click or drop one to add it; over it, Replace and Remove. A square */
@@ -374,7 +380,8 @@ function Row({ row, grip, first, last, onChange, onMove, onRemove, onUploadImage
       placeholder="Info"
       aria-label="Info"
       maxLength={100}
-      className={`${INPUT} flex-1 text-small font-medium`}
+      // (on the article's box, in the dark theme: a warm grey, under the values)
+      className={`${INPUT} flex-1 text-small font-medium dark:[.ui-info-box_&]:text-[#a39686]`}
     />
   )
   // The popup menu (Dropdown's look and pop-in), not the dots of the sidebar rows

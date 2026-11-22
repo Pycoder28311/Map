@@ -85,7 +85,11 @@ export default function ArticleBanner({ image, onChange, onUploadImage, onUpload
     )
   }
   return (
-    <div onDragOver={(e) => e.preventDefault()} onDrop={drop} className="group/banner relative" style={{ marginBottom: -REACH }}>
+    <div
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={drop}
+      // Add banner image's words muted gold, brighter when hovered (dark theme), as the title's ribbon
+      className="group/banner relative dark:[&_button]:[--btn-text:#b8975a] dark:[&_button]:[--btn-hover-text:#d9b56a]" style={{ marginBottom: -REACH }}>
       {image ? (
         <>
           <div style={{ height: `calc(11rem + ${REACH}px)` }}>
