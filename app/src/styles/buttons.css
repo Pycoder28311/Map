@@ -1278,7 +1278,7 @@
 
   /* C8. Leather (variant "leather"): a tab of light brown leather, like a gold game button in leather. Two tones (the top half lighter,
      the bottom half in shade), a fine pixel grain over it, a lit line along its top and a shaded one along its bottom inside, a thin
-     light line inside a dark brown edge two pixels thick, its corners a little rounded; the words cream in the pixel font with a dark
+     light line inside a dark brown edge two pixels thick, its corners rounded in a pixel step; the words cream in the pixel font with a dark
      shadow. Hovered: a little lighter; pressed: it sinks a pixel. Its colours are the --leather-* below */
   .ui-btn-leather {
     --leather: #a8683d;
@@ -1294,8 +1294,9 @@
     --btn-font: var(--font-pixel);
     --btn-font-weight: 600;
     --btn-letter-spacing: 0.5px;
-    --btn-pad-x: 10px;
-    --btn-pad-y: 4px;
+    /* (inside its 6px frame) */
+    --btn-pad-x: 16px;
+    --btn-pad-y: 0px;
     /* the grain: a few darker and lighter pixels on a small tile, so the leather is not flat; each pixel as big as the Dashboard cards'
        (dashboard/cards: 3.75px), so it reads as the same pixel art */
     --leather-px: 3.75px;
@@ -1309,13 +1310,13 @@
       var(--leather-grain) 0 0 / calc(var(--leather-px) * 12) calc(var(--leather-px) * 8) repeat,
       linear-gradient(to bottom, transparent 50%, rgb(70 30 10 / 0.22) 50%),
       var(--_bg);
-    border: 2px solid var(--leather-edge);
-    box-shadow:
-      inset 0 2px 0 var(--leather-light),
-      inset 0 -2px 0 var(--leather-shade),
-      inset 0 0 0 1px var(--leather-line);
-    /* its corners a little rounded */
-    border-radius: 4px;
+    /* its frame in pixels of 2px (a 7 × 7 drawing, its corners kept, its middle stretched): the dark edge with its corners rounded in a
+       pixel step, the lit line along its top, the shade along its bottom, the light line down its sides (the --leather-edge, -light,
+       -shade and -line colours, written into the drawing). The corners outside the step are cut off the leather (clip-path) */
+    min-height: 30px;
+    border: 6px solid transparent;
+    border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='7' shape-rendering='crispEdges'><path fill='%233a1f0f' d='M2 0h3v1h-3zM2 6h3v1h-3zM0 2h1v3h-1zM6 2h1v3h-1zM1 1h1v1h-1zM5 1h1v1h-1zM1 5h1v1h-1zM5 5h1v1h-1z'/><path fill='%23cf9260' d='M2 1h3v1h-3z'/><path fill='%237f4a2a' d='M2 5h3v1h-3z'/><path fill='rgba(255,226,180,0.35)' d='M1 2h1v3h-1zM5 2h1v3h-1z'/></svg>") 3 / 6px stretch;
+    clip-path: polygon(4px 0, calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px), calc(100% - 2px) calc(100% - 2px), calc(100% - 4px) calc(100% - 2px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 2px), 2px calc(100% - 2px), 2px calc(100% - 4px), 0 calc(100% - 4px), 0 4px, 2px 4px, 2px 2px, 4px 2px);
     transition: background-color 0.15s ease-out, color 0.15s ease-out;
   }
 
