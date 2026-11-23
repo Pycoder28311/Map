@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { DATA, SHAREABLE, TABLE_NAMES } from './data.config'
+import { DATA, INVITABLE, SHAREABLE, TABLE_NAMES } from './data.config'
+import { followsFilter } from './follows'
+import { invitationInput, invitationsFilter } from './invitations'
 import { messageFilter, messageImport, messageInput, messageUpdate } from './messages'
 import { rightsApply } from './rights'
 
@@ -20,16 +22,45 @@ describe('shared tables', () => {
 
 describe('rightsApply', () => {
   const base = { objectType: 'notes', objectId: 1 }
-  it('defaults the lists to empty', () => {
-    expect(rightsApply.parse(base)).toEqual({ ...base, set: [], remove: [] })
+  it('defaults the list to empty', () => {
+    expect(rightsApply.parse(base)).toEqual({ ...base, remove: [] })
   })
-  it('refuses a person twice, or both set and removed', () => {
-    expect(rightsApply.safeParse({ ...base, set: [{ userId: 'a', role: 'reader' }, { userId: 'a', role: 'editor' }] }).success).toBe(false)
-    expect(rightsApply.safeParse({ ...base, set: [{ userId: 'a', role: 'reader' }], remove: ['a'] }).success).toBe(false)
+  it('adds nobody: people come only by an accepted invitation', () => {
+    expect(rightsApply.parse({ ...base, set: [{ userId: 'a', role: 'reader' }] })).toEqual({ ...base, remove: [] })
   })
-  it('refuses tables that are not shareable and unknown roles', () => {
+  it('refuses tables that are not shareable', () => {
     expect(rightsApply.safeParse({ ...base, objectType: 'layouts' }).success).toBe(false)
-    expect(rightsApply.safeParse({ ...base, set: [{ userId: 'a', role: 'admin' }] }).success).toBe(false)
+  })
+})
+
+describe('invitations', () => {
+  const base = { type: 'collaboration', recipientId: 'u2', objectType: 'articles', objectId: 3, payload: { role: 'editor' } }
+  it('INVITABLE is shareable, with maps and without notes', () => {
+    for (const name of INVITABLE) expect(SHAREABLE).toContain(name)
+    expect(INVITABLE).toContain('maps')
+    expect(INVITABLE).not.toContain('notes')
+  })
+  it('takes a collaboration with a role', () => {
+    expect(invitationInput.parse(base)).toEqual(base)
+    expect(invitationInput.safeParse({ ...base, payload: { role: 'admin' } }).success).toBe(false)
+    expect(invitationInput.safeParse({ ...base, type: 'party' }).success).toBe(false)
+  })
+  it('refuses notes and tables that are not shareable', () => {
+    expect(invitationInput.safeParse({ ...base, objectType: 'notes' }).success).toBe(false)
+    expect(invitationInput.safeParse({ ...base, objectType: 'layouts' }).success).toBe(false)
+  })
+  it('a filter names a box; an item needs its type', () => {
+    expect(invitationsFilter.parse({ box: 'inbox' })).toEqual({ box: 'inbox' })
+    expect(invitationsFilter.parse({ box: 'sent', objectType: 'maps', objectId: '4', status: 'pending' })).toEqual({ box: 'sent', objectType: 'maps', objectId: 4, status: 'pending' })
+    expect(invitationsFilter.safeParse({ box: 'sent', objectId: '4' }).success).toBe(false)
+    expect(invitationsFilter.safeParse({ box: 'outbox' }).success).toBe(false)
+  })
+})
+
+describe('follows', () => {
+  it('a list names its direction', () => {
+    expect(followsFilter.parse({ direction: 'followers' })).toEqual({ direction: 'followers' })
+    expect(followsFilter.safeParse({ direction: 'friends' }).success).toBe(false)
   })
 })
 

@@ -7,6 +7,8 @@ import ErrorText from '../../components/ui/fields/ErrorText'
 import AvatarEditor from '../../features/profile/AvatarEditor'
 import NameForm from '../../features/profile/NameForm'
 import PasswordForm from '../../features/profile/PasswordForm'
+import PeopleCard from '../../features/follows/PeopleCard'
+import MyCollaborations from '../../features/collaborators/MyCollaborations'
 import ProfileBanner from '../../features/profile/ProfileBanner'
 import { authClient } from '../../lib/auth-client'
 import { DAY_MONTH_YEAR } from '../../lib/dates'
@@ -14,7 +16,8 @@ import { DAY_MONTH_YEAR } from '../../lib/dates'
 // No <main> here: AppLayout provides it
 /**
  * The signed-in user's page (/profile, from the navbar's profile picture): a dark fantasy banner, the
- * picture (camera button: change it) and name over its bottom edge, then two cards: the name, and the password; Sign out (red) at the bottom.
+ * picture (camera button: change it) and name over its bottom edge, then cards: the name, the password, the people (followers and
+ * following, find people) and the articles I collaborate on; Sign out (red) at the bottom.
  */
 export default function ProfilePage() {
   const navigate = useNavigate()
@@ -61,6 +64,12 @@ export default function ProfilePage() {
           </Section>
           <Section title="Password" description="Used to sign in with your email.">
             <PasswordForm email={user.email} />
+          </Section>
+          <Section title="People" description="Who follows you and who you follow. Only you and your collaborators see these lists.">
+            <PeopleCard />
+          </Section>
+          <Section title="Collaborations" description="The articles you are a collaborator on.">
+            <MyCollaborations />
           </Section>
         </div>
 

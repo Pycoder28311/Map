@@ -5,8 +5,8 @@ import * as schema from '../../db/schema'
 import type { Ctx } from '../../lib/crud'
 import { HttpError } from '../../lib/errors'
 import { ownedRepo } from '../../lib/ownedRepo'
-import { newUser } from '../../lib/ownedRepo.suite'
-import { copyMapFile, createBranch, mapsOverrides, saveMapFile } from './maps.repo'
+import { give, newUser } from '../../lib/ownedRepo.suite'
+import { copyMapFile, createBranch, mapsOverrides, openableMap, saveMapFile } from './maps.repo'
 
 /** The BOARDS bucket in memory: what R2's get / put / delete do with whole files */
 function fakeBucket() {
@@ -111,5 +111,25 @@ describe('a map\'s file (docs/plans/38)', () => {
     expect(await saveMapFile(ctx, id, 1, bytes(2))).toMatchObject({ version: 2 })
     expect(await repo.remove(ctx, id)).toBe(true)
     expect(bucket.files.size).toBe(0)
+  })
+})
+
+describe('a shared map (docs/plans/40)', () => {
+  it('an Author saves its file, a reader opens it but cannot save, anyone else does not see it; branches stay the owner\'s', async () => {
+    const { ctx: me, bucket } = owner()
+    const author = { ...newUser(), env: { BOARDS: bucket } } as unknown as Ctx
+    const reader = { ...newUser(), env: { BOARDS: bucket } } as unknown as Ctx
+    const stranger = { ...newUser(), env: { BOARDS: bucket } } as unknown as Ctx
+    const id = await newMap(me)
+    await give(me, 'maps', id, author, 'editor')
+    await give(me, 'maps', id, reader, 'reader')
+    expect(await saveMapFile(author, id, 0, bytes(5))).toMatchObject({ version: 1 })
+    expect((await openableMap(reader, id))?.access).toBe('reader')
+    expect(await status(saveMapFile(reader, id, 1, bytes(6)))).toBe(403)
+    expect(await openableMap(stranger, id)).toBeUndefined()
+    expect(await status(saveMapFile(stranger, id, 1, bytes(6)))).toBe(404)
+    expect(await status(createBranch(author, id, 'B', bytes(1)))).toBe(404)
+    expect(await repo.get(author, id)).toMatchObject({ access: 'editor' })
+    expect(await repo.get(author, id)).not.toHaveProperty('editedBy')
   })
 })

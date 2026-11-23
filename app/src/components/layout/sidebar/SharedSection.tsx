@@ -1,9 +1,10 @@
-import type { SharedItem } from '@map/shared'
+import { ROLE_LABEL, type SharedItem } from '@map/shared'
 import { useState, useSyncExternalStore } from 'react'
 import { LuChevronDown, LuChevronUp, LuRefreshCw } from 'react-icons/lu'
 import { Link } from 'react-router-dom'
 import { useWorkspace } from '../../../features/workspace/useWorkspace'
 import { listShared } from '../../../lib/api/shared'
+import { onAccepted } from '../../../features/inbox/inboxStore'
 import { resourceByName } from '../../../resources/registry'
 import Button from '../../ui/buttons/Button'
 import Divider from '../../ui/Divider'
@@ -27,6 +28,11 @@ const subscribe = (listener: () => void) => {
   }
 }
 
+// An accepted invitation (docs/plans/40) puts something new here: read again if it was read already
+onAccepted(() => {
+  if (state.status !== 'idle') void load(false)
+})
+
 /** Reads the first page (`more`: the next one) */
 async function load(more: boolean) {
   if (state.status === 'loading') return
@@ -40,7 +46,7 @@ async function load(more: boolean) {
 }
 
 /**
- * Shared with me (docs/plans/34): what other people shared with the user, newest first, each with its kind's icon and Reader / Editor;
+ * Shared with me (docs/plans/34): what other people shared with the user, newest first, each with its kind's icon and Read only / Author;
  * a click opens it. Closed at first: its list is read only when it is opened, a page at a time
  */
 export default function SharedSection({ compact }: { compact: boolean }) {
@@ -79,7 +85,7 @@ export default function SharedSection({ compact }: { compact: boolean }) {
               >
                 <Icon className="size-(--btn-icon-size) shrink-0 text-fg-subtle" />
                 <span className="min-w-0 flex-1 truncate">{item.title || resource.ui.untitled}</span>
-                <span className="shrink-0 text-small text-fg-subtle">{item.role === 'editor' ? 'Editor' : 'Reader'}</span>
+                <span className="shrink-0 text-small text-fg-subtle">{ROLE_LABEL[item.role]}</span>
               </Link>
             )
           })}

@@ -4,7 +4,9 @@ import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
 import CrackedPanel from '../../components/ui/pixel/CrackedPanel'
 import TreeMenu from '../../components/ui/tree/TreeMenu'
-import { mapName, renameMap, useMaps, type MapItem } from '../maps/maps'
+import { mapName, renameMap, useMap, useMaps, type MapItem } from '../maps/maps'
+import PrivacyButton from '../sharing/PrivacyButton'
+import type { Visibility } from '@map/shared'
 import { useWorkspace } from '../workspace/useWorkspace'
 import { getBoard } from './boardStore'
 import BranchesPopout from './BranchesPopout'
@@ -75,7 +77,11 @@ export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onP
     ? 'max-w-[calc(var(--editor-w,100%)-25rem)] @5xl:max-w-[calc(var(--editor-w,100%)/2-13.5rem)]'
     : 'max-w-[calc(var(--editor-w,100%)-25rem)] xl:max-w-[calc(var(--editor-w,100%)/2-13.5rem)]'
   const maps = useMaps()
-  const object = maps.find((m) => String(m.id) === mapId) ?? starter?.item
+  // A map shared with me (docs/plans/40) is not in my list: its own item
+  const { map: opened } = useMap(starter ? undefined : mapId)
+  const object = maps.find((m) => String(m.id) === mapId) ?? (opened as MapItem | null) ?? starter?.item
+  const access = (opened as { access?: string } | null)?.access ?? 'owner'
+  const owner = access === 'owner'
   // The big name is the map's own (the first map of its branch group), whichever branch is open; the branch has its own item
   const title = maps.find((m) => object?.branchOf && m.id === object.branchOf) ?? object
   const branch = useCurrentBranch(mapId)
@@ -210,9 +216,10 @@ export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onP
           plain
           label={`More: ${mapName(title)}`}
           groups={[
-            [{ label: 'Rename', icon: LuPencil, onClick: () => setDraft(title.title) }],
+            // Renaming and branching are the owner's (docs/plans/40)
+            ...(owner ? [[{ label: 'Rename', icon: LuPencil, onClick: () => setDraft(title.title) }]] : []),
             [
-              { label: branch.count > 1 ? `Branches · ${branch.current}` : 'Create branch', icon: LuGitBranch, onClick: () => setBranches(true) },
+              ...(owner ? [{ label: branch.count > 1 ? `Branches · ${branch.current}` : 'Create branch', icon: LuGitBranch, onClick: () => setBranches(true) }] : []),
               { label: panel === 'layers' ? 'Hide layers' : 'Layers', icon: LuLayers, onClick: () => toggle('layers') },
             ],
             [{ label: busy ? 'Taking the screenshot…' : 'Screenshot', icon: LuCamera, onClick: () => void (busy || shoot()) }],
@@ -220,6 +227,17 @@ export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onP
         />
         <BranchesPopout mapId={mapId} open={branches} onOpenChange={setBranches} />
         </div>
+        {/* Who can see it: its owner's lock (docs/plans/40); a collaborator sees what they may do */}
+        {!starter && owner && object && typeof (opened as { version?: unknown } | null)?.version === 'number' && (
+          <div className={`pointer-events-auto flex h-11 shrink-0 items-center self-center p-1 ${PIECE}`}>
+            <PrivacyButton objectType="maps" objectId={Number(object.id)} visibility={((opened as { visibility?: Visibility } | null)?.visibility) ?? 'private'} what="map" />
+          </div>
+        )}
+        {!owner && (
+          <span className={`pointer-events-auto flex h-11 shrink-0 items-center self-center px-3 text-small text-fg-muted ${PIECE}`}>
+            {access === 'reader' ? 'Read only' : 'Author'}
+          </span>
+        )}
       </div>
       {(error || save?.error) && (
         <p role="alert" className={`pointer-events-auto px-3 py-2 text-small text-danger ${FLOAT}`}>

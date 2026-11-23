@@ -1,4 +1,4 @@
-import { DATA, SHAREABLE } from '@map/shared'
+import { DATA, INVITABLE, INVITATION_STATUSES, INVITATION_TYPES, SHAREABLE } from '@map/shared'
 import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text, uniqueIndex, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core'
 import { createdAt, id, owner, ownedTable, updatedAt } from '../lib/ownedTable'
@@ -44,8 +44,8 @@ export const objectRights = sqliteTable(
   'object_rights',
   {
     id: id(),
-    // The config name of the row's table (`notes`, `articles`…) and its id. No foreign key can point at four tables: a trigger on
-    // each of them deletes the row's rights with it (migration 0012)
+    // The config name of the row's table (`notes`, `articles`, `maps`…) and its id. No foreign key can point at five tables: a trigger
+    // on each of them deletes the row's rights with it (migrations 0012, 0017)
     objectType: text('object_type').notNull(),
     objectId: integer('object_id').notNull(),
     userId: owner(),
@@ -60,6 +60,71 @@ export const objectRights = sqliteTable(
     index('object_rights_user_idx').on(t.userId, t.id),
     check('object_rights_type', sql`${t.objectType} IN (${shareableList})`),
     check('object_rights_role', sql`${t.role} IN ('reader', 'editor')`),
+  ],
+)
+
+/* ─────────────── Follows (docs/plans/40): who follows whom; no approval. Following someone lets you invite them to collaborate ─────────────── */
+
+export const follows = sqliteTable(
+  'follows',
+  {
+    id: id(),
+    followerId: text('follower_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    followeeId: text('followee_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    // Once per pair; also the "following" list's index and the invitation check (do I follow them?)
+    uniqueIndex('follows_pair').on(t.followerId, t.followeeId),
+    // A person's followers, newest first, and their count
+    index('follows_followee_idx').on(t.followeeId, t.id),
+    check('follows_not_self', sql`${t.followerId} <> ${t.followeeId}`),
+  ],
+)
+
+/* ─────────────── Invitations (docs/plans/40): one table for every kind (shared/src/invitations.ts); only `collaboration` for now ─────────────── */
+
+const sqlList = (values: readonly string[]) => sql.raw(values.map((v) => `'${v}'`).join(', '))
+
+export const invitations = sqliteTable(
+  'invitations',
+  {
+    id: id(),
+    type: text('type').notNull(),
+    senderId: text('sender_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    recipientId: text('recipient_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    // What it is about (a kind about no item leaves both empty). No foreign key can point at four tables: a trigger on each deletes the
+    // item's invitations with it (migration 0018)
+    objectType: text('object_type'),
+    objectId: integer('object_id'),
+    // The kind's own values (collaboration: { role }), checked by its zod schema
+    payload: text('payload', { mode: 'json' }).notNull().default({}),
+    status: text('status').notNull().default('pending'),
+    createdAt: createdAt(),
+    answeredAt: integer('answered_at', { mode: 'timestamp' }),
+  },
+  (t) => [
+    // The inbox (pending first, newest first) and its badge's count
+    index('invitations_recipient_idx').on(t.recipientId, t.status, t.id),
+    // An item's invitations in its privacy panel; the ones to cancel when their sender unfollows the recipient
+    index('invitations_sender_idx').on(t.senderId, t.objectType, t.objectId, t.status),
+    // One pending invitation of a kind per item and person (a new one after a decline is fine)
+    uniqueIndex('invitations_pending_once')
+      .on(t.type, t.objectType, t.objectId, t.recipientId)
+      .where(sql`${t.status} = 'pending'`),
+    check('invitations_type', sql`${t.type} IN (${sqlList(INVITATION_TYPES)})`),
+    check('invitations_status', sql`${t.status} IN (${sqlList(INVITATION_STATUSES)})`),
+    check('invitations_object', sql`${t.objectType} IS NULL OR ${t.objectType} IN (${sqlList(INVITABLE)})`),
+    check('invitations_object_pair', sql`(${t.objectType} IS NULL) = (${t.objectId} IS NULL)`),
+    check('invitations_not_self', sql`${t.senderId} <> ${t.recipientId}`),
   ],
 )
 

@@ -1,245 +1,146 @@
-import type { Author } from '@map/shared'
-import { useEffect, useState, type FormEvent } from 'react'
-import { LuGlobe, LuLock, LuSearch, LuUserRoundPlus, LuX } from 'react-icons/lu'
+import { ROLE_LABEL, type Collaborator, type Role } from '@map/shared'
+import { useEffect, useState } from 'react'
+import { LuCheck, LuGlobe, LuLock, LuSend, LuX } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
-import CheckField from '../../components/ui/fields/CheckField'
-import SwitchField from '../../components/ui/fields/SwitchField'
-import TextField from '../../components/ui/fields/TextField'
-import HoverInfo, { TIP_DELAY } from '../../components/ui/overlays/HoverInfo'
-import Modal from '../../components/ui/overlays/Modal'
-import { ApiError } from '../../lib/api/client'
-import { lookupUser } from '../../lib/api/users'
-import { placeholderArt } from '../objects/placeholderArt'
-import { allowedFrom, allowedOf, changesOf, initialsOf, permissionOf, withSwitch, type Allowed, type AllowedRole, type Permission, type useSharing, type Visibility } from './sharing'
+import SearchInput from '../../components/ui/fields/SearchInput'
+import { fold } from '../search/search'
+import RoleChoice from '../collaborators/RoleChoice'
+import { useFollowing } from '../follows/followStore'
+import Avatar from '../people/Avatar'
+import { collaboratorsIn, invitableFrom, type Sharing, type Visibility } from './sharing'
+
+export { default as Avatar } from '../people/Avatar'
 
 const CHOICES: { value: Visibility; label: string; text: string; icon: typeof LuLock }[] = [
-  { value: 'private', label: 'Private', text: 'Only you, and the people you allow', icon: LuLock },
-  { value: 'public', label: 'Public', text: 'Everyone signed in who has the link', icon: LuGlobe },
+  { value: 'private', label: 'Private', text: 'Only you and your collaborators', icon: LuLock },
+  { value: 'public', label: 'Public', text: 'Everyone signed in with the link can read it', icon: LuGlobe },
 ]
 
-const ROLE_LABEL: Record<AllowedRole, string> = { reader: 'Allow reading', editor: 'Allow reading and editing' }
-
-type Sharing = ReturnType<typeof useSharing>
-
-/** A person's round picture: theirs, or their initials on a colour made from their id */
-export function Avatar({ person, size = 'size-6' }: { person: Author; size?: string }) {
-  if (person.image) return <img src={person.image} alt="" referrerPolicy="no-referrer" className={`shrink-0 rounded-full object-cover ${size}`} />
+/** A small heading of one part of the panel */
+function Heading({ children, count }: { children: string; count?: number }) {
   return (
-    <span aria-hidden style={placeholderArt(person.id)} className={`inline-flex shrink-0 items-center justify-center rounded-full text-small font-medium text-fg ${size}`}>
-      {initialsOf(person)}
-    </span>
+    <h3 className="flex items-center gap-1 px-1 text-small font-medium text-fg-muted">
+      {children}
+      {count !== undefined && count > 0 && <span className="text-fg-subtle">· {count}</span>}
+    </h3>
   )
 }
 
-/**
- * One person of the list: a checkbox at the right end of the row chooses them, and then two switches open below (Allow reading, Allow
- * editing), each with a small faint "What it is" (HoverInfo). Nothing is saved until Apply (People)
- */
-function PersonRow({ person, what, permission, onPermission }: { person: Author; what: string; permission: Permission; onPermission: (change: Partial<Permission>) => void }) {
-  const switches = [
-    { key: 'read' as const, label: 'Allow reading', what: `They can open and read the ${what}, but cannot change anything in it.` },
-    { key: 'edit' as const, label: 'Allow editing', what: `They can change the ${what}'s own text. It needs reading, so it turns that on too.` },
-  ]
+/** One collaborator: picture, name, Remove, and their role (Read only / Author), changed at once */
+function CollaboratorRow({ person, busy, onRole, onRemove }: { person: Collaborator; busy: boolean; onRole: (role: Role) => void; onRemove: () => void }) {
   return (
-    <li className="flex flex-col">
-      <CheckField
-        label={
-          <span className="flex min-w-0 items-center gap-2">
-            <Avatar person={person} />
-            <span className="truncate">{person.name}</span>
-          </span>
-        }
-        checked={permission.on}
-        onChange={(on) => onPermission({ on })}
-        boxAt="end"
-        className="min-h-8"
-      />
-      {permission.on && (
-        <ul aria-label={`What ${person.name} can do`} className="flex flex-col gap-1 ps-6 pt-1 pb-1">
-          {switches.map((s) => (
-            <li key={s.key}>
-              <SwitchField label={s.label} checked={permission[s.key]} onChange={(on) => onPermission({ [s.key]: on })}>
-                <HoverInfo title={s.label} text={s.what} side="top" delay={TIP_DELAY}>
-                  <Button variant="ghost" size="xs" plain className="font-normal! [--btn-text:var(--fg-subtle)]!">
-                    What it is
-                  </Button>
-                </HoverInfo>
-              </SwitchField>
-            </li>
-          ))}
-        </ul>
-      )}
+    <li className="flex flex-col gap-1 rounded-(--corner-sm) px-1 py-1">
+      <div className="flex min-h-7 items-center gap-2">
+        <Avatar person={person.user} />
+        <span className="min-w-0 flex-1 truncate text-body">{person.user.name}</span>
+        <IconButton icon={LuX} label={`Remove ${person.user.name}`} size="sm" disabled={busy} onClick={onRemove} />
+      </div>
+      <div className="ps-8">
+        <RoleChoice label={`${person.user.name}'s role`} value={person.role as Role} disabled={busy} onChange={onRole} />
+      </div>
     </li>
   )
 }
 
-/** The message of a failed email search */
-const lookupError = (e: unknown) =>
-  e instanceof ApiError && e.status === 404 ? 'Nobody with this email.' : e instanceof ApiError && e.status === 429 ? 'Too many searches. Wait a minute.' : 'Could not search. Try again.'
-
 /**
- * The people: the ones allowed already and the ones found by their exact email (Find), each chosen with a checkbox and given reading
- * and / or editing with two switches; Apply asks first (a modal that says what will be done) and sends only the changes, at once
+ * Invite someone I follow: a search of the people I follow (not on the row, not invited yet), the role, Send. Only people I follow can be
+ * invited (docs/plans/40): the empty list says so
  */
-function People({ sharing, what }: { sharing: Sharing; what: string }) {
-  const [searching, setSearching] = useState(false)
-  const [email, setEmail] = useState('')
-  const [finding, setFinding] = useState(false)
-  const [findError, setFindError] = useState<string | null>(null)
-  // People found by email, not allowed yet (shown first, newest on top)
-  const [found, setFound] = useState<Author[]>([])
-  // What was changed in the rows and is not applied yet (people not in it are as they are saved)
-  const [edits, setEdits] = useState<Record<string, Permission>>({})
-  const [confirming, setConfirming] = useState(false)
-  const [applying, setApplying] = useState(false)
+function Invite({ sharing, what }: { sharing: Sharing; what: string }) {
+  const following = useFollowing()
+  const [query, setQuery] = useState('')
+  const [chosen, setChosen] = useState<string | null>(null)
+  const [role, setRole] = useState<Role>('reader')
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState<string | null>(null)
 
-  const rights = sharing.rights ?? []
-  const saved = allowedOf(rights)
-  const people = [...found.filter((p) => !rights.some((r) => r.user.id === p.id)), ...rights.map((r) => r.user)]
-  const next = allowedFrom(saved, edits)
-  const changes = changesOf(saved, next)
-  const changed = changes.added.length + changes.changed.length + changes.removed.length > 0
-  const nameOf = (id: string) => people.find((p) => p.id === id)?.name ?? 'Someone'
-  const permission = (id: string) => edits[id] ?? permissionOf(saved, id)
+  const words = fold(query).split(/\s+/).filter(Boolean)
+  const candidates = invitableFrom(following.items, sharing.people, sharing.pending).filter((f) => words.every((w) => fold(f.user.name).includes(w)))
+  const person = candidates.find((c) => c.user.id === chosen)?.user
 
-  const find = async (e: FormEvent) => {
-    e.preventDefault()
-    if (!email.trim() || finding) return
-    setFinding(true)
-    setFindError(null)
+  const send = async () => {
+    if (!person) return
+    setSending(true)
     try {
-      const person = await lookupUser(email)
-      setFound((list) => [person, ...list.filter((p) => p.id !== person.id)])
-      // Found to be added: chosen, with reading
-      if (!rights.some((r) => r.user.id === person.id)) setEdits((all) => ({ ...all, [person.id]: withSwitch(permissionOf(saved, person.id), { on: true }) }))
-      setEmail('')
-    } catch (error) {
-      setFindError(lookupError(error))
-    } finally {
-      setFinding(false)
-    }
-  }
-
-  const accept = async () => {
-    setApplying(true)
-    try {
-      await sharing.apply({ set: [...changes.added, ...changes.changed], remove: changes.removed.map((a) => a.id) })
-      setEdits({})
-      setFound([])
-      setConfirming(false)
+      await sharing.invite(person.id, role)
+      setSent(person.name)
+      setChosen(null)
+      setQuery('')
     } catch {
-      // sharing.error says it; the modal stays to try again
+      // sharing.error says it
     } finally {
-      setApplying(false)
+      setSending(false)
     }
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex min-h-8 items-center justify-between gap-2">
-        <h3 className="text-small font-medium text-fg-muted">People</h3>
-        <IconButton
-          icon={searching ? LuX : LuSearch}
-          label={searching ? 'Close the search of people' : 'Find a person by email'}
-          size="sm"
-          aria-expanded={searching}
-          onClick={() => {
-            if (searching) {
-              setEmail('')
-              setFindError(null)
-            }
-            setSearching(!searching)
-          }}
-        />
-      </div>
-      {searching && (
-        <form className="flex items-end gap-1" onSubmit={(e) => void find(e)}>
-          <TextField label="Their email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" autoFocus className="min-w-0 flex-1" />
-          <Button type="submit" size="sm" disabled={!email.trim() || finding}>
-            {finding ? 'Finding…' : 'Find'}
-          </Button>
-        </form>
-      )}
-      {findError && <p className="text-small text-danger">{findError}</p>}
-      <ul className="flex max-h-72 flex-col gap-1 overflow-y-auto">
-        {people.map((person) => (
-          <PersonRow
-            key={person.id}
-            person={person}
-            what={what}
-            permission={permission(person.id)}
-            onPermission={(change) => setEdits({ ...edits, [person.id]: withSwitch(permission(person.id), change) })}
-          />
-        ))}
-        {sharing.loading && <li className="text-small text-fg-subtle">Loading…</li>}
-        {!sharing.loading && sharing.rights !== null && people.length === 0 && <li className="text-small text-fg-subtle">Nobody yet. Find a person by their email.</li>}
-      </ul>
-      <Button className="w-full" disabled={!changed} onClick={() => setConfirming(true)}>
-        Apply
-      </Button>
-
-      <Modal
-        open={confirming}
-        onClose={() => setConfirming(false)}
-        title="Apply these permissions?"
-        size="sm"
-        footer={
-          <>
-            {/* sortBy2: a Shade button with its text, without the white corner elements and without an arrow */}
-            <Button variant="ghost" size="sm" plain onClick={() => setConfirming(false)}>
-              Cancel
-            </Button>
-            <Button size="sm" plain disabled={applying} onClick={() => void accept()}>
-              {applying ? 'Applying…' : 'Accept'}
-            </Button>
-          </>
-        }
-      >
-        <div className="flex flex-col gap-2 text-body">
-          <p>This will change who can open the {what} while it is private:</p>
-          <ul className="flex flex-col gap-1">
-            {changes.added.map((a: Allowed) => (
-              <li key={a.id}>
-                <span className="font-medium">{nameOf(a.id)}</span> <span className="text-fg-muted">gets access: {ROLE_LABEL[a.role]}</span>
+    <div className="flex flex-col gap-1.5">
+      <Heading>Invite someone you follow</Heading>
+      {following.status === 'ready' && following.items.length === 0 ? (
+        <p className="px-1 text-small text-fg-subtle">Follow people from your profile to invite them to this {what}.</p>
+      ) : (
+        <>
+          <SearchInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search people you follow" aria-label="Search people you follow" />
+          <ul aria-label="People you follow" className="flex max-h-36 flex-col gap-0.5 overflow-y-auto">
+            {candidates.map((f) => (
+              <li key={f.user.id}>
+                <Button
+                  variant={chosen === f.user.id ? 'selected' : 'ghost'}
+                  plain
+                  size="sm"
+                  aria-pressed={chosen === f.user.id}
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setChosen(chosen === f.user.id ? null : f.user.id)
+                    setSent(null)
+                  }}
+                >
+                  <span className="flex min-w-0 flex-1 items-center gap-2">
+                    <Avatar person={f.user} size="size-5" />
+                    <span className="truncate">{f.user.name}</span>
+                    {chosen === f.user.id && <LuCheck aria-hidden className="ms-auto size-4" />}
+                  </span>
+                </Button>
               </li>
             ))}
-            {changes.changed.map((a) => (
-              <li key={a.id}>
-                <span className="font-medium">{nameOf(a.id)}</span> <span className="text-fg-muted">now has: {ROLE_LABEL[a.role]}</span>
-              </li>
-            ))}
-            {changes.removed.map((a) => (
-              <li key={a.id}>
-                <span className="font-medium">{nameOf(a.id)}</span> <span className="text-fg-muted">loses access</span>
-              </li>
-            ))}
+            {following.status === 'loading' && <li className="px-1 text-small text-fg-subtle">Loading…</li>}
+            {following.status === 'ready' && candidates.length === 0 && <li className="px-1 text-small text-fg-subtle">{query ? 'Nobody with this name.' : 'Everyone you follow is invited or on it already.'}</li>}
           </ul>
-          <p className="text-small text-fg-subtle">Everyone else keeps what they have now.</p>
-          {sharing.error && <p className="text-small text-danger">{sharing.error}</p>}
-        </div>
-      </Modal>
+          <div className="flex items-center justify-between gap-2">
+            <RoleChoice value={role} onChange={setRole} />
+            <Button size="sm" icon={LuSend} disabled={!person || sending} onClick={() => void send()}>
+              {sending ? 'Sending…' : 'Invite'}
+            </Button>
+          </div>
+          {sent && (
+            <p role="status" className="px-1 text-small text-fg-muted">
+              Invitation sent to {sent}. They become a collaborator when they accept it.
+            </p>
+          )}
+        </>
+      )}
     </div>
   )
 }
 
 /**
- * Who can see a row (the popup under the Private / Public button; its owner only): Private or Public (saved at once), and the people
- * allowed (Allow certain people): read from the server when this opens, each chosen with a checkbox and given reading and / or editing
- * with two switches, applied together with Apply. `what`: the row's kind, e.g. "article"
+ * Who can see a row (the popup under the Private / Public button; its creator only): Private or Public (saved at once), its collaborators
+ * (their role changed, or taken away, at once), the invitations waiting for an answer (Unsend) and, for projects, folders, articles and
+ * maps, Invite (people the creator follows). Its people are read when this opens. `what`: the row's kind, e.g. "article"
  */
 export default function PrivacyPanel({ sharing, what }: { sharing: Sharing; what: string }) {
-  const [choosing, setChoosing] = useState(false)
   const [busy, setBusy] = useState(false)
   const { load } = sharing
   // The people are read when the panel opens (not with the page)
   useEffect(() => load(), [load])
-  const rights = sharing.rights ?? []
+  const collaborators = collaboratorsIn(sharing.people)
+  const pending = sharing.pending ?? []
 
-  const change = async (visibility?: Visibility, remove?: string[]) => {
+  const act = async (change: () => Promise<void>) => {
     setBusy(true)
     try {
-      await sharing.apply({ visibility, remove })
+      await change()
     } catch {
       // sharing.error says it
     } finally {
@@ -248,7 +149,7 @@ export default function PrivacyPanel({ sharing, what }: { sharing: Sharing; what
   }
 
   return (
-    <div className="flex flex-col gap-1.5 p-1 text-fg">
+    <div className="flex flex-col gap-2 p-1 text-fg">
       <h2 className="px-1 pb-1 text-body font-medium text-fg">Who can see this {what}</h2>
       <div role="radiogroup" aria-label="Visibility" className="flex flex-col gap-1">
         {CHOICES.map((c) => (
@@ -261,7 +162,7 @@ export default function PrivacyPanel({ sharing, what }: { sharing: Sharing; what
             icon={c.icon}
             disabled={busy}
             className="w-full justify-start"
-            onClick={() => sharing.visibility !== c.value && void change(c.value)}
+            onClick={() => sharing.visibility !== c.value && void act(() => sharing.setVisibility(c.value))}
           >
             <span className="flex flex-col items-start text-start">
               <span>{c.label}</span>
@@ -270,34 +171,51 @@ export default function PrivacyPanel({ sharing, what }: { sharing: Sharing; what
           </Button>
         ))}
       </div>
-      {sharing.error && !busy && <p className="px-1 text-small text-danger">{sharing.error}</p>}
+      {sharing.error && <p className="px-1 text-small text-danger">{sharing.error}</p>}
 
-      <div className="flex flex-col gap-2 border-t border-line pt-1.5">
-        {/* Like Private and Public above, set apart by the line over it */}
-        <Button variant={choosing ? 'selected' : 'ghost'} plain icon={LuUserRoundPlus} aria-expanded={choosing} className="w-full justify-start" onClick={() => setChoosing(!choosing)}>
-          <span className="flex flex-col items-start text-start">
-            <span>Allow certain people</span>
-            <span className="text-small font-normal text-fg-subtle">Choose who can read or edit it</span>
-          </span>
-        </Button>
-        {rights.length > 0 && (
-          <ul aria-label="Allowed people" className="flex flex-wrap gap-1">
-            {rights.map((r) => (
-              <li key={r.id} className="flex items-center gap-1 rounded-full bg-fill py-0.5 ps-0.5 pe-1">
-                <Avatar person={r.user} />
-                <span className="text-small">
-                  {r.user.name} <span className="text-fg-subtle">· {r.role === 'editor' ? 'Editing' : 'Reading'}</span>
-                </span>
-                <IconButton icon={LuX} label={`Remove ${r.user.name}`} size="sm" disabled={busy} className="size-6 min-h-0 min-w-0" onClick={() => void change(undefined, [r.user.id])} />
-              </li>
+      <div className="flex flex-col gap-1 border-t border-line pt-2">
+        <Heading count={collaborators.length}>Collaborators</Heading>
+        {sharing.loading && <p className="px-1 text-small text-fg-subtle">Loading…</p>}
+        {!sharing.loading && sharing.people !== null && collaborators.length === 0 && <p className="px-1 text-small text-fg-subtle">Nobody yet.</p>}
+        {collaborators.length > 0 && (
+          <ul aria-label="Collaborators" className="flex max-h-48 flex-col gap-0.5 overflow-y-auto">
+            {collaborators.map((p) => (
+              <CollaboratorRow
+                key={p.id}
+                person={p}
+                busy={busy}
+                onRole={(role) => void act(() => sharing.changeRole(p, role))}
+                onRemove={() => void act(() => sharing.remove(p))}
+              />
             ))}
           </ul>
         )}
-        {choosing && (
-          <>
-            <People sharing={sharing} what={what} />
-            {sharing.visibility === 'public' && <p className="text-small text-fg-subtle">It is public: everyone signed in can read it already.</p>}
-          </>
+      </div>
+
+      {pending.length > 0 && (
+        <div className="flex flex-col gap-1 border-t border-line pt-2">
+          <Heading count={pending.length}>Waiting for an answer</Heading>
+          <ul aria-label="Invitations waiting for an answer" className="flex flex-col gap-0.5">
+            {pending.map((i) => (
+              <li key={i.id} className="flex min-h-7 items-center gap-2 px-1">
+                <Avatar person={i.to} />
+                <span className="min-w-0 flex-1 truncate text-body">
+                  {i.to.name} <span className="text-small text-fg-subtle">· {ROLE_LABEL[i.payload.role]}</span>
+                </span>
+                <Button variant="ghost" size="xs" plain disabled={busy} onClick={() => void act(() => sharing.unsend(i))}>
+                  Unsend
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="border-t border-line pt-2">
+        {sharing.invitable ? (
+          <Invite sharing={sharing} what={what} />
+        ) : (
+          <p className="px-1 text-small text-fg-subtle">A {what} keeps the collaborators it has; new people can be invited to projects, folders, articles and maps.</p>
         )}
       </div>
     </div>

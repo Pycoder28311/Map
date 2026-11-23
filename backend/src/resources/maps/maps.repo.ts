@@ -1,8 +1,10 @@
 import { FILE_VERSION_HEADER, type MapFileSaved } from '@map/shared'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { maps } from '../../db/schema'
+import { accessOf } from '../../lib/access'
 import { userId, type Ctx } from '../../lib/crud'
-import { HttpError, notFound } from '../../lib/errors'
+import type { OwnedTable } from '../../lib/ownedTable'
+import { forbidden, HttpError, notFound } from '../../lib/errors'
 import type { RepoOverrides } from '../../lib/ownedRepo'
 
 type MapRow = typeof maps.$inferSelect
@@ -20,9 +22,18 @@ export const mapRow = (ctx: Ctx, id: number) =>
     .where(and(eq(maps.id, id), eq(maps.userId, userId(ctx))))
     .get()
 
-/** A map as the app gets it: the generic JSON without the owner and without where its file is (the key is the server's) */
+/**
+ * A map the user may open (docs/plans/40): theirs, one they collaborate on, or a public one; with what they may do. One read (the row
+ * and their right). undefined when they may not see it
+ */
+export async function openableMap(ctx: Ctx, id: number) {
+  const found = await accessOf(ctx, 'maps', maps as unknown as OwnedTable, id)
+  return found ? { row: found.row as unknown as MapRow, access: found.access } : undefined
+}
+
+/** A map as the app gets it: the generic JSON without the owner, who saved it last and where its file is (the key is the server's) */
 export function mapJson(row: Record<string, unknown>): Record<string, unknown> {
-  const { userId: _owner, fileKey: _key, createdAt, updatedAt, savedAt, ...rest } = row
+  const { userId: _owner, editedBy: _editedBy, fileKey: _key, createdAt, updatedAt, savedAt, ...rest } = row
   return {
     ...rest,
     createdAt: (createdAt as Date).toISOString(),
@@ -42,12 +53,16 @@ export const mapsOverrides: RepoOverrides = {
 const conflict = (version: number) => new HttpError(409, 'CONFLICT', 'A newer version was saved', [{ path: 'version', message: String(version) }])
 
 /**
- * Saves a map's file over version `base`: the file goes to a new key first, then the row moves to it only if it is still at `base`
+ * Saves a map's file over version `base`, by its owner or an Author (an editor, docs/plans/40): who may is checked first (one read;
+ * someone who may not see it: 404, a reader: 403). The file goes to a new key, then the row moves to it only if it is still at `base`
  * (one read and one write, in one batch: the read gives the old key and says why when nothing was written). Written: the old file
- * is deleted. Not written: the new file is deleted, and 404 (not theirs) or 409 (another version was saved since)
+ * is deleted. Not written: the new file is deleted, and 404 (gone) or 409 (another version was saved since)
  */
 export async function saveMapFile(ctx: Ctx, id: number, base: number, bytes: ArrayBuffer): Promise<MapFileSaved> {
   const me = userId(ctx)
+  const allowed = await openableMap(ctx, id)
+  if (!allowed) throw notFound('Map not found')
+  if (allowed.access === 'reader') throw forbidden('You can only read this map')
   const key = newKey()
   await ctx.env.BOARDS.put(key, bytes, { httpMetadata: { contentType: 'application/octet-stream' } })
   const savedAt = new Date()
@@ -55,11 +70,11 @@ export async function saveMapFile(ctx: Ctx, id: number, base: number, bytes: Arr
   let written: { fileVersion: number }[]
   try {
     ;[before, written] = await ctx.db.batch([
-      ctx.db.select({ fileKey: maps.fileKey, fileVersion: maps.fileVersion }).from(maps).where(and(eq(maps.id, id), eq(maps.userId, me))),
+      ctx.db.select({ fileKey: maps.fileKey, fileVersion: maps.fileVersion }).from(maps).where(eq(maps.id, id)),
       ctx.db
         .update(maps)
-        .set({ fileKey: key, fileVersion: sql`${maps.fileVersion} + 1`, fileSize: bytes.byteLength, savedAt })
-        .where(and(eq(maps.id, id), eq(maps.userId, me), eq(maps.fileVersion, base)))
+        .set({ fileKey: key, fileVersion: sql`${maps.fileVersion} + 1`, fileSize: bytes.byteLength, savedAt, editedBy: me })
+        .where(and(eq(maps.id, id), eq(maps.fileVersion, base)))
         .returning({ fileVersion: maps.fileVersion }),
     ])
   } catch (error) {

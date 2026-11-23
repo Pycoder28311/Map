@@ -1,11 +1,17 @@
-import type { Right, RightsApply, ShareableName, Sharing } from '@map/shared'
+import type { Collaborator, Right, RightsApply, Role, ShareableName, Sharing } from '@map/shared'
 import { request } from './client'
 import { toQuery } from './resource'
 
-/** The people a row of the caller's is shared with, by name (its owner only) */
+/** A row's creator and collaborators (its creator or one of its collaborators asks), the creator first */
 export const listRights = (objectType: ShareableName, objectId: number | string) =>
-  request<Right[]>(`/api/object-rights${toQuery({ objectType, objectId })}`)
+  request<Collaborator[]>(`/api/object-rights${toQuery({ objectType, objectId })}`)
 
-/** The privacy panel's Apply: only the changes, in one request; answers the row's visibility and people as they are now */
-export const applyRights = (body: Omit<RightsApply, 'set' | 'remove'> & Partial<Pick<RightsApply, 'set' | 'remove'>>) =>
+/** The creator changes a collaborator's role */
+export const updateRight = (id: number, role: Role) => request<Right>(`/api/object-rights/${id}`, { method: 'PATCH', json: { role } })
+
+/** The creator takes a collaborator away, or a collaborator leaves (their own right) */
+export const removeRight = (id: number) => request<void>(`/api/object-rights/${id}`, { method: 'DELETE' })
+
+/** The privacy panel's Apply: the visibility and the people taken out, in one request; answers the row's visibility and people as they are now */
+export const applyRights = (body: Omit<RightsApply, 'remove'> & Partial<Pick<RightsApply, 'remove'>>) =>
   request<Sharing>('/api/object-rights/apply', { method: 'POST', json: body })

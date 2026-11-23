@@ -14,6 +14,8 @@ import mapsFileRoutes from './resources/maps/maps.routes'
 import { mapsOverrides } from './resources/maps/maps.repo'
 import commentsRoutes from './resources/comments/comments.routes'
 import messagesRoutes, { messageRepliesRoutes } from './resources/messages/messages.routes'
+import followsRoutes from './resources/follows/follows.routes'
+import invitationsRoutes from './resources/invitations/invitations.routes'
 import rightsRoutes from './resources/rights/rights.routes'
 import sharedRoutes from './resources/shared/shared.routes'
 import usersRoutes from './resources/users/users.routes'
@@ -82,6 +84,9 @@ const routes = app
   .route('/api/object-rights', rightsRoutes)
   .route('/api/shared', sharedRoutes)
   .route('/api/users', usersRoutes)
+  // Following people, and invitations to collaborate (docs/plans/40)
+  .route('/api/follows', followsRoutes)
+  .route('/api/invitations', invitationsRoutes)
 
 // Serves R2 files through the Worker for LOCAL development only (production uses the IMAGES_URL domain).
 // The bucket is shared with other apps, so only keys inside this app's IMAGES_FOLDER are served.

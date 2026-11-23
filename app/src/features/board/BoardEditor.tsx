@@ -14,6 +14,7 @@ import { getBorderPen, getPen, getPointPen } from './pen'
 import { defaultFill } from './drawBorder'
 import PointPenSidebar from './sidebar/point/PointPenSidebar'
 import VisitorLayer from './VisitorLayer'
+import { useMap } from '../maps/maps'
 import AreaNameInput from './AreaNameInput'
 import { nameArea } from './areaName'
 import BorderPenSidebar from './sidebar/border/BorderPenSidebar'
@@ -161,8 +162,9 @@ export default function BoardEditor({ mapId, starter }: { mapId: string; starter
     onCreated: selectCreated,
   })
   const text = useTextTool({ mapId, board, view })
-  // The visitor's view: no tools, a click on a pin opens its card
-  const [visitor] = useState(false)
+  // The visitor's view: no tools, a click on a pin opens its card. A collaborator with Read only (docs/plans/40) gets it
+  const { map: opened } = useMap(starter ? undefined : mapId)
+  const visitor = (opened as { access?: string } | null)?.access === 'reader'
   const [presenting, setPresenting] = useState(false)
   // The pointer is over the grey around the board's sheet (a drag there pans)
   const [offBoard, setOffBoard] = useState(false)
