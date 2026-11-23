@@ -1,0 +1,95 @@
+/* The shared Modal's frame (components/ui/overlays/Modal.tsx, .ui-modal-frame on its <dialog>), in the look of the Venom button's frame
+   (buttons.css), so the app reads as one theme: a light metal band as thick as the title's and the close button's border (black outline,
+   one row of metal, lit from above and on the left, black outline: 6px), cut corners, a 2px pixel (--mf-px, as the buttons') and their drop shadow, and a yellow diamond in a metal setting on
+   the middle of each side, as the button has at its ends.
+   Two layers over the dialog (its ::before and ::after), nothing in the markup. The band is pixel art in a 9-slice border-image (a
+   13 x 14 source of 2px pixels: corners of 6, one middle row / column that stretches), so it fits a dialog of any size. It lies round the
+   dialog, outside it (the dialog must not clip: overflow visible); only its cut inner corners reach 3 pixels inside. */
+.ui-modal-frame {
+  /* the pixel: 2px, as the buttons' (buttons.css: --vpx of the framed Venom / Cancel) */
+  --mf-px: var(--px);
+  /* the band's width (outside the dialog), and the corner slice (the band and the 3 pixels of the cut inner corner) */
+  --mf-t: calc(var(--mf-px) * 3);
+  --mf-s: calc(var(--mf-px) * 6);
+  /* the title's distance from the corner */
+  --mf-n: 9px;
+  /* the band's outline and its light metal (the title's and the close button's line take them too) */
+  --mf-outline: #050203;
+  --mf-gold: #e6dfd8;
+  --mf-art: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='14' viewBox='0 0 13 14' shape-rendering='crispEdges'><path fill='%23050203' d='M3 0h7v1h-7zM2 1h1v1h-1zM10 1h1v1h-1zM1 2h1v1h-1zM4 2h5v1h-5zM11 2h1v1h-1zM0 3h1v1h-1zM3 3h1v1h-1zM9 3h1v1h-1zM12 3h1v1h-1zM0 4h1v1h-1zM2 4h1v1h-1zM10 4h1v1h-1zM12 4h1v1h-1zM0 5h1v1h-1zM2 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM0 6h1v1h-1zM2 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM0 7h1v1h-1zM2 7h1v1h-1zM10 7h1v1h-1zM12 7h1v1h-1zM0 8h1v1h-1zM2 8h1v1h-1zM10 8h1v1h-1zM12 8h1v1h-1zM0 9h1v1h-1zM3 9h1v1h-1zM9 9h1v1h-1zM12 9h1v1h-1zM1 10h1v1h-1zM4 10h5v1h-5zM11 10h1v1h-1zM2 11h1v1h-1zM10 11h1v1h-1zM3 12h7v1h-7z'/><path fill='%23e6dfd8' d='M3 1h7v1h-7zM2 2h2v1h-2zM9 2h2v1h-2zM1 3h2v1h-2zM1 4h1v1h-1zM1 5h1v1h-1zM1 6h1v1h-1zM1 7h1v1h-1zM1 8h1v1h-1zM1 9h2v1h-2z'/><path fill='%23cdc2b9' d='M10 3h2v1h-2zM11 4h1v1h-1zM11 5h1v1h-1zM11 6h1v1h-1zM11 7h1v1h-1zM11 8h1v1h-1zM10 9h2v1h-2z'/><path fill='%23a89c98' d='M2 10h2v1h-2zM9 10h2v1h-2zM3 11h7v1h-7z'/><path fill='rgba(0,0,0,0.35)' d='M2 13h9v1h-9z'/></svg>");
+  --mf-diamond: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 9 9' shape-rendering='crispEdges'><path fill='%23050203' d='M4 0h1v1h-1zM3 1h1v1h-1zM5 1h1v1h-1zM2 2h1v1h-1zM6 2h1v1h-1zM1 3h1v1h-1zM7 3h1v1h-1zM0 4h1v1h-1zM8 4h1v1h-1zM1 5h1v1h-1zM7 5h1v1h-1zM2 6h1v1h-1zM6 6h1v1h-1zM3 7h1v1h-1zM5 7h1v1h-1zM4 8h1v1h-1z'/><path fill='%23e6dfd8' d='M4 1h1v1h-1zM3 2h1v1h-1zM5 2h1v1h-1zM2 3h1v1h-1zM1 4h1v1h-1zM2 5h1v1h-1z'/><path fill='%238f6d1a' d='M4 2h1v1h-1zM3 3h1v1h-1zM2 4h1v1h-1z'/><path fill='%23e6c55a' d='M4 3h1v1h-1zM3 4h1v1h-1z'/><path fill='%234f3a10' d='M5 3h1v1h-1zM6 4h1v1h-1zM3 5h1v1h-1zM5 5h1v1h-1zM4 6h1v1h-1z'/><path fill='%238a7d75' d='M6 3h1v1h-1zM7 4h1v1h-1zM6 5h1v1h-1zM3 6h1v1h-1zM5 6h1v1h-1zM4 7h1v1h-1z'/><path fill='%23f5e3a0' d='M4 4h1v1h-1z'/><path fill='%23d1ab3a' d='M5 4h1v1h-1zM4 5h1v1h-1z'/></svg>");
+}
+
+/* a faint inner line, 8px inside the band (the dialog's own background, under its content): 2px (the frame's pixel), the band's
+   light metal, barely there (--mf-inner: its colour) */
+.ui-modal-frame {
+  --mf-inner: rgb(230 223 216 / 0.12);
+  --_il: linear-gradient(var(--mf-inner), var(--mf-inner));
+  background-image:
+    var(--_il), var(--_il), var(--_il), var(--_il);
+  background-position:
+    left 8px top 8px, left 8px bottom 8px, left 8px top 10px, right 8px top 10px;
+  background-size:
+    calc(100% - 16px) var(--mf-px), calc(100% - 16px) var(--mf-px), var(--mf-px) calc(100% - 20px), var(--mf-px) calc(100% - 20px);
+  background-repeat: no-repeat;
+}
+
+.ui-modal-frame::before,
+.ui-modal-frame::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+/* the band: the dialog grown by its width (and 2 pixels of shadow below) */
+.ui-modal-frame::before {
+  inset: calc(var(--mf-t) * -1) calc(var(--mf-t) * -1) calc(var(--mf-t) * -1 - var(--mf-px));
+  border-style: solid;
+  border-color: transparent;
+  border-width: var(--mf-s) var(--mf-s) calc(var(--mf-s) + var(--mf-px));
+  border-image: var(--mf-art) 6 6 7 6 / var(--mf-s) var(--mf-s) calc(var(--mf-s) + var(--mf-px)) / 0 stretch;
+  image-rendering: pixelated;
+}
+
+/* a diamond (11 x 11 pixels) on the middle of each side, its middle on the band's (1.5 pixels outside the dialog) */
+.ui-modal-frame::after {
+  inset: 0 calc(var(--mf-px) * -6);
+  background:
+    var(--mf-diamond) left center / calc(var(--mf-px) * 9) calc(var(--mf-px) * 9) no-repeat,
+    var(--mf-diamond) right center / calc(var(--mf-px) * 9) calc(var(--mf-px) * 9) no-repeat;
+  image-rendering: pixelated;
+}
+
+/* The title, as part of the frame: a plaque across the top edge, at its left (past the corner's notch). Its look, shared with the close
+   button (.ui-btn.ui-modal-close in buttons.css): flat, the surface, the frame's outlined line round it (in the buttons' pixels). Gold capitals. It straddles the top edge
+   (absolute, on the <dialog>, which is the positioned box) */
+.ui-modal-frame {
+  --mf-plaque-bg: var(--surface);
+  /* its border: pixel art (outline, light metal lit above and on the left, outline: each 2px, so 6px in all) with pixel-stepped round
+     corners, a 9-slice (corners of 6 pixels of 2px) */
+  --mf-plaque-border: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 13 13' shape-rendering='crispEdges'><path fill='%23050203' d='M3 0h7v1h-7zM2 1h1v1h-1zM10 1h1v1h-1zM1 2h1v1h-1zM3 2h7v1h-7zM11 2h1v1h-1zM0 3h1v1h-1zM2 3h1v1h-1zM10 3h1v1h-1zM12 3h1v1h-1zM0 4h1v1h-1zM2 4h1v1h-1zM10 4h1v1h-1zM12 4h1v1h-1zM0 5h1v1h-1zM2 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM0 6h1v1h-1zM2 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM0 7h1v1h-1zM2 7h1v1h-1zM10 7h1v1h-1zM12 7h1v1h-1zM0 8h1v1h-1zM2 8h1v1h-1zM10 8h1v1h-1zM12 8h1v1h-1zM0 9h1v1h-1zM2 9h1v1h-1zM10 9h1v1h-1zM12 9h1v1h-1zM1 10h1v1h-1zM3 10h7v1h-7zM11 10h1v1h-1zM2 11h1v1h-1zM10 11h1v1h-1zM3 12h7v1h-7z'/><path fill='%23e6dfd8' d='M3 1h7v1h-7zM2 2h1v1h-1zM10 2h1v1h-1zM1 3h1v1h-1zM1 4h1v1h-1zM1 5h1v1h-1zM1 6h1v1h-1z'/><path fill='%23ada096' d='M11 3h1v1h-1zM11 4h1v1h-1zM11 5h1v1h-1zM11 6h1v1h-1zM1 7h1v1h-1zM11 7h1v1h-1zM1 8h1v1h-1zM11 8h1v1h-1zM1 9h1v1h-1zM11 9h1v1h-1zM2 10h1v1h-1zM10 10h1v1h-1zM3 11h7v1h-7z'/></svg>");
+  --mf-plaque-lines: none;
+}
+
+.ui-modal-title {
+  position: absolute;
+  /* its middle on the band's */
+  top: calc(var(--mf-px) * -1.5);
+  left: calc(var(--mf-n) + 16px);
+  transform: translateY(-50%);
+  max-width: calc(100% - var(--mf-n) * 2 - 4rem);
+  padding: 3px 12px;
+  background: var(--mf-plaque-bg) padding-box;
+  border: 6px solid transparent;
+  border-image: var(--mf-plaque-border) 6 / 12px / 0 stretch;
+  image-rendering: pixelated;
+  color: var(--color-bone, #ece2c8);
+  font-family: var(--font-pixel);
+  font-size: 0.875rem;
+  font-weight: 500;
+  -webkit-font-smoothing: none;
+  text-shadow: 1px 0 0 #0c0600, -1px 0 0 #0c0600, 0 1px 0 #0c0600, 0 -1px 0 #0c0600;
+  line-height: 1.25;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}

@@ -253,7 +253,7 @@ export default function ArticlePage({ resource, item, focusField, onStarterChang
           }
           // Below the text, in every view (docs/plans/37): read when scrolled to
           comments={starter ? null : <CommentsSection articleId={articleId} />}
-          footer={starter ? null : <ArticleFooter autosave={autosave} canEdit={canEdit} createdAt={item.createdAt} />}
+          footer={starter ? null : <ArticleFooter autosave={autosave} canEdit={canEdit} createdAt={item.createdAt} articleId={articleId} />}
         />
         {dialogs}
         <Modal open={editInfo} onClose={() => setEditInfo(false)} title="Editing this article" size="sm">

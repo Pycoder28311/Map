@@ -32,6 +32,7 @@ const envSchema = z.object({
   API_GENERAL: binding,
   USER_LOOKUP: binding,
   COMMENTS: binding,
+  SOCIAL_WRITES: binding,
 })
 
 export type ValidEnv = z.infer<typeof envSchema>

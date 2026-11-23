@@ -13,36 +13,42 @@ export type ItemAccess = 'owner' | Role
 export type Visibility = 'private' | 'public'
 export const VISIBILITIES = ['private', 'public'] as const satisfies readonly Visibility[]
 
-/** The most people one Apply of the privacy panel can change */
+/** The most people one Apply of the privacy panel can take out */
 export const RIGHTS_CHANGE_MAX = 50
+
+/** What the app calls each access (docs/plans/40): the stored values stay `reader` / `editor` */
+export const ROLE_LABEL: Record<ItemAccess, string> = { owner: 'Creator', editor: 'Author', reader: 'Read only' }
 
 const userRef = z.string().min(1).max(100)
 
 /**
- * The privacy panel's Apply: the visibility (when it changes), the people given a role (added or changed), the people taken out.
- * Only the changes are sent
+ * The privacy panel's Apply: the visibility (when it changes) and the people taken out. People are added only by an accepted
+ * invitation (invitations.ts), so the creator can only invite people they follow
  */
-export const rightsApply = z
-  .object({
-    objectType: z.enum(SHAREABLE),
-    objectId: entityId,
-    visibility: z.enum(VISIBILITIES).optional(),
-    set: z.array(z.object({ userId: userRef, role: z.enum(ROLES) })).max(RIGHTS_CHANGE_MAX).default([]),
-    remove: z.array(userRef).max(RIGHTS_CHANGE_MAX).default([]),
-  })
-  .refine((v) => new Set(v.set.map((s) => s.userId)).size === v.set.length, { message: 'Each person once', path: ['set'] })
-  .refine((v) => !v.set.some((s) => v.remove.includes(s.userId)), { message: 'A person is both set and removed', path: ['remove'] })
+export const rightsApply = z.object({
+  objectType: z.enum(SHAREABLE),
+  objectId: entityId,
+  visibility: z.enum(VISIBILITIES).optional(),
+  remove: z.array(userRef).max(RIGHTS_CHANGE_MAX).default([]),
+})
 export type RightsApply = z.infer<typeof rightsApply>
 
-/** GET /api/object-rights?objectType=&objectId=: the people of one row (its owner asks) */
+/** GET /api/object-rights?objectType=&objectId=: the people of one row (its creator or one of its collaborators asks) */
 export const rightsFilter = z.object({ objectType: z.enum(SHAREABLE), objectId: queryId })
 export type RightsFilter = z.infer<typeof rightsFilter>
 
 /** A person allowed on a row */
 export type Right = { id: number; user: Author; role: Role }
 
-/** A row's sharing, as its owner sees it */
+/** A row's people as its collaborators see them: the creator first (no right of their own: `id` null, role `owner`), then the others */
+export type Collaborator = { id: number | null; user: Author; role: ItemAccess }
+
+/** A row's sharing, as its owner sees it (after an Apply) */
 export type Sharing = { visibility: Visibility; rights: Right[] }
+
+/** GET /api/shared?objectType=: "Shared with me", all of it or one table's rows (the articles I am on) */
+export const sharedFilter = z.object({ objectType: z.enum(SHAREABLE).optional() })
+export type SharedFilter = z.infer<typeof sharedFilter>
 
 /** A row shared with the caller ("Shared with me") */
 export type SharedItem = {

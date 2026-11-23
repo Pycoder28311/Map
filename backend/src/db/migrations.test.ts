@@ -230,3 +230,77 @@ describe('0016: object cards are gone', () => {
     expect(db.prepare('SELECT count(*) AS n FROM object_rights').all()[0]).toEqual({ n: 0 })
   })
 })
+
+describe('0017 + 0018: follows, invitations, shared maps', () => {
+  const db = new DatabaseSync(':memory:')
+  db.exec('PRAGMA foreign_keys = ON') // as D1
+  for (const file of files.filter((f) => f < '0017')) run(db, file)
+  const now = Math.floor(Date.now() / 1000)
+  const addUser = (id: string) => db.prepare('INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)').run(id, id, `${id}@x.test`, now, now)
+  for (const id of ['owner', 'other', 'third']) addUser(id)
+  for (const table of ['projects', 'notes', 'folders', 'articles', 'maps']) db.prepare(`INSERT INTO ${table} (user_id, title, created_at, updated_at) VALUES ('owner', 'old', ?, ?)`).run(now, now)
+  // Rights given before, with ids that must survive the rebuild
+  db.prepare("INSERT INTO object_rights (id, object_type, object_id, user_id, role, created_at) VALUES (7, 'notes', 1, 'other', 'reader', ?)").run(now)
+  db.prepare("INSERT INTO object_rights (id, object_type, object_id, user_id, role, created_at) VALUES (9, 'articles', 1, 'other', 'editor', ?)").run(now)
+  for (const file of files.filter((f) => f >= '0017')) run(db, file)
+  const count = (table: string, where = '1') => (db.prepare(`SELECT count(*) AS n FROM ${table} WHERE ${where}`).all()[0] as { n: number }).n
+  const invite = db.prepare("INSERT INTO invitations (type, sender_id, recipient_id, object_type, object_id, payload, status, created_at) VALUES ('collaboration', ?, ?, ?, ?, '{\"role\":\"reader\"}', ?, ?)")
+
+  it('keeps every right and its id; an old map becomes private, version 0', () => {
+    expect(db.prepare('SELECT id, object_type, role FROM object_rights ORDER BY id').all()).toEqual([
+      { id: 7, object_type: 'notes', role: 'reader' },
+      { id: 9, object_type: 'articles', role: 'editor' },
+    ])
+    expect(db.prepare('SELECT title, visibility, version, edited_by FROM maps').all()[0]).toEqual({ title: 'old', visibility: 'private', version: 0, edited_by: null })
+  })
+
+  it('takes a right on a map, and every table still cleans up its rights', () => {
+    db.prepare("INSERT INTO object_rights (object_type, object_id, user_id, role, created_at) VALUES ('maps', 1, 'other', 'reader', ?)").run(now)
+    db.prepare('DELETE FROM maps WHERE id = 1').run()
+    db.prepare('DELETE FROM notes WHERE id = 1').run()
+    expect(db.prepare('SELECT object_type FROM object_rights').all()).toEqual([{ object_type: 'articles' }])
+  })
+
+  it('follows: once per pair, never oneself', () => {
+    const follow = db.prepare('INSERT INTO follows (follower_id, followee_id, created_at) VALUES (?, ?, ?)')
+    follow.run('owner', 'other', now)
+    expect(() => follow.run('owner', 'other', now)).toThrow()
+    expect(() => follow.run('owner', 'owner', now)).toThrow()
+    follow.run('other', 'owner', now)
+    expect(count('follows')).toBe(2)
+  })
+
+  it('invitations: one pending per item and person, a new one after an answer; no notes, no unknown kind, never oneself', () => {
+    invite.run('owner', 'other', 'articles', 1, 'pending', now)
+    expect(() => invite.run('owner', 'other', 'articles', 1, 'pending', now)).toThrow()
+    db.prepare("UPDATE invitations SET status = 'declined'").run()
+    invite.run('owner', 'other', 'articles', 1, 'pending', now)
+    expect(() => invite.run('owner', 'other', 'notes', 1, 'pending', now)).toThrow()
+    expect(() => invite.run('owner', 'owner', 'articles', 1, 'pending', now)).toThrow()
+    expect(() => invite.run('owner', 'other', 'articles', 1, 'maybe', now)).toThrow()
+    expect(() => db.prepare("INSERT INTO invitations (type, sender_id, recipient_id, created_at) VALUES ('party', 'owner', 'other', ?)").run(now)).toThrow()
+    expect(count('invitations')).toBe(2)
+  })
+
+  it('the inbox is read through its index', () => {
+    const plan = (db.prepare("EXPLAIN QUERY PLAN SELECT id FROM invitations WHERE recipient_id = 'other' AND status = 'pending' ORDER BY id DESC LIMIT 21").all() as { detail: string }[])
+      .map((p) => p.detail)
+      .join(' | ')
+    expect(plan).toContain('invitations_recipient_idx')
+    expect(plan).not.toContain('TEMP B-TREE')
+  })
+
+  it('an item takes its invitations with it; an account takes its follows and invitations', () => {
+    db.prepare("INSERT INTO folders (user_id, title, created_at, updated_at) VALUES ('owner', 'f', ?, ?)").run(now, now)
+    const folder = (db.prepare('SELECT max(id) AS id FROM folders').all()[0] as { id: number }).id
+    invite.run('owner', 'third', 'folders', folder, 'pending', now)
+    db.prepare('DELETE FROM folders WHERE id = ?').run(folder)
+    expect(count('invitations', "object_type = 'folders'")).toBe(0)
+    db.prepare('DELETE FROM articles WHERE id = 1').run()
+    expect(count('invitations')).toBe(0)
+    invite.run('owner', 'other', 'projects', 1, 'pending', now)
+    db.prepare("DELETE FROM user WHERE id = 'other'").run()
+    expect(count('invitations')).toBe(0)
+    expect(count('follows')).toBe(0)
+  })
+})

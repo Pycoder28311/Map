@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
-import { LuPlus } from 'react-icons/lu'
 import { actionsOf } from '../../lib/resource/hooks'
 import { resourcesWith } from '../../resources/registry'
 import type { AnyResource } from '../../resources/types'
@@ -173,7 +172,7 @@ export default function CreateModal({ active, onCancel, onCreated }: Props) {
         ) : (
           <>
             <span className="me-auto text-small text-fg-subtle">Ctrl+Enter</span>
-            <Button variant="primary" icon={LuPlus} type="submit" form={formId} disabled={!canCreate}>
+            <Button variant="primary" type="submit" form={formId} disabled={!canCreate}>
               {busy ? 'Creating…' : 'Create'}
             </Button>
             <Button variant="ghost" filled onClick={onCancel} disabled={busy}>

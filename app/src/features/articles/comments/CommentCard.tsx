@@ -2,7 +2,7 @@ import type { Comment } from '@map/shared'
 import { LuPencil, LuTrash2, LuUserRound } from 'react-icons/lu'
 import LinkButton from '../../../components/ui/buttons/LinkButton'
 import TreeMenu from '../../../components/ui/tree/TreeMenu'
-import { Avatar } from '../../sharing/PrivacyPanel'
+import Avatar from '../../people/Avatar'
 import { EMPTY_THREAD, type CommentsState, type CommentsStore } from './commentsStore'
 import { DAY_MONTH_YEAR_TIME } from '../../../lib/dates'
 

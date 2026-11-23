@@ -16,9 +16,11 @@ import { D1_MAX_PARAMS } from './relations'
 export const sqlite = new DatabaseSync(':memory:')
 sqlite.exec('PRAGMA foreign_keys = ON')
 for (const statement of await generateSQLiteMigration(await generateSQLiteDrizzleJson({}), await generateSQLiteDrizzleJson(schema))) sqlite.exec(statement)
-// (but the one of object_cards, a table 0016 dropped)
-for (const statement of readFileSync('drizzle/0012_object_rights_triggers.sql', 'utf8').split('--> statement-breakpoint')) {
-  if (!statement.includes('`object_cards`')) sqlite.exec(statement)
+// (but the one of object_cards, a table 0016 dropped), and the ones of 0018 (maps' rights; every item's invitations)
+for (const file of ['0012_object_rights_triggers.sql', '0018_invitation_triggers.sql']) {
+  for (const statement of readFileSync(`drizzle/${file}`, 'utf8').split('--> statement-breakpoint')) {
+    if (!statement.includes('`object_cards`')) sqlite.exec(statement)
+  }
 }
 
 type Method = 'run' | 'all' | 'values' | 'get'

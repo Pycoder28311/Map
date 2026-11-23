@@ -65,9 +65,11 @@ export const DATA = defineTables({
     link: PARENT,
   },
   // A map (docs/plans/38): its name and its branch group here; everything drawn on it is one file in R2 (the `maps` routes), whose
-  // key and version are columns of the backend's own (not fields: no client writes them). The owner's only for now
+  // key and version are columns of the backend's own (not fields: no client writes them)
   maps: {
     access: 'owner',
+    // Shared with collaborators (docs/plans/40): its row like the others, its file through the maps routes' own access check
+    share: true,
     order: ORDERED,
     // branchOf: the first map of its branch group (0: not a branch); set by the branch route (features/board/branches.ts)
     fields: { title: field.text(200), branchOf: field.int() },
@@ -98,9 +100,17 @@ export type TableName = keyof typeof DATA
 export const TABLE_NAMES = Object.keys(DATA) as TableName[]
 
 /** The tables whose rows can be shared (`share: true`), by name: object_rights.object_type is one of them */
-export const SHAREABLE = ['projects', 'notes', 'folders', 'articles'] as const satisfies readonly TableName[]
+export const SHAREABLE = ['projects', 'notes', 'folders', 'articles', 'maps'] as const satisfies readonly TableName[]
 export type ShareableName = (typeof SHAREABLE)[number]
 export const isShareable = (name: string): name is ShareableName => (SHAREABLE as readonly string[]).includes(name)
+
+/**
+ * The tables a person can be invited to collaborate on (docs/plans/40): every shareable one but notes (a note keeps the collaborators
+ * it had, and gets no new ones)
+ */
+export const INVITABLE = ['projects', 'folders', 'articles', 'maps'] as const satisfies readonly ShareableName[]
+export type InvitableName = (typeof INVITABLE)[number]
+export const isInvitable = (name: string): name is InvitableName => (INVITABLE as readonly string[]).includes(name)
 
 /** The types of one table, e.g. `Item<'notes'>` */
 export type Item<N extends TableName> = ItemOf<(typeof DATA)[N]>

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { LuEye, LuEyeOff, LuLogOut } from 'react-icons/lu'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/ui/buttons/Button'
-import DashboardBackground, { DASHBOARD_SHADE } from '../../features/dashboard/DashboardBackground'
 import DashboardRelics from '../../features/dashboard/DashboardRelics'
 import EditIconsPreview from '../../features/dashboard/EditIconsPreview'
 import QuillIconsPreview from '../../features/dashboard/QuillIconsPreview'
@@ -31,9 +30,7 @@ export default function DashboardPage() {
 
     return (
         <div className="relative min-h-full">
-            {/* The night landscape behind everything */}
-            <DashboardBackground />
-            <div style={{ filter: DASHBOARD_SHADE }} className="relative mx-auto flex max-w-[65rem] flex-col gap-12 px-4 pt-8 pb-24">
+            <div className="relative mx-auto flex max-w-[65rem] flex-col gap-12 px-4 pt-8 pb-24">
                 <div className="flex justify-end">
                     <Button
                         variant="ghost"

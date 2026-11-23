@@ -1,4 +1,4 @@
-import { SHAREABLE, type Page, type Role, type ShareableName, type SharedItem } from '@map/shared'
+import { SHAREABLE, type Page, type Role, type ShareableName, type SharedFilter, type SharedItem } from '@map/shared'
 import { and, desc, eq, getTableColumns, sql, type SQL } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/sqlite-core'
 import * as schema from '../../db/schema'
@@ -19,9 +19,9 @@ const firstOf = (key: 'title' | 'archived' | 'userId') =>
 /**
  * "Shared with me" (docs/plans/34): the rows other people gave the caller a right on, newest first, a page at a time. One query: the
  * rights through their index (user_id, id), each joined with its row (its title, and whether it is in its owner's Trash) and the
- * owner's name. Rows in the Trash, or gone, are left out
+ * owner's name. Rows in the Trash, or gone, are left out. `objectType`: one table's rows only (the articles I am on, docs/plans/40)
  */
-export async function listShared(ctx: Ctx, page: PageParams): Promise<Page<SharedItem>> {
+export async function listShared(ctx: Ctx, page: PageParams, filter: SharedFilter = {}): Promise<Page<SharedItem>> {
   const base = ctx.db
     .select({
       id: objectRights.id,
@@ -39,7 +39,7 @@ export async function listShared(ctx: Ctx, page: PageParams): Promise<Page<Share
   )
   const rows = await withRows
     .leftJoin(user, eq(user.id, firstOf('userId')))
-    .where(and(eq(objectRights.userId, userId(ctx)), eq(firstOf('archived'), 0), beforeCursor(objectRights.id, page)))
+    .where(and(eq(objectRights.userId, userId(ctx)), filter.objectType ? eq(objectRights.objectType, filter.objectType) : undefined, eq(firstOf('archived'), 0), beforeCursor(objectRights.id, page)))
     .orderBy(desc(objectRights.id))
     .limit(fetchLimit(page)!)
   const result = toPage(rows, page, (r) => r.id)

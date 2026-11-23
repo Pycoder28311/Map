@@ -68,6 +68,10 @@
   --row-border-color-hover: var(--row-border-color);
   /* hovered, or the current page */
   --row-border-width: 1px;
+  /* the sidebar's objects (.ui-field-row) and the input boxes (.ui-field): as thick as the buttons' gray frame at its top and bottom (one art pixel of 2px) */
+  --sidebar-row-border-width: 2px;
+  /* and their border's colour: a little lighter than --row-border-color */
+  --sidebar-row-border-color: #474747;
 }
 
 @layer components {
@@ -102,7 +106,43 @@
       --input-bg-now 0.2s ease-out;
   }
 
+  /* the sidebar's objects (.ui-field-row) and the input boxes (.ui-field: Search, the big input, text fields): the same border,
+     as thick as the buttons' gray frame at its top and bottom, and the same pixel corners */
+  .ui-field,
   .ui-field-row {
+    --row-border-width: var(--sidebar-row-border-width);
+    --row-border-color: var(--sidebar-row-border-color);
+    --row-border-color-hover: var(--sidebar-row-border-color);
+    /* a pixel rounding of two pixels (of 2px): square corners, each corner's three pixels in a step (an L) cut away, and the pixel
+       inside the step painted the border's colour, so the border follows the step. The clip reaches 48px out so the shadow around the
+       box still shows; the four corner Ls are holes in it (even-odd, each reached by a line from the clip's top left corner and back) */
+    --_c: var(--px, 2px);
+    --_d: calc(var(--_c) * 2);
+    --_cp: linear-gradient(var(--row-border-color), var(--row-border-color));
+    border-radius: 0;
+    clip-path: polygon(evenodd,
+        -48px -48px, calc(100% + 48px) -48px, calc(100% + 48px) calc(100% + 48px), -48px calc(100% + 48px), -48px -48px,
+        0 0, var(--_d) 0, var(--_d) var(--_c), var(--_c) var(--_c), var(--_c) var(--_d), 0 var(--_d), 0 0, -48px -48px,
+        100% 0, 100% var(--_d), calc(100% - var(--_c)) var(--_d), calc(100% - var(--_c)) var(--_c), calc(100% - var(--_d)) var(--_c), calc(100% - var(--_d)) 0, 100% 0, -48px -48px,
+        100% 100%, calc(100% - var(--_d)) 100%, calc(100% - var(--_d)) calc(100% - var(--_c)), calc(100% - var(--_c)) calc(100% - var(--_c)), calc(100% - var(--_c)) calc(100% - var(--_d)), 100% calc(100% - var(--_d)), 100% 100%, -48px -48px,
+        0 100%, 0 calc(100% - var(--_d)), var(--_c) calc(100% - var(--_d)), var(--_c) calc(100% - var(--_c)), var(--_d) calc(100% - var(--_c)), var(--_d) 100%, 0 100%, -48px -48px);
+  }
+
+  .ui-field-row {
+    /* the four step pixels on top of the row's own layers (the sheen, the colour layer, the grain: as in the first rule above) */
+    background-image:
+      var(--_cp), var(--_cp), var(--_cp), var(--_cp),
+      linear-gradient(135deg, rgb(255 255 255 / var(--input-sheen)), transparent 45%, rgb(255 255 255 / calc(var(--input-sheen) * 0.5))),
+      linear-gradient(color-mix(in srgb, var(--input-bg-now) calc((1 - var(--input-grain)) * 100%), transparent),
+        color-mix(in srgb, var(--input-bg-now) calc((1 - var(--input-grain)) * 100%), transparent)),
+      var(--input-grain-image);
+    background-size:
+      var(--_c) var(--_c), var(--_c) var(--_c), var(--_c) var(--_c), var(--_c) var(--_c),
+      100% 100%, 100% 100%, var(--input-grain-size) var(--input-grain-size);
+    background-position:
+      left var(--_c) top var(--_c), right var(--_c) top var(--_c), right var(--_c) bottom var(--_c), left var(--_c) bottom var(--_c),
+      0 0, 0 0, 0 0;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat;
     box-shadow:
       inset 0 0 0 var(--row-border-width) var(--row-border-color),
       var(--input-shadow);
@@ -190,7 +230,11 @@
 
   /* A text field is the same box without the leather: no grain, sheen, light on its edge or inner shadow, only the border and the shadow around it */
   .ui-field {
-    background-image: none;
+    /* only the four step pixels of its pixel corners (above) */
+    background-image: var(--_cp), var(--_cp), var(--_cp), var(--_cp);
+    background-size: var(--_c) var(--_c);
+    background-position: left var(--_c) top var(--_c), right var(--_c) top var(--_c), right var(--_c) bottom var(--_c), left var(--_c) bottom var(--_c);
+    background-repeat: no-repeat;
     box-shadow:
       inset 0 0 0 var(--row-border-width) var(--row-border-color),
       var(--input-outer-shadow);

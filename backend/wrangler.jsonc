@@ -74,6 +74,15 @@
 				"limit": 10,
 				"period": 60
 			}
+		},
+		// New follows and invitations (POST /api/follows, POST /api/invitations), per signed-in user (docs/plans/40): no spam
+		{
+			"name": "SOCIAL_WRITES",
+			"namespace_id": "2005",
+			"simple": {
+				"limit": 30,
+				"period": 60
+			}
 		}
 	],
 	// Workers Logs: CPU time per request (cpuTimeMs)
