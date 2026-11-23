@@ -13,8 +13,8 @@ import { DAY_MONTH_YEAR } from '../../lib/dates'
 
 // No <main> here: AppLayout provides it
 /**
- * The signed-in user's page (/profile, from the navbar's profile picture): a dark fantasy banner with Sign out at its top, the
- * picture (camera button: change it) and name over its bottom edge, then two cards: the name, and the password.
+ * The signed-in user's page (/profile, from the navbar's profile picture): a dark fantasy banner, the
+ * picture (camera button: change it) and name over its bottom edge, then two cards: the name, and the password; Sign out (red) at the bottom.
  */
 export default function ProfilePage() {
   const navigate = useNavigate()
@@ -39,11 +39,6 @@ export default function ProfilePage() {
           aria-hidden
           className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-b from-transparent to-surface-muted"
         />
-        <div className="absolute top-4 right-4 sm:top-5 sm:right-6">
-          <Button variant="secondary" icon={LuLogOut} onClick={signOut} disabled={signingOut}>
-            {signingOut ? 'Signing out...' : 'Sign out'}
-          </Button>
-        </div>
       </div>
 
       <div className="relative mx-auto flex max-w-[56rem] flex-col gap-8 px-4 sm:px-6">
@@ -68,6 +63,14 @@ export default function ProfilePage() {
             <PasswordForm email={user.email} />
           </Section>
         </div>
+
+        {/* Sign out, in red, at the end of the page */}
+        <footer className="flex items-center justify-between gap-4 border-t border-line pt-6">
+          <p className="text-body text-fg-muted">Signed in as {user.email}</p>
+          <Button danger icon={LuLogOut} onClick={signOut} disabled={signingOut}>
+            {signingOut ? 'Signing out...' : 'Sign out'}
+          </Button>
+        </footer>
       </div>
     </div>
   )
