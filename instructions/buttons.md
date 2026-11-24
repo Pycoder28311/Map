@@ -102,7 +102,7 @@ The look of the text fields is Dark Fantasy UI's "1. Minimal input" (its `minima
 a soft shadow, a lighter grey while typed in. Without its faint corner marks on the right side. It is in
 `styles/fields.css`, the same in every theme and in light mode too (inside, the text roles are the dark mode's):
 
-- `.ui-field`: the box of every input: `InputBox` (`components/ui/fields/InputBox.tsx`), used by `TextField`, `SearchInput` and the Dashboard's big input (`QuickCreate`). Its border is the rows' one (`--row-border-*`, below);
+- `.ui-inset`: the same box and inner shadow without the shadow around it (no longer used by the Dashboard cards: an article card is now a pixel-art book, `cards/book.ts` and `cards/BookArt.tsx`).
 - `.ui-inset`: the same box and inner shadow without the shadow around it: the text part of the Dashboard's image cards (`cards/cardFaces.tsx`).
 - `.ui-field-row`: the same look for clickable rows that aren't buttons: the sidebar's objects (`TreeItem`'s row), Trash,
   Show more. Hovered, or the current page, it takes the field's focus colour.

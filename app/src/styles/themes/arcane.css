@@ -57,9 +57,9 @@
   --sidebar-pixel-color: color-mix(in srgb, var(--fg) 6%, transparent);
   --sidebar-pixel-hot: rgb(34 24 18 / 0.26);
   --sidebar-glow:
-    radial-gradient(90% 70% at 0% 100%, rgb(255 120 36 / 0.14), rgb(255 120 36 / 0.07) 30%, rgb(255 120 36 / 0.025) 60%, transparent 85%),
-    radial-gradient(90% 70% at 100% 100%, rgb(255 120 36 / 0.14), rgb(255 120 36 / 0.07) 30%, rgb(255 120 36 / 0.025) 60%, transparent 85%),
-    radial-gradient(70% 25% at 50% 100%, rgb(255 160 70 / 0.08), rgb(255 160 70 / 0.03) 50%, transparent 90%);
+    radial-gradient(115% 100% at 0% 100%, rgb(255 120 36 / 0.3), rgb(255 120 36 / 0.16) 30%, rgb(255 120 36 / 0.06) 62%, transparent 88%),
+    radial-gradient(115% 100% at 100% 100%, rgb(255 120 36 / 0.3), rgb(255 120 36 / 0.16) 30%, rgb(255 120 36 / 0.06) 62%, transparent 88%),
+    radial-gradient(85% 45% at 50% 100%, rgb(255 160 70 / 0.2), rgb(255 160 70 / 0.08) 50%, transparent 90%);
   /* The embers catch fire when an object is deleted: orange squares, yellow at the bottom, and a brighter glow */
   --sidebar-fire: rgb(224 108 48);
   --sidebar-fire-hot: rgb(240 176 90);

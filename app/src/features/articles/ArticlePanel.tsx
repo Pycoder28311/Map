@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import NewItemEditor from '../../components/ui/resource/NewItemEditor'
 import ResourceItemGate from '../../components/ui/resource/ResourceItemGate'
+import NightBackdrop from '../dashboard/NightBackdrop'
 import { dropFocus, isNewId, peekFocus } from '../../lib/resource/newItem'
 import { resourceByName } from '../../resources/registry'
 import StarterArticle from '../starters/StarterArticle'
@@ -28,8 +29,12 @@ export default function ArticlePanel({ id }: PanelProps) {
     return found.resource === 'articles' ? <StarterArticle resource={resource} starter={found} /> : <p className="p-4 text-body text-fg-muted">Not found.</p>
   }
   return (
-    <ResourceItemGate key={id} resource={resource} id={id}>
-      {(item) => <ArticlePage key={item.id} resource={resource} item={item} focusField={peekFocus(resource.name, id)} />}
-    </ResourceItemGate>
+    // The Dashboard's table behind it (dark theme), as lit as there, with no sky and nothing on it; down over the page's padding at its foot (PanelPage)
+    <div className="relative -mb-20 min-h-full pb-20">
+      <NightBackdrop props={null} sky={false} />
+      <ResourceItemGate key={id} resource={resource} id={id}>
+        {(item) => <ArticlePage key={item.id} resource={resource} item={item} focusField={peekFocus(resource.name, id)} />}
+      </ResourceItemGate>
+    </div>
   )
 }

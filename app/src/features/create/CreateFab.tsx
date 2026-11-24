@@ -5,6 +5,7 @@ import { useTimeout } from '../../lib/useTimeout'
 import { useOpenLayout } from '../objects/ListRows'
 import { single } from '../workspace/layout'
 import CreateModal from './CreateModal'
+import { onOpenCreate } from './openCreate'
 import Button from '../../components/ui/buttons/Button'
 import PanelFrame from '../../components/ui/buttons/PanelFrame'
 
@@ -29,6 +30,8 @@ export default function CreateFab() {
   const [mounted, setMounted] = useState(false)
   const [session, setSession] = useState(0)
   const [made, setMade] = useState<Made | null>(null)
+  // The tab it opens on, when asked for one (openCreate); else the last one used
+  const [kind, setKind] = useState<string | undefined>()
   const buttonRef = useRef<HTMLButtonElement>(null)
   const closeTimer = useTimeout()
   const toastTimer = useTimeout()
@@ -48,6 +51,16 @@ export default function CreateFab() {
     setOpen(false)
     closeTimer.set(() => setMounted(false), CLOSE_MS)
   }, [closeTimer])
+
+  // Another Create button asks for it (the Dashboard's big ones: openCreate), maybe on a given tab
+  useEffect(
+    () =>
+      onOpenCreate((asked) => {
+        setKind(asked)
+        show()
+      }),
+    [show],
+  )
 
   // Esc closes it (an open menu in it gets the Esc first)
   useEffect(() => {
@@ -99,8 +112,11 @@ export default function CreateFab() {
             </Button>
           </p>
         )}
-        <PanelFrame open={open} icon={LuPlus} label="Create" onPress={show} buttonRef={buttonRef} controls="create-modal" className="size-full">
-          {mounted && <CreateModal key={session} active={open} onCreated={onCreated} onCancel={hide} />}
+        <PanelFrame open={open} icon={LuPlus} label="Create" onPress={() => {
+            setKind(undefined)
+            show()
+          }} buttonRef={buttonRef} controls="create-modal" className="size-full">
+          {mounted && <CreateModal key={session} kind={kind} active={open} onCreated={onCreated} onCancel={hide} />}
         </PanelFrame>
       </div>
     </>

@@ -5,10 +5,13 @@ import type { AnyResource } from '../../../resources/types'
 import type { Entry } from '../../../lib/resource/reorder'
 import { hueOf } from '../../objects/placeholderArt'
 import { CARD_SIZE, cardOf } from './cardStyles'
-import { CRACK_DEPTH, CRACK_REACH, crackedPolygons } from './crack'
-import { paperEdgePolygon } from './paperEdge'
+import { BOOK, BOOK_FRAME, BOOK_SIZE, BOOK_TITLE, bookAt } from './book'
+import BookArt from './BookArt'
+import PixelRects from './PixelRects'
+import { BOTTOM_PLANK_MIDDLE, FRAME_PIXELS, FRAME_SIZE, MAP_INSET, paperMarks, paperPixels } from './mapFrame'
 import FolderFace from './FolderFace'
 import MapPreview from './MapPreview'
+import WoodSign from './WoodSign'
 import { DAY_MONTH } from '../../../lib/dates'
 
 /** The picture of an item's card: the first one of its text (when the item has its `content`: a list gives only the preview), else its Info box's picture or its banner (an article) */
@@ -44,7 +47,7 @@ type Props = {
 /**
  * The look of a Dashboard card, by its resource's `ui.card`: `plain`, like a comment: a square paper card, its title and date on top, its preview quoted below
  * behind a thin bar, fading out where it's cut; `image`, a picture on top (a placeholder made from its id: the list has no images), its
- * title, date and two lines, in two parts that touch, the picture going on behind the text part, whose top edge is cracked (crack.ts), the text part a dark box with the fields' inner shadow (.ui-inset); `map`, its preview filling the card with edges like old paper (small cuts, paperEdge.ts), its title in a narrower box hanging below it, centred on its bottom edge; `folder`,
+ * its title, on the cover of a square pixel-art leather book (book.ts: the picture in a one-pixel outline on it, the title under it, the name on the frame's edge, the pages and a ribbon below); `map`, its preview printed on pixel-art old paper in a thin pixel-art wooden frame filling the card (mapFrame.ts), its title in a narrower box hanging below it, centred on its bottom edge; `folder`,
  * its name floating on its top left corner and its first four items as tiles. Only what is inside the box: the real card (ResourceCard) adds drag, menu and zoom, a draft (DraftCard) blurs it.
  * The element of the title carries `data-card-title`, where a draft's title input lands when it is created. What a draft blurs is marked `data-card-body`
  * (the content, never the box with the border), and `data-card-bleed` too when it fills its box to the edge (it is scaled up a little while blurred, so its blurred edge is out of sight).
@@ -57,23 +60,21 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
   const subtitle = resource.ui.row.subtitle?.(item) || 'Empty'
 
   if (look === 'map') {
+    const mapBox = { position: 'absolute', inset: `${(MAP_INSET / FRAME_SIZE) * 100}%` } as const
     return (
-      // The card itself does not clip: the name hangs below the picture (which clips itself to the edges of old paper: uneven, with small cuts,
-      // paperEdge.ts; its wrapper draws the outline along that shape), centred on its bottom edge
+      // The paper and frame in pixel art (mapFrame.ts): a sheet of old paper with a torn edge in a thin wooden frame; the map (smooth) printed on it, its folds, cracks
+      // and stains over it; the name hangs on the frame's bottom edge, centred
       <div {...box} className={`group/card relative shrink-0 snap-start ${CARD_SIZE} ${className}`}>
-        <div className="ui-crack absolute inset-0">
-          <div className="size-full overflow-hidden bg-surface" style={{ clipPath: paperEdgePolygon(`${item.id}:map`) }}>
-            <div data-card-body data-card-bleed className="size-full">
-              <MapPreview id={String(item.id)} className="size-full" />
-            </div>
-          </div>
+        <PixelRects rects={paperPixels(String(item.id))} width={FRAME_SIZE} height={FRAME_SIZE} />
+        <div data-card-body data-card-bleed style={mapBox}>
+          {/* Toned toward old sepia, darkened toward its edges: a dark fantasy map, its colours kept */}
+          <MapPreview id={String(item.id)} className="size-full [filter:sepia(0.35)_saturate(0.8)_brightness(0.86)_contrast(1.05)]" />
+          <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_0_18px_4px_rgb(25_12_4/0.6)]" />
         </div>
-        {/* The name: a Stone button's look (like the Recent History button) */}
-        <ButtonLook data-card-title-box variant="secondary" size="xs" icon={Icon} className="absolute bottom-0 left-1/2 max-w-[85%] min-w-0 -translate-x-1/2 translate-y-1/2">
-          <span data-card-title className="min-w-0 truncate">
-            {title}
-          </span>
-        </ButtonLook>
+        <PixelRects rects={paperMarks(String(item.id))} width={FRAME_SIZE} height={FRAME_SIZE} />
+        <PixelRects rects={FRAME_PIXELS} width={FRAME_SIZE} height={FRAME_SIZE} className="[filter:drop-shadow(0_4px_0_rgb(0_0_0/0.5))_drop-shadow(0_0_8px_rgb(0_0_0/0.35))]" />
+        {/* The name on a little wooden plank (WoodSign), centred on the frame's bottom edge (its bottom plank) */}
+        <WoodSign title={title} icon={Icon} className="absolute left-1/2 max-w-[85%] -translate-x-1/2 -translate-y-1/2" style={{ top: `${(BOTTOM_PLANK_MIDDLE / FRAME_SIZE) * 100}%` }} />
         {marks}
       </div>
     )
@@ -81,49 +82,36 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
 
   if (look === 'image') {
     const src = firstImage(item)
-    const crack = crackedPolygons(String(item.id))
+    const frame = BOOK_FRAME
     return (
-      // The picture and the text part touch, with no gap: the picture goes on behind the text part, which lies over it with a cracked top edge
-      // (crack.ts), an outline and a shadow that falls on the picture, as if the picture came out from behind it. The name sits on that edge
-      <div {...box} className={`group/card relative flex shrink-0 snap-start flex-col text-start ${CARD_SIZE} ${className}`}>
-        {/* The picture's box reaches CRACK_DEPTH past the middle of the crack, so it is behind the text part wherever the crack wanders */}
-        <div className="ui-crack shrink-0" style={{ height: `calc(62.5% + ${CRACK_DEPTH}px)` }}>
-          <div className="size-full overflow-hidden rounded-t-(--card-radius) bg-surface">
+      // A pixel-art book (book.ts): its picture in a one-pixel outline on the cover, its title under it (no plate, no preview or date); its
+      // pages and a ribbon along the bottom. On hover it lifts a little off the shelf
+      <div {...box} className={`group/card relative shrink-0 snap-start text-start ${BOOK_SIZE} ${className}`} style={{ color: BOOK.ink }}>
+        <div className="absolute inset-0 transition-transform duration-200 ease-out group-hover/card:-translate-y-[3px] motion-reduce:transition-none">
+          <BookArt className="[filter:drop-shadow(0_4px_0_rgb(0_0_0/0.5))_drop-shadow(0_0_8px_rgb(0_0_0/0.35))]" />
+          {/* The picture, filling its box inside the one-pixel outline */}
+          <div className="overflow-hidden" style={{ ...bookAt(frame.x + 1, frame.y + 1, frame.w - 2, frame.h - 2), backgroundColor: BOOK.picture }}>
             {src ? (
-              <img data-card-body data-card-bleed src={src} alt="" className="size-full object-cover" />
+              <img data-card-body data-card-bleed src={src} alt="" className="size-full object-cover [filter:saturate(0.8)_brightness(0.88)_contrast(1.05)]" />
             ) : (
-              <div data-card-body data-card-bleed className="flex size-full flex-col items-center justify-center gap-1 bg-fg/[0.04] text-small text-fg-subtle/70">
-                <LuImageOff aria-hidden className="size-6 opacity-70" />
+              <div data-card-body data-card-bleed className="flex size-full flex-col items-center justify-center gap-1 text-small" style={{ color: BOOK.pictureInk }}>
+                <LuImageOff aria-hidden className="size-6 opacity-80" />
                 No image found
               </div>
             )}
+            <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_0_14px_3px_rgb(0_0_0/0.55)]" />
+          </div>
+          {/* The title, in the pixel font, on the leather under the picture */}
+          <div data-card-title-box className="flex items-center justify-center px-1 text-center" style={bookAt(BOOK_TITLE.x, BOOK_TITLE.y, BOOK_TITLE.w, BOOK_TITLE.h)}>
+            <span
+              data-card-title
+              className="line-clamp-2 font-(family-name:--font-pixel) text-[24px] leading-[25px] font-medium"
+              style={{ textShadow: `0 2px 0 ${BOOK.inkShadow}, 0 0 6px rgb(170 40 25 / 0.45)` }}
+            >
+              {title}
+            </span>
           </div>
         </div>
-        <div
-          className="ui-crack min-h-0 flex-1 [--crack-blur:7px] [--crack-line:var(--row-border-color)] [--crack-shadow:0.55]"
-          style={{ marginTop: -2 * CRACK_DEPTH }}
-        >
-          <div
-            className="ui-inset flex size-full items-start gap-2 rounded-b-(--card-radius) px-2"
-            style={{ clipPath: crack.bottom, paddingTop: `calc(0.75rem + ${CRACK_REACH}px)` }}
-          >
-            <p data-card-body className="line-clamp-2 min-w-0 flex-1 text-small text-fg-muted">
-              {subtitle}
-            </p>
-            {date && <span data-card-body className="shrink-0 text-small text-fg-subtle">{DAY_MONTH.format(created!)}</span>}
-          </div>
-        </div>
-        <ButtonLook
-          data-card-title-box
-          variant="secondary"
-          size="xs"
-          icon={Icon}
-          className="absolute top-[62.5%] left-1/2 z-10 max-w-[85%] min-w-0 -translate-x-1/2 -translate-y-1/2"
-        >
-          <span data-card-title className="min-w-0 truncate">
-            {title}
-          </span>
-        </ButtonLook>
         {marks}
       </div>
     )

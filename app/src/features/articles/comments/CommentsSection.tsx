@@ -56,7 +56,7 @@ export default function CommentsSection({ articleId }: { articleId: number }) {
 
   if (state.gone) {
     return (
-      <section aria-label="Comments" className="flex flex-col gap-2 border-t border-line pt-4">
+      <section aria-label="Comments" className="flex flex-col gap-2">
         <h2 className="text-body font-medium">Comments</h2>
         <p className="text-small text-fg-muted">The comments can't be shown: this article can no longer be read.</p>
       </section>
@@ -65,7 +65,7 @@ export default function CommentsSection({ articleId }: { articleId: number }) {
 
   const { top } = state
   return (
-    <section ref={root} aria-label="Comments" className="flex flex-col gap-3 border-t border-line pt-4">
+    <section ref={root} aria-label="Comments" className="flex flex-col gap-3">
       <h2 className="text-body font-medium">Comments</h2>
       {/* Looks like the plain field (as the sidebar's description); it is the button that opens the modal */}
       <div

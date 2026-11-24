@@ -1,5 +1,6 @@
 import type { Editor } from '@tiptap/react'
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { dogEar, PAPER_STAINS, paperOutline, PARCHMENT, PARCHMENT_INK, pixelOutline } from '../../components/ui/pixel/paperSheet'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react'
 import Button from '../../components/ui/buttons/Button'
 import RichTextToolbar from '../../components/ui/editors/RichTextToolbar'
 import RichTextField from '../../components/ui/fields/RichTextField'
@@ -33,7 +34,19 @@ const FIELD = 'w-full resize-none bg-transparent px-4 text-fg outline-none place
  * Opening, Create slides in at the bottom right, with the format buttons on the left. Create (or Ctrl/⌘+Enter) makes the note
  * on the server (and says so if it could not); a click outside or Esc folds the card back, keeping the draft.
  */
-export default function QuickCreate() {
+/** The tall box's colours: a sheet of muted, aged parchment (paperSheet.ts) */
+const TALL = PARCHMENT
+/** The tall box's pixels (px): its worn edge, its dog-ear and its border are drawn in steps of this, like the pixel art round it */
+const PX = 2
+/** The tall box's paper corners: square, as a sheet's, the top right one folded over (a dog-ear this many px along each edge) */
+const FOLD = 8 * PX
+/** The sheet's outline in pixel steps, its edges worn, the dog-ear cut off the top right */
+const PAPER_CORNERS = paperOutline({ px: PX, fold: FOLD, seed: 11, across: 48, down: 8 })
+const DOG_EAR = dogEar(PX, FOLD)
+
+/** `tall`: notes only (no Note / Article choice), its text two lines tall from the start (both shown even folded), and its bottom bar (format
+ *  buttons, Create) always shown as a second row; a sheet of parchment with square corners, the top right one folded over, as on the Dashboard over its big buttons; else one line, and the bar only while open */
+export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
   const rootRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLInputElement>(null)
   const editorRef = useRef<Editor | null>(null)
@@ -46,7 +59,8 @@ export default function QuickCreate() {
   const [drafts, setDrafts] = useState(0)
   const [editor, setEditor] = useState<Editor | null>(null)
   const [kindName, setKindName] = useState(lastKind)
-  const kind = QUICK.find((r) => r.name === kindName) ?? QUICK[0]
+  // tall (the Dashboard's): notes only, no choice of kind
+  const kind = (tall ? QUICK.find((r) => r.name === 'notes') : QUICK.find((r) => r.name === kindName)) ?? QUICK[0]
   const textPlaceholder = kind.ui.fields.find((f) => !f.heading)?.placeholder ?? 'Take a note…'
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -58,6 +72,8 @@ export default function QuickCreate() {
   const [kindBox, setKindBox] = useState({ width: 0, gap: 4 })
 
   const canCreate = title.trim() !== '' || text !== ''
+  // The bottom bar (format buttons, kinds, Create): always there when tall, else only while open
+  const bar = open || tall
 
   // Measured while folded (open, the button is hidden): the button is centred in the text row, so its top and bottom gaps are equal
   useLayoutEffect(() => {
@@ -153,7 +169,15 @@ export default function QuickCreate() {
 
   return (
     // Keeps the folded card's place in the page; the open card lies over what's around it
-    <div ref={rootRef} style={{ height: size.folded || undefined }} className={`relative ${open ? 'z-30' : ''}`}>
+    <div
+      ref={rootRef}
+      style={{
+        height: size.folded || undefined,
+        // tall: its border drawn round its worn paper edge and the dog-ear's steps (an outline a pixel (PX) wide that follows the clipped shape)
+        filter: tall ? pixelOutline(PX, TALL.border) : undefined,
+      }}
+      className={`relative ${open ? 'z-30' : ''}`}
+    >
       <InputBox
         as="div"
         row={false}
@@ -168,13 +192,40 @@ export default function QuickCreate() {
         }}
         onKeyDown={onKeyDown}
         // Open: moved up by the title's height while the title grows (same timing), so the text stays put
-        style={open ? { boxShadow: 'inset 0 0 0 var(--row-border-width) var(--row-border-color), var(--lift-shadow)', transform: `translateY(${-size.title}px)` } : undefined}
+        style={{
+          ...(open ? { boxShadow: 'inset 0 0 0 var(--row-border-width) var(--row-border-color), var(--lift-shadow)', transform: `translateY(${-size.title}px)` } : {}),
+          // tall (on the Dashboard): square paper corners, the top right one cut off where it is folded over
+          ...(tall
+            ? ({
+                borderRadius: 0,
+                clipPath: PAPER_CORNERS,
+                // a few stains of age instead of the fields' pixel-corner marks
+                backgroundImage: PAPER_STAINS,
+                backgroundSize: 'auto',
+                backgroundPosition: '0 0',
+                // parchment (its border drawn round the steps by the wrapper instead), its words in ink, its edge aged
+                boxShadow: TALL.edge,
+                ['--input-bg' as string]: TALL.bg,
+                ['--input-bg-now' as string]: TALL.bg,
+                ['--row-border-width' as string]: '0px',
+                ...PARCHMENT_INK,
+              } as CSSProperties)
+            : {}),
+        }}
         // overflow-hidden: Create slides in from beyond the right edge
       className={`absolute inset-x-0 top-0 flex flex-col transition-[box-shadow,transform] ${ANIMATE} ${
         // Open: clips Create sliding in from the right. Folded: nothing
         open ? 'overflow-hidden' : ''
       }`}
       >
+        {/* tall: the dog-ear's back, the corner folded down onto the sheet (a little shadow under its edge) */}
+        {tall && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute top-0 right-0 z-10"
+            style={{ width: FOLD, height: FOLD, backgroundColor: TALL.fold, clipPath: DOG_EAR }}
+          />
+        )}
         {/* The title, growing on top; out of the tab order while folded */}
         <div className={`${GROW} ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr] opacity-0'}`} inert={!open}>
           <div ref={titleBoxRef} className="min-h-0 overflow-hidden">
@@ -192,12 +243,12 @@ export default function QuickCreate() {
           </div>
         </div>
 
-        {/* Folded, the text shows its first line only; open, it grows with its lines. Folded, the Note / Article button is at its right, a dropdown
+        {/* Folded, the text shows its first line only (its first two when `tall`, and it is two lines tall from the start, less 12px: 4 of its padding above and 8 of its height); open, it grows with its lines. Folded, the Note / Article button is at its right, a dropdown
             like the rows' Sort by, as far from the right edge as from the top and bottom (out of the way once open: the two buttons are beside Create) */}
-        <div ref={rowRef} className={`${FIELD} relative flex items-start py-3 text-body`}>
+        <div ref={rowRef} className={`${tall ? FIELD.replace('px-4', 'px-2.5') : FIELD} relative flex items-start ${tall ? 'pt-2 pb-1 text-[1.1875rem]' : 'py-3 text-body'}`}>
           <div
-            style={{ marginInlineEnd: open ? 0 : kindBox.width + kindBox.gap - 16 + 8 }}
-            className={`min-h-[1lh] min-w-0 flex-1 transition-[margin] ${ANIMATE} ${open ? 'max-h-[50vh] overflow-y-auto' : 'max-h-[1lh] overflow-hidden'}`}
+            style={{ marginInlineEnd: bar ? 0 : kindBox.width + kindBox.gap - 16 + 8 }}
+            className={`${tall ? 'min-h-[calc(2lh-8px)]' : 'min-h-[1lh]'} min-w-0 flex-1 transition-[margin] ${ANIMATE} ${open ? 'max-h-[50vh] overflow-y-auto' : tall ? 'max-h-[calc(2lh-8px)] overflow-hidden' : 'max-h-[1lh] overflow-hidden'}`}
           >
             <RichTextField
               key={drafts}
@@ -207,21 +258,23 @@ export default function QuickCreate() {
               onKeyDown={onTextKeyDown}
               placeholder={textPlaceholder}
               label="Text"
-              minHeight="min-h-0"
+              minHeight={tall ? 'min-h-[calc(2lh-8px)]' : 'min-h-0'}
             />
           </div>
-          <div
-            ref={kindRef}
-            inert={open}
-            style={{ insetInlineEnd: kindBox.gap }}
-            className={`absolute top-1/2 -translate-y-1/2 transition-opacity ${ANIMATE} ${open ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
-          >
-            <ExtendMenu variant="ghost" label="Kind" items={KINDS} value={kind.name} onSelect={chooseKind}>
-              <kind.ui.icon aria-hidden className="size-4" />
-              {kind.ui.label}
-              <LuChevronDown aria-hidden className="ui-extend-flip size-4" />
-            </ExtendMenu>
-          </div>
+          {!tall && (
+            <div
+              ref={kindRef}
+              inert={bar}
+              style={{ insetInlineEnd: kindBox.gap }}
+              className={`absolute top-1/2 -translate-y-1/2 transition-opacity ${ANIMATE} ${bar ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
+            >
+              <ExtendMenu variant="ghost" label="Kind" items={KINDS} value={kind.name} onSelect={chooseKind}>
+                <kind.ui.icon aria-hidden className="size-4" />
+                {kind.ui.label}
+                <LuChevronDown aria-hidden className="ui-extend-flip size-4" />
+              </ExtendMenu>
+            </div>
+          )}
         </div>
 
         {open && error && (
@@ -231,30 +284,37 @@ export default function QuickCreate() {
         )}
 
         {/* The bottom part, growing below (Create lies over it) */}
-        <div className={`${GROW} ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+        <div className={`${GROW} ${bar ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
           <div className="min-h-0 overflow-hidden">
-            <div className="h-11" />
+            <div className={tall ? 'h-10' : 'h-11'} />
           </div>
         </div>
 
-        {/* The format buttons, at the bottom left of the open card */}
-        <div inert={!open} className={`absolute bottom-1 left-2 transition-opacity ${ANIMATE} ${open ? `opacity-100 ${AFTER_GROW}` : 'opacity-0'}`}>
-          <RichTextToolbar editor={editor} only={['bold', 'italic', 'size']} />
+        {/* The format buttons, at the bottom left of the open card (tall: as far up from its bottom as Create) */}
+        <div inert={!bar} className={`absolute ${tall ? 'bottom-2 left-1' : 'bottom-1 left-2'} transition-opacity ${ANIMATE} ${bar ? `opacity-100 ${AFTER_GROW}` : 'opacity-0'}`}>
+          <RichTextToolbar
+            editor={editor}
+            only={['bold', 'italic', 'size']}
+            // tall (parchment): its buttons in brown ink, darker when hovered, their brackets the border's leather
+            className={tall ? '[&_button]:[--btn-bracket-color:#7a5a36] [&_button]:[--btn-hover-text:#2e2118] [&_button]:[--btn-text:#5e4a33]' : ''}
+          />
         </div>
 
+        {/* Create (and the kinds), at the bottom right (tall: 8px in from the right and the bottom) */}
         <div
-          inert={!open}
-          className={`absolute right-1 bottom-1 ${
-            open ? `translate-x-0 opacity-100 transition-[translate,opacity] ${ANIMATE} ${AFTER_GROW}` : 'translate-x-[calc(100%+1rem)] opacity-0'
+          inert={!bar}
+          className={`absolute ${tall ? 'right-2 bottom-2' : 'right-1 bottom-1'} ${
+            bar ? `translate-x-0 opacity-100 transition-[translate,opacity] ${ANIMATE} ${AFTER_GROW}` : 'translate-x-[calc(100%+1rem)] opacity-0'
           }`}
         >
           <div className="flex items-center gap-sm">
             {/* Open: not a dropdown, one button for each kind; the chosen one is outlined */}
-            {QUICK.map((r) => (
-              <Button key={r.name} plain variant={r === kind ? 'selected' : 'ghost'} icon={r.ui.icon} onClick={() => chooseKind(r.name)} aria-pressed={r === kind}>
-                {r.ui.label}
-              </Button>
-            ))}
+            {!tall &&
+              QUICK.map((r) => (
+                <Button key={r.name} plain variant={r === kind ? 'selected' : 'ghost'} icon={r.ui.icon} onClick={() => chooseKind(r.name)} aria-pressed={r === kind}>
+                  {r.ui.label}
+                </Button>
+              ))}
             <Button onClick={() => void create()} disabled={!canCreate || busy} title="Create (Ctrl+Enter)">
               {busy ? 'Creating…' : 'Create'}
             </Button>

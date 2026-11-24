@@ -181,7 +181,7 @@ export default function DashboardSections() {
               sortByLabel={!row.root}
               create={{ kinds, onCreate: create }}
             />
-            <div data-row-strip={row.id} className="-mx-2 flex min-h-[14rem] snap-x gap-lg overflow-x-auto px-2 pt-4 pb-4">
+            <div data-row-strip={row.id} className="-mx-2 flex min-h-[17rem] snap-x gap-lg overflow-x-auto px-2 pt-4 pb-4">
               {rowDrafts.map((d) => (
                 <div key={d.key} className="shrink-0">
                   <DraftCard

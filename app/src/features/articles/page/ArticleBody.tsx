@@ -19,6 +19,14 @@ import ArticleBanner from './ArticleBanner'
 import ArticleTitle from './ArticleTitle'
 import { BANNER_HEIGHT } from './pageConfig'
 
+/**
+ * The text's box and the comments' box under it in the dark theme, on the desk (NightBackdrop): a thick frame of dark, brownish wood with a
+ * fine dark line outside it and a lit bevel inside it, square, and their grey a little brownish (their own surface colour, which the toolbar's
+ * bar and the fields in them take too; Tailwind's colours read --surface itself: colors.css's @theme is inline)
+ */
+const FRAME =
+  'dark:rounded-none dark:border-4 dark:border-[#4a3c31] dark:[--surface:#31271f] dark:[--color-surface:#31271f] dark:shadow-[0_0_0_2px_#100c0a,inset_0_0_0_2px_#2a221d,inset_0_0_0_3px_#5c4b3c]'
+
 type Props = {
   resource: AnyResource
   /** The values the fields open on (not followed afterwards) */
@@ -92,7 +100,7 @@ export default function ArticleBody(props: Props) {
       <div className="flex min-w-0 flex-1 flex-col">
         {/* The text's parent box: it takes all the height there is and has a border (none on top: the banner reaches the top of the page). Inside it,
             from the top: the banner across it, where the article is, then the title (with the actions at its right end), the toolbar and the text */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-(--card-radius) border border-t-0 border-line bg-surface">
+        <div className={`flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-(--card-radius) border border-t-0 border-line bg-surface ${FRAME}`}>
           <ArticleBanner
             image={infobox.banner ?? null}
             onChange={(banner) => setInfoboxField({ ...infobox, banner })}
@@ -151,10 +159,11 @@ export default function ArticleBody(props: Props) {
                 />
               </div>
             ) : null}
-            <div className="mt-4">{props.comments}</div>
-            <div className="mt-auto">{props.footer}</div>
+            <div className="mt-auto pt-4">{props.footer}</div>
           </div>
         </div>
+        {/* The comments in their own box under it, apart */}
+        {props.comments && <div className={`mt-4 rounded-(--card-radius) border border-line bg-surface p-4 ${FRAME}`}>{props.comments}</div>}
       </div>
     </div>
   )

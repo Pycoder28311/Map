@@ -12,8 +12,8 @@ export const CRACK_POINTS = 20
 export const CRACK_ANGLE = 35
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** The card's width (px): size-48 in cardStyles.ts, 12rem. Keep them equal: the steepness is worked out from it */
-const CARD_WIDTH = 192
+/** The card's width (px): size-60 in cardStyles.ts, 15rem. Keep them equal: the steepness is worked out from it */
+const CARD_WIDTH = 240
 /** How far the crack wanders up and down (px, in all: from its highest point to its lowest): a piece's length times the tangent of its angle */
 export const CRACK_DEPTH = Math.round((CARD_WIDTH / CRACK_POINTS) * Math.tan((Math.min(80, Math.max(0, CRACK_ANGLE)) * Math.PI) / 180))
 /** The space between the two parts, the same along the whole crack (px): 0, they touch (the picture goes on behind the text part). A number, not a token: it is used in the clip-path's points */

@@ -49,6 +49,10 @@ type Props = {
  * next to the alignments with no space: Media (an image icon and its name; it opens the image, table and divider choice) and Link (a link icon and its name) together, with no gap and a line before them.
  * Its controls are in this folder; this file only lays out its two rows (which control goes where at each level: toolbarLevel.ts).
  */
+/** The toolbar's warm browns in the dark theme (as the article's frame, ArticleBody): lines, dividers and boxes, a pressed button's faint gold */
+const WARM =
+  'dark:[--color-line:#3a2f27] dark:[--color-line-strong:#4a3c31] dark:[--line:#3a2f27] dark:[--line-strong:#4a3c31] dark:[--row-border-color:#4a3c31] dark:[&_button[aria-pressed=true]]:[--btn-bg:rgb(201_161_74/0.16)] dark:[&_button[aria-pressed=true]]:[--btn-hover-bg:rgb(201_161_74/0.22)]'
+
 export default function ArticleToolbar({ editor: own, onUploadImage, onUploadError, secondRow, onSecondRowChange, onSection, linkTypes, linkRow }: Props) {
   // Before the text is opened the buttons read an editor of their own (and are disabled)
   const idle = !own
@@ -76,7 +80,8 @@ export default function ArticleToolbar({ editor: own, onUploadImage, onUploadErr
       role="toolbar"
       aria-label="Article formatting"
       // Every icon one size, 1.25rem: the buttons' own (a button sets its size from its text) and the colour fields'
-      className="relative flex flex-col gap-base rounded-(--card-radius) border border-line bg-surface p-base shadow-sm [--btn-icon-size:1.25rem] [&_button]:[--btn-icon-size:1.25rem]"
+      // dark theme: its border, dividers and dropdown boxes in the article frame's warm browns; a pressed button a faint gold
+      className={`relative flex flex-col gap-base rounded-(--card-radius) border border-line bg-surface p-base shadow-sm [--btn-icon-size:1.25rem] [&_button]:[--btn-icon-size:1.25rem] ${WARM}`}
     >
       {/* The first row: its buttons scroll sideways when they are too wide, until the bar is narrow enough to wrap them (level 3); More is outside
           the part that scrolls, so it is always in view, and the buttons give way to it */}
@@ -194,7 +199,8 @@ export default function ArticleToolbar({ editor: own, onUploadImage, onUploadErr
                         aria-pressed={linkTypes.shown}
                         onMouseDown={keepFocus}
                         onClick={linkTypes.onToggle}
-                        className="font-normal! [--btn-font-size:1rem]! [--btn-icon-size:1rem]!"
+                        // (its words muted gold in the dark theme, brighter when hovered)
+                        className="font-normal! [--btn-font-size:1rem]! [--btn-icon-size:1rem]! dark:[--btn-text:#b8975a]! dark:[--btn-hover-text:#d9b56a]!"
                       >
                         Link types
                       </Button>

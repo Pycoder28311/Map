@@ -1275,4 +1275,53 @@
     width: var(--btn-icon-size);
     height: var(--btn-icon-size);
   }
+
+  /* C8. Leather (variant "leather"): a tab of light brown leather, like a gold game button in leather. Two tones (the top half lighter,
+     the bottom half in shade), a fine pixel grain over it, a lit line along its top and a shaded one along its bottom inside, a thin
+     light line inside a dark brown edge two pixels thick, its corners rounded in a pixel step; the words cream in the pixel font with a dark
+     shadow. Hovered: a little lighter; pressed: it sinks a pixel. Its colours are the --leather-* below */
+  .ui-btn-leather {
+    --leather: #a8683d;
+    --leather-hover: #b87749;
+    --leather-light: #cf9260;
+    --leather-shade: #7f4a2a;
+    --leather-edge: #3a1f0f;
+    --leather-line: rgb(255 226 180 / 0.35);
+    --btn-text: #f6e9cf;
+    --btn-hover-text: #fff8e8;
+    --btn-bg: var(--leather);
+    --btn-hover-bg: var(--leather-hover);
+    --btn-font: var(--font-pixel);
+    --btn-font-weight: 600;
+    --btn-letter-spacing: 0.5px;
+    /* (inside its frame, two of its pixels thick) */
+    --btn-pad-x: 10px;
+    --btn-pad-y: 0px;
+    /* its pixel: the Dashboard cards' and the page's pixel art (dashboard/cards: 3.75px); its grain, its frame and its corners' step are in it.
+       The grain: a few darker and lighter pixels on a small tile, so the leather is not flat */
+    --leather-px: 3.75px;
+    --leather-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' shape-rendering='crispEdges'%3E%3Cpath fill='rgba(60,25,8,0.22)' d='M1 1h2v1h-2zM7 2h1v1h-1zM4 5h2v1h-2zM10 6h1v1h-1zM0 4h1v1h-1z'/%3E%3Cpath fill='rgba(255,220,170,0.16)' d='M5 0h1v1h-1zM9 3h2v1h-2zM2 6h1v1h-1zM7 7h1v1h-1z'/%3E%3C/svg%3E");
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 2px 0 rgb(40 18 6 / 0.75);
+    background:
+      var(--leather-grain) 0 0 / calc(var(--leather-px) * 12) calc(var(--leather-px) * 8) repeat,
+      linear-gradient(to bottom, transparent 50%, rgb(70 30 10 / 0.22) 50%),
+      var(--_bg);
+    /* its frame in its pixels (a 5 × 5 drawing, its corners kept, its middle stretched), two of them thick: the dark edge with its corners
+       rounded in a pixel step, the lit line along its top, the shade along its bottom, a light line down its sides (the --leather-edge,
+       -light, -shade and -line colours, written into the drawing). The corners outside the step are cut off the leather (clip-path) */
+    --_p: var(--leather-px);
+    min-height: calc(var(--_p) * 8);
+    border: calc(var(--_p) * 2) solid transparent;
+    border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='5' height='5' shape-rendering='crispEdges'><path fill='%233a1f0f' d='M1 0h3v1h-3zM1 4h3v1h-3zM0 1h1v3h-1zM4 1h1v3h-1z'/><path fill='%23cf9260' d='M1 1h3v1h-3z'/><path fill='%237f4a2a' d='M1 3h3v1h-3z'/><path fill='rgba(255,226,180,0.35)' d='M1 2h1v1h-1zM3 2h1v1h-1z'/></svg>") 2 / calc(var(--_p) * 2) stretch;
+    clip-path: polygon(var(--_p) 0, calc(100% - var(--_p)) 0, calc(100% - var(--_p)) var(--_p), 100% var(--_p), 100% calc(100% - var(--_p)), calc(100% - var(--_p)) calc(100% - var(--_p)), calc(100% - var(--_p)) 100%, var(--_p) 100%, var(--_p) calc(100% - var(--_p)), 0 calc(100% - var(--_p)), 0 var(--_p), var(--_p) var(--_p));
+    transition: background-color 0.15s ease-out, color 0.15s ease-out;
+  }
+
+  .ui-btn-leather:active:not(:disabled) {
+    transform: translateY(1px);
+  }
 }

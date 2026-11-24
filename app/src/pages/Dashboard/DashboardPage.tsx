@@ -5,21 +5,31 @@ import Button from '../../components/ui/buttons/Button'
 import DashboardRelics from '../../features/dashboard/DashboardRelics'
 import EditIconsPreview from '../../features/dashboard/EditIconsPreview'
 import QuillIconsPreview from '../../features/dashboard/QuillIconsPreview'
-import DashboardColumns from '../../features/dashboard/DashboardColumns'
+import BigCreateButton, { BIG_BUTTON_W } from '../../features/dashboard/BigCreateButton'
+import NightBackdrop from '../../features/dashboard/NightBackdrop'
+import { STONE_PIXEL } from '../../features/dashboard/stoneButton'
 import DashboardSections from '../../features/dashboard/DashboardSections'
-import { useDashboardColumns } from '../../features/dashboard/useDashboardColumns'
 import QuickCreate from '../../features/notes/QuickCreate'
 import { authClient } from '../../lib/auth-client'
 
+/** The two big Create buttons side by side (px): their width each and the gap between them (gap-3). The note input is as wide */
+const TWO_BUTTONS = 2 * BIG_BUTTON_W * STONE_PIXEL + 12
+/** How far in from the buttons' outer edges the note input stops, on each side (px) */
+const INPUT_INSET = 32
+/** How much shorter the note input is at its top (px; QuickCreate's tall box is this much shorter): its top comes down, its bottom stays */
+const INPUT_LOWER = 16
+/** The shadow and thickness each button's slab shows past its stone on its right (px: three of its pixels): the input is centred on the
+ *  stone you see, so it is this much narrower and half of it further left */
+const BUTTON_SHADOW = 3 * STONE_PIXEL
+
 // Also a workspace panel (src/panels.ts): no <main> here, AppLayout provides it
 /**
- * The main page: the quick note input, three columns (Recent, Notes, Maps by default; each can show
- * another list), and under them a row of cards per project (its items) and an Orphans row
+ * The main page: the greeting and the quick note input, the two big Create buttons (Create article, Create map) under them (the
+ * Recent / Notes / Maps columns are hidden: DashboardColumns), and under that a row of cards per project (its items) and an Orphans row
  */
 export default function DashboardPage() {
     const navigate = useNavigate()
     const { data: session } = authClient.useSession()
-    const columns = useDashboardColumns()
     const [showIcons, setShowIcons] = useState(false)
     const firstName = session?.user.name?.split(/\s+/)[0]
 
@@ -30,6 +40,8 @@ export default function DashboardPage() {
 
     return (
         <div className="relative min-h-full">
+            {/* The pixel-art dusk behind it all (dark theme) */}
+            <NightBackdrop />
             <div className="relative mx-auto flex max-w-[65rem] flex-col gap-12 px-4 pt-8 pb-24">
                 <div className="flex justify-end">
                     <Button
@@ -51,16 +63,21 @@ export default function DashboardPage() {
                         <EditIconsPreview />
                     </>
                 )}
-                {/* The input and the columns share one narrower width, centred over the sections */}
-                <div className="mx-auto flex w-full max-w-[54rem] flex-col gap-xl">
-                    {/* A greeting, then the page's main input, low on the screen with room above them */}
-                    <div className="mt-[18vh] flex flex-col items-center gap-12">
+                {/* The input and the Create buttons share one narrower width, centred over the sections */}
+                <div className="mx-auto flex w-full max-w-[54rem] flex-col gap-5">
+                    {/* A greeting, then the page's main input and the Create buttons, near the top of the screen */}
+                    <div className="mt-[4vh] flex flex-col items-center gap-6">
                         <h1 className="text-center text-5xl font-semibold tracking-tight">Hello{firstName ? `, ${firstName}` : ''}</h1>
-                        <div className="w-full">
-                            <QuickCreate />
+                        {/* A little narrower than the two Create buttons under it (INPUT_INSET in from each side) */}
+                        <div className="relative w-full" style={{ maxWidth: TWO_BUTTONS - 2 * INPUT_INSET - BUTTON_SHADOW, left: -BUTTON_SHADOW / 2, marginTop: INPUT_LOWER }}>
+                            <QuickCreate tall />
                         </div>
                     </div>
-                    <DashboardColumns {...columns} />
+                    {/* The two big Create buttons, side by side under the input (they open the Create modal on its Article and Map tabs) */}
+                    <div className="mx-auto flex w-full items-start justify-center gap-3" style={{ maxWidth: TWO_BUTTONS }}>
+                        <BigCreateButton lines={['Create', 'article']} art="article" kind="articles" />
+                        <BigCreateButton lines={['Create', 'map']} art="map" kind="maps" />
+                    </div>
                 </div>
 
                 <DashboardSections />

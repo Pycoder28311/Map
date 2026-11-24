@@ -33,14 +33,12 @@ import {
 } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
-import Card from '../../components/ui/Card'
 import TextAreaField from '../../components/ui/fields/TextAreaField'
 import type { PlainIcon } from '../../components/ui/icons/IconSlot'
 import SideMenu from '../../components/ui/overlays/SideMenu'
 import IconMenu from '../../components/ui/tree/IconMenu'
 import { BackgroundPointerSensor, followPointer, startsOnBackground, swallowClickAfterDrag } from '../../lib/dnd'
 import { ICON_SHOW } from '../../components/ui/tree/treeIconStyles'
-import { paperEdgePolygon } from '../dashboard/cards/paperEdge'
 import {
   changeKind,
   emptyRow,
@@ -80,8 +78,12 @@ const OTHER = TYPES.filter((t) => !QUICK.some((q) => q.type === t.value))
 const INPUT = 'min-w-0 bg-transparent text-fg outline-none placeholder:text-fg-subtle'
 // Each row is a block of its own on the box's background, a gap (with the + in it) between two blocks
 const noop = () => {}
-/** The box's cracked edge: uneven, with a few small cuts, like the map cards' but gentler (the same every time) */
-const EDGE = paperEdgePolygon('article-info', 3, 5)
+/**
+ * In the dark theme, the article's box in warm greys: its rows and picture a step lighter than the box, its buttons' words (Add picture, Add
+ * info) muted gold, brighter when hovered, as the title's ribbon (ArticleTitle)
+ */
+const INFO_DARK =
+  'dark:[--color-fill:#46403b] dark:[--color-fill-strong:#46403b] dark:[--fill:#46403b] dark:[--fill-strong:#46403b] dark:[&_button]:[--btn-bg:transparent] dark:[&_button]:[--btn-text:#b8975a] dark:[&_button]:[--btn-hover-text:#d9b56a]'
 const ROW = 'group/row relative flex flex-col gap-1 rounded-(--corner-sm) bg-fill-strong px-2 py-1.5'
 
 type Props = {
@@ -125,11 +127,11 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError,
   }
 
   return (
-    // The box clips itself to the cracked edge; its wrapper draws the outline along that shape. While a preview shows it is that much taller, but its
+    // The article's box: a thick border round a lighter grey (Frame). While a preview shows it is that much taller, but its
     // place in the text is not: a negative margin takes the extra height back, so the text beside it stays where it is (in a form it
     // does push what is under it down: the description makes room for it)
     // A reader's box is inert: shown as it is, nothing in it reacts
-    <div className={cracked ? 'ui-crack' : undefined} style={{ marginBottom: cracked ? -extra : 0 }} inert={readOnly || undefined}>
+    <div style={{ marginBottom: cracked ? -extra : 0 }} inert={readOnly || undefined}>
       {/* (a point's or an object's form has no box around its sections: they stand on the form itself) */}
       <Frame boxed={cracked}>
         {(!readOnly || value.image) && <Picture image={value.image} onChange={(image) => onChange({ ...value, image })} onUploadImage={onUploadImage} onUploadError={onUploadError} flat={!cracked} />}
@@ -225,13 +227,54 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError,
   )
 }
 
-/** The article's box around the sections (muted, with the cracked edge), or nothing around them */
+/** The article's box around the sections, or nothing around them: square, a thick border of the article's frame (ArticleBody), a lighter grey than the text's box */
 function Frame({ boxed, children }: { boxed: boolean; children: ReactNode }) {
   if (!boxed) return <div className="flex flex-col">{children}</div>
   return (
-    <Card variant="muted" radius={0} className="flex flex-col p-base" style={{ clipPath: EDGE }}>
+    <div className={`ui-info-box relative flex flex-col border-4 border-line-strong bg-surface-muted p-base dark:border-[#4a3c31] dark:bg-[#3a3532] ${INFO_DARK}`}>
       {children}
-    </Card>
+      {CORNERS.map((flip) => (
+        <GoldCorner key={flip} flip={flip} />
+      ))}
+    </div>
+  )
+}
+
+/** The gold corners' pixel (px) and colours: the brass of the book cards' corners (dashboard/cards/book.ts) */
+const CORNER_PX = 3
+const GOLD = { face: '#a17b2f', light: '#c3a767', deep: '#5d4413' } as const
+/** Which way each corner faces: the top left as drawn, the others mirrored */
+const CORNERS = ['', 'x', 'y', 'xy'] as const
+/**
+ * A gold corner over one of the box's corners, flush with its outer edge: an L two pixels thick and six long over the border and a little
+ * inside it, lit along its outer edges, darker at its inner ends. Drawn for the top left; `flip` mirrors it to the other corners
+ */
+function GoldCorner({ flip }: { flip: (typeof CORNERS)[number] }) {
+  const size = 6 * CORNER_PX
+  const right = flip.includes('x')
+  const bottom = flip.includes('y')
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 6 6"
+      width={size}
+      height={size}
+      shapeRendering="crispEdges"
+      className="pointer-events-none absolute z-20"
+      style={{
+        // over the border: the border is 4px, outside the padding box the box is placed in
+        [right ? 'right' : 'left']: -4,
+        [bottom ? 'bottom' : 'top']: -4,
+        transform: `scale(${right ? -1 : 1}, ${bottom ? -1 : 1})`,
+      }}
+    >
+      <rect x={0} y={0} width={6} height={2} fill={GOLD.face} />
+      <rect x={0} y={0} width={2} height={6} fill={GOLD.face} />
+      <rect x={0} y={0} width={6} height={1} fill={GOLD.light} />
+      <rect x={0} y={0} width={1} height={6} fill={GOLD.light} />
+      <rect x={5} y={1} width={1} height={1} fill={GOLD.deep} />
+      <rect x={1} y={5} width={1} height={1} fill={GOLD.deep} />
+    </svg>
   )
 }
 
@@ -278,7 +321,7 @@ function Picture({
           </div>
         </>
       ) : (
-        <Button variant="ghost" icon={LuImagePlus} disabled={busy} onClick={() => picker.current?.click()} className="size-full justify-center">
+        <Button variant="ghost" plain icon={LuImagePlus} disabled={busy} onClick={() => picker.current?.click()} className="size-full justify-center">
           {busy ? 'Uploading…' : 'Add picture'}
         </Button>
       )}
@@ -382,7 +425,8 @@ function Row({ row, grip, first, last, onChange, onMove, onRemove, onUploadImage
       placeholder="Info"
       aria-label="Info"
       maxLength={100}
-      className={`${INPUT} flex-1 text-small font-medium`}
+      // (on the article's box, in the dark theme: a warm grey, under the values)
+      className={`${INPUT} flex-1 text-small font-medium dark:[.ui-info-box_&]:text-[#a39686]`}
     />
   )
   // The popup menu (Dropdown's look and pop-in), not the dots of the sidebar rows

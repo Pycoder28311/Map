@@ -3,8 +3,18 @@
   --animate-float: float 6s ease-in-out infinite;
   /* The profile banner's mist drifting sideways and back (features/profile/ProfileBanner.tsx; SVG units) */
   --animate-profile-mist: profile-mist 70s ease-in-out infinite alternate;
+  /* a glint of light sweeping once across a metal button (the Dashboard's Create buttons) */
+  --animate-glint: glint 900ms ease-out 1;
 
   /* Percent of the icon's size, so it scales with --btn-icon-size (12.5% = 2px at 16px). */
+  @keyframes glint {
+    from {
+      transform: translateX(-120%) skewX(-20deg);
+    }
+    to {
+      transform: translateX(420%) skewX(-20deg);
+    }
+  }
   @keyframes float {
     0%, 100% { transform: translateY(0) rotate(-6deg); }
     50% { transform: translateY(-6px) rotate(-3deg); }
