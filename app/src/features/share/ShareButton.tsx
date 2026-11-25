@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { LuShare2, LuMousePointerClick } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import BarPopout from '../../components/ui/overlays/BarPopout'
@@ -14,10 +14,10 @@ export default function ShareButton() {
   const { phase, chosenId } = useShareState()
   const [open, setOpen] = useState(false)
 
-  // Share mode ended elsewhere (Esc, a click beside the highlights): the popout closes too
-  useEffect(() => {
-    if (phase === 'idle') setOpen(false)
-  }, [phase])
+  // The popout follows share mode: it closes when share mode ends elsewhere (Esc, a click beside the highlights), and opens when it starts
+  // elsewhere (the profile menu's Share), to say what to do
+  if (phase === 'idle' && open) setOpen(false)
+  if (phase !== 'idle' && !open) setOpen(true)
 
   return (
     <BarPopout

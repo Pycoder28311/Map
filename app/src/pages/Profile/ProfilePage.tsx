@@ -1,6 +1,6 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { LuLogOut } from 'react-icons/lu'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Button from '../../components/ui/buttons/Button'
 import Card from '../../components/ui/Card'
 import ErrorText from '../../components/ui/fields/ErrorText'
@@ -24,7 +24,13 @@ export default function ProfilePage() {
   const { data: session } = authClient.useSession()
   const [avatarError, setAvatarError] = useState<string | null>(null)
   const [signingOut, setSigningOut] = useState(false)
+  const { hash } = useLocation()
   const user = session?.user
+  // /profile#people (the profile menu's Followers): that card is scrolled into view
+  useEffect(() => {
+    if (!hash || !user) return
+    document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [hash, user])
   if (!user) return null
 
   const signOut = async () => {
@@ -65,7 +71,7 @@ export default function ProfilePage() {
           <Section title="Password" description="Used to sign in with your email.">
             <PasswordForm email={user.email} />
           </Section>
-          <Section title="People" description="Who follows you and who you follow. Only you and your collaborators see these lists.">
+          <Section id="people" title="People" description="Who follows you and who you follow. Only you and your collaborators see these lists.">
             <PeopleCard />
           </Section>
           <Section title="Collaborations" description="The articles you are a collaborator on.">
@@ -86,9 +92,9 @@ export default function ProfilePage() {
 }
 
 /** One card of settings: a title, a line under it, then its form */
-function Section({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+function Section({ id, title, description, children }: { id?: string; title: string; description: string; children: ReactNode }) {
   return (
-    <Card variant="white" className="flex flex-col gap-5 p-6">
+    <Card id={id} variant="white" className="flex scroll-mt-6 flex-col gap-5 p-6">
       <div className="flex flex-col gap-1 border-b border-line pb-4">
         <h2 className="text-heading font-semibold">{title}</h2>
         <p className="text-small text-fg-muted">{description}</p>
