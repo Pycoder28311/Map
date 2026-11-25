@@ -3,13 +3,11 @@ import { Link } from 'react-router-dom'
 import ZoomButton from '../../features/focus/ZoomButton'
 import RecentHistory from '../../features/recent/RecentHistory'
 import NavSearch from '../../features/search/NavSearch'
-import ShareButton from '../../features/share/ShareButton'
 import PopoutLayer from '../ui/overlays/PopoutLayer'
 import GlobeLogo from '../ui/icons/GlobeLogo'
 import MenuToggleIcon from '../ui/icons/MenuToggleIcon'
 import DeskStrip from '../ui/icons/DeskStrip'
 import ProfileCircle from './ProfileCircle'
-import InboxButton from '../../features/inbox/InboxButton'
 import { frameRadiusPx } from '../../features/workspace/paneStyles'
 import { useWorkspace } from '../../features/workspace/useWorkspace'
 import { useSidebar } from './sidebar/useSidebar'
@@ -25,7 +23,7 @@ const MENU_BUTTON = 'shrink-0 ms-[calc((var(--sidebar-rail)-46px)/2-var(--spacin
  * - left: ☰ pins/unpins the sidebar (opens/closes it on narrow screens; sidebar/useSidebar.ts) and
  *   turns into an ✕ while it's open; links home
  * - centre: Recent History
- * - right: Search, Share, the Inbox (invitations, with a badge), the profile circle, Zoom (focus mode), over a faint pixel desk of its own
+ * - right: Search, the profile circle (its menu: profile, Inbox, Followers, Share, …), Zoom (focus mode), over a faint pixel desk of its own
  * Their popouts grow out of the bar's bottom edge in one layer (PopoutLayer), so Search's and Share's
  * join into one shape when both are open.
  */
@@ -72,8 +70,6 @@ export default function Navbar() {
 
                 <div className="relative ms-auto flex h-full items-center gap-4">
                     <NavSearch />
-                    <ShareButton />
-                    <InboxButton />
                     <ProfileCircle />
                     <ZoomButton />
                 </div>

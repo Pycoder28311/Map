@@ -8,7 +8,7 @@ The design is in `docs/plans/40-follows-invitations-collaborators.md`.
   with, not by their followers.
 - An item's **creator** (its owner) invites a person **they follow** to be a collaborator: **Author** (`editor`: read and edit) or
   **Read only** (`reader`). Projects, folders, articles and maps take invitations; notes don't (they keep the collaborators they had).
-- The person sees it in their **inbox** (the navbar's Inbox, `/inbox`): Accept makes them a collaborator with that role; Decline
+- The person sees it in their **inbox** (the profile menu's Inbox, `/inbox`; a red dot on the profile picture while some wait): Accept makes them a collaborator with that role; Decline
   changes nothing. The creator can **unsend** it while unanswered, and change a collaborator's role or remove them (the privacy panel).
 - Unfollowing someone cancels the invitations you sent them that wait for an answer. Accepting one whose item is in its owner's Trash
   or gone answers `410 NOT_AVAILABLE` and removes it.
@@ -24,7 +24,7 @@ backend/src/resources/invitations/types/         what each kind checks on send a
 backend/src/resources/rights/                    the collaborators (/api/object-rights)
 backend/drizzle/0017_*, 0018_*                   the tables, maps made shareable, the cleanup triggers
 app/src/features/follows/                        followStore, FollowButton, PeopleCard (profile page)
-app/src/features/inbox/                          inboxStore, InboxButton (navbar), cards per kind; pages/Inbox/InboxPage.tsx
+app/src/features/inbox/                          inboxStore, cards per kind; pages/Inbox/InboxPage.tsx (opened from the profile menu)
 app/src/features/sharing/                        useSharing + PrivacyPanel: Invite / Waiting / Collaborators
 app/src/features/collaborators/                  CollaboratorsList (article footer, Leave), MyCollaborations (profile), RoleChoice
 ```

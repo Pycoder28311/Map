@@ -4,12 +4,16 @@ import { useNavigate } from 'react-router-dom'
 import { useFollowCounts } from '../../features/follows/followStore'
 import { usePendingCount } from '../../features/inbox/inboxStore'
 import Avatar from '../../features/people/Avatar'
-import { startSharing } from '../../features/share/shareStore'
+import SharePanel from '../../features/share/SharePanel'
+import { startSharing, stopSharing, useShareState } from '../../features/share/shareStore'
 import { authClient } from '../../lib/auth-client'
 import Button from '../ui/buttons/Button'
 import IconButton from '../ui/buttons/IconButton'
 import Divider from '../ui/Divider'
 import BarPopout from '../ui/overlays/BarPopout'
+
+/** The menu's rows: less room at their sides than a button's (styles/buttons.css --btn-pad-x) */
+const ROW_PAD = '[--btn-pad-x:0.375rem]'
 
 /** A small faint tag at a row's right end: a count, a plan, "Soon" */
 function Tag({ children, alert = false }: { children: ReactNode; alert?: boolean }) {
@@ -27,7 +31,7 @@ type Item = { label: string; icon: ComponentType<{ className?: string }>; onClic
 /** One row of the menu: icon, label and its tag, the whole width */
 function MenuRow({ label, icon, onClick, tag, disabled, title }: Item) {
   return (
-    <Button variant="ghost" plain icon={icon} disabled={disabled} title={title} className="w-full justify-start" onClick={onClick}>
+    <Button variant="ghost" plain icon={icon} disabled={disabled} title={title} className={`w-full justify-start ${ROW_PAD}`} onClick={onClick}>
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span className="truncate">{label}</span>
         {tag}
@@ -77,7 +81,7 @@ function ProfileMenu({ user, onClose }: { user: { id: string; name: string; emai
   return (
     <nav aria-label="Your account" className="flex w-72 flex-col p-1">
       {/* View profile: the picture and the name big, the action small under the name */}
-      <Button variant="ghost" plain className="w-full justify-start" onClick={() => go('/profile')}>
+      <Button variant="ghost" plain className={`w-full justify-start ${ROW_PAD}`} onClick={() => go('/profile')}>
         <span className="flex min-w-0 flex-1 items-center gap-3 py-1 text-start">
           <Avatar person={{ id: user.id, name: user.name, image: user.image ?? null }} size="size-12" />
           <span className="flex min-w-0 flex-col">
@@ -98,27 +102,38 @@ function ProfileMenu({ user, onClose }: { user: { id: string; name: string; emai
   )
 }
 
-/** The signed-in user's picture (or a person icon) in the navbar: a click opens their menu (ProfileMenu) */
+/** The signed-in user's picture (or a person icon) in the navbar, with a red dot while invitations wait: a click opens their menu (ProfileMenu) */
 export default function ProfileCircle() {
   const { data: session } = authClient.useSession()
   const [open, setOpen] = useState(false)
+  const pending = usePendingCount()
+  // Sharing (the menu's Share): the popout shows "Choose what to share", then the ways to share; closing it ends share mode
+  const sharing = useShareState().phase !== 'idle'
   const user = session?.user
   if (!user) return null
+  const shown = open || sharing
   return (
     <BarPopout
       mode="click"
       stick="end"
-      open={open}
-      onOpenChange={setOpen}
+      open={shown}
+      onOpenChange={(next) => {
+        setOpen(next)
+        if (!next) stopSharing()
+      }}
       trigger={
-        <IconButton label="Your account" aria-haspopup="menu" aria-expanded={open} variant={open ? 'selected' : 'ghost'}>
-          <span className="inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-fill text-fg-muted ring-1 ring-line">
-            {user.image ? <img src={user.image} alt="" className="size-full object-cover" /> : <LuUser aria-hidden className="size-5" />}
-          </span>
-        </IconButton>
+        <span className="relative inline-flex">
+          <IconButton label={pending > 0 ? `Your account: ${pending} invitations waiting` : 'Your account'} aria-haspopup="menu" aria-expanded={shown} variant={shown ? 'selected' : 'ghost'}>
+            <span className="inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-fill text-fg-muted ring-1 ring-line">
+              {user.image ? <img src={user.image} alt="" className="size-full object-cover" /> : <LuUser aria-hidden className="size-5" />}
+            </span>
+          </IconButton>
+          {/* Invitations waiting (the Inbox is in the menu) */}
+          {pending > 0 && <span aria-hidden className="pointer-events-none absolute top-1 right-1 size-2.5 rounded-full bg-danger ring-2 ring-surface" />}
+        </span>
       }
     >
-      {open && <ProfileMenu user={user} onClose={() => setOpen(false)} />}
+      {sharing ? <SharePanel /> : open && <ProfileMenu user={user} onClose={() => setOpen(false)} />}
     </BarPopout>
   )
 }
