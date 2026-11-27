@@ -1,10 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
-import { keepSaving, restore } from './store/persist'
+import { keepSaving, restore } from './store/library'
 import './styles.css'
 
-// What this browser kept (the drawing and the settings), then keep saving it. Frontend only: nothing is sent anywhere
+// The asset library this browser kept (or the default assets), then keep saving the open one. Frontend only: nothing is sent anywhere
 restore()
 keepSaving()
 

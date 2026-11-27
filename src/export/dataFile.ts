@@ -1,6 +1,6 @@
 // The data file Download gives (`<name>.pixel.json`), the one to send to Claude: the board's size, a palette of one character per colour
 // and the drawing as rows of those characters, one per unit ('.': empty), the form the Map app's hand-drawn sprites use. It also holds the
-// whole drawing, so Open brings back every object editable. The same form of the drawing is what the browser keeps (store/persist.ts).
+// whole drawing, so Open brings back every object editable. The same form of the drawing is what the browser keeps (store/library.ts).
 import { normalizeDrawing } from '../model/normalize'
 import { flatten } from '../model/raster'
 import type { Drawing, Hex, Item } from '../model/types'

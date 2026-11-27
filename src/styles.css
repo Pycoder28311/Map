@@ -99,7 +99,11 @@ kbd {
   grid-template-rows: auto 1fr;
   grid-template-areas: 'top top top' 'tools stage side';
   height: 100%;
+  height: 100dvh;
   overflow: hidden;
+}
+body {
+  overscroll-behavior: none;
 }
 
 .topbar {
@@ -134,6 +138,17 @@ kbd {
 }
 .name input {
   width: 150px;
+}
+.inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+button.icon {
+  min-width: 32px;
+  padding: 2px 8px;
+  font-size: 16px;
+  line-height: 1;
 }
 .anchor-wrap {
   position: relative;
@@ -181,6 +196,11 @@ kbd {
   background: var(--panel);
   border-right: 1px solid var(--line);
   overflow-y: auto;
+}
+.toolbar .tools {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 .toolbar button {
   position: relative;
@@ -379,4 +399,287 @@ kbd {
 }
 .swap {
   padding: 2px 8px;
+}
+
+/* ─────────── Assets ─────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(0 0 0 / 0.6);
+}
+.dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(720px, 100%);
+  max-height: min(720px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.6);
+}
+.dialog-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.dialog-head h2 {
+  margin: 0;
+  font-size: 15px;
+}
+.dialog-head .close,
+.sheet-tabs .close {
+  margin-left: auto;
+  min-width: 36px;
+  background: transparent;
+  border-color: transparent;
+}
+.assets {
+  list-style: none;
+  margin: 0;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  overflow-y: auto;
+}
+.asset {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-2);
+}
+.asset.current {
+  border-color: var(--accent);
+}
+.asset-open {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+}
+.asset-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.asset-text strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.asset-text span {
+  color: var(--fg-subtle);
+  font-size: 12px;
+}
+.asset-actions {
+  display: flex;
+  gap: 4px;
+  padding: 0 8px 8px;
+}
+.asset-actions button {
+  flex: 1;
+}
+.thumb {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 72px;
+  height: 72px;
+  background: repeating-conic-gradient(#3a3a40 0 25%, #2e2e33 0 50%) 0 0 / 12px 12px;
+}
+.thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  image-rendering: pixelated;
+}
+.dialog-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+}
+.defaults {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.defaults button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.default-thumb {
+  height: 24px;
+  image-rendering: pixelated;
+}
+
+/* ─────────── Phones: tools along the bottom, the panels in a sheet over the board ─────────── */
+.sheet,
+.tool-extras {
+  display: none;
+}
+.app.narrow {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas: 'top' 'stage' 'tools';
+}
+.app.narrow .topbar {
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 6px 8px;
+  padding-top: max(6px, env(safe-area-inset-top));
+}
+.app.narrow .brand {
+  margin-right: 2px;
+}
+.app.narrow button {
+  min-height: 40px;
+}
+.app.narrow .popover {
+  width: min(320px, calc(100vw - 16px));
+}
+.popover.stacked {
+  gap: 12px;
+}
+.popover.stacked .name input {
+  flex: 1;
+  width: auto;
+}
+.popover-end-wrap .popover {
+  left: auto;
+  right: 0;
+}
+.app.narrow .toolbar {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  padding-bottom: max(6px, env(safe-area-inset-bottom));
+  border-right: 0;
+  border-top: 1px solid var(--line);
+  overflow: hidden;
+}
+.app.narrow .toolbar .tools {
+  flex-direction: row;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.app.narrow .toolbar button {
+  flex: none;
+  width: 44px;
+  height: 44px;
+}
+.app.narrow .tool-extras {
+  display: flex;
+  gap: 6px;
+  padding-left: 6px;
+  border-left: 1px solid var(--line);
+}
+.app.narrow .tool-extras button.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.colour-chip span {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--fg);
+}
+.app.narrow .status {
+  gap: 10px;
+  font-size: 11px;
+  padding: 3px 8px;
+}
+.app.narrow .status span:first-child {
+  display: none;
+}
+.app.narrow .sheet {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(57px + env(safe-area-inset-bottom));
+  z-index: 30;
+  max-height: 52vh;
+  background: var(--panel);
+  border-top: 1px solid var(--line-strong);
+  box-shadow: 0 -12px 30px rgb(0 0 0 / 0.5);
+}
+.sheet-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.sheet-tabs button[role='tab'] {
+  background: transparent;
+  border-color: transparent;
+  color: var(--fg-muted);
+}
+.sheet-tabs button[role='tab'].on {
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+}
+.sheet-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.app.narrow input[type='number'] {
+  width: 72px;
+  min-height: 36px;
+  font-size: 16px;
+}
+.app.narrow textarea,
+.app.narrow .name input {
+  font-size: 16px;
+}
+.app.narrow input[type='color'] {
+  width: 40px;
+  height: 36px;
+}
+.app.narrow .toggle input {
+  width: 20px;
+  height: 20px;
+}
+.app.narrow .swatches {
+  grid-template-columns: repeat(8, 1fr);
+  gap: 5px;
+}
+.app.narrow .dialog {
+  max-height: 100%;
+}
+.app.narrow .assets {
+  grid-template-columns: 1fr;
+}
+@media (max-width: 760px) {
+  .overlay {
+    padding: 0;
+    align-items: stretch;
+  }
+  .dialog {
+    width: 100%;
+    max-height: none;
+    height: 100%;
+  }
+  .assets {
+    grid-template-columns: 1fr;
+  }
+}
+/* The tools scroll sideways on phones: their edges fade where more tools are */
+.app.narrow .toolbar .tools {
+  mask-image: linear-gradient(to right, transparent 0, #000 12px, #000 calc(100% - 24px), transparent 100%);
+  padding: 0 12px 0 4px;
 }

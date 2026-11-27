@@ -2,7 +2,25 @@
 
 A drawing board for the Map app's pixel art: buttons, book and map cards, frames, icons. Everything sits on **one grid of pixel units**:
 the brush, every shape, every border and every letter land on whole units, never between them. Frontend only: no server, nothing is
-sent anywhere; the drawing is kept in this browser.
+sent anywhere. It works on phones and tablets as well as with a mouse.
+
+## Assets (saved in this browser)
+
+**Assets** (top left) is the library: every drawing, kept in this browser's local storage, with a small picture, its size and when it
+changed. Open, copy or delete one, or make a new one of any size. The open drawing is saved a second after each change and before another
+opens, so a reload brings everything back. It starts with the Map app's **article book card** (51 × 64 units, the app's own pixels, unit
+for unit); "From the Map app" adds a fresh copy of it any time. **Open** (a `.pixel.json`) adds that file as a new asset.
+
+## On a phone
+
+The tools are a bar along the bottom (swipe it sideways for more), with the main colour and a ⚙ button at its end: they open a sheet over
+the board with the tool's settings, the selected object and the colours. The drawing's own settings (name, size, background, grid, New,
+Open) are under ⋯, and Download is **Save ▾** (with **Share both…** where the phone can share files).
+
+- One finger draws; **two fingers** pinch to zoom and move the board (a stroke the first finger began is dropped, nothing is painted).
+- The handles of a selected object are bigger for fingers.
+- What Shift does with a mouse (squares, circles, straight lines, resizing that keeps proportions) is the **"like Shift"** switch in the
+  tool's settings.
 
 ## Run it
 

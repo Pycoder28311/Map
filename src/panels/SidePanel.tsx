@@ -4,7 +4,8 @@ import { flatten } from '../model/raster'
 import { mirrorShape } from '../model/mirror'
 import { textLayout } from '../model/raster'
 import { EDIT_TEXT_EVENT, takeEdit } from '../board/tools'
-import { begin, commit, end, getState, live, selected, setSettings, useStore, withAdded, withMoved, withoutItem, withShape, select } from '../store/store'
+import { begin, commit, end, getState, live, selected, setSettings, setSheet, useStore, withAdded, withMoved, withoutItem, withShape, select, type Sheet } from '../store/store'
+import { useNarrow } from '../useNarrow'
 import { Choice, ColorField, NumberField, Section, Toggle } from './fields'
 
 const ALIGNS = [
@@ -34,12 +35,14 @@ function ToolSettings() {
           <NumberField label="Border thickness" value={s.borderThickness} min={1} max={LIMITS.thicknessMax} suffix="units" disabled={!s.border} onChange={(borderThickness) => setSettings({ borderThickness })} />
           <Toggle label="Fill (second colour)" checked={s.fill} onChange={(fill) => setSettings({ fill })} />
           {tool === 'stepped' && <NumberField label="Corner steps" value={s.steps} min={1} max={LIMITS.stepsMax} suffix="units" onChange={(steps) => setSettings({ steps })} />}
+          <Toggle label="Square / circle (like Shift)" checked={s.constrain} onChange={(constrain) => setSettings({ constrain })} />
           <p className="hint">Drag from corner to corner. Shift: a square or a circle.</p>
         </>
       )}
       {tool === 'line' && (
         <>
           <NumberField label="Thickness" value={s.lineThickness} min={1} max={LIMITS.thicknessMax} suffix="units" onChange={(lineThickness) => setSettings({ lineThickness })} />
+          <Toggle label="Straight lines only (like Shift)" checked={s.constrain} onChange={(constrain) => setSettings({ constrain })} />
           <p className="hint">Shift: straight across, down, or at 45°.</p>
         </>
       )}
@@ -63,7 +66,12 @@ function ToolSettings() {
       )}
       {tool === 'fill' && <p className="hint">Fills the area that looks the same colour, on the paint layer.</p>}
       {tool === 'eyedropper' && <p className="hint">Click a colour to make it the main colour (or hold Alt with any tool).</p>}
-      {tool === 'select' && <p className="hint">Click an object; drag it or its handles. Arrows: 1 unit (Shift: 10). Delete, Ctrl+D duplicate, [ ] order.</p>}
+      {tool === 'select' && (
+        <>
+          <Toggle label="Keep proportions when resizing (like Shift)" checked={s.constrain} onChange={(constrain) => setSettings({ constrain })} />
+          <p className="hint">Click an object; drag it or its handles. Arrows: 1 unit (Shift: 10). Delete, Ctrl+D duplicate, [ ] order.</p>
+        </>
+      )}
       <div className="mirror">
         <span>Mirror</span>
         <Toggle label="Left ↔ right" checked={s.mirror.x} onChange={(x) => setSettings({ mirror: { ...s.mirror, x } })} />
@@ -269,12 +277,44 @@ function Palette() {
   )
 }
 
+const TABS: { tab: Exclude<Sheet, null>; label: string }[] = [
+  { tab: 'selection', label: 'Selected' },
+  { tab: 'tool', label: 'Tool' },
+  { tab: 'colours', label: 'Colours' },
+]
+
+/** The panels: a column on the right; on phones a sheet over the board's lower part, one tab at a time, closed with ✕ */
 export default function SidePanel() {
+  const narrow = useNarrow()
+  const sheet = useStore((s) => s.sheet)
+  const hasSelection = useStore((s) => s.selection !== null)
+  if (!narrow)
+    return (
+      <aside className="side">
+        <SelectionPanel />
+        <ToolSettings />
+        <Palette />
+      </aside>
+    )
+  if (!sheet) return null
+  const shown = sheet === 'selection' && !hasSelection ? 'tool' : sheet
   return (
-    <aside className="side">
-      <SelectionPanel />
-      <ToolSettings />
-      <Palette />
+    <aside className="sheet" aria-label="Settings">
+      <div className="sheet-tabs" role="tablist">
+        {TABS.filter((t) => t.tab !== 'selection' || hasSelection).map((t) => (
+          <button key={t.tab} type="button" role="tab" aria-selected={shown === t.tab} className={shown === t.tab ? 'on' : ''} onClick={() => setSheet(t.tab)}>
+            {t.label}
+          </button>
+        ))}
+        <button type="button" className="close" aria-label="Close" onClick={() => setSheet(null)}>
+          ✕
+        </button>
+      </div>
+      <div className="sheet-body">
+        {shown === 'selection' && <SelectionPanel />}
+        {shown === 'tool' && <ToolSettings />}
+        {shown === 'colours' && <Palette />}
+      </div>
     </aside>
   )
 }

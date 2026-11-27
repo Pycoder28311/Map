@@ -2,6 +2,9 @@
 import type { Box } from '../model/raster'
 import { ZOOMS, type View } from '../store/store'
 
+/** The zoom step nearest to a wanted zoom (a pinch) */
+export const nearestZoom = (want: number) => ZOOMS.reduce((best, z) => (Math.abs(Math.log(z / want)) < Math.abs(Math.log(best / want)) ? z : best), ZOOMS[0])
+
 /** The unit under a point of the board's element (may be outside the board: callers clamp or ignore) */
 export const unitAt = (view: View, px: number, py: number): [number, number] => [Math.floor((px - view.panX) / view.zoom), Math.floor((py - view.panY) / view.zoom)]
 
@@ -33,8 +36,8 @@ export function zoomAt(view: View, zoom: number, px: number, py: number): View {
 
 export type Handle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
 export const HANDLES: Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
-/** Half a handle's size on screen (CSS px) */
-export const HANDLE_HALF = 5
+/** Half a handle's size on screen (CSS px): bigger for fingers */
+export const handleHalf = () => (typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches ? 10 : 5)
 
 /** A handle's centre on screen, for a box in units */
 export function handlePoint(view: View, box: Box, handle: Handle): [number, number] {
@@ -51,7 +54,7 @@ export function handlePoint(view: View, box: Box, handle: Handle): [number, numb
 export function handleAt(view: View, box: Box, px: number, py: number): Handle | null {
   for (const handle of HANDLES) {
     const [hx, hy] = handlePoint(view, box, handle)
-    if (Math.abs(px - hx) <= HANDLE_HALF + 2 && Math.abs(py - hy) <= HANDLE_HALF + 2) return handle
+    if (Math.abs(px - hx) <= handleHalf() + 3 && Math.abs(py - hy) <= handleHalf() + 3) return handle
   }
   return null
 }

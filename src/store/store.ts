@@ -33,6 +33,8 @@ export type Settings = {
   shadowDy: number
   mirror: Mirror
   grid: boolean
+  /** Like holding Shift (for touch screens): squares, circles, straight lines, resizing that keeps proportions */
+  constrain: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -56,7 +58,11 @@ export const DEFAULT_SETTINGS: Settings = {
   shadowDy: 1,
   mirror: { x: false, y: false },
   grid: true,
+  constrain: false,
 }
+
+/** On a narrow screen the panels are a sheet over the board: which part shows (null: closed) */
+export type Sheet = 'selection' | 'tool' | 'colours' | null
 
 /** Screen pixels per unit (a whole number: every unit the same size on screen) and where the board's top left is (CSS px) */
 export type View = { zoom: number; panX: number; panY: number }
@@ -73,6 +79,9 @@ export type State = {
   version: number
   /** A message under the board (a saved drawing that could not be read, too many colours …) */
   notice: string | null
+  sheet: Sheet
+  /** The library's asset being drawn (store/library.ts) */
+  assetId: string | null
 }
 
 export const HISTORY_MAX = 200
@@ -88,6 +97,8 @@ let state: State = {
   view: { zoom: 8, panX: 0, panY: 0 },
   version: 0,
   notice: null,
+  sheet: null,
+  assetId: null,
 }
 const listeners = new Set<() => void>()
 
@@ -129,6 +140,13 @@ export function end() {
   if (start && start !== state.drawing) set({ past: [...state.past, start].slice(-HISTORY_MAX), future: [] })
 }
 
+/** The gesture is dropped: the drawing goes back to how it was when it began (a second finger landed: a pinch, not a stroke) */
+export function cancel() {
+  const start = gestureStart
+  gestureStart = null
+  if (start && start !== state.drawing) set({ drawing: start })
+}
+
 /** One change, one undo step */
 export function commit(drawing: Drawing) {
   begin()
@@ -150,10 +168,10 @@ export function redo() {
 
 const keepSelection = (d: Drawing) => (d.items.some((i) => i.id === state.selection) ? state.selection : null)
 
-/** A new drawing or one opened from a file: the history starts again */
-export function replaceDrawing(drawing: Drawing) {
+/** Another drawing (another asset, a new one, one opened from a file): the history starts again */
+export function replaceDrawing(drawing: Drawing, assetId: string | null = state.assetId) {
   gestureStart = null
-  set({ drawing: normalizeDrawing(drawing), past: [], future: [], selection: null })
+  set({ drawing: normalizeDrawing(drawing), past: [], future: [], selection: null, assetId })
 }
 
 /** Notifies after painting in place on a stroke's own copy of the paint layer */
@@ -193,6 +211,7 @@ export const setSettings = (patch: Partial<Settings>) => set({ settings: { ...st
 export const select = (id: string | null) => set({ selection: id })
 export const setView = (view: Partial<View>) => set({ view: { ...state.view, ...view } })
 export const setNotice = (notice: string | null) => set({ notice })
+export const setSheet = (sheet: Sheet) => set({ sheet })
 
 /** Changes the drawing's own settings (name, scale, background): one undo step */
 export const setDrawingProps = (patch: Partial<Pick<Drawing, 'name' | 'exportScale' | 'background'>>) => commit(normalizeDrawing({ ...state.drawing, ...patch }))
@@ -205,8 +224,8 @@ export function paintCopy(): PaintItem {
   return copy
 }
 
-/** Starts the store from what the browser kept (store/persist.ts) */
-export function hydrate(next: Partial<Pick<State, 'drawing' | 'settings' | 'view'>>, notice: string | null) {
+/** Starts the store from what the browser kept (store/library.ts) */
+export function hydrate(next: Partial<Pick<State, 'drawing' | 'settings' | 'view' | 'assetId'>>, notice: string | null) {
   state = { ...state, ...next, settings: { ...DEFAULT_SETTINGS, ...next.settings }, notice, version: state.version + 1 }
   listeners.forEach((listener) => listener())
 }

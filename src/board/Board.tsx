@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { boundsOf, flatten } from '../model/raster'
 import { isShape } from '../model/types'
-import { getState, selected, setView, subscribe, useStore } from '../store/store'
+import { cancel, getState, selected, setView, subscribe, useStore, type View } from '../store/store'
 import { editText, press, resizeSelected, type Gesture, type Mods } from './tools'
-import { clampUnit, fitView, HANDLE_HALF, handleAt, handlePoint, HANDLES, stepZoom, unitAt, zoomAt } from './view'
+import { clampUnit, fitView, handleAt, handleHalf, handlePoint, HANDLES, nearestZoom, stepZoom, unitAt, zoomAt } from './view'
 
 const CHECKER_A = '#3a3a40'
 const CHECKER_B = '#2e2e33'
@@ -26,6 +26,11 @@ export default function Board() {
   const offscreen = useRef<HTMLCanvasElement | null>(null)
   const gesture = useRef<Gesture | null>(null)
   const panning = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null)
+  // Touch: the fingers down, a pinch (two fingers: zoom and pan), and a one-finger press waiting to know it is not the start of a pinch
+  const fingers = useRef(new Map<number, [number, number]>())
+  const pinch = useRef<{ dist: number; mid: [number, number]; view: View } | null>(null)
+  const pinchHeld = useRef(false)
+  const waiting = useRef<{ at: [number, number]; mods: Mods } | null>(null)
   const [space, setSpace] = useState(false)
   const [hover, setHover] = useState<[number, number] | null>(null)
   const tool = useStore((s) => s.tool)
@@ -129,7 +134,7 @@ export default function Board() {
         ctx.setLineDash([])
         for (const h of HANDLES) {
           const [hx, hy] = handlePoint(s.view, b, h)
-          const r = HANDLE_HALF * dpr
+          const r = handleHalf() * dpr
           ctx.fillStyle = '#111'
           ctx.fillRect(hx * dpr - r - line, hy * dpr - r - line, 2 * r + 2 * line, 2 * r + 2 * line)
           ctx.fillStyle = ACCENT
@@ -188,17 +193,36 @@ export default function Board() {
     const r = wrap.current!.getBoundingClientRect()
     return [e.clientX - r.left, e.clientY - r.top] as const
   }
-  const mods = (e: React.PointerEvent | PointerEvent): Mods => ({ shift: e.shiftKey, alt: e.altKey })
+  const mods = (e: React.PointerEvent | PointerEvent): Mods => ({ shift: e.shiftKey || getState().settings.constrain, alt: e.altKey })
   const unit = (e: React.PointerEvent) => {
     const [px, py] = local(e)
     const { view, drawing } = getState()
     return clampUnit(unitAt(view, px, py), drawing.width, drawing.height)
   }
 
+  const fingerSpread = () => {
+    const [a, b] = [...fingers.current.values()]
+    return { dist: Math.hypot(a[0] - b[0], a[1] - b[1]), mid: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2] as [number, number] }
+  }
+
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0 && e.button !== 1) return
     wrap.current!.setPointerCapture(e.pointerId)
     const [px, py] = local(e)
+    const touch = e.pointerType === 'touch'
+    if (touch) {
+      fingers.current.set(e.pointerId, [px, py])
+      // A second finger: a pinch. What the first one began is dropped (a stroke goes back; a press waiting is forgotten)
+      if (fingers.current.size === 2) {
+        if (gesture.current) cancel()
+        gesture.current = null
+        waiting.current = null
+        pinchHeld.current = true
+        pinch.current = { ...fingerSpread(), view: getState().view }
+        return
+      }
+      if (fingers.current.size > 2 || pinchHeld.current) return
+    }
     const { view, drawing } = getState()
     if (space || e.button === 1) {
       panning.current = { x: px, y: py, panX: view.panX, panY: view.panY }
@@ -217,11 +241,27 @@ export default function Board() {
     // Outside the board: shapes, the brush and the eraser still start at the nearest unit; the others ignore it
     const outside = ux < 0 || uy < 0 || ux >= drawing.width || uy >= drawing.height
     if (outside && (getState().tool === 'fill' || getState().tool === 'eyedropper' || getState().tool === 'text' || getState().tool === 'select')) return
-    gesture.current = press(unit(e), mods(e))
+    // A finger: the press starts when it moves or lifts, so a pinch never paints or fills first
+    if (touch) waiting.current = { at: unit(e), mods: mods(e) }
+    else gesture.current = press(unit(e), mods(e))
   }
 
   const onPointerMove = (e: React.PointerEvent) => {
     const [px, py] = local(e)
+    if (e.pointerType === 'touch' && fingers.current.has(e.pointerId)) {
+      fingers.current.set(e.pointerId, [px, py])
+      if (pinch.current && fingers.current.size >= 2) {
+        // Zoom in whole steps (every unit the same size), keeping the unit under the fingers' middle under it
+        const p = pinch.current
+        const { dist, mid } = fingerSpread()
+        const zoom = nearestZoom((p.view.zoom * dist) / Math.max(1, p.dist))
+        const ux = (p.mid[0] - p.view.panX) / p.view.zoom
+        const uy = (p.mid[1] - p.view.panY) / p.view.zoom
+        setView({ zoom, panX: Math.round(mid[0] - ux * zoom), panY: Math.round(mid[1] - uy * zoom) })
+        return
+      }
+      if (pinchHeld.current) return
+    }
     if (panning.current) {
       const p = panning.current
       setView({ panX: Math.round(p.panX + px - p.x), panY: Math.round(p.panY + py - p.y) })
@@ -229,12 +269,28 @@ export default function Board() {
     }
     const { view, drawing } = getState()
     const [ux, uy] = unitAt(view, px, py)
-    setHover(ux >= 0 && uy >= 0 && ux < drawing.width && uy < drawing.height ? [ux, uy] : null)
+    if (e.pointerType !== 'touch') setHover(ux >= 0 && uy >= 0 && ux < drawing.width && uy < drawing.height ? [ux, uy] : null)
+    if (waiting.current) {
+      const w = waiting.current
+      waiting.current = null
+      gesture.current = press(w.at, w.mods)
+    }
     gesture.current?.move(unit(e), mods(e))
   }
 
-  const onPointerUp = () => {
+  const onPointerUp = (e: React.PointerEvent) => {
     panning.current = null
+    if (e.pointerType === 'touch') {
+      fingers.current.delete(e.pointerId)
+      if (fingers.current.size < 2) pinch.current = null
+      if (fingers.current.size === 0) pinchHeld.current = false
+    }
+    // A tap: the press it was waiting for, now
+    if (waiting.current) {
+      const w = waiting.current
+      waiting.current = null
+      gesture.current = press(w.at, w.mods)
+    }
     const g = gesture.current
     gesture.current = null
     g?.up()

@@ -1,4 +1,6 @@
 import { useEffect } from 'react'
+import { EDIT_TEXT_EVENT } from './board/tools'
+import { useNarrow } from './useNarrow'
 import Board from './board/Board'
 import { fitView, stepZoom, zoomAt } from './board/view'
 import { moved } from './board/tools'
@@ -6,7 +8,7 @@ import { newId, isShape, type ShapeItem } from './model/types'
 import SidePanel from './panels/SidePanel'
 import Toolbar, { TOOLS } from './panels/Toolbar'
 import TopBar from './panels/TopBar'
-import { commit, getState, redo, select, selected, setSettings, setTool, setView, undo, withAdded, withMoved, withoutItem, withShape } from './store/store'
+import { commit, getState, redo, select, selected, setSettings, setSheet, setTool, setView, undo, useStore, withAdded, withMoved, withoutItem, withShape } from './store/store'
 
 /** The keyboard: tools by their key, undo / redo, the selection (arrows, Delete, duplicate, order), colours, grid and zoom */
 function useShortcuts() {
@@ -72,10 +74,23 @@ function useShortcuts() {
   }, [])
 }
 
+/** On phones, editing a text opens the sheet at its field (the keyboard comes up there) */
+function useTextSheet(narrow: boolean) {
+  useEffect(() => {
+    if (!narrow) return
+    const open = () => setSheet('selection')
+    window.addEventListener(EDIT_TEXT_EVENT, open)
+    return () => window.removeEventListener(EDIT_TEXT_EVENT, open)
+  }, [narrow])
+}
+
 export default function App() {
   useShortcuts()
+  const narrow = useNarrow()
+  useTextSheet(narrow)
+  const sheet = useStore((s) => s.sheet)
   return (
-    <div className="app">
+    <div className={`app ${narrow ? 'narrow' : ''} ${narrow && sheet ? 'with-sheet' : ''}`}>
       <TopBar />
       <Toolbar />
       <main className="stage">

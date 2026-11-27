@@ -11,7 +11,8 @@ merged into `main`.
 **Not in this plan:** accounts, a server, sharing between people, animation, importing pictures to trace, a layers panel.
 
 **Status:** built (see README.md). Changes from the plan while building: items hold their colours as `#rrggbb` and the palette letters are
-made only in the data file (so there is no palette to manage while drawing); **mirror drawing** added (U10).
+made only in the data file (so there is no palette to manage while drawing); **mirror drawing** added (U10); **phones and tablets**
+(U11); an **asset library** in local storage starting with the app's article book card (U12).
 
 ## 0 — Decisions
 
@@ -28,6 +29,8 @@ made only in the data file (so there is no palette to manage while drawing); **m
 | U7 | **Download:** a **PNG** and a **data file** (JSON) |
 | U8 | Also: **eraser**, **fill bucket**, **eyedropper**, **undo / redo**, **save in the browser** (and open a saved data file again) |
 | U9 | No layers panel |
+| U11 | **Works on phones** with a good touch UI: tools along the bottom, the panels in a sheet, pinch to zoom, bigger handles, a "like Shift" switch |
+| U12 | **Saved in local storage** as a library of assets, starting with the Map app's **article book card** |
 | U10 | **Mirror:** left ↔ right and / or top ↔ bottom across the board's middle, for the brush, the eraser, the fill and new shapes and texts; a selected object has Mirror copy ↔ / ↕ |
 
 ### Defaults chosen in this plan (override any of them)
