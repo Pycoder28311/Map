@@ -10,6 +10,9 @@ merged into `main`.
 
 **Not in this plan:** accounts, a server, sharing between people, animation, importing pictures to trace, a layers panel.
 
+**Status:** built (see README.md). Changes from the plan while building: items hold their colours as `#rrggbb` and the palette letters are
+made only in the data file (so there is no palette to manage while drawing); **mirror drawing** added (U10).
+
 ## 0 — Decisions
 
 ### Confirmed by the user
@@ -25,6 +28,7 @@ merged into `main`.
 | U7 | **Download:** a **PNG** and a **data file** (JSON) |
 | U8 | Also: **eraser**, **fill bucket**, **eyedropper**, **undo / redo**, **save in the browser** (and open a saved data file again) |
 | U9 | No layers panel |
+| U10 | **Mirror:** left ↔ right and / or top ↔ bottom across the board's middle, for the brush, the eraser, the fill and new shapes and texts; a selected object has Mirror copy ↔ / ↕ |
 
 ### Defaults chosen in this plan (override any of them)
 
@@ -234,4 +238,4 @@ the Map app ("this is the book card's frame").
 
 1. P1–P11 are defaults: say which to change.
 2. Should it later be put online (a static site) so it can be opened without running it? Not in this plan.
-3. Should a **mirror** option be added for symmetric assets (draw the left half, the right follows)? Many of the app's frames are symmetric.
+3. ~~Mirror option~~: added (U10).
