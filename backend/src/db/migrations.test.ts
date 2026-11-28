@@ -304,3 +304,20 @@ describe('0017 + 0018: follows, invitations, shared maps', () => {
     expect(count('follows')).toBe(0)
   })
 })
+
+describe('0019: Explore indexes', () => {
+  it('only adds indexes; the public list of each table reads through its own, with no sort', () => {
+    const db = new DatabaseSync(':memory:')
+    for (const file of files.filter((f) => f < '0019')) run(db, file)
+    const before = (db.prepare("SELECT count(*) AS n FROM sqlite_master WHERE type = 'table'").all()[0] as { n: number }).n
+    run(db, files.find((f) => f.startsWith('0019'))!)
+    expect((db.prepare("SELECT count(*) AS n FROM sqlite_master WHERE type = 'table'").all()[0] as { n: number }).n).toBe(before)
+    for (const table of ['articles', 'maps', 'projects', 'folders']) {
+      const plan = (db.prepare(`EXPLAIN QUERY PLAN SELECT id FROM ${table} WHERE visibility = 'public' AND archived = 0 ORDER BY created_at DESC, id DESC LIMIT 25`).all() as { detail: string }[])
+        .map((p) => p.detail)
+        .join(' | ')
+      expect(plan).toContain(`${table}_explore_idx`)
+      expect(plan).not.toContain('TEMP B-TREE')
+    }
+  })
+})

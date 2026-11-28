@@ -8,7 +8,7 @@ import { useObjectDrag } from '../drag/objectDrag'
 import { useObjectDrop } from '../drag/objectDrop'
 import { PLACE_ZONE, placeDropData, type PlaceTarget, type PlaceValue } from '../drag/placeDrop'
 import { useState } from 'react'
-import { LuMaximize2, LuPlus } from 'react-icons/lu'
+import { LuGlobe, LuMaximize2, LuPlus } from 'react-icons/lu'
 import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
 import Modal from '../../components/ui/overlays/Modal'
@@ -128,10 +128,21 @@ export default function ResourceCard({ resource, item, menu, onOpen, place, cont
       </Button>
     </div>
   )
+  // Public (its owner's own card): anyone signed in can find it on Explore (docs/plans/41)
+  const publicTag = item.visibility === 'public' && (
+    <span
+      title="Public: anyone signed in can find and read it"
+      aria-label="Public"
+      className="pointer-events-none absolute start-2 bottom-2 z-10 inline-flex size-6 items-center justify-center rounded-full bg-black/55 text-white/85"
+    >
+      <LuGlobe aria-hidden className="size-3.5" />
+    </span>
+  )
   const marks = (
     <>
       {open}
       {more}
+      {publicTag}
       {bar}
     </>
   )

@@ -134,6 +134,13 @@
       "when": 1795462265351,
       "tag": "0018_invitation_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1795854219326,
+      "tag": "0019_explore_indexes",
+      "breakpoints": true
     }
   ]
 }

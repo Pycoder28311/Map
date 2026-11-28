@@ -60,7 +60,7 @@ const attachColumns = () => ({
  * has an `attach`), `extra` (the backend's own columns, which no client writes: a map's file), the dates, `archived`,
  * `visibility`/`version`/`edited_by` (when it has `share`), then the order columns. Its list index: the owner, the list filters, then
  * the list order (lib/sort.ts), so a filtered list reads only its own rows. An attachable table also has an index of its attached
- * rows only (the others are not in it)
+ * rows only (the others are not in it); an explorable one an index of its public rows (docs/plans/41)
  */
 export function ownedTable(config: Table, extra: Record<string, SQLiteColumnBuilderBase> = {}): OwnedTable {
   const columns: Record<string, SQLiteColumnBuilderBase> = {
@@ -81,6 +81,10 @@ export function ownedTable(config: Table, extra: Record<string, SQLiteColumnBuil
   return sqliteTable(config.tableName, columns, (t) => [
     listIndex(`${config.tableName}_list_idx`, t as never, { owner: 'userId', filters: filters as never, order: config.order }),
     ...(config.link ? [check(`${config.tableName}_object_pair`, sql`(${t.objectType} IS NULL) = (${t.objectId} IS NULL)`)] : []),
+    // Explore (docs/plans/41): the public rows not in the Trash, newest first, read without a sort
+    ...(config.share && config.explore
+      ? [index(`${config.tableName}_explore_idx`).on(t.visibility as never, t.archived as never, t.createdAt as never, t.id as never)]
+      : []),
     ...(config.attach
       ? [
           index(`${config.tableName}_attached_idx`)

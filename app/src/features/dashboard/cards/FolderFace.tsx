@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from 'react'
-import { LuImagePlus, LuPlus } from 'react-icons/lu'
+import { LuFolderOpen, LuImagePlus, LuPlus } from 'react-icons/lu'
 import type { Entry } from '../../../lib/resource/reorder'
 import MapPreview from './MapPreview'
 
@@ -43,7 +43,7 @@ function DraftTile({ className = '' }: { className?: string }) {
  * objects here); one, a big tile; two, side by side and a little less tall; three, two above one centred (all the same size); four or more
  * (the first four): a 2×2 grid. `pending`: a draft card is being made from it: its dashed tile comes first, among the items. While an item is dragged over it (`dropping`), the dashed square shows instead, whatever it holds.
  */
-type Props = { contents: Entry[]; dropping?: boolean; pending?: boolean }
+type Props = { contents: Entry[]; dropping?: boolean; pending?: boolean; /** Someone else's folder (Explore): no "Drop objects here" */ readOnly?: boolean }
 
 /** The grid and the tile of each count (Tailwind needs the full class strings): one grid for all of them, so a tile is the same element when the count changes */
 const GRID = ['', 'grid-cols-1 grid-rows-1', 'grid-cols-2 grid-rows-[1fr] items-center', 'grid-cols-4 grid-rows-2', 'grid-cols-2 grid-rows-2']
@@ -51,7 +51,7 @@ const BIG = [{}, { icon: 'size-10', text: 'text-small' }, { icon: 'size-6' }, {}
 /** How long a tile takes to go to its new place and size, or to appear (ms) */
 const MOVE_MS = 320
 
-export default function FolderFace({ contents, dropping = false, pending = false }: Props) {
+export default function FolderFace({ contents, dropping = false, pending = false, readOnly = false }: Props) {
   const shown: (Entry | 'draft')[] = [...(pending ? (['draft'] as const) : []), ...contents].slice(0, FOLDER_TILES)
   const n = shown.length
   const keyOf = (entry: Entry | 'draft') => (entry === 'draft' ? 'draft' : `${entry.resource.name}:${entry.item.id}`)
@@ -96,7 +96,13 @@ export default function FolderFace({ contents, dropping = false, pending = false
 
   return (
     <>
-      {(n === 0 || dropping) && (
+      {readOnly && n === 0 && (
+        <div data-card-body className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1 text-center text-small text-fg-subtle">
+          <LuFolderOpen aria-hidden className="size-8" />
+          Open to see what is inside
+        </div>
+      )}
+      {!readOnly && (n === 0 || dropping) && (
         <div
           data-card-body
           className={`flex min-h-0 flex-1 flex-col items-center justify-center gap-1 rounded-(--btn-radius) border-2 border-dashed text-center text-small transition-colors ${

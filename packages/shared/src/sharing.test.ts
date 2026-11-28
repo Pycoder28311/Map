@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { DATA, INVITABLE, SHAREABLE, TABLE_NAMES } from './data.config'
+import { DATA, EXPLORABLE, INVITABLE, SHAREABLE, TABLE_NAMES } from './data.config'
+import { exploreFilter } from './explore'
 import { followsFilter } from './follows'
 import { invitationInput, invitationsFilter } from './invitations'
 import { messageFilter, messageImport, messageInput, messageUpdate } from './messages'
@@ -87,5 +88,20 @@ describe('messages', () => {
   it('imports between 1 and 50 old messages', () => {
     expect(messageImport.safeParse({ articleId: 1, items: [] }).success).toBe(false)
     expect(messageImport.parse({ articleId: 1, items: [{ title: 't' }] })).toEqual({ articleId: 1, items: [{ title: 't', content: '' }] })
+  })
+})
+
+describe('explore', () => {
+  it('EXPLORABLE is exactly the tables with explore: true, each shareable, without notes', () => {
+    expect([...EXPLORABLE].sort()).toEqual(TABLE_NAMES.filter((n) => (DATA[n] as { explore?: true }).explore).sort())
+    for (const name of EXPLORABLE) expect(SHAREABLE).toContain(name)
+    expect(EXPLORABLE).not.toContain('notes')
+  })
+  it('a search is trimmed and cut; empty is none; a type is one of them', () => {
+    expect(exploreFilter.parse({ q: '  light ' })).toEqual({ q: 'light' })
+    expect(exploreFilter.parse({ q: '   ' })).toEqual({})
+    expect(exploreFilter.parse({ q: 'x'.repeat(150) }).q).toHaveLength(100)
+    expect(exploreFilter.parse({ type: 'maps' })).toEqual({ type: 'maps' })
+    expect(exploreFilter.safeParse({ type: 'notes' }).success).toBe(false)
   })
 })

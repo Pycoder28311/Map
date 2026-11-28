@@ -8,6 +8,7 @@ import SidebarDropProvider from './SidebarDrop'
 import SidebarPixels from './SidebarPixels'
 import SidebarTree from './SidebarTree'
 import TrashBin from './TrashBin'
+import ExploreLink from './ExploreLink'
 import { useHoverIntent } from './useHoverIntent'
 import { useSidebar } from './useSidebar'
 
@@ -127,7 +128,9 @@ export default function Sidebar() {
                                 <SidebarTree compact={!open} />
                             </div>
                         </div>
-                        <div className="shrink-0 pt-(--divider-gap)">
+                        {/* Explore, then the Trash, at the bottom (docs/plans/41) */}
+                        <div className="flex shrink-0 flex-col gap-(--divider-gap) pt-(--divider-gap)">
+                            <ExploreLink compact={!open} />
                             <TrashBin compact={!open} />
                         </div>
                     </div>

@@ -53,6 +53,8 @@ export type TableConfig = {
    * and `edited_by` to the table
    */
   readonly share?: true
+  /** Its public rows are listed on the Explore page (docs/plans/41): an index of them, newest first. Needs `share` */
+  readonly explore?: true
 }
 
 type FieldValues<C extends TableConfig> = { -readonly [K in keyof C['fields']]: ValueOf<C['fields'][K]> }

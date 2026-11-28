@@ -28,6 +28,7 @@ export const DATA = defineTables({
   projects: {
     access: 'owner',
     share: true,
+    explore: true,
     order: ORDERED,
     fields: { title: field.text(200), content: field.richText() },
     preview: 'content',
@@ -47,6 +48,7 @@ export const DATA = defineTables({
   folders: {
     access: 'owner',
     share: true,
+    explore: true,
     order: ORDERED,
     fields: { title: field.text(200), description: field.plainText(2000) },
     requireOneOf: ['title'],
@@ -55,6 +57,7 @@ export const DATA = defineTables({
   articles: {
     access: 'owner',
     share: true,
+    explore: true,
     order: ORDERED,
     fields: { title: field.text(200), content: field.richText(), infobox: field.json(infobox, EMPTY_INFOBOX), autolinkers: field.json(autolinkers, EMPTY_AUTOLINKERS) },
     // The autolinkers are the editors' (the links they made are in the text) and big: not in lists, not in a reader's copy
@@ -70,6 +73,7 @@ export const DATA = defineTables({
     access: 'owner',
     // Shared with collaborators (docs/plans/40): its row like the others, its file through the maps routes' own access check
     share: true,
+    explore: true,
     order: ORDERED,
     // branchOf: the first map of its branch group (0: not a branch); set by the branch route (features/board/branches.ts)
     fields: { title: field.text(200), branchOf: field.int() },
@@ -110,6 +114,10 @@ export const isShareable = (name: string): name is ShareableName => (SHAREABLE a
  */
 export const INVITABLE = ['projects', 'folders', 'articles', 'maps'] as const satisfies readonly ShareableName[]
 export type InvitableName = (typeof INVITABLE)[number]
+
+/** The tables whose public rows the Explore page lists (`explore: true`, docs/plans/41): not notes, which are personal */
+export const EXPLORABLE = ['projects', 'folders', 'articles', 'maps'] as const satisfies readonly ShareableName[]
+export type ExplorableName = (typeof EXPLORABLE)[number]
 export const isInvitable = (name: string): name is InvitableName => (INVITABLE as readonly string[]).includes(name)
 
 /** The types of one table, e.g. `Item<'notes'>` */

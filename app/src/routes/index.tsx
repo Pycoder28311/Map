@@ -8,6 +8,7 @@ import HomePage from '../pages/Home/HomePage'
 import DashboardPage from '../pages/Dashboard/DashboardPage'
 import ProfilePage from '../pages/Profile/ProfilePage'
 import InboxPage from '../pages/Inbox/InboxPage'
+import ExplorePage from '../pages/Explore/ExplorePage'
 import ResourceListPage from '../components/ui/resource/ResourceListPage'
 import { resourcesWith } from '../resources/registry'
 import SignInPage from '../pages/SignIn/SignInPage'
@@ -30,6 +31,7 @@ export default function AppRoutes() {
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/inbox" element={<InboxPage />} />
+                    <Route path="/explore" element={<ExplorePage />} />
                     {/* Each resource's list page (/projects, /notes, /folders…) */}
                     {resourcesWith('page').map((resource) => (
                         <Route key={resource.name} path={resource.surfaces.page} element={<ResourceListPage resource={resource} />} />

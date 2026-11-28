@@ -1,6 +1,6 @@
 import { PAGE_SIZE_DEFAULT } from '@map/shared/page-size'
 import { Fragment, useEffect, useMemo, useState, type ComponentProps } from 'react'
-import { LuChevronsDown, LuChevronsUp, LuLoaderCircle, LuPin, LuSave, LuTrash2, LuUnlink, LuX } from 'react-icons/lu'
+import { LuChevronsDown, LuChevronsUp, LuGlobe, LuLoaderCircle, LuPin, LuSave, LuTrash2, LuUnlink, LuX } from 'react-icons/lu'
 import { CHILDREN, ROOTS } from '../../../features/dashboard/childResources'
 import { DRAFTED } from '../../../features/dashboard/draftKinds'
 import { groupByParent, parentTypeOf, type Entry } from '../../../features/dashboard/tree'
@@ -245,7 +245,11 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
         ? [{ icon: LuUnlink, label: `Remove from screen: ${node.label}`, show: 'hover', onClick: () => workspace.close(node.panel!) }]
         : []
     if (!row) return undrag
-    const pin: TreeRightIcon[] = !only && row.resource.ui.row.pinned?.(row.item) ? [{ icon: LuPin, label: 'Pinned', show: 'always' }] : []
+    const pin: TreeRightIcon[] = [
+      ...(!only && row.resource.ui.row.pinned?.(row.item) ? [{ icon: LuPin, label: 'Pinned', show: 'always' as const }] : []),
+      // Its owner's public ones: anyone signed in can find them on Explore (docs/plans/41)
+      ...(!only && row.item.visibility === 'public' ? [{ icon: LuGlobe, label: 'Public: anyone signed in can find and read it', show: 'always' as const }] : []),
+    ]
     const more: TreeRightIcon = {
       label: `More: ${node.label}`,
       show: 'hover',

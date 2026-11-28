@@ -42,6 +42,8 @@ type Props = {
   className?: string
   /** What sits on the card: the ⋯ menu and the drop bar */
   marks?: ReactNode
+  /** Someone else's object (Explore): a folder says nothing about dropping into it */
+  readOnly?: boolean
 }
 
 /**
@@ -52,7 +54,7 @@ type Props = {
  * The element of the title carries `data-card-title`, where a draft's title input lands when it is created. What a draft blurs is marked `data-card-body`
  * (the content, never the box with the border), and `data-card-bleed` too when it fills its box to the edge (it is scaled up a little while blurred, so its blurred edge is out of sight).
  */
-export default function CardFace({ resource, item, title, contents, dropping, pending, box, className = '', marks }: Props) {
+export default function CardFace({ resource, item, title, contents, dropping, pending, box, className = '', marks, readOnly }: Props) {
   const Icon = resource.ui.icon
   const created = item.createdAt ? new Date(item.createdAt) : null
   const look = resource.ui.card ?? 'plain'
@@ -126,7 +128,7 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
           className="ui-glass absolute inset-0 flex flex-col gap-2 overflow-hidden rounded-(--card-radius) p-2 pt-5"
           style={{ '--glass-hue': hueOf(String(item.id)) } as CSSProperties}
         >
-          <FolderFace contents={contents ?? []} dropping={dropping} pending={pending} />
+          <FolderFace contents={contents ?? []} dropping={dropping} pending={pending} readOnly={readOnly} />
         </div>
         <ButtonLook data-card-title-box variant="secondary" size="xs" icon={Icon} className="absolute left-3 top-0 max-w-[80%] min-w-0 -translate-y-1/2">
           <span data-card-title className="min-w-0 truncate">
