@@ -24,11 +24,14 @@ app/src/components/ui/overlays/ExtendMenu.tsx   a primary button that grows into
 
 ## Which one (buttons with text)
 
-There are **four styles**, nothing else: no `plain`, `filled`, `danger` or `noline` modifiers.
+There are **five styles**, nothing else: no modifiers, no sixth style. Each is defined **once**, in section C of `styles/buttons.css`
+(the file's header lists its sections). A new look for a text button is a change to one of these five. `buttons.test.ts` checks this:
+`ButtonVariant` is exactly primary / secondary / underline / leather, and section C names only those classes, Link, the tones and the sizes.
 
 | Style | How | For |
 |---|---|---|
 | **Primary** | `<Button>` (`variant="primary"`, the default) | every framed button: the Cancel-like frame and panel, bone label in the pixel font, no diamonds |
+| **Secondary** | `variant="secondary"` | bold white pixel text only; hovered (or chosen) the frame comes **out of the screen**: Primary's frame with a plain panel, lifted, a black edge under it; pressed, it goes back in. The **Sort by** buttons |
 | **Underline** | `variant="underline"` | quiet actions: toolbars, menu rows, tabs and chips not chosen, Show more, Try again |
 | **Leather** | `variant="leather"` | the leather buttons (as before) |
 | **Link** | `<LinkButton>` | small text that lightens when hovered (the columns' "Show all") |
@@ -38,7 +41,7 @@ Primary has three **tones** (`tone`, only on primary):
 | Tone | Look | For |
 |---|---|---|
 | `green` (default) | the gray panel with a soft teal glow inside (the old Venom's) | the main action (Save, Sign in, Create, Add +), and the **chosen** one of a group |
-| `gray` | the plain gray panel | the other actions (Cancel, Share, Sort by), the cards' names (`ButtonLook`'s default) |
+| `gray` | the plain gray panel | the other actions (Cancel, Share), the cards' names (`ButtonLook`'s default) |
 | `red` | a red panel | Delete, Sign out |
 
 A chosen / not chosen pair: `variant={on ? 'primary' : 'underline'}` (a tab, a filter chip), or `tone={on ? 'green' : 'gray'}`
@@ -50,7 +53,7 @@ when both should be framed.
 
 **Icon-only buttons** (`IconButton`) keep their own looks: `ghost`, `selected`, `secondary`, `primary`, `text`, and `round`.
 
-**ExtendMenu** (a button that grows into its menu): `variant="ghost"` is a gray primary ("Sort by"); `variant="create"` a green
+**ExtendMenu** (a button that grows into its menu): `variant="ghost"` is a Secondary ("Sort by"); `variant="create"` a green
 one with its icon on the right ("Add +", the + turning into an ✕ and its label into "None" while open). Open, the box is dark grey.
 
 ```tsx
@@ -58,6 +61,7 @@ one with its icon on the right ("Add +", the + turning into an ✕ and its label
 <Button tone="gray" icon={LuShare2} onClick={share}>Share</Button>
 <Button iconRight={LuPlus} onClick={add}>Note</Button>
 <Button tone="red" icon={LuTrash2} onClick={remove}>Delete</Button>
+<Button variant="secondary" iconRight={LuChevronDown}>Sort by</Button>
 <Button variant="underline" size="sm" onClick={more}>Show more</Button>
 <IconButton icon={LuX} label="Close" onClick={close} />
 <ExtendMenu variant="create" label="Add" items={kinds} onSelect={create}>Add</ExtendMenu>

@@ -8,10 +8,10 @@ import { extendShift, roomOf } from './extendShift'
 
 // The box that grows is a button of the same look (styles/buttons.css, "ExtendMenu"): closed, its button shows; open,
 // it is the button's face, with the options in it
-// it is the button's face, with the options in it. Both kinds are the primary button: gray ("Sort by") or green (create: "Add +")
+// it is the button's face, with the options in it. ghost is a secondary button ("Sort by"), create a primary green one ("Add +")
 const BOX = {
-  ghost: 'ui-btn ui-btn-shade ui-extend',
-  create: 'ui-btn ui-btn-shade ui-tone-green ui-extend',
+  ghost: 'ui-btn ui-extend',
+  create: 'ui-btn ui-extend',
 } as const
 
 export type ExtendMenuItem<T extends string> = { value: T; label: string; icon?: ButtonIcon }
@@ -19,7 +19,7 @@ export type ExtendMenuItem<T extends string> = { value: T; label: string; icon?:
 type Content = ReactNode | ((open: boolean) => ReactNode)
 
 type Props<T extends string> = {
-  /** ghost: a primary gray button ("Sort by"); create: a primary green button with its icon on the right ("Add +") */
+  /** ghost: a secondary button ("Sort by"); create: a primary green button with its icon on the right ("Add +") */
   variant?: keyof typeof BOX
   items: ExtendMenuItem<T>[]
   /** The option the closed button already shows (e.g. the current kind): left out of the options */
@@ -178,7 +178,7 @@ export default function ExtendMenu<T extends string>({
     // In front of everything beside it while it is open (and while it folds back)
     <div ref={wrapRef} className={`relative inline-flex ${open || closing ? 'z-30' : ''} ${className}`}>
       <div ref={sizerRef} aria-hidden className="invisible flex">
-        <ButtonLook tone={variant === 'create' ? 'green' : 'gray'} className="gap-(--btn-gap)">{content(false)}</ButtonLook>
+        <ButtonLook variant={variant === 'create' ? 'primary' : 'secondary'} tone="green" className="gap-(--btn-gap)">{content(false)}</ButtonLook>
       </div>
       {/* The options, laid out in full but unseen: their natural size is what the button grows to */}
       <div ref={optionsRef} aria-hidden className={`${BOX[variant]} invisible pointer-events-none absolute top-0 left-0 -z-10 inline-flex flex-col`}>
@@ -200,7 +200,7 @@ export default function ExtendMenu<T extends string>({
         // button's own content (centred) stays where it is (next to an edge the whole box moves over a little: `shift`)
         className={`${BOX[variant]} absolute ${direction === 'up' ? 'bottom-0 flex-col-reverse' : 'top-0 flex-col'} flex left-1/2 -translate-x-1/2 z-20`}
       >
-        <Button tone={variant === 'create' ? 'green' : 'gray'} {...toggle} className={`${toggle.className} gap-(--btn-gap)`}>
+        <Button variant={variant === 'create' ? 'primary' : 'secondary'} {...toggle} className={`${toggle.className} gap-(--btn-gap)`}>
           {content(open)}
         </Button>
         <div id={id} role="menu" aria-label={label} inert={!open} className="ui-extend-menu flex shrink-0 flex-col">

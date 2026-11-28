@@ -1,6 +1,10 @@
+/// <reference types="node" />
 // Keeps every button in one place: the components of this folder, styled only by styles/buttons.css. A new button
-// anywhere else must use them (Button, ButtonLink, NavButton, IconButton, SplitButton; how: instructions/buttons.md).
+// anywhere else must use them (Button, ButtonLink, NavButton, IconButton, LinkButton; how: instructions/buttons.md). A button with
+// text has one of five styles only: Primary, Secondary, Underline, Leather, Link (styles/buttons.css, section C).
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import { buttonClass, type ButtonVariant } from './buttonStyles'
 
 const BUTTONS = 'components/ui/buttons/'
 
@@ -57,6 +61,9 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
 const CLASSES_ALLOWED = [BUTTONS, 'components/ui/overlays/ExtendMenu.tsx']
 
 /** Classes that give a button a look of its own: the look belongs in styles/buttons.css */
+// The stylesheet as text, read from disk (the CSS plugins empty a .css file imported in a test, even as ?raw)
+const buttonsCss = readFileSync(new URL('../../../styles/buttons.css', import.meta.url), 'utf8')
+
 const LOOK_CLASS = /(^|[\s`"'{])(bg-|text-\[|px-|py-|p-\d|rounded|shadow|border\b|border-)/
 
 // Every source file of the app (src/), as text, by its path from src/
@@ -118,7 +125,7 @@ describe('buttons', () => {
 
   it('gives buttons no look of their own (colours, padding, corners, shadows: styles/buttons.css)', () => {
     const wrong = sources.flatMap((f) =>
-      ['Button', 'ButtonLink', 'NavButton', 'IconButton', 'SplitButton', 'LinkButton', 'ButtonLook'].flatMap((name) =>
+      ['Button', 'ButtonLink', 'NavButton', 'IconButton', 'LinkButton', 'ButtonLook'].flatMap((name) =>
         openingTags(code(f.text), name)
           .map((tag) => tag.match(/className=(?:"([^"]*)"|\{`([^`]*)`\})/))
           .filter((m): m is RegExpMatchArray => !!m && LOOK_CLASS.test(m[1] ?? m[2]))
@@ -126,5 +133,31 @@ describe('buttons', () => {
       ),
     )
     expect(wrong).toEqual([])
+  })
+
+  it('has exactly five text-button styles: Primary, Secondary, Underline, Leather (Button variants) and Link (LinkButton)', () => {
+    const variants: ButtonVariant[] = ['primary', 'secondary', 'underline', 'leather']
+    // ButtonVariant is exactly these (a sixth would be a type error here, and a missing one too)
+    const all: Record<ButtonVariant, true> = { primary: true, secondary: true, underline: true, leather: true }
+    expect(Object.keys(all).sort()).toEqual([...variants].sort())
+    expect(variants.map((v) => buttonClass(v, 'gray').match(/ui-btn-[a-z]+/g)?.filter((c) => c !== 'ui-btn-sm'))).toEqual([
+      ['ui-btn-primary'],
+      ['ui-btn-secondary'],
+      ['ui-btn-underline'],
+      ['ui-btn-leather'],
+    ])
+  })
+
+  it('defines the text styles once, in section C of styles/buttons.css, and no other text style', () => {
+    const css = buttonsCss.replace(/\/\*[\s\S]*?\*\//g, '')
+    const c = css.slice(css.indexOf('.ui-btn-primary,'), css.indexOf('.ui-btn.ui-btn-square'))
+    // every style class section C names: the five, their tones, and the sizes they share
+    const named = new Set(c.match(/\.ui-(btn|tone)-[a-z-]+/g))
+    expect([...named].sort()).toEqual(
+      ['.ui-btn-leather', '.ui-btn-link', '.ui-btn-primary', '.ui-btn-secondary', '.ui-btn-selected', '.ui-btn-sm', '.ui-btn-underline', '.ui-btn-xs', '.ui-tone-green', '.ui-tone-red'],
+    )
+    // and nowhere else does a rule start a text style
+    const outside = css.replace(c, '')
+    expect(outside.match(/\.ui-btn-(primary|secondary|leather|link)\b/g) ?? []).toEqual([])
   })
 })

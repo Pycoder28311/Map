@@ -1,25 +1,29 @@
 /* ==========================================================================
    BUTTONS - the ONE place to restyle every button of the app.
-   The markup is in components/ui/buttons/ (Button, ButtonLink, NavButton,
-   IconButton, ClosableButton, SplitButton, PanelButton); which look each
-   variant has is the LOOK object in components/ui/buttons/buttonStyles.ts.
-   How to use them and how to copy changes over: instructions/buttons.md.
+   The markup is in components/ui/buttons/ (Button, ButtonLink, NavButton, ButtonLook, LinkButton, IconButton, ClosableButton,
+   PanelFrame); which class each variant gets is in components/ui/buttons/buttonStyles.ts. How to use them: instructions/buttons.md.
 
-   Only how a button looks: nothing here places it in its parent (no
-   margin, no align-self); that is the call site's (ms-auto, self-start...).
+   THE RULE: a button with text has ONE of these five styles, and there are no others:
 
-   Section C below is copied from Dark Fantasy UI (src/theme.css, "C.
-   BUTTONS"), with these edits (also in instructions/buttons.md):
-   - ":hover:enabled" -> ":hover:not(:disabled)", ":active:enabled" ->
-     ":active:not(:disabled)", so it works on links too;
-   - no margin and no align-self in .ui-btn, no --btn-margin anywhere;
-   - Underline and Stone keep their text centred (marked "Map:").
-   The Map's own additions are at the end, each marked "Map:". The same
-   look in every theme (base / arcane / pixel).
-   In @layer components: Tailwind utilities (layout: ms-auto, w-full...) win.
+     C1  Primary    .ui-btn-primary     the framed panel; tones: gray (none), .ui-tone-green (default), .ui-tone-red
+     C2  Secondary  .ui-btn-secondary   bold white pixel text; hovered, the frame comes out of the screen (Sort by)
+     C3  Underline  .ui-btn-underline   text; hovered, a line slides in under it
+     C4  Leather    .ui-btn-leather     a leather tab (a book card's Open)
+     C5  Link       .ui-btn-link        small text that lightens
+
+   A new look for a text button is a change to one of these, never a sixth style or a modifier (buttons.test.ts checks
+   buttonStyles.ts). Sizes (B) apply to every style.
+
+   Sections:  A tokens · B every button (base, icon, sizes, states) · C the five text styles · D icon-only buttons
+              (IconButton: their own looks, kept as they were) · E parts made of buttons (ExtendMenu, the floating Create, the
+              modal's close X)
+
+   Only how a button looks: nothing here places it in its parent (no margin, no align-self). In @layer components: Tailwind
+   utilities (layout: ms-auto, w-full...) win. The same look in every theme. Parts come from Dark Fantasy UI
+   (src/theme.css, "C. BUTTONS"), ":hover:enabled" written ":hover:not(:disabled)" so links work too.
    ========================================================================== */
 
-/* ---- A. TOKENS (from Dark Fantasy UI's @theme; only what the buttons use) ---- */
+/* ---- A. TOKENS ---- */
 :root {
   --color-void: #0a0710;
   --color-crypt-900: #140e1f;
@@ -76,10 +80,11 @@
 }
 
 @layer components {
-  /* ---- C. BUTTONS (copied from Dark Fantasy UI) ---- */
 
-  /* shared by every button: the defaults of all settings, and the hover swap
-     (a button that has no --btn-hover-bg etc. simply ignores it) */
+  /* ======================= B. EVERY BUTTON ======================= */
+
+  /* the defaults of all settings, and the hover swap (a button that has no --btn-hover-bg etc. simply ignores it); icon and
+     text in one line, centred */
   .ui-btn {
     --btn-font: var(--font-body);
     --btn-font-size: var(--btn-md-font);
@@ -105,6 +110,12 @@
     border: var(--btn-border);
     border-radius: var(--btn-radius);
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    text-decoration: none;
+    user-select: none;
   }
 
   .ui-btn:disabled {
@@ -117,9 +128,26 @@
     --_bg: var(--btn-hover-bg);
   }
 
-  /* react-icon before a label: size = text size x ratio, centre kept at
-     --btn-icon-center x text size above the baseline for any ratio.
-     --_pull = how much closer icon and text get on hover (bracket buttons). */
+  /* a link can't be :disabled; aria-disabled gives it the same look */
+  .ui-btn[aria-disabled='true'] {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* keyboard focus */
+  .ui-btn:focus-visible {
+    outline: var(--px) solid var(--color-bone);
+    outline-offset: var(--px);
+  }
+
+  /* the current page (NavButton) and a chosen button (aria-pressed) keep the hover look */
+  .ui-btn:is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
+    --_text: var(--btn-hover-text, var(--btn-text));
+    --_bg: var(--btn-hover-bg, var(--btn-bg));
+  }
+
+  /* the icon before the label (ButtonContent): size = text size x ratio. --_pull = how much closer icon and text get on hover */
   .ui-btn-icon {
     --btn-icon-center: 0.38;
     display: inline-block;
@@ -128,20 +156,379 @@
     height: var(--btn-icon-size);
     margin-left: calc(var(--btn-icon-edge) - var(--btn-pad-x) + var(--_pull, 0px) / 2);
     margin-right: calc(var(--btn-icon-gap) - var(--_pull, 0px));
-    vertical-align: calc(var(--btn-font-size) * var(--btn-icon-center) - var(--btn-icon-size) / 2);
     transition: margin 0.18s ease-out;
   }
 
-  /* C1. Panel: the floating Create button, a square. It is a Venom button in gold (.ui-btn-venom.ui-btn-gold below: the brackets, the
-     bevels, the inner shadow and the press), with a soft shadow under it too; open (the Create modal it grows into) it is the page's
-     surface at once, with none of Venom's look */
-  .ui-btn-panel {
-    --btn-soft-shadow: 0 8px 20px rgba(0, 0, 0, 0.28), 0 2px 5px rgba(0, 0, 0, 0.2);
+  /* the icon after the label (iconRight): the same room, mirrored */
+  .ui-btn-icon.ui-btn-icon-right {
+    margin-left: calc(var(--btn-icon-gap) - var(--_pull, 0px));
+    margin-right: calc(var(--btn-icon-edge) - var(--btn-pad-x) + var(--_pull, 0px) / 2);
   }
 
-  /* ---- bracket buttons: Venom, Shade, Venom split. Padding and the white
-     corner brackets are defined ONCE here. The brackets are hidden (zero
-     length, on the corner) and slide out on hover. */
+  /* other icons in a button's content (a ▾ after the label, an ✕ in a chip): text-sized, spaced from the text, as far from the
+     button's edge as from the text */
+  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon) {
+    flex: none;
+    width: 1em;
+    height: 1em;
+  }
+
+  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):first-child:not(:last-child) {
+    margin-inline-end: var(--btn-icon-gap);
+  }
+
+  /* the icon at either end is as far from the button's edge as from the text (a button's padding can be wider than that) */
+  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):first-child:not(:last-child) {
+    margin-inline-start: calc(var(--btn-icon-edge) - var(--btn-pad-x));
+  }
+
+  /* hovered (Venom, Shade): the icon after the label comes closer to the text, like the one before it does (--_pull); the
+     space it leaves goes to its end margin, so the button keeps its width. (A lone one is a ▾ after the label: the text
+     before it isn't an element, so it counts as first and last) */
+  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):is(:not(:first-child), :only-child) {
+    margin-inline-start: calc(var(--btn-icon-gap) - var(--_pull, 0px));
+    transition: margin 0.18s ease-out;
+  }
+
+  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):last-child {
+    margin-inline-end: calc(var(--btn-icon-edge) - var(--btn-pad-x) + var(--_pull, 0px));
+  }
+
+  /* sizes (any style): lg as tall as a text field (the navbar's Recent History); sm for tight rows; xs smaller still */
+  .ui-btn.ui-btn-lg {
+    --btn-font-size: 16px;
+    --btn-icon-ratio: 1.25;
+    min-height: var(--field-h);
+  }
+
+  .ui-btn.ui-btn-sm {
+    --btn-font-size: 12.8px;
+    --bracket-btn-pad-x: calc(var(--px) * 5.5);
+    --bracket-btn-pad-y: calc(var(--px) * 2);
+    --btn-icon-ratio: 1.1;
+  }
+
+  /* Map: smaller still (a map card's name): the icon's distance to the edge is its distance to the text, as in every button */
+  .ui-btn.ui-btn-xs {
+    --btn-font-size: 11px;
+    --btn-letter-spacing: 0.4px;
+    --btn-pad-x: calc(var(--px) * 4);
+    --bracket-btn-pad-x: calc(var(--px) * 4);
+    --bracket-btn-pad-y: calc(var(--px) * 1.5);
+    --btn-icon-ratio: 1.1;
+  }
+
+  /* the editor's square bars (title bar, tool panel): a button that is on has a thick light line along its bottom, inside it;
+     except the ones that say so (IconButton noline: they show it by their panel) */
+  .ui-bar-square .ui-btn:is([aria-pressed='true'], [aria-expanded='true']) {
+    box-shadow: inset 0 -3px 0 var(--color-bone);
+  }
+
+  .ui-bar-square .ui-btn.ui-btn-noline:is([aria-pressed='true'], [aria-expanded='true']) {
+    box-shadow: none;
+  }
+
+  /* ======================= C. THE FIVE TEXT STYLES ======================= */
+
+  /* C0. The frame Primary and Secondary share (defined once): the metal frame in pixel art, 19 x 19 art pixels (--vpx each): a
+     9-pixel cap each side, one middle column that stretches; the panel inside it (art columns 5.. from each side, rows 3..14);
+     the label in the pixel font with a dark outline. sm / xs: art pixels of 1.5px */
+  .ui-btn-primary,
+  .ui-btn-secondary {
+    --vpx: var(--px);
+    --btn-frame-art: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='19' height='19' viewBox='0 0 19 19' shape-rendering='crispEdges'><path fill='%23050203' d='M6 0h7v1h-7zM5 1h1v1h-1zM13 1h1v1h-1zM4 2h1v1h-1zM7 2h5v1h-5zM14 2h1v1h-1zM3 3h1v1h-1zM6 3h1v1h-1zM12 3h1v1h-1zM15 3h1v1h-1zM2 4h1v1h-1zM5 4h1v1h-1zM13 4h1v1h-1zM16 4h1v1h-1zM2 5h1v1h-1zM5 5h1v1h-1zM13 5h1v1h-1zM16 5h1v1h-1zM2 6h1v1h-1zM5 6h1v1h-1zM13 6h1v1h-1zM16 6h1v1h-1zM2 7h1v1h-1zM5 7h1v1h-1zM13 7h1v1h-1zM16 7h1v1h-1zM2 8h1v1h-1zM5 8h1v1h-1zM13 8h1v1h-1zM16 8h1v1h-1zM2 9h1v1h-1zM5 9h1v1h-1zM13 9h1v1h-1zM16 9h1v1h-1zM2 10h1v1h-1zM5 10h1v1h-1zM13 10h1v1h-1zM16 10h1v1h-1zM2 11h1v1h-1zM5 11h1v1h-1zM13 11h1v1h-1zM16 11h1v1h-1zM2 12h1v1h-1zM5 12h1v1h-1zM13 12h1v1h-1zM16 12h1v1h-1zM2 13h1v1h-1zM5 13h1v1h-1zM13 13h1v1h-1zM16 13h1v1h-1zM3 14h1v1h-1zM6 14h1v1h-1zM12 14h1v1h-1zM15 14h1v1h-1zM4 15h1v1h-1zM7 15h5v1h-5zM14 15h1v1h-1zM5 16h1v1h-1zM13 16h1v1h-1zM6 17h7v1h-7z'/><path fill='%23a89a91' d='M6 1h7v1h-7zM5 2h1v1h-1zM13 2h1v1h-1zM4 3h1v1h-1zM14 3h1v1h-1zM3 4h1v1h-1zM15 4h1v1h-1zM3 5h1v1h-1zM15 5h1v1h-1zM3 6h1v1h-1zM15 6h1v1h-1zM3 7h1v1h-1zM15 7h1v1h-1zM3 8h1v1h-1zM15 8h1v1h-1z'/><path fill='%238a7b74' d='M6 2h1v1h-1zM12 2h1v1h-1zM5 3h1v1h-1zM13 3h1v1h-1zM4 4h1v1h-1zM14 4h1v1h-1zM4 5h1v1h-1zM14 5h1v1h-1zM4 6h1v1h-1zM14 6h1v1h-1zM4 7h1v1h-1zM14 7h1v1h-1zM4 8h1v1h-1zM14 8h1v1h-1z'/><path fill='rgba(255,255,255,0.14)' d='M7 3h5v1h-5zM6 4h1v1h-1zM12 4h1v1h-1zM6 5h1v1h-1zM12 5h1v1h-1zM6 6h1v1h-1zM12 6h1v1h-1zM6 7h1v1h-1zM12 7h1v1h-1zM6 8h1v1h-1zM12 8h1v1h-1zM6 9h1v1h-1zM12 9h1v1h-1zM6 10h1v1h-1zM12 10h1v1h-1zM6 11h1v1h-1zM12 11h1v1h-1zM6 12h1v1h-1zM12 12h1v1h-1zM6 13h1v1h-1zM12 13h1v1h-1zM7 14h5v1h-5z'/><path fill='rgba(0,0,0,0.22)' d='M7 4h1v1h-1zM11 4h1v1h-1zM7 5h1v1h-1zM11 5h1v1h-1zM7 6h1v1h-1zM11 6h1v1h-1zM7 7h1v1h-1zM11 7h1v1h-1zM7 8h1v1h-1zM11 8h1v1h-1zM7 9h1v1h-1zM11 9h1v1h-1zM7 10h1v1h-1zM11 10h1v1h-1zM7 11h1v1h-1zM11 11h1v1h-1zM7 12h1v1h-1zM11 12h1v1h-1zM7 13h1v1h-1zM11 13h1v1h-1z'/><path fill='%236c5c56' d='M3 9h1v1h-1zM15 9h1v1h-1zM3 10h1v1h-1zM15 10h1v1h-1zM3 11h1v1h-1zM15 11h1v1h-1zM3 12h1v1h-1zM15 12h1v1h-1zM3 13h1v1h-1zM15 13h1v1h-1zM4 14h1v1h-1zM14 14h1v1h-1zM5 15h1v1h-1zM13 15h1v1h-1z'/><path fill='%234a3d3c' d='M4 9h1v1h-1zM14 9h1v1h-1zM4 10h1v1h-1zM14 10h1v1h-1zM4 11h1v1h-1zM14 11h1v1h-1zM4 12h1v1h-1zM14 12h1v1h-1zM4 13h1v1h-1zM14 13h1v1h-1zM5 14h1v1h-1zM13 14h1v1h-1zM6 15h1v1h-1zM12 15h1v1h-1z'/><path fill='rgba(0,0,0,0.35)' d='M2 14h1v1h-1zM16 14h1v1h-1zM3 15h1v1h-1zM15 15h1v1h-1zM4 16h1v1h-1zM14 16h1v1h-1zM5 17h1v1h-1zM13 17h1v1h-1zM6 18h7v1h-7z'/><path fill='%23625758' d='M6 16h7v1h-7z'/></svg>");
+    --_panel: calc(var(--vpx) * 5) calc(var(--vpx) * 3) / calc(100% - var(--vpx) * 10) calc(var(--vpx) * 12) no-repeat;
+    --btn-font: var(--font-pixel);
+    --btn-letter-spacing: 0.5px;
+    --btn-icon-ratio: 1.2;
+    --btn-pad-x: 18px;
+    --btn-icon-edge: var(--btn-pad-x);
+    /* an icon close to its text */
+    --btn-icon-gap: 6px;
+    position: relative;
+    isolation: isolate;
+    box-sizing: border-box;
+    height: calc(var(--vpx) * 19);
+    min-width: 70px;
+    padding-block: 0 var(--vpx);
+    text-align: center;
+    -webkit-font-smoothing: none;
+    font-smooth: never;
+    --_tx: 1.5px;
+    text-shadow:
+      var(--_tx) 0 0 #0c0600, calc(var(--_tx) * -1) 0 0 #0c0600, 0 var(--_tx) 0 #0c0600, 0 calc(var(--_tx) * -1) 0 #0c0600;
+  }
+
+  .ui-btn-primary::before,
+  .ui-btn-secondary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-style: solid;
+    border-color: transparent;
+    border-width: 0 calc(var(--vpx) * 9);
+    border-image: var(--btn-frame-art) 0 9 fill / 0 calc(var(--vpx) * 9) / 0 stretch;
+    image-rendering: pixelated;
+  }
+
+  :is(.ui-btn-primary, .ui-btn-secondary):is(.ui-btn-sm, .ui-btn-xs) {
+    --vpx: 1.5px;
+    --btn-pad-x: 21px;
+    min-width: 52px;
+  }
+
+  /* C1. PRIMARY: the frame with its panel always there; the bone label. Hovered or chosen: a lighter panel; pressed: down an art
+     pixel, darker. Tones: gray (no class), green (.ui-tone-green: a soft teal glow inside the panel), red (.ui-tone-red) */
+  .ui-btn-primary {
+    --btn-bg: var(--color-stone);
+    --btn-hover-bg: var(--color-stone-hover);
+    --btn-text: var(--color-bone);
+    --btn-hover-text: var(--color-bone-hover);
+    --btn-font-weight: 500;
+    background: linear-gradient(var(--_bg), var(--_bg)) var(--_panel);
+    transition:
+      transform 0.12s steps(3),
+      color 0.15s steps(2),
+      background-color 0.12s steps(2);
+  }
+
+  .ui-btn-primary:active:not(:disabled) {
+    --_bg: #3a3a3a;
+    transform: translateY(var(--vpx));
+  }
+
+  .ui-btn-primary.ui-tone-green {
+    --_glow: 93 191 186;
+    --_glow-a: 0.55;
+    --_glowl:
+      linear-gradient(to bottom, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) left calc(var(--vpx) * 5) top calc(var(--vpx) * 3) / calc(100% - var(--vpx) * 10) calc(var(--vpx) * 6) no-repeat,
+      linear-gradient(to top, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) left calc(var(--vpx) * 5) bottom calc(var(--vpx) * 4) / calc(100% - var(--vpx) * 10) calc(var(--vpx) * 6) no-repeat,
+      linear-gradient(to right, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) left calc(var(--vpx) * 5) top calc(var(--vpx) * 3) / calc(var(--vpx) * 15) calc(var(--vpx) * 12) no-repeat,
+      linear-gradient(to left, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) right calc(var(--vpx) * 5) top calc(var(--vpx) * 3) / calc(var(--vpx) * 15) calc(var(--vpx) * 12) no-repeat;
+    background: var(--_glowl), linear-gradient(var(--_bg), var(--_bg)) var(--_panel);
+  }
+
+  .ui-btn-primary.ui-tone-green:is(:hover:not(:disabled), [aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
+    --_glow-a: 0.8;
+  }
+
+  .ui-btn-primary.ui-tone-green:active:not(:disabled) {
+    --_glow-a: 0.4;
+  }
+
+  .ui-btn-primary.ui-tone-green:disabled {
+    --_glow-a: 0.3;
+  }
+
+  .ui-btn-primary.ui-tone-red {
+    --btn-bg: #a8322d;
+    --btn-hover-bg: #bf3b35;
+  }
+
+  .ui-btn-primary.ui-tone-red:active:not(:disabled) {
+    --_bg: #7e2622;
+  }
+
+  /* C2. SECONDARY: only thick, bold, white pixel text. Hovered (or chosen) the frame comes out of the screen: the same frame
+     as Primary with a plain panel (no glow, no colour of its own), lifted an art pixel, a black edge under it (its shadow,
+     the shape of the frame). Pressed: it goes back in */
+  .ui-btn-secondary {
+    --btn-bg: var(--color-stone);
+    --btn-hover-bg: var(--color-stone);
+    --btn-text: #fff;
+    --btn-hover-text: #fff;
+    --btn-font-weight: 700;
+    --_lift: 0px;
+    --_drop: 0px;
+    --_shown: 0;
+    background: none;
+    transform: translateY(calc(var(--_lift) * -1));
+    transition: transform 0.12s steps(2);
+  }
+
+  .ui-btn-secondary::before {
+    background: linear-gradient(var(--_bg), var(--_bg)) var(--_panel);
+    background-origin: border-box;
+    background-clip: border-box;
+    opacity: var(--_shown);
+    filter: drop-shadow(0 var(--_drop) 0 #000);
+    transition: opacity 0.12s steps(2), filter 0.12s steps(2);
+  }
+
+  .ui-btn-secondary:is(:hover:not(:disabled), :focus-visible, [aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
+    --_shown: 1;
+    --_lift: var(--vpx);
+    --_drop: calc(var(--vpx) * 2);
+  }
+
+  .ui-btn-secondary:active:not(:disabled) {
+    --_shown: 1;
+    --_lift: 0px;
+    --_drop: calc(var(--vpx) / 2);
+    transition: none;
+  }
+
+  .ui-btn-secondary:active:not(:disabled)::before {
+    transition: none;
+  }
+
+  /* C3. UNDERLINE: no background; on hover (or chosen) a line with a hard pixel shadow slides in from the left under the text.
+     The space below the text (for the line) is above it too, so the text is centred */
+  .ui-btn-underline {
+    --btn-pad-x: 0px;
+    --btn-pad-y: calc(var(--px) * 1.5);
+    --btn-icon-gap: var(--icon-gap, 6.48px);
+    --btn-icon-ratio: 1.2;
+    --btn-text: var(--color-bone-dim);
+    --btn-bg: transparent;
+    --btn-hover-text: var(--color-bone);
+    --btn-underline-color: var(--color-bone);
+    --btn-underline-thickness: var(--px);
+    --btn-underline-offset: 3px;
+    --btn-underline-shadow-color: #000;
+    --btn-underline-speed: 0.25s;
+    --_ul-w: 0%;
+    padding: calc(var(--btn-pad-y) + var(--btn-underline-offset)) calc(var(--btn-pad-x) + var(--px)) calc(var(--btn-pad-y) + var(--btn-underline-offset)) var(--btn-pad-x);
+    background:
+      linear-gradient(var(--btn-underline-color), var(--btn-underline-color)) left 0 bottom var(--px) / var(--_ul-w) var(--btn-underline-thickness) no-repeat,
+      linear-gradient(var(--btn-underline-shadow-color), var(--btn-underline-shadow-color)) left var(--px) bottom 0 / var(--_ul-w) var(--btn-underline-thickness) no-repeat,
+      var(--btn-bg);
+    transition: color 0.2s ease-out, background-size var(--btn-underline-speed) ease-out;
+  }
+
+  .ui-btn-underline:hover:not(:disabled),
+  .ui-btn-underline:focus-visible {
+    --_ul-w: 100%;
+    --_text: var(--btn-hover-text);
+  }
+
+  .ui-btn-underline:is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
+    --_ul-w: 100%;
+  }
+
+  /* C4. LEATHER: a tab of light brown leather. Two tones (the top half lighter, the bottom half in shade), a fine pixel grain,
+     a lit line along its top and a shaded one along its bottom, a dark brown edge two pixels thick with its corners rounded in a
+     pixel step; the words cream in the pixel font with a dark shadow. Hovered: a little lighter; pressed: it sinks a pixel */
+  .ui-btn-leather {
+    --leather: #a8683d;
+    --leather-hover: #b87749;
+    --leather-light: #cf9260;
+    --leather-shade: #7f4a2a;
+    --leather-edge: #3a1f0f;
+    --leather-line: rgb(255 226 180 / 0.35);
+    --btn-text: #f6e9cf;
+    --btn-hover-text: #fff8e8;
+    --btn-bg: var(--leather);
+    --btn-hover-bg: var(--leather-hover);
+    --btn-font: var(--font-pixel);
+    --btn-font-weight: 600;
+    --btn-letter-spacing: 0.5px;
+    /* (inside its frame, two of its pixels thick) */
+    --btn-pad-x: 10px;
+    --btn-pad-y: 0px;
+    /* its pixel: the Dashboard cards' and the page's pixel art (dashboard/cards: 3.75px); its grain, its frame and its corners' step are in it.
+       The grain: a few darker and lighter pixels on a small tile, so the leather is not flat */
+    --leather-px: 3.75px;
+    --leather-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' shape-rendering='crispEdges'%3E%3Cpath fill='rgba(60,25,8,0.22)' d='M1 1h2v1h-2zM7 2h1v1h-1zM4 5h2v1h-2zM10 6h1v1h-1zM0 4h1v1h-1z'/%3E%3Cpath fill='rgba(255,220,170,0.16)' d='M5 0h1v1h-1zM9 3h2v1h-2zM2 6h1v1h-1zM7 7h1v1h-1z'/%3E%3C/svg%3E");
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 2px 0 rgb(40 18 6 / 0.75);
+    background:
+      var(--leather-grain) 0 0 / calc(var(--leather-px) * 12) calc(var(--leather-px) * 8) repeat,
+      linear-gradient(to bottom, transparent 50%, rgb(70 30 10 / 0.22) 50%),
+      var(--_bg);
+    /* its frame in its pixels (a 5 × 5 drawing, its corners kept, its middle stretched), two of them thick: the dark edge with its corners
+       rounded in a pixel step, the lit line along its top, the shade along its bottom, a light line down its sides (the --leather-edge,
+       -light, -shade and -line colours, written into the drawing). The corners outside the step are cut off the leather (clip-path) */
+    --_p: var(--leather-px);
+    min-height: calc(var(--_p) * 8);
+    border: calc(var(--_p) * 2) solid transparent;
+    border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='5' height='5' shape-rendering='crispEdges'><path fill='%233a1f0f' d='M1 0h3v1h-3zM1 4h3v1h-3zM0 1h1v3h-1zM4 1h1v3h-1z'/><path fill='%23cf9260' d='M1 1h3v1h-3z'/><path fill='%237f4a2a' d='M1 3h3v1h-3z'/><path fill='rgba(255,226,180,0.35)' d='M1 2h1v1h-1zM3 2h1v1h-1z'/></svg>") 2 / calc(var(--_p) * 2) stretch;
+    clip-path: polygon(var(--_p) 0, calc(100% - var(--_p)) 0, calc(100% - var(--_p)) var(--_p), 100% var(--_p), 100% calc(100% - var(--_p)), calc(100% - var(--_p)) calc(100% - var(--_p)), calc(100% - var(--_p)) 100%, var(--_p) 100%, var(--_p) calc(100% - var(--_p)), 0 calc(100% - var(--_p)), 0 var(--_p), var(--_p) var(--_p));
+    transition: background-color 0.15s ease-out, color 0.15s ease-out;
+  }
+
+  .ui-btn-leather:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  /* C5. LINK (LinkButton): just small text that lightens when hovered: no padding, background, frame or underline. Not a .ui-btn,
+     so none of the settings above apply to it */
+  .ui-btn-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: 500 11px / 1.2 var(--font-body);
+    letter-spacing: 0.4px;
+    color: var(--color-bone-dim);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.18s ease-out;
+  }
+
+  .ui-btn-link:hover:not(:disabled) {
+    color: var(--color-bone-hover);
+  }
+
+  .ui-btn-link:focus-visible {
+    outline: var(--px) solid var(--color-bone);
+    outline-offset: var(--px);
+  }
+
+  .ui-btn-link:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* ======================= D. ICON-ONLY BUTTONS (IconButton) ======================= */
+  /* Their own looks, unchanged: ghost / selected (.ui-btn-shade .ui-btn-plain), secondary (.ui-btn-stone), primary (.ui-btn-venom),
+     text (.ui-btn-underline), all as .ui-btn-square; and the modifiers round, plain, filled, bright, big-icon. Not for buttons
+     with text */
+
+  /* a square: the vertical padding all round */
+  .ui-btn.ui-btn-square {
+    --btn-pad-x: var(--btn-pad-y);
+    --btn-icon-edge: var(--btn-pad-x);
+    --btn-icon-gap: 0px;
+    --btn-hover-pull: 0px;
+    aspect-ratio: 1;
+  }
+
+  .ui-btn-square>svg {
+    width: var(--btn-icon-size);
+    height: var(--btn-icon-size);
+  }
+
+  /* Map: a square button with a bigger icon (IconButton bigIcon): as tall as a normal button (--btn-md-h), the icon most of it */
+  .ui-btn.ui-btn-square.ui-btn-big-icon {
+    --btn-icon-size: calc(var(--btn-md-h) * 0.72);
+    --btn-pad-y: calc((var(--btn-md-h) - var(--btn-icon-size)) / 2);
+  }
+
+  .ui-btn.ui-btn-square.ui-btn-big-icon>svg {
+    width: var(--btn-icon-size);
+    height: var(--btn-icon-size);
+  }
+
+  /* (keeps its width on hover: no icon + text to pull together) */
+  .ui-btn-square:is(.ui-btn-venom, .ui-btn-shade):hover:not(:disabled) {
+    padding-right: var(--btn-pad-x);
+  }
+
+  /* Underline as a square: no underline, the icon brightens */
+  .ui-btn-square.ui-btn-underline {
+    --btn-pad-x: var(--btn-pad-y);
+    padding: var(--btn-pad-y);
+    background: none;
+  }
+
+  /* white corner brackets (Venom, Shade): hidden (zero length, on the corner), they slide out on hover */
   .ui-btn-venom,
   .ui-btn-shade {
     --bracket-btn-pad-x: calc(var(--px) * 6);
@@ -196,8 +583,18 @@
     transform: translateY(var(--btn-press-depth));
   }
 
-  /* C2. Venom: green; the press snaps down and flips the bevel, release
-     springs back in pixel steps */
+  .ui-btn-venom:is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
+    --_bevel-top: var(--btn-hover-bevel-top);
+    --_bevel-bottom: var(--btn-hover-bevel-bottom);
+  }
+
+  .ui-btn:is(.ui-btn-venom, .ui-btn-shade):is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
+    --br-gap: var(--btn-bracket-gap);
+    --br-len-x: var(--btn-bracket-len-x);
+    --br-len-y: var(--btn-bracket-len-y);
+  }
+
+  /* Venom: green; the press snaps down and flips the bevel */
   .ui-btn-venom {
     --btn-bg: var(--color-venom);
     --btn-bevel-top: var(--color-venom-light);
@@ -246,467 +643,26 @@
     transition: none;
   }
 
-  /* Map: Venom in red, for an action that destroys something (Delete): the same face, bevels and press, other colours */
-  .ui-btn-venom.ui-btn-danger {
-    --btn-bg: #a8322d;
-    --btn-bevel-top: #e0625a;
-    --btn-bevel-bottom: #5e1815;
-    --btn-hover-bg: #bf3b35;
-    --btn-hover-bevel-top: #f07a71;
-    --btn-hover-bevel-bottom: #6e1c18;
-    --btn-press-bg: #7e2622;
-    --btn-press-bevel-top: #5e1815;
-    --btn-press-bevel-bottom: #c24d46;
+  /* Shade: no background until hovered */
+  .ui-btn-shade {
+    --btn-text: var(--color-bone-dim);
+    --btn-bg: transparent;
+    --btn-bracket-color: color-mix(in srgb, #fff 80%, var(--color-shade));
+    --btn-hover-text: var(--color-bone);
+    --btn-hover-bg: var(--color-shade-hover);
+    box-shadow: none;
+    transition: color 0.18s ease-out, background-color 0.18s ease-out, var(--br-transition), padding 0.18s ease-out;
   }
 
-  /* Map: Cancel (a Shade button that is filled, with only text: the one beside a Create), and the Venom (its own body colour: below). The same
-     frame, panel shading, label and press, with small gray diamonds, and sides three times as thick as the top and the bottom (a side:
-     outline, three metal columns, outline; the top: outline, one metal row, outline), and the panel's inner shadow along its
-     sides too, as along its top. The art is 19 x 19 art pixels of 2px: a 9-pixel cap each side, one middle column that stretches; a
-     diamond sits on each side's middle, half of it inside the panel. Not with .ui-btn-plain (the dropdown triggers) or a square
-     icon button: they keep Shade */
-  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend),
-  .ui-btn-shade.ui-btn-filled:not(.ui-btn-plain, .ui-btn-square, .ui-extend),
-  .ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend) {
-    /* its art pixel: 2px (the Venom's is 1.5px); the same shape and sizes as at 1.5px, to within a pixel */
-    --vpx: var(--px);
-    --cancel-frame: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='19' height='19' viewBox='0 0 19 19' shape-rendering='crispEdges'><path fill='%23050203' d='M6 0h7v1h-7zM5 1h1v1h-1zM13 1h1v1h-1zM4 2h1v1h-1zM7 2h5v1h-5zM14 2h1v1h-1zM3 3h1v1h-1zM6 3h1v1h-1zM12 3h1v1h-1zM15 3h1v1h-1zM2 4h1v1h-1zM5 4h1v1h-1zM13 4h1v1h-1zM16 4h1v1h-1zM2 5h1v1h-1zM5 5h1v1h-1zM13 5h1v1h-1zM16 5h1v1h-1zM2 6h1v1h-1zM5 6h1v1h-1zM13 6h1v1h-1zM16 6h1v1h-1zM2 7h1v1h-1zM5 7h1v1h-1zM13 7h1v1h-1zM16 7h1v1h-1zM2 8h1v1h-1zM5 8h1v1h-1zM13 8h1v1h-1zM16 8h1v1h-1zM2 9h1v1h-1zM5 9h1v1h-1zM13 9h1v1h-1zM16 9h1v1h-1zM2 10h1v1h-1zM5 10h1v1h-1zM13 10h1v1h-1zM16 10h1v1h-1zM2 11h1v1h-1zM5 11h1v1h-1zM13 11h1v1h-1zM16 11h1v1h-1zM2 12h1v1h-1zM5 12h1v1h-1zM13 12h1v1h-1zM16 12h1v1h-1zM2 13h1v1h-1zM5 13h1v1h-1zM13 13h1v1h-1zM16 13h1v1h-1zM3 14h1v1h-1zM6 14h1v1h-1zM12 14h1v1h-1zM15 14h1v1h-1zM4 15h1v1h-1zM7 15h5v1h-5zM14 15h1v1h-1zM5 16h1v1h-1zM13 16h1v1h-1zM6 17h7v1h-7z'/><path fill='%23a89a91' d='M6 1h7v1h-7zM5 2h1v1h-1zM13 2h1v1h-1zM4 3h1v1h-1zM14 3h1v1h-1zM3 4h1v1h-1zM15 4h1v1h-1zM3 5h1v1h-1zM15 5h1v1h-1zM3 6h1v1h-1zM15 6h1v1h-1zM3 7h1v1h-1zM15 7h1v1h-1zM3 8h1v1h-1zM15 8h1v1h-1z'/><path fill='%238a7b74' d='M6 2h1v1h-1zM12 2h1v1h-1zM5 3h1v1h-1zM13 3h1v1h-1zM4 4h1v1h-1zM14 4h1v1h-1zM4 5h1v1h-1zM14 5h1v1h-1zM4 6h1v1h-1zM14 6h1v1h-1zM4 7h1v1h-1zM14 7h1v1h-1zM4 8h1v1h-1zM14 8h1v1h-1z'/><path fill='rgba(255,255,255,0.14)' d='M7 3h5v1h-5zM6 4h1v1h-1zM12 4h1v1h-1zM6 5h1v1h-1zM12 5h1v1h-1zM6 6h1v1h-1zM12 6h1v1h-1zM6 7h1v1h-1zM12 7h1v1h-1zM6 8h1v1h-1zM12 8h1v1h-1zM6 9h1v1h-1zM12 9h1v1h-1zM6 10h1v1h-1zM12 10h1v1h-1zM6 11h1v1h-1zM12 11h1v1h-1zM6 12h1v1h-1zM12 12h1v1h-1zM6 13h1v1h-1zM12 13h1v1h-1zM7 14h5v1h-5z'/><path fill='rgba(0,0,0,0.22)' d='M7 4h1v1h-1zM11 4h1v1h-1zM7 5h1v1h-1zM11 5h1v1h-1zM7 6h1v1h-1zM11 6h1v1h-1zM7 7h1v1h-1zM11 7h1v1h-1zM7 8h1v1h-1zM11 8h1v1h-1zM7 9h1v1h-1zM11 9h1v1h-1zM7 10h1v1h-1zM11 10h1v1h-1zM7 11h1v1h-1zM11 11h1v1h-1zM7 12h1v1h-1zM11 12h1v1h-1zM7 13h1v1h-1zM11 13h1v1h-1z'/><path fill='%236c5c56' d='M3 9h1v1h-1zM15 9h1v1h-1zM3 10h1v1h-1zM15 10h1v1h-1zM3 11h1v1h-1zM15 11h1v1h-1zM3 12h1v1h-1zM15 12h1v1h-1zM3 13h1v1h-1zM15 13h1v1h-1zM4 14h1v1h-1zM14 14h1v1h-1zM5 15h1v1h-1zM13 15h1v1h-1z'/><path fill='%234a3d3c' d='M4 9h1v1h-1zM14 9h1v1h-1zM4 10h1v1h-1zM14 10h1v1h-1zM4 11h1v1h-1zM14 11h1v1h-1zM4 12h1v1h-1zM14 12h1v1h-1zM4 13h1v1h-1zM14 13h1v1h-1zM5 14h1v1h-1zM13 14h1v1h-1zM6 15h1v1h-1zM12 15h1v1h-1z'/><path fill='rgba(0,0,0,0.35)' d='M2 14h1v1h-1zM16 14h1v1h-1zM3 15h1v1h-1zM15 15h1v1h-1zM4 16h1v1h-1zM14 16h1v1h-1zM5 17h1v1h-1zM13 17h1v1h-1zM6 18h7v1h-7z'/><path fill='%23625758' d='M6 16h7v1h-7z'/></svg>");
-    --cancel-diamond: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='7' viewBox='0 0 7 7' shape-rendering='crispEdges'><path fill='%23a89a91' d='M3 0h1v1h-1zM2 1h1v1h-1zM4 1h1v1h-1zM1 2h1v1h-1zM0 3h1v1h-1zM1 4h1v1h-1z'/><path fill='%234a4a50' d='M3 1h1v1h-1zM2 2h1v1h-1zM4 2h1v1h-1zM1 3h1v1h-1zM5 3h1v1h-1zM2 4h1v1h-1zM4 4h1v1h-1zM3 5h1v1h-1z'/><path fill='%23b0b0b6' d='M3 2h1v1h-1zM2 3h1v1h-1z'/><path fill='%234a3d3c' d='M5 2h1v1h-1zM6 3h1v1h-1zM5 4h1v1h-1zM2 5h1v1h-1zM4 5h1v1h-1zM3 6h1v1h-1z'/><path fill='%23e6e6ea' d='M3 3h1v1h-1z'/><path fill='%238e8e94' d='M4 3h1v1h-1zM3 4h1v1h-1z'/></svg>");
-    --cancel-diamond-hover: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='7' height='7' viewBox='0 0 7 7' shape-rendering='crispEdges'><path fill='%23a89a91' d='M3 0h1v1h-1zM2 1h1v1h-1zM4 1h1v1h-1zM1 2h1v1h-1zM0 3h1v1h-1zM1 4h1v1h-1z'/><path fill='%2356565c' d='M3 1h1v1h-1zM2 2h1v1h-1zM4 2h1v1h-1zM1 3h1v1h-1zM5 3h1v1h-1zM2 4h1v1h-1zM4 4h1v1h-1zM3 5h1v1h-1z'/><path fill='%23c8c8ce' d='M3 2h1v1h-1zM2 3h1v1h-1z'/><path fill='%234a3d3c' d='M5 2h1v1h-1zM6 3h1v1h-1zM5 4h1v1h-1zM2 5h1v1h-1zM4 5h1v1h-1zM3 6h1v1h-1z'/><path fill='%23ffffff' d='M3 3h1v1h-1z'/><path fill='%23a2a2a8' d='M4 3h1v1h-1zM3 4h1v1h-1z'/></svg>");
-    --_frame: var(--cancel-frame);
-    /* the diamonds: a layer of their own (the ::after), so they can move: on a press they come a little nearer the middle */
-    --_dia: var(--cancel-diamond);
-    --_nudge: 0px;
-    --cancel-nudge: 1px;
-    /* the panel: art columns 5.. from each side, rows 3..14 */
-    --_panel: calc(var(--vpx) * 5) calc(var(--vpx) * 3) / calc(100% - var(--vpx) * 10) calc(var(--vpx) * 12) no-repeat;
-    /* the panel's gray: the Stone's */
-    --btn-bg: var(--color-stone);
-    --btn-hover-bg: var(--color-stone-hover);
+  /* Map: a Shade button whose background shows all the time (a Cancel beside a Create): the dark grey of an open Shade, lighter on hover */
+  .ui-btn-shade.ui-btn-filled {
+    --btn-bg: var(--color-shade);
     --btn-text: var(--color-bone);
-    --btn-hover-text: var(--color-bone-hover);
-    --btn-font: var(--font-pixel);
-    --btn-font-weight: 500;
-    --btn-letter-spacing: 0.5px;
-    --btn-pad-x: 28px;
-    position: relative;
-    isolation: isolate;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    height: calc(var(--vpx) * 19);
-    min-width: 70px;
-    padding-block: 0 var(--vpx);
-    background: linear-gradient(var(--_bg), var(--_bg)) var(--_panel);
-    box-shadow: none;
-    text-align: center;
-    -webkit-font-smoothing: none;
-    font-smooth: never;
-    /* the label's outline stays 1.5px, as the Venom's */
-    --_tx: 1.5px;
-    text-shadow:
-      var(--_tx) 0 0 #0c0600, calc(var(--_tx) * -1) 0 0 #0c0600, 0 var(--_tx) 0 #0c0600, 0 calc(var(--_tx) * -1) 0 #0c0600;
-    transition:
-      transform 0.12s steps(3),
-      color 0.15s steps(2),
-      background-color 0.12s steps(2),
-      padding 0.18s ease-out;
+    --btn-hover-bg: color-mix(in srgb, #fff 12%, var(--color-shade));
   }
 
-  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend)::before,
-  .ui-btn-shade.ui-btn-filled:not(.ui-btn-plain, .ui-btn-square, .ui-extend)::before,
-  .ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend)::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    border-style: solid;
-    border-color: transparent;
-    border-width: 0 calc(var(--vpx) * 9);
-    border-image: var(--_frame) 0 9 fill / 0 calc(var(--vpx) * 9) / 0 stretch;
-    image-rendering: pixelated;
-  }
-
-  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend)::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    /* each 7 x 7 diamond: its middle on the side's metal, 6 rows down, moving in by --_nudge */
-    background:
-      var(--_dia) left calc(var(--vpx) + var(--_nudge)) top calc(var(--vpx) * 6) / calc(var(--vpx) * 7) calc(var(--vpx) * 7) no-repeat,
-      var(--_dia) right calc(var(--vpx) + var(--_nudge)) top calc(var(--vpx) * 6) / calc(var(--vpx) * 7) calc(var(--vpx) * 7) no-repeat;
-    image-rendering: pixelated;
-    transition: background-position 0.18s ease-out;
-  }
-
-  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend):hover:not(:disabled) {
-    --_dia: var(--cancel-diamond-hover);
-  }
-
-  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend):active:not(:disabled),
-  .ui-btn-shade.ui-btn-filled:not(.ui-btn-plain, .ui-btn-square, .ui-extend):active:not(:disabled),
-  .ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):active:not(:disabled) {
-    --_nudge: var(--cancel-nudge);
-    --_bg: #3a3a3a;
-    transform: translateY(var(--vpx));
-  }
-
-  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend):is(.ui-btn-sm, .ui-btn-xs),
-  .ui-btn-shade.ui-btn-filled:not(.ui-btn-plain, .ui-btn-square, .ui-extend):is(.ui-btn-sm, .ui-btn-xs),
-  .ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):is(.ui-btn-sm, .ui-btn-xs) {
-    /* tight rows: art pixels of 1.5px (28.5px tall), the padding in proportion */
-    --vpx: 1.5px;
-    --btn-pad-x: 21px;
-    min-width: 52px;
-  }
-
-  /* Map: Venom: the Cancel's look above (frame, small diamonds, panel shading, bone label, press), with its body as before: the Stone's
-     gray with a soft teal glow inside. Delete (.ui-btn-danger): red */
-  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend, .ui-btn-danger) {
-    /* the body gray (the Stone's), as before */
-    --btn-bg: var(--color-stone);
-    --btn-hover-bg: var(--color-stone-hover);
-    /* the teal glow inside the panel, as before: soft, from its edges, fading out towards its middle with no step (four eased
-       gradients on the panel: art columns 5.. from each side, rows 3..14). --_glow-a: how strong; brighter hovered, fainter pressed */
-    --_glow: 93 191 186;
-    --_glow-a: 0.55;
-    --_glowl:
-      linear-gradient(to bottom, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) left calc(var(--vpx) * 5) top calc(var(--vpx) * 3) / calc(100% - var(--vpx) * 10) calc(var(--vpx) * 6) no-repeat,
-      linear-gradient(to top, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) left calc(var(--vpx) * 5) bottom calc(var(--vpx) * 4) / calc(100% - var(--vpx) * 10) calc(var(--vpx) * 6) no-repeat,
-      linear-gradient(to right, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) left calc(var(--vpx) * 5) top calc(var(--vpx) * 3) / calc(var(--vpx) * 15) calc(var(--vpx) * 12) no-repeat,
-      linear-gradient(to left, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) right calc(var(--vpx) * 5) top calc(var(--vpx) * 3) / calc(var(--vpx) * 15) calc(var(--vpx) * 12) no-repeat;
-    background: var(--_glowl), linear-gradient(var(--_bg), var(--_bg)) var(--_panel);
-  }
-
-  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend, .ui-btn-danger):hover:not(:disabled) {
-    --_glow-a: 0.8;
-  }
-
-  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend, .ui-btn-danger):active:not(:disabled) {
-    --_bg: #3a3a3a;
-    --_glow-a: 0.4;
-  }
-
-  .ui-btn-venom:not(.ui-btn-gold, .ui-btn-square, .ui-extend, .ui-btn-danger):disabled {
-    --_glow-a: 0.3;
-  }
-
-  .ui-btn-venom.ui-btn-danger:not(.ui-btn-gold, .ui-btn-square, .ui-extend) {
-    --btn-bg: #a8322d;
-    --btn-hover-bg: #bf3b35;
-  }
-
-  .ui-btn-venom.ui-btn-danger:not(.ui-btn-gold, .ui-btn-square, .ui-extend):active:not(:disabled) {
-    --_bg: #7e2622;
-  }
-
-  /* Map: Shade framed (every ghost Button with text, as "Sort by": not plain, filled, square or an ExtendMenu's box): the Cancel's look
-     above (its frame, gray panel, bone label in the pixel font, press) without its diamonds, and a little less room inside. Hovered or
-     chosen (aria-pressed, aria-current, .ui-btn-selected): the lighter gray. The icon and the text don't close up when hovered.
-     Cancel (a filled Shade) is the same button: one style, not two */
-  .ui-btn-shade.ui-btn-filled:not(.ui-btn-plain, .ui-btn-square, .ui-extend),
-  .ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend) {
-    --btn-pad-x: 18px;
-    --btn-icon-edge: var(--btn-pad-x);
-    /* an icon close to its text */
-    --btn-icon-gap: 6px;
-    --btn-hover-pull: 0px;
-  }
-
-  .ui-btn-shade.ui-btn-filled:not(.ui-btn-plain, .ui-btn-square, .ui-extend):is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected),
-  .ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
-    --_bg: var(--btn-hover-bg);
-  }
-
-  /* Map: Primary's tones (Button tone=…, buttonStyles.ts). Gray: the frame above as it is. Green: the same frame and gray panel with the
-     old Venom's soft teal glow inside (no diamonds). Red: a red panel (Delete, Sign out) */
-  .ui-btn-shade.ui-tone-green:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend) {
-    --_glow: 93 191 186;
-    --_glow-a: 0.55;
-    --_glowl:
-      linear-gradient(to bottom, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) left calc(var(--vpx) * 5) top calc(var(--vpx) * 3) / calc(100% - var(--vpx) * 10) calc(var(--vpx) * 6) no-repeat,
-      linear-gradient(to top, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) left calc(var(--vpx) * 5) bottom calc(var(--vpx) * 4) / calc(100% - var(--vpx) * 10) calc(var(--vpx) * 6) no-repeat,
-      linear-gradient(to right, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) left calc(var(--vpx) * 5) top calc(var(--vpx) * 3) / calc(var(--vpx) * 15) calc(var(--vpx) * 12) no-repeat,
-      linear-gradient(to left, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) right calc(var(--vpx) * 5) top calc(var(--vpx) * 3) / calc(var(--vpx) * 15) calc(var(--vpx) * 12) no-repeat;
-    background: var(--_glowl), linear-gradient(var(--_bg), var(--_bg)) var(--_panel);
-  }
-
-  .ui-btn-shade.ui-tone-green:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):hover:not(:disabled),
-  .ui-btn-shade.ui-tone-green:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
-    --_glow-a: 0.8;
-  }
-
-  .ui-btn-shade.ui-tone-green:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):active:not(:disabled) {
-    --_glow-a: 0.4;
-  }
-
-  .ui-btn-shade.ui-tone-green:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):disabled {
-    --_glow-a: 0.3;
-  }
-
-  /* an open (or folding) ExtendMenu: the box's band is round it all, no glow of its own */
-  .ui-extend:is([data-open='true'], [data-closing='true'])>.ui-btn-shade.ui-tone-green:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend) {
-    background: none;
-  }
-
-  .ui-btn-shade.ui-tone-red:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend) {
-    --btn-bg: #a8322d;
-    --btn-hover-bg: #bf3b35;
-  }
-
-  .ui-btn-shade.ui-tone-red:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):active:not(:disabled) {
-    --_bg: #7e2622;
-  }
-
-  /* an icon after the label (Button iconRight): the same room as one before it, mirrored */
-  .ui-btn-icon.ui-btn-icon-right {
-    margin-left: calc(var(--btn-icon-gap) - var(--_pull, 0px));
-    margin-right: calc(var(--btn-icon-edge) - var(--btn-pad-x) + var(--_pull, 0px) / 2);
-  }
-
-  /* in an ExtendMenu ("Sort by"), closed: its panel (the box behind it is see-through); open (and folding back): no frame or panel of
-     its own, the box's band is round it all */
-  .ui-extend>.ui-btn.ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend, .ui-tone-green) {
-    background: linear-gradient(var(--_bg), var(--_bg)) var(--_panel);
-  }
-
-  .ui-extend:is([data-open='true'], [data-closing='true'])>.ui-btn.ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend) {
-    background: none;
-  }
-
-  .ui-extend:is([data-open='true'], [data-closing='true'])>.ui-btn.ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend)::before {
-    display: none;
-  }
-
-  /* Map: the shared Modal's close X (components/ui/overlays/Modal.tsx), as part of its gold frame (styles/modalFrame.css): a square on
-     the top right corner, with the title plaque's look (--mf-plaque-*: flat, the frame's outlined line round it), a bone X. Hover:
-     a little lighter; press: down a pixel */
-  .ui-btn.ui-modal-close {
-    position: absolute;
-    /* its middle on the band's middle, at the corner */
-    top: calc(var(--mf-px, 2px) * -1.5);
-    right: calc(var(--mf-px, 2px) * -1.5);
-    z-index: 1;
-    /* as tall as the title's plaque, its middle on the frame's corner: it covers the corner's step, and the lines meet its edges */
-    width: 33px;
-    height: 33px;
-    padding: 0;
-    display: grid;
-    place-items: center;
-    color: var(--color-bone);
-    /* the title plaque's pixel border (modalFrame.css): 6px, pixel-stepped round corners */
-    background: var(--mf-plaque-bg) padding-box;
-    border: 6px solid transparent;
-    border-image: var(--mf-plaque-border) 6 / 12px / 0 stretch;
-    image-rendering: pixelated;
-    transform: translate(50%, -50%);
-    transition: color 0.15s ease-out, background-color 0.15s ease-out;
-  }
-
-  .ui-btn.ui-modal-close>svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  /* (more specific than .ui-btn-square's hover, which gives a Shade square a right padding on hover and would move the X) */
-  .ui-btn.ui-btn-square.ui-modal-close:hover:not(:disabled) {
-    padding: 0;
-    color: var(--color-bone-hover);
-    background: color-mix(in srgb, #fff 8%, var(--surface)) padding-box;
-  }
-
-  .ui-btn.ui-modal-close:active:not(:disabled) {
-    transform: translate(50%, calc(-50% + 1px));
-  }
-
-  /* Map: Venom in gold (the floating Create button): the same face, bevels, brackets and press, gold colours and a dark gray icon, and a soft
-     shadow under it besides Venom's own */
-  .ui-btn-venom.ui-btn-gold {
-    /* its + dark gray */
-    --btn-text: #2a2a2a;
-    --btn-hover-text: #222222;
-    --btn-press-text: #2a2a2a;
-    --btn-bg: var(--color-gold);
-    --btn-bevel-top: #ffe28f;
-    --btn-bevel-bottom: var(--color-gold-dark);
-    --btn-hover-bg: #f3c85a;
-    --btn-hover-bevel-top: #fff0b8;
-    --btn-hover-bevel-bottom: #a8791f;
-    --btn-press-bg: #c99a33;
-    --btn-press-bevel-top: #8a621c;
-    --btn-press-bevel-bottom: #e6c063;
-  }
-
-  .ui-btn-venom.ui-btn-gold.ui-btn-panel {
-    box-shadow:
-      inset 0 var(--px) 0 0 var(--_bevel-top),
-      inset 0 var(--px-neg) 0 0 var(--_bevel-bottom),
-      0 var(--_shadow-y) 0 0 var(--btn-shadow-color),
-      var(--btn-soft-shadow);
-  }
-
-  /* Open: the page's surface the moment it starts to grow, and nothing of Venom (no brackets, bevels or press: a click in the modal
-     presses it too) */
-  .ui-btn-venom.ui-btn-gold.ui-btn-panel[data-open],
-  .ui-btn-venom.ui-btn-gold.ui-btn-panel[data-open]:is(:hover, :active) {
-    background: var(--surface);
-    box-shadow: var(--btn-soft-shadow);
-    transform: none;
-    transition: none;
-  }
-
-  /* Venom split: two pieces (icon / label, iconPosition left or right) with a
-     small gap; each has the Venom face, bevel and shadow, and the brackets
-     slide in on its outer side only. Nothing moves on hover. */
-  .ui-btn-venom.ui-btn-venom-split {
-    --btn-split-gap: var(--spacing-xs);
-    display: inline-flex;
-    align-items: stretch;
-    gap: var(--btn-split-gap);
-    padding: 0;
-    background: none;
-    box-shadow: none;
-  }
-
-  .ui-btn-venom-split {
-    /* the height of a piece: the taller of one text line and the icon, plus the padding above and below, whole pixels */
-    --_split-h: round(up, calc(max(var(--btn-font-size) * var(--btn-line-height), var(--btn-icon-size)) + var(--btn-pad-y) * 2), var(--px));
-  }
-
-  .ui-btn-venom-split>span {
-    display: flex;
-    align-items: center;
-    min-height: var(--_split-h);
-    border-radius: var(--btn-radius);
-    padding: var(--btn-pad-y) var(--btn-pad-x);
-    box-shadow:
-      inset 0 var(--px) 0 0 var(--_bevel-top),
-      inset 0 var(--px-neg) 0 0 var(--_bevel-bottom),
-      0 var(--_shadow-y) 0 0 var(--btn-shadow-color);
-    transition: var(--br-transition);
-  }
-
-  .ui-btn-venom-split>span:first-child {
-    background: var(--br-layers-left), var(--btn-inner-shadow), var(--_bg);
-  }
-
-  .ui-btn-venom-split>span:last-child {
-    background: var(--br-layers-right), var(--btn-inner-shadow), var(--_bg);
-  }
-
-  /* distance from the split line to the text (on the side facing the icon) */
-  .ui-btn-venom-split>.ui-btn-venom-split-label:last-child {
-    padding-left: var(--btn-split-text-edge);
-  }
-
-  .ui-btn-venom-split>.ui-btn-venom-split-label:first-child {
-    padding-right: var(--btn-split-text-edge);
-  }
-
-  /* the icon piece is a square: as wide as it is tall (the taller of one text line and the icon, plus the vertical
-     padding on both sides) with the icon centred */
-  .ui-btn-venom-split>.ui-btn-venom-split-icon {
-    flex: none;
-    box-sizing: border-box;
-    width: var(--_split-h);
-    padding: var(--btn-pad-y) 0;
-    justify-content: center;
-  }
-
-  /* the icon is a whole number of pixels, in a piece that is one too, so it is centred exactly (no half pixels) */
-  .ui-btn-venom-split-icon svg {
-    width: round(var(--btn-icon-size), var(--px));
-    height: round(var(--btn-icon-size), var(--px));
-  }
-
-  .ui-btn-venom-split:active:not(:disabled)>span {
-    transition: none;
-  }
-
-  /* Map: Venom split, framed (SplitButton, ExtendMenu's Create): the framed Venom's look (its frame, diamonds, pixel font, press),
-     the icon and the label side by side in its one green panel, with no faces of their own. The pieces keep their size open
-     and closed (ExtendMenu turns them into Shade buttons while open: their hover then shows) */
-  .ui-btn.ui-btn-venom.ui-btn-venom-split {
-    align-items: center;
-    gap: 3px;
-    padding: 0 28px var(--vpx);
-    background: var(--_glowl, linear-gradient(transparent, transparent)), linear-gradient(var(--_bg), var(--_bg)) var(--_panel);
-  }
-
-  .ui-btn.ui-btn-venom.ui-btn-venom-split>span {
-    min-height: 0;
-    padding: 3px 4.5px;
-    box-shadow: none;
-  }
-
-  .ui-btn.ui-btn-venom.ui-btn-venom-split>.ui-btn-venom-split-icon {
-    width: auto;
-  }
-
-  .ui-btn.ui-btn-venom.ui-btn-venom-split:not(.ui-extend[data-open='true']>*)>span {
-    background: none;
-  }
-
-  /* inside an open ExtendMenu (and while it folds back): no frame or green of its own; the box's frame is round it all */
-  .ui-extend:is([data-open='true'], [data-closing='true'])>.ui-btn.ui-btn-venom.ui-btn-venom-split {
-    background: none;
-  }
-
-  .ui-extend:is([data-open='true'], [data-closing='true'])>.ui-btn.ui-btn-venom.ui-btn-venom-split::before,
-  .ui-extend:is([data-open='true'], [data-closing='true'])>.ui-btn.ui-btn-venom.ui-btn-venom-split::after {
-    display: none;
-  }
-
-  /* Map: ExtendMenu's Venom box (the Create dropdown), in the framed buttons' look: no white brackets; open, the dark grey
-     panel inside the buttons' metal band (outline, three rows of metal lit from above, outline; cut corners, a drop shadow:
-     pixel art in a 9-slice border-image, so it grows with the box), the options in the buttons' pixel font. The band shows
-     at once on opening and stays while it folds back (0.2s) */
-  .ui-btn:is(.ui-btn-venom, .ui-btn-shade).ui-extend,
-  .ui-btn:is(.ui-btn-venom, .ui-btn-shade).ui-extend:is(:hover, :active) {
-    --vpx: calc(var(--px) * 0.75);
-    --btn-font: var(--font-pixel);
-    --btn-font-weight: 500;
-    --btn-letter-spacing: 0.5px;
-    -webkit-font-smoothing: none;
-    background: var(--_bg);
-  }
-
-  .ui-btn:is(.ui-btn-venom, .ui-btn-shade).ui-extend::before {
-    content: '';
-    position: absolute;
-    inset: 0 0 calc(var(--vpx) * -2);
-    z-index: 1;
-    pointer-events: none;
-    border-style: solid;
-    border-color: transparent;
-    border-width: calc(var(--vpx) * 8) calc(var(--vpx) * 8) calc(var(--vpx) * 10);
-    border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='17' height='19' viewBox='0 0 17 19' shape-rendering='crispEdges'><path fill='%23050203' d='M4 0h9v1h-9zM3 1h1v1h-1zM13 1h1v1h-1zM2 2h1v1h-1zM14 2h1v1h-1zM1 3h1v1h-1zM15 3h1v1h-1zM0 4h1v1h-1zM7 4h3v1h-3zM16 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM16 5h1v1h-1zM0 6h1v1h-1zM5 6h1v1h-1zM11 6h1v1h-1zM16 6h1v1h-1zM0 7h1v1h-1zM4 7h1v1h-1zM12 7h1v1h-1zM16 7h1v1h-1zM0 8h1v1h-1zM4 8h1v1h-1zM12 8h1v1h-1zM16 8h1v1h-1zM0 9h1v1h-1zM4 9h1v1h-1zM12 9h1v1h-1zM16 9h1v1h-1zM0 10h1v1h-1zM5 10h1v1h-1zM11 10h1v1h-1zM16 10h1v1h-1zM0 11h1v1h-1zM6 11h1v1h-1zM10 11h1v1h-1zM16 11h1v1h-1zM0 12h1v1h-1zM7 12h3v1h-3zM16 12h1v1h-1zM1 13h1v1h-1zM15 13h1v1h-1zM2 14h1v1h-1zM14 14h1v1h-1zM3 15h1v1h-1zM13 15h1v1h-1zM4 16h9v1h-9z'/><path fill='%23a89a91' d='M4 1h9v1h-9zM3 2h1v1h-1zM13 2h1v1h-1zM2 3h1v1h-1zM14 3h1v1h-1zM1 4h1v1h-1zM15 4h1v1h-1zM1 5h1v1h-1zM15 5h1v1h-1zM1 6h1v1h-1zM15 6h1v1h-1zM1 7h1v1h-1zM15 7h1v1h-1zM1 8h1v1h-1zM15 8h1v1h-1zM1 9h1v1h-1zM15 9h1v1h-1zM1 10h1v1h-1zM15 10h1v1h-1zM1 11h1v1h-1zM15 11h1v1h-1zM1 12h1v1h-1zM15 12h1v1h-1zM2 13h1v1h-1zM14 13h1v1h-1z'/><path fill='%238a7b74' d='M4 2h9v1h-9zM3 3h1v1h-1zM13 3h1v1h-1z'/><path fill='%236c5c56' d='M4 3h9v1h-9zM2 4h1v1h-1zM4 4h3v1h-3zM10 4h3v1h-3zM14 4h1v1h-1zM2 5h1v1h-1zM5 5h1v1h-1zM11 5h1v1h-1zM14 5h1v1h-1zM2 6h1v1h-1zM14 6h1v1h-1zM2 7h1v1h-1zM14 7h1v1h-1zM2 8h1v1h-1zM14 8h1v1h-1zM2 9h1v1h-1zM14 9h1v1h-1zM2 10h1v1h-1zM14 10h1v1h-1zM2 11h1v1h-1zM14 11h1v1h-1zM2 12h1v1h-1zM14 12h1v1h-1z'/><path fill='%234a3d3c' d='M3 4h1v1h-1zM13 4h1v1h-1zM3 5h2v1h-2zM12 5h2v1h-2zM3 6h2v1h-2zM12 6h2v1h-2zM3 7h1v1h-1zM13 7h1v1h-1zM3 8h1v1h-1zM13 8h1v1h-1zM3 9h1v1h-1zM13 9h1v1h-1zM3 10h2v1h-2zM12 10h2v1h-2zM3 11h2v1h-2zM12 11h2v1h-2zM3 12h1v1h-1zM13 12h1v1h-1zM3 13h1v1h-1zM13 13h1v1h-1zM4 14h9v1h-9z'/><path fill='%23625758' d='M5 11h1v1h-1zM11 11h1v1h-1zM4 12h3v1h-3zM10 12h3v1h-3zM4 13h9v1h-9z'/><path fill='%23392d31' d='M3 14h1v1h-1zM13 14h1v1h-1zM4 15h9v1h-9z'/><path fill='rgba(0,0,0,0.35)' d='M3 17h11v1h-11zM5 18h7v1h-7z'/></svg>") 8 8 10 8 / calc(var(--vpx) * 8) calc(var(--vpx) * 8) calc(var(--vpx) * 10) / 0 stretch;
-    image-rendering: pixelated;
-    opacity: 0;
-    transition: opacity 0s 0.2s;
-  }
-
-  .ui-btn:is(.ui-btn-venom, .ui-btn-shade).ui-extend[data-open='true']::before {
-    opacity: 1;
-    transition: none;
-  }
-
-  /* its options clear of the band */
-  :is(.ui-btn-venom, .ui-btn-shade).ui-extend .ui-extend-item {
-    padding-inline: calc(var(--vpx) * 10);
-  }
-
-  /* (on the last option, not the list: ExtendMenu measures the options alone to size the box) */
-  :is(.ui-btn-venom, .ui-btn-shade).ui-extend .ui-extend-item:last-child {
-    padding-bottom: calc(var(--btn-pad-y) + var(--vpx) * 5);
-  }
-
-  /* C3. Stone: grey block with stepped pixel corners, bevel, soft inner shadow
-     and a strip underneath. The button is the strip, .ui-btn-stone-face sits on
-     it; pressing pushes the face into the strip. */
+  /* Stone: a flat grey block with a rocky border (--btn-rock, components/ui/buttons/rockEdge.ts) and soft inner shadows; IconButton
+     wraps its icon in .ui-btn-stone-face */
   .ui-btn-stone {
     --btn-font-size: 12.8px;
     --btn-letter-spacing: 0.768px;
@@ -817,69 +773,6 @@
     filter: brightness(0.88);
   }
 
-  /* C4. Shade: no background until hover, then dark grey fades in and the
-     white brackets slide out (shared bracket block above) */
-  .ui-btn-shade {
-    --btn-text: var(--color-bone-dim);
-    --btn-bg: transparent;
-    --btn-bracket-color: color-mix(in srgb, #fff 80%, var(--color-shade));
-    --btn-hover-text: var(--color-bone);
-    --btn-hover-bg: var(--color-shade-hover);
-    box-shadow: none;
-    transition: color 0.18s ease-out, background-color 0.18s ease-out, var(--br-transition), padding 0.18s ease-out;
-  }
-
-  /* Map: a Shade button whose background shows all the time (a Cancel beside a Create): the dark grey of an open Shade, lighter on hover */
-  .ui-btn-shade.ui-btn-filled {
-    --btn-bg: var(--color-shade);
-    --btn-text: var(--color-bone);
-    --btn-hover-bg: color-mix(in srgb, #fff 12%, var(--color-shade));
-  }
-
-  /* C5. Underline: no background; on hover a line with a hard pixel shadow
-     slides in from the left under the text and back out on leave */
-  .ui-btn-underline {
-    --btn-pad-x: 0px;
-    --btn-pad-y: calc(var(--px) * 1.5);
-    --btn-icon-gap: var(--icon-gap, 6.48px);
-    --btn-icon-ratio: 1.2;
-    --btn-text: var(--color-bone-dim);
-    --btn-bg: transparent;
-    --btn-hover-text: var(--color-bone);
-    --btn-underline-color: var(--color-bone);
-    --btn-underline-thickness: var(--px);
-    --btn-underline-offset: 3px;
-    --btn-underline-shadow-color: #000;
-    --btn-underline-speed: 0.25s;
-    --_ul-w: 0%;
-    /* Map: the space below the text (for the line) above it too, so the text is centred */
-    padding: calc(var(--btn-pad-y) + var(--btn-underline-offset)) calc(var(--btn-pad-x) + var(--px)) calc(var(--btn-pad-y) + var(--btn-underline-offset)) var(--btn-pad-x);
-    background:
-      linear-gradient(var(--btn-underline-color), var(--btn-underline-color)) left 0 bottom var(--px) / var(--_ul-w) var(--btn-underline-thickness) no-repeat,
-      linear-gradient(var(--btn-underline-shadow-color), var(--btn-underline-shadow-color)) left var(--px) bottom 0 / var(--_ul-w) var(--btn-underline-thickness) no-repeat,
-      var(--btn-bg);
-    transition: color 0.2s ease-out, background-size var(--btn-underline-speed) ease-out;
-  }
-
-  .ui-btn-underline:hover:not(:disabled),
-  .ui-btn-underline:focus-visible {
-    --_ul-w: 100%;
-    --_text: var(--btn-hover-text);
-  }
-
-  /* ---- Map: additions ---- */
-
-  /* Map: icon and text in one line, centred */
-  .ui-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    white-space: nowrap;
-    text-decoration: none;
-    user-select: none;
-  }
-
-  /* Map: the Stone face holds the icon and the label in one line too, laid out like its button (justify-start...) */
   .ui-btn-stone>.ui-btn-stone-face {
     display: flex;
     flex: 1 1 auto;
@@ -888,123 +781,7 @@
     justify-content: inherit;
   }
 
-  /* Map: the icon is a flex item: no baseline shift */
-  .ui-btn-icon {
-    vertical-align: initial;
-  }
-
-  /* Map: other icons in a button's content (a ▾ after the label, an ✕ in a chip): text-sized, spaced from the text */
-  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon) {
-    flex: none;
-    width: 1em;
-    height: 1em;
-  }
-
-  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):first-child:not(:last-child) {
-    margin-inline-end: var(--btn-icon-gap);
-  }
-
-  /* the icon at either end is as far from the button's edge as from the text (a button's padding can be wider than that) */
-  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):first-child:not(:last-child) {
-    margin-inline-start: calc(var(--btn-icon-edge) - var(--btn-pad-x));
-  }
-
-  /* hovered (Venom, Shade): the icon after the label comes closer to the text, like the one before it does (--_pull); the
-     space it leaves goes to its end margin, so the button keeps its width. (A lone one is a ▾ after the label: the text
-     before it isn't an element, so it counts as first and last) */
-  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):is(:not(:first-child), :only-child) {
-    margin-inline-start: calc(var(--btn-icon-gap) - var(--_pull, 0px));
-    transition: margin 0.18s ease-out;
-  }
-
-  :is(.ui-btn, .ui-btn-stone-face)>svg:not(.ui-btn-icon):last-child {
-    margin-inline-end: calc(var(--btn-icon-edge) - var(--btn-pad-x) + var(--_pull, 0px));
-  }
-
-  /* Map: a link can't be :disabled; aria-disabled gives it the same look */
-  .ui-btn[aria-disabled='true'] {
-    opacity: 0.4;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
-
-  /* Map: keyboard focus */
-  .ui-btn:focus-visible {
-    outline: var(--px) solid var(--color-bone);
-    outline-offset: var(--px);
-  }
-
-  /* Map: the current page (NavButton) and a selected button (aria-pressed) keep the hover look */
-  .ui-btn:is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
-    --_text: var(--btn-hover-text, var(--btn-text));
-    --_bg: var(--btn-hover-bg, var(--btn-bg));
-  }
-
-  .ui-btn-venom:is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
-    --_bevel-top: var(--btn-hover-bevel-top);
-    --_bevel-bottom: var(--btn-hover-bevel-bottom);
-  }
-
-  .ui-btn:is(.ui-btn-venom, .ui-btn-shade):is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
-    --br-gap: var(--btn-bracket-gap);
-    --br-len-x: var(--btn-bracket-len-x);
-    --br-len-y: var(--btn-bracket-len-y);
-  }
-
-  .ui-btn-underline:is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
-    --_ul-w: 100%;
-  }
-
-  /* Map: the editor's square bars (title bar, tool panel): a button that is on (aria-pressed / aria-expanded) has a thick light line along its
-     bottom, inside it; the others have no background until hovered (the Sort by look, ghost and plain) */
-  .ui-bar-square .ui-btn:is([aria-pressed='true'], [aria-expanded='true']) {
-    box-shadow: inset 0 -3px 0 var(--color-bone);
-  }
-
-  /* ...except the ones that say so (the title bar's Notes and search: open, they show it by their panel) */
-  .ui-bar-square .ui-btn.ui-btn-noline:is([aria-pressed='true'], [aria-expanded='true']) {
-    box-shadow: none;
-  }
-
-  /* Map: a square button with only an icon (IconButton, ClosableButton's X): the vertical padding all round */
-  .ui-btn.ui-btn-square {
-    --btn-pad-x: var(--btn-pad-y);
-    --btn-icon-edge: var(--btn-pad-x);
-    --btn-icon-gap: 0px;
-    --btn-hover-pull: 0px;
-    aspect-ratio: 1;
-  }
-
-  .ui-btn-square>svg {
-    width: var(--btn-icon-size);
-    height: var(--btn-icon-size);
-  }
-
-  /* Map: a square button with a bigger icon (IconButton bigIcon): as tall as a normal button (--btn-md-h), the icon most of it */
-  .ui-btn.ui-btn-square.ui-btn-big-icon {
-    --btn-icon-size: calc(var(--btn-md-h) * 0.72);
-    --btn-pad-y: calc((var(--btn-md-h) - var(--btn-icon-size)) / 2);
-  }
-
-  .ui-btn.ui-btn-square.ui-btn-big-icon>svg {
-    width: var(--btn-icon-size);
-    height: var(--btn-icon-size);
-  }
-
-  /* (keeps its width on hover: no icon + text to pull together) */
-  .ui-btn-square:is(.ui-btn-venom, .ui-btn-shade):hover:not(:disabled) {
-    padding-right: var(--btn-pad-x);
-  }
-
-  /* Underline as a square: no underline, the icon brightens */
-  .ui-btn-square.ui-btn-underline {
-    --btn-pad-x: var(--btn-pad-y);
-    padding: var(--btn-pad-y);
-    background: none;
-  }
-
-  /* Map: a round icon button floating over a border (the article's tools on its body's left edge, IconButton round): a circle on the
-     surface with a line and a shadow, no brackets, no cut corners; its hover is Shade's */
+  /* round: a circle floating over a border (the article's tools on its body's left edge) */
   .ui-btn.ui-btn-round {
     --btn-radius: 9999px;
     --btn-bracket-gap: 0px;
@@ -1025,8 +802,7 @@
     border-color: var(--fg-muted);
   }
 
-  /* Map: Shade (or Venom) without its white corner brackets: they stay hidden and never slide out, hovered, current or
-     chosen (the icon-only buttons). The hover background is the same; no icon-and-text pull either */
+  /* plain: Shade without its brackets (every icon-only Shade) */
   .ui-btn.ui-btn-plain {
     --btn-bracket-gap: 0px;
     --btn-bracket-len-x: 0px;
@@ -1034,185 +810,107 @@
     --btn-hover-pull: 0px;
   }
 
-  /* Map: a brighter label and icon with no background of its own (the navbar's menu button): near white instead of Shade's muted
-     purple, and no square behind it, hovered or not */
+  /* bright: a brighter icon with no background (the navbar's menu button) */
   .ui-btn.ui-btn-bright {
     --btn-text: var(--color-bone-hover);
     --btn-hover-text: #fff;
     --btn-hover-bg: transparent;
   }
 
-  /* Map: the link button (components/ui/buttons/LinkButton.tsx): just small text that lightens when hovered. Nothing else: no padding,
-     no background, no brackets, no underline. It is not a .ui-btn on purpose, so none of the button settings apply to it */
-  .ui-btn-link {
-    display: inline-flex;
-    align-items: center;
-    padding: 0;
-    border: 0;
-    background: none;
-    font: 500 11px / 1.2 var(--font-body);
-    letter-spacing: 0.4px;
-    color: var(--color-bone-dim);
-    text-decoration: none;
-    cursor: pointer;
-    transition: color 0.18s ease-out;
-  }
+  /* ======================= E. PARTS MADE OF BUTTONS ======================= */
 
-  .ui-btn-link:hover:not(:disabled) {
-    color: var(--color-bone-hover);
-  }
-
-  .ui-btn-link:focus-visible {
-    outline: var(--px) solid var(--color-bone);
-    outline-offset: var(--px);
-  }
-
-  .ui-btn-link:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  /* Map: a button as tall as a text field (--field-h), with a bigger icon and text (the navbar's Recent History) */
-  .ui-btn.ui-btn-lg {
-    --btn-font-size: 16px;
-    --btn-icon-ratio: 1.25;
-    min-height: var(--field-h);
-  }
-
-  .ui-btn-stone.ui-btn-lg>.ui-btn-stone-face {
-    min-height: calc(var(--field-h) - 2 * var(--btn-shadow-height));
-  }
-
-  /* Map: a smaller button, for tight rows (pane islands, board panels, row headers) */
-  .ui-btn.ui-btn-sm {
-    --btn-font-size: 12.8px;
-    --bracket-btn-pad-x: calc(var(--px) * 5.5);
-    --bracket-btn-pad-y: calc(var(--px) * 2);
-    --btn-icon-ratio: 1.1;
-  }
-
-  /* Map: smaller still (a map card's name): the icon's distance to the edge is its distance to the text, as in every button */
-  .ui-btn.ui-btn-xs {
-    --btn-font-size: 11px;
-    --btn-letter-spacing: 0.4px;
-    --btn-pad-x: calc(var(--px) * 4);
-    --bracket-btn-pad-x: calc(var(--px) * 4);
-    --bracket-btn-pad-y: calc(var(--px) * 1.5);
-    --btn-icon-ratio: 1.1;
-  }
-
-  /* Map: ExtendMenu (components/ui/overlays/ExtendMenu.tsx). The box that grows is a button of the same look
-     (.ui-btn .ui-btn-venom / -shade .ui-extend), holding the real button and the options. The box draws the face and
-     the white brackets, always with the same layers: the brackets are placed from its edges, so as it grows they just
-     move out with its corners. Its button draws nothing of its own (the Venom split's two pieces do, while closed).
-     Open, every ExtendMenu is dark grey like an open Shade; a Venom one fades from green to it. */
+  /* E1. ExtendMenu (components/ui/overlays/ExtendMenu.tsx): a Secondary ("Sort by") or a Primary green ("Add +") button that grows
+     into its own menu. The box (.ui-btn .ui-extend) holds the button and the options. Closed, the box is see-through and the button
+     shows as it is; open (and while it folds back, data-closing) the box is the dark grey panel in the metal band, the options in the
+     pixel font, and the button has no frame of its own */
   .ui-btn.ui-extend,
   .ui-btn.ui-extend:is(:hover, :active) {
-    /* a column: the button, then the options, from its start (a button centres its content) */
+    --vpx: calc(var(--px) * 0.75);
+    --btn-pad-x: calc(var(--px) * 6);
+    --btn-pad-y: var(--btn-md-pad-y);
+    --btn-icon-ratio: 1.2;
+    --btn-font: var(--font-pixel);
+    --btn-font-weight: 500;
+    --btn-letter-spacing: 0.5px;
+    -webkit-font-smoothing: none;
+    /* a column: the button, then the options, from its start */
     justify-content: flex-start;
     align-items: stretch;
     padding: 0;
     cursor: auto;
-    background: var(--br-layers-left), var(--br-layers-right), var(--_bg);
+    background: var(--_bg);
     box-shadow: none;
     transform: none;
+    /* what is outside the box is cut off (the options while it grows or shrinks), but for a few px all round: the button's own
+       shadow and focus ring */
+    clip-path: inset(-5px);
     transition:
       width 0.2s ease-out,
       height 0.2s ease-out,
       margin-left 0.2s ease-out,
       color 0.2s ease-out,
-      background-color 0.2s ease-out,
-      var(--br-transition);
+      background-color 0.2s ease-out;
   }
 
-  /* the button inside: its content only (the box behind it is its face) */
-  .ui-extend>.ui-btn {
-    background: none;
-    box-shadow: none;
-  }
-
-  /* Venom split, closed: the box is see-through: the two pieces show (its brackets, while hovered, are exactly under
-     the pieces' outer ones) */
-  .ui-btn-venom.ui-extend:not([data-open='true']),
-  .ui-btn.ui-btn-shade.ui-extend:not([data-open='true']):is(*, :hover) {
+  .ui-btn.ui-extend:not([data-open='true']):is(*, :hover) {
     --_bg: transparent;
   }
 
-  /* open: dark grey with the brackets out, whatever the pointer does */
-  .ui-btn.ui-extend[data-open='true'] {
+  .ui-btn.ui-extend[data-open='true']:is(*, :hover) {
     --_text: var(--color-bone);
     --_bg: var(--color-shade);
-    --br-gap: var(--btn-bracket-gap);
-    --br-len-x: var(--btn-bracket-len-x);
-    --br-len-y: var(--btn-bracket-len-y);
   }
 
-  /* what is outside the box is cut off (the options while it grows or shrinks), but for a few px all round: the
-     button's own shadow and focus ring */
-  .ui-btn.ui-extend {
-    clip-path: inset(-5px);
+  /* the metal band round the open box (a 9-slice border-image, so it grows with the box): shows at once on opening, stays while it
+     folds back (0.2s) */
+  .ui-btn.ui-extend::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 calc(var(--vpx) * -2);
+    z-index: 1;
+    pointer-events: none;
+    border-style: solid;
+    border-color: transparent;
+    border-width: calc(var(--vpx) * 8) calc(var(--vpx) * 8) calc(var(--vpx) * 10);
+    border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='17' height='19' viewBox='0 0 17 19' shape-rendering='crispEdges'><path fill='%23050203' d='M4 0h9v1h-9zM3 1h1v1h-1zM13 1h1v1h-1zM2 2h1v1h-1zM14 2h1v1h-1zM1 3h1v1h-1zM15 3h1v1h-1zM0 4h1v1h-1zM7 4h3v1h-3zM16 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM16 5h1v1h-1zM0 6h1v1h-1zM5 6h1v1h-1zM11 6h1v1h-1zM16 6h1v1h-1zM0 7h1v1h-1zM4 7h1v1h-1zM12 7h1v1h-1zM16 7h1v1h-1zM0 8h1v1h-1zM4 8h1v1h-1zM12 8h1v1h-1zM16 8h1v1h-1zM0 9h1v1h-1zM4 9h1v1h-1zM12 9h1v1h-1zM16 9h1v1h-1zM0 10h1v1h-1zM5 10h1v1h-1zM11 10h1v1h-1zM16 10h1v1h-1zM0 11h1v1h-1zM6 11h1v1h-1zM10 11h1v1h-1zM16 11h1v1h-1zM0 12h1v1h-1zM7 12h3v1h-3zM16 12h1v1h-1zM1 13h1v1h-1zM15 13h1v1h-1zM2 14h1v1h-1zM14 14h1v1h-1zM3 15h1v1h-1zM13 15h1v1h-1zM4 16h9v1h-9z'/><path fill='%23a89a91' d='M4 1h9v1h-9zM3 2h1v1h-1zM13 2h1v1h-1zM2 3h1v1h-1zM14 3h1v1h-1zM1 4h1v1h-1zM15 4h1v1h-1zM1 5h1v1h-1zM15 5h1v1h-1zM1 6h1v1h-1zM15 6h1v1h-1zM1 7h1v1h-1zM15 7h1v1h-1zM1 8h1v1h-1zM15 8h1v1h-1zM1 9h1v1h-1zM15 9h1v1h-1zM1 10h1v1h-1zM15 10h1v1h-1zM1 11h1v1h-1zM15 11h1v1h-1zM1 12h1v1h-1zM15 12h1v1h-1zM2 13h1v1h-1zM14 13h1v1h-1z'/><path fill='%238a7b74' d='M4 2h9v1h-9zM3 3h1v1h-1zM13 3h1v1h-1z'/><path fill='%236c5c56' d='M4 3h9v1h-9zM2 4h1v1h-1zM4 4h3v1h-3zM10 4h3v1h-3zM14 4h1v1h-1zM2 5h1v1h-1zM5 5h1v1h-1zM11 5h1v1h-1zM14 5h1v1h-1zM2 6h1v1h-1zM14 6h1v1h-1zM2 7h1v1h-1zM14 7h1v1h-1zM2 8h1v1h-1zM14 8h1v1h-1zM2 9h1v1h-1zM14 9h1v1h-1zM2 10h1v1h-1zM14 10h1v1h-1zM2 11h1v1h-1zM14 11h1v1h-1zM2 12h1v1h-1zM14 12h1v1h-1z'/><path fill='%234a3d3c' d='M3 4h1v1h-1zM13 4h1v1h-1zM3 5h2v1h-2zM12 5h2v1h-2zM3 6h2v1h-2zM12 6h2v1h-2zM3 7h1v1h-1zM13 7h1v1h-1zM3 8h1v1h-1zM13 8h1v1h-1zM3 9h1v1h-1zM13 9h1v1h-1zM3 10h2v1h-2zM12 10h2v1h-2zM3 11h2v1h-2zM12 11h2v1h-2zM3 12h1v1h-1zM13 12h1v1h-1zM3 13h1v1h-1zM13 13h1v1h-1zM4 14h9v1h-9z'/><path fill='%23625758' d='M5 11h1v1h-1zM11 11h1v1h-1zM4 12h3v1h-3zM10 12h3v1h-3zM4 13h9v1h-9z'/><path fill='%23392d31' d='M3 14h1v1h-1zM13 14h1v1h-1zM4 15h9v1h-9z'/><path fill='rgba(0,0,0,0.35)' d='M3 17h11v1h-11zM5 18h7v1h-7z'/></svg>") 8 8 10 8 / calc(var(--vpx) * 8) calc(var(--vpx) * 8) calc(var(--vpx) * 10) / 0 stretch;
+    image-rendering: pixelated;
+    opacity: 0;
+    transition: opacity 0s 0.2s;
   }
 
-  /* open, the Venom split's pieces fade out (their brackets hand over to the box's, in the same places). Both pieces
-     always have the same layers (left brackets, right brackets, inner shadow, colour), closed and open, so nothing
-     slides in from another layer's place when they turn into Shade buttons; closed, the inner side's are see-through */
-  .ui-extend>.ui-btn-venom-split>span {
-    background: var(--br-layers-left), var(--br-layers-right), var(--btn-inner-shadow), var(--_bg);
-    transition:
-      var(--br-transition),
-      background-color 0.2s ease-out,
-      box-shadow 0.2s ease-out;
+  .ui-btn.ui-extend[data-open='true']::before {
+    opacity: 1;
+    transition: none;
   }
 
-  .ui-extend[data-open='true']>.ui-btn-venom-split {
-    --_bg: transparent;
-    --br-h: linear-gradient(transparent, transparent);
-    --btn-inner-shadow: linear-gradient(transparent, transparent);
+  /* its options clear of the band */
+  .ui-extend .ui-extend-item {
+    padding-inline: calc(var(--vpx) * 10);
   }
 
-  .ui-extend:not([data-open='true'])>.ui-btn-venom-split>span:first-child {
-    --br-layers-right:
-      var(--br-none) right var(--br-gap) top var(--br-gap) / var(--br-len-x) var(--br-w) no-repeat,
-      var(--br-none) right var(--br-gap) top var(--br-gap) / var(--br-w) var(--br-len-y) no-repeat,
-      var(--br-none) right var(--br-gap) bottom var(--br-gap) / var(--br-len-x) var(--br-w) no-repeat,
-      var(--br-none) right var(--br-gap) bottom var(--br-gap) / var(--br-w) var(--br-len-y) no-repeat;
+  /* (on the last option, not the list: ExtendMenu measures the options alone to size the box) */
+  .ui-extend .ui-extend-item:last-child {
+    padding-bottom: calc(var(--btn-pad-y) + var(--vpx) * 5);
   }
 
-  .ui-extend:not([data-open='true'])>.ui-btn-venom-split>span:last-child {
-    --br-layers-left:
-      var(--br-none) left var(--br-gap) top var(--br-gap) / var(--br-len-x) var(--br-w) no-repeat,
-      var(--br-none) left var(--br-gap) top var(--br-gap) / var(--br-w) var(--br-len-y) no-repeat,
-      var(--br-none) left var(--br-gap) bottom var(--br-gap) / var(--br-len-x) var(--br-w) no-repeat,
-      var(--br-none) left var(--br-gap) bottom var(--br-gap) / var(--br-w) var(--br-len-y) no-repeat;
-  }
-
-  .ui-extend {
-    --br-none: linear-gradient(transparent, transparent);
-  }
-
-  .ui-extend[data-open='true']>.ui-btn-venom-split>span {
+  /* the button inside an open (or folding) box: its content only, no frame, panel, glow, lift or press */
+  .ui-extend:is([data-open='true'], [data-closing='true'])>.ui-btn {
+    background: none;
     box-shadow: none;
+    transform: none;
+    filter: none;
+  }
+
+  .ui-extend:is([data-open='true'], [data-closing='true'])>.ui-btn::before {
+    display: none;
   }
 
   .ui-extend[data-open='true']>.ui-btn {
     --_text: var(--color-bone);
-    transform: none;
-  }
-
-  /* open: the icon and the text don't close up when hovered */
-  .ui-extend[data-open='true']>.ui-btn,
-  .ui-extend[data-open='true']>.ui-btn:hover:not(:disabled) {
     --_pull: 0px;
   }
 
-  /* open, a Venom split's two pieces are Shade buttons (ExtendMenu gives them .ui-btn .ui-btn-shade): no face, and
-     Shade's own hover background on the one under the pointer, without its white brackets (the box has its own). They
-     keep their size and place while the box grows around them; hovering the label ("None") lights the ✕ too */
-  .ui-extend[data-open='true']>.ui-btn-venom-split>span {
-    --br-h: var(--br-none);
-  }
-
-  /* a split button's two labels (its own, and "None" while open) in one cell: as wide as the wider one, one shown */
+  /* a create button's two labels (its own, and "None" while open) in one cell: as wide as the wider one, one shown */
   .ui-extend-labels {
     display: grid;
   }
@@ -1224,11 +922,6 @@
 
   .ui-extend-labels>[data-shown='false'] {
     visibility: hidden;
-  }
-
-  .ui-extend[data-open='true']>.ui-btn-venom-split:has(> .ui-btn-venom-split-label:hover)>.ui-btn-venom-split-icon {
-    --_text: var(--btn-hover-text);
-    --_bg: var(--btn-hover-bg);
   }
 
   /* a + turns into an ✕ */
@@ -1244,7 +937,7 @@
     rotate: 45deg;
   }
 
-  /* an arrow (a chevron) in the button's content, marked ui-extend-flip, turns half a round while open, and back */
+  /* an arrow (a chevron) marked ui-extend-flip turns half a round while open, and back */
   .ui-extend-flip {
     transition: rotate 0.2s ease-out;
   }
@@ -1253,9 +946,8 @@
     rotate: -180deg;
   }
 
-  /* Folding back (data-closing, for as long as it shrinks): the box keeps its open look while it shrinks, then takes
-     its closed look at once (its colour, brackets, options: a delay, no duration). The label (None → Add) changes at the click. Only the button's own
-     colours fade back meanwhile (a Venom split's pieces turn green again) */
+  /* folding back (data-closing, for as long as it shrinks): the box keeps its open look while it shrinks, then takes its closed
+     look at once */
   .ui-btn.ui-extend[data-closing='true'],
   .ui-btn.ui-extend[data-closing='true']:is(:hover, :active) {
     transition:
@@ -1263,19 +955,11 @@
       height 0.2s ease-out,
       margin-left 0.2s ease-out,
       color 0s 0.2s,
-      background-color 0s 0.2s,
-      background-position 0s 0.2s,
-      background-size 0s 0.2s;
+      background-color 0s 0.2s;
   }
 
-  .ui-extend[data-closing='true']>.ui-btn,
-  .ui-extend[data-closing='true']>.ui-btn-venom-split>span {
-    transition:
-      color 0.2s ease-out,
-      background-color 0.2s ease-out,
-      box-shadow 0.2s ease-out,
-      background-position 0s 0.2s,
-      background-size 0s 0.2s;
+  .ui-extend[data-closing='true']>.ui-btn {
+    transition: color 0.2s ease-out, background-color 0.2s ease-out;
   }
 
   .ui-extend[data-closing='true']>.ui-extend-menu {
@@ -1290,7 +974,6 @@
   @media (prefers-reduced-motion: reduce) {
 
     .ui-btn.ui-extend,
-    .ui-extend>.ui-btn-venom-split>span,
     .ui-extend-turn>svg,
     .ui-extend-flip {
       transition: none;
@@ -1322,52 +1005,83 @@
     height: var(--btn-icon-size);
   }
 
-  /* C8. Leather (variant "leather"): a tab of light brown leather, like a gold game button in leather. Two tones (the top half lighter,
-     the bottom half in shade), a fine pixel grain over it, a lit line along its top and a shaded one along its bottom inside, a thin
-     light line inside a dark brown edge two pixels thick, its corners rounded in a pixel step; the words cream in the pixel font with a dark
-     shadow. Hovered: a little lighter; pressed: it sinks a pixel. Its colours are the --leather-* below */
-  .ui-btn-leather {
-    --leather: #a8683d;
-    --leather-hover: #b87749;
-    --leather-light: #cf9260;
-    --leather-shade: #7f4a2a;
-    --leather-edge: #3a1f0f;
-    --leather-line: rgb(255 226 180 / 0.35);
-    --btn-text: #f6e9cf;
-    --btn-hover-text: #fff8e8;
-    --btn-bg: var(--leather);
-    --btn-hover-bg: var(--leather-hover);
-    --btn-font: var(--font-pixel);
-    --btn-font-weight: 600;
-    --btn-letter-spacing: 0.5px;
-    /* (inside its frame, two of its pixels thick) */
-    --btn-pad-x: 10px;
-    --btn-pad-y: 0px;
-    /* its pixel: the Dashboard cards' and the page's pixel art (dashboard/cards: 3.75px); its grain, its frame and its corners' step are in it.
-       The grain: a few darker and lighter pixels on a small tile, so the leather is not flat */
-    --leather-px: 3.75px;
-    --leather-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' shape-rendering='crispEdges'%3E%3Cpath fill='rgba(60,25,8,0.22)' d='M1 1h2v1h-2zM7 2h1v1h-1zM4 5h2v1h-2zM10 6h1v1h-1zM0 4h1v1h-1z'/%3E%3Cpath fill='rgba(255,220,170,0.16)' d='M5 0h1v1h-1zM9 3h2v1h-2zM2 6h1v1h-1zM7 7h1v1h-1z'/%3E%3C/svg%3E");
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-shadow: 0 2px 0 rgb(40 18 6 / 0.75);
-    background:
-      var(--leather-grain) 0 0 / calc(var(--leather-px) * 12) calc(var(--leather-px) * 8) repeat,
-      linear-gradient(to bottom, transparent 50%, rgb(70 30 10 / 0.22) 50%),
-      var(--_bg);
-    /* its frame in its pixels (a 5 × 5 drawing, its corners kept, its middle stretched), two of them thick: the dark edge with its corners
-       rounded in a pixel step, the lit line along its top, the shade along its bottom, a light line down its sides (the --leather-edge,
-       -light, -shade and -line colours, written into the drawing). The corners outside the step are cut off the leather (clip-path) */
-    --_p: var(--leather-px);
-    min-height: calc(var(--_p) * 8);
-    border: calc(var(--_p) * 2) solid transparent;
-    border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='5' height='5' shape-rendering='crispEdges'><path fill='%233a1f0f' d='M1 0h3v1h-3zM1 4h3v1h-3zM0 1h1v3h-1zM4 1h1v3h-1z'/><path fill='%23cf9260' d='M1 1h3v1h-3z'/><path fill='%237f4a2a' d='M1 3h3v1h-3z'/><path fill='rgba(255,226,180,0.35)' d='M1 2h1v1h-1zM3 2h1v1h-1z'/></svg>") 2 / calc(var(--_p) * 2) stretch;
-    clip-path: polygon(var(--_p) 0, calc(100% - var(--_p)) 0, calc(100% - var(--_p)) var(--_p), 100% var(--_p), 100% calc(100% - var(--_p)), calc(100% - var(--_p)) calc(100% - var(--_p)), calc(100% - var(--_p)) 100%, var(--_p) 100%, var(--_p) calc(100% - var(--_p)), 0 calc(100% - var(--_p)), 0 var(--_p), var(--_p) var(--_p));
-    transition: background-color 0.15s ease-out, color 0.15s ease-out;
+  /* E2. Panel: the floating Create button (PanelFrame), a square: Venom in gold (D: its bevels, brackets and press), with a soft
+     shadow under it too; open (the Create modal it grows into) it is the page's surface at once */
+  .ui-btn-panel {
+    --btn-soft-shadow: 0 8px 20px rgba(0, 0, 0, 0.28), 0 2px 5px rgba(0, 0, 0, 0.2);
   }
 
-  .ui-btn-leather:active:not(:disabled) {
-    transform: translateY(1px);
+  .ui-btn-venom.ui-btn-gold {
+    /* its + dark gray */
+    --btn-text: #2a2a2a;
+    --btn-hover-text: #222222;
+    --btn-press-text: #2a2a2a;
+    --btn-bg: var(--color-gold);
+    --btn-bevel-top: #ffe28f;
+    --btn-bevel-bottom: var(--color-gold-dark);
+    --btn-hover-bg: #f3c85a;
+    --btn-hover-bevel-top: #fff0b8;
+    --btn-hover-bevel-bottom: #a8791f;
+    --btn-press-bg: #c99a33;
+    --btn-press-bevel-top: #8a621c;
+    --btn-press-bevel-bottom: #e6c063;
+  }
+
+  .ui-btn-venom.ui-btn-gold.ui-btn-panel {
+    box-shadow:
+      inset 0 var(--px) 0 0 var(--_bevel-top),
+      inset 0 var(--px-neg) 0 0 var(--_bevel-bottom),
+      0 var(--_shadow-y) 0 0 var(--btn-shadow-color),
+      var(--btn-soft-shadow);
+  }
+
+  /* Open: the page's surface the moment it starts to grow, and nothing of Venom (no brackets, bevels or press: a click in the modal
+     presses it too) */
+  .ui-btn-venom.ui-btn-gold.ui-btn-panel[data-open],
+  .ui-btn-venom.ui-btn-gold.ui-btn-panel[data-open]:is(:hover, :active) {
+    background: var(--surface);
+    box-shadow: var(--btn-soft-shadow);
+    transform: none;
+    transition: none;
+  }
+
+  /* E3. The shared Modal's close X (components/ui/overlays/Modal.tsx), part of its gold frame (styles/modalFrame.css): a square on the
+     top right corner with the title plaque's look, a bone X. Hover: a little lighter; press: down a pixel */
+  .ui-btn.ui-modal-close {
+    position: absolute;
+    /* its middle on the band's middle, at the corner */
+    top: calc(var(--mf-px, 2px) * -1.5);
+    right: calc(var(--mf-px, 2px) * -1.5);
+    z-index: 1;
+    /* as tall as the title's plaque, its middle on the frame's corner: it covers the corner's step, and the lines meet its edges */
+    width: 33px;
+    height: 33px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    color: var(--color-bone);
+    /* the title plaque's pixel border (modalFrame.css): 6px, pixel-stepped round corners */
+    background: var(--mf-plaque-bg) padding-box;
+    border: 6px solid transparent;
+    border-image: var(--mf-plaque-border) 6 / 12px / 0 stretch;
+    image-rendering: pixelated;
+    transform: translate(50%, -50%);
+    transition: color 0.15s ease-out, background-color 0.15s ease-out;
+  }
+
+  .ui-btn.ui-modal-close>svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* (more specific than .ui-btn-square's hover, which gives a Shade square a right padding on hover and would move the X) */
+  .ui-btn.ui-btn-square.ui-modal-close:hover:not(:disabled) {
+    padding: 0;
+    color: var(--color-bone-hover);
+    background: color-mix(in srgb, #fff 8%, var(--surface)) padding-box;
+  }
+
+  .ui-btn.ui-modal-close:active:not(:disabled) {
+    transform: translate(50%, calc(-50% + 1px));
   }
 }

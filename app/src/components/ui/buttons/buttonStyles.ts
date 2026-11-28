@@ -1,14 +1,18 @@
-// The buttons' looks, in one place (the look itself is styles/buttons.css). Buttons with text have only these styles:
+// The buttons' looks, in one place (the look itself is styles/buttons.css, section C). A button with text has ONE of these five
+// styles and there are no others (buttons.test.ts checks it): no modifiers, no sixth style; a new look is a change to one of them.
 // - primary: the framed button (the pixel frame, a panel, the pixel font) in one of three tones: green (the main action, the default), gray
 //   (the other actions), red (an action that destroys something)
-// - underline: just its text; a line under it while hovered (the quiet actions: Cancel, Show more, Share…)
+// - secondary: bold white pixel text; hovered, the frame comes out of the screen (Sort by)
+// - underline: just its text; a line under it while hovered (the quiet actions: Show more, tabs not chosen…)
 // - leather: a book card's Open
-// and LinkButton (its own: small text that lightens). Sizes change how big a button is, not its style.
+// - link: LinkButton (small text that lightens). Sizes change how big a button is, not its style.
 // Buttons with only an icon (IconButton) keep their own looks: ICON_LOOK below.
 
 const LOOK = {
   /** The framed button, in a tone */
-  primary: 'ui-btn-shade',
+  primary: 'ui-btn-primary',
+  /** Bold white pixel text; hovered, the frame pulls out of the screen */
+  secondary: 'ui-btn-secondary',
   /** Text only, a line under it while hovered */
   underline: 'ui-btn-underline',
   /** A book card's Open: light brown leather */
