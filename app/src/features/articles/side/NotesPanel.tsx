@@ -94,7 +94,7 @@ export default function NotesPanel({ articleId }: { articleId: string }) {
           <LuStickyNote className="size-5 shrink-0" />
           <span className="truncate">Notes of this article ({ids.length})</span>
         </h2>
-        <Button variant="ghost" size="sm" plain filled icon={LuPlus} aria-expanded={adding} className="shrink-0" onClick={() => setAdding(!adding)}>
+        <Button variant="underline" size="sm" icon={LuPlus} aria-expanded={adding} className="shrink-0" onClick={() => setAdding(!adding)}>
           New
         </Button>
       </div>

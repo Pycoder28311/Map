@@ -41,7 +41,7 @@ export default function ImportModal({ schema, self, have, onClose, onImport }: {
       footer={
         from && (
           <>
-            <Button variant="ghost" onClick={() => setFrom(null)}>
+            <Button tone="gray" onClick={() => setFrom(null)}>
               Another article
             </Button>
             <Button

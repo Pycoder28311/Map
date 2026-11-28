@@ -72,7 +72,7 @@ function FindPeople() {
     <div className="flex flex-col gap-3">
       <form className="flex items-end gap-2" onSubmit={(e) => void find(e)}>
         <TextField label="Find people by email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" className="min-w-0 flex-1" />
-        <Button type="submit" variant="secondary" icon={LuUserSearch} disabled={!email.trim() || finding}>
+        <Button variant="underline" type="submit" icon={LuUserSearch} disabled={!email.trim() || finding}>
           {finding ? 'Finding…' : 'Find'}
         </Button>
       </form>
@@ -100,7 +100,7 @@ export default function PeopleCard() {
     <div className="flex flex-col gap-5">
       <div role="tablist" aria-label="People" className="flex gap-1 border-b border-line pb-2">
         {(['followers', 'following'] as const).map((t) => (
-          <Button key={t} role="tab" aria-selected={tab === t} variant={tab === t ? 'selected' : 'ghost'} plain onClick={() => setTab(t)}>
+          <Button key={t} role="tab" aria-selected={tab === t} variant={tab === t ? 'primary' : 'underline'} onClick={() => setTab(t)}>
             {t === 'followers' ? 'Followers' : 'Following'}
             {counts && <span className="ms-1.5 text-fg-subtle">{counts[t]}</span>}
           </Button>
@@ -128,7 +128,7 @@ function Followers({ onError }: { onError: (message: string) => void }) {
         ))}
       </ul>
       {list.cursor && (
-        <Button variant="ghost" size="sm" plain className="self-start" disabled={list.status === 'loading'} onClick={() => void list.more()}>
+        <Button variant="underline" size="sm" className="self-start" disabled={list.status === 'loading'} onClick={() => void list.more()}>
           Show more
         </Button>
       )}

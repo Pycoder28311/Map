@@ -69,7 +69,7 @@ export default function NodeNotes({ mapId, objectId, extra, centered = false }: 
             }}
           />
           {found.map((note) => (
-            <Button key={String(note.id)} variant="ghost" size="sm" icon={LuStickyNote} onClick={() => void toggleNoteLink(mapId, objectId, note)} title={note.attachedType ? 'Moves it here from where it is' : undefined}>
+            <Button tone="gray" key={String(note.id)} size="sm" icon={LuStickyNote} onClick={() => void toggleNoteLink(mapId, objectId, note)} title={note.attachedType ? 'Moves it here from where it is' : undefined}>
               {title(note)}
             </Button>
           ))}
@@ -83,10 +83,10 @@ export default function NodeNotes({ mapId, objectId, extra, centered = false }: 
         // A sortBy2 button with the project's hover card, and `extra` (the form's own button) right after it
         <div className={`flex items-center gap-1 ${centered ? 'justify-center' : ''}`}>
           <HoverInfo title="Connect a note" text="Finds one of your notes and attaches it here. A note is attached to one thing: it leaves wherever it was." side="top" delay={TIP_DELAY}>
-            <Button
-              variant="ghost"
+            <Button variant="underline"
+             
               size="md"
-              plain
+             
               // Alone (no Create article beside it): the whole width, bigger text, less padding
               className={extra ? '' : 'min-w-0 flex-1 [--btn-font-size:1.125rem]! [--btn-pad-y:var(--spacing-sm)]!'}
               onClick={() => setPicking(true)}

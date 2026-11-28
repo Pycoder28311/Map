@@ -82,7 +82,7 @@ export default function ProfilePage() {
         {/* Sign out, in red, at the end of the page */}
         <footer className="flex items-center justify-between gap-4 border-t border-line pt-6">
           <p className="text-body text-fg-muted">Signed in as {user.email}</p>
-          <Button danger icon={LuLogOut} onClick={signOut} disabled={signingOut}>
+          <Button tone="red" icon={LuLogOut} onClick={signOut} disabled={signingOut}>
             {signingOut ? 'Signing out...' : 'Sign out'}
           </Button>
         </footer>

@@ -47,9 +47,9 @@ export default function ExplorePage() {
               key={t.label}
               role="radio"
               aria-checked={explore.type === t.type}
-              variant={explore.type === t.type ? 'selected' : 'ghost'}
+              variant={explore.type === t.type ? 'primary' : 'underline'}
               size="sm"
-              plain
+             
               className="shrink-0"
               onClick={() => explore.setType(t.type)}
             >
@@ -64,7 +64,7 @@ export default function ExplorePage() {
           <p role="alert" className="text-body text-danger">
             {explore.error}
           </p>
-          <Button variant="secondary" size="sm" onClick={explore.retry}>
+          <Button variant="underline" size="sm" onClick={explore.retry}>
             Try again
           </Button>
         </div>
@@ -81,7 +81,7 @@ export default function ExplorePage() {
       </ul>
 
       {explore.cursor && (
-        <Button variant="secondary" className="self-center" disabled={explore.more} onClick={() => void explore.loadMore()}>
+        <Button variant="underline" className="self-center" disabled={explore.more} onClick={() => void explore.loadMore()}>
           {explore.more ? 'Loading…' : 'Load more'}
         </Button>
       )}

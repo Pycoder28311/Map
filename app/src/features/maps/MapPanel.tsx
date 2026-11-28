@@ -26,7 +26,7 @@ function SavedMapPanel({ id }: PanelProps) {
         <p role="alert" className="text-body text-danger">
           {load.error}
         </p>
-        <Button variant="secondary" size="sm" onClick={() => void loadBoard(id, true)}>
+        <Button variant="underline" size="sm" onClick={() => void loadBoard(id, true)}>
           Try again
         </Button>
       </div>

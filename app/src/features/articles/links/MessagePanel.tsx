@@ -134,7 +134,7 @@ export default function MessagePanel({ id, legacy, words, articleId, canEditArti
         <p role="alert" className="text-small text-danger">
           {state.error}
         </p>
-        <Button variant="secondary" size="sm" className="self-start" onClick={() => loadMessage(id, true)}>
+        <Button variant="underline" size="sm" className="self-start" onClick={() => loadMessage(id, true)}>
           Try again
         </Button>
       </Frame>
@@ -145,7 +145,7 @@ export default function MessagePanel({ id, legacy, words, articleId, canEditArti
       <Frame top={top} textRight={textRight} anchor={anchor} words={words} onClose={onClose}>
         <p className="text-small text-fg-muted">This message was deleted.</p>
         {canEditArticle && (
-          <Button variant="secondary" size="sm" className="self-start" onClick={onRemoveLink}>
+          <Button variant="underline" size="sm" className="self-start" onClick={onRemoveLink}>
             Remove the link
           </Button>
         )}

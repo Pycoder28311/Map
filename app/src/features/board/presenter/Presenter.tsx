@@ -94,7 +94,7 @@ export default function Presenter({ mapId, onClose }: { mapId: string; onClose: 
             </button>
           ))}
         </div>
-        <Button variant="secondary" icon={LuExternalLink} onClick={open}>
+        <Button variant="underline" icon={LuExternalLink} onClick={open}>
           Open
         </Button>
         <IconButton icon={LuX} label="Close" onClick={onClose} />

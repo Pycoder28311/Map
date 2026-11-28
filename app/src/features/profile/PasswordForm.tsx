@@ -136,7 +136,7 @@ function SetPasswordByEmail({ email }: { email: string }) {
           <LuCheck aria-hidden className="size-4" /> Sent to {email}. The link works for an hour.
         </p>
       ) : (
-        <Button variant="secondary" onClick={send} disabled={sending} className="self-end">
+        <Button variant="underline" onClick={send} disabled={sending} className="self-end">
           {sending ? 'Sending...' : 'Email me a link'}
         </Button>
       )}

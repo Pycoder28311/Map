@@ -69,7 +69,7 @@ export default function MapSearchPanel({ mapId, onShow, onEdit, onClose }: Props
             const on = sameFilter(tab.filter, current)
             return (
               <span key={tab.name} className={`shrink-0 rounded-(--radius-pill) ${FLOAT}`}>
-                <Button variant={on ? 'selected' : 'ghost'} size="sm" plain aria-pressed={on} onClick={() => setFilter(tab.filter)}>
+                <Button variant={on ? 'primary' : 'underline'} size="sm" aria-pressed={on} onClick={() => setFilter(tab.filter)}>
                   {tab.name}
                   <span className="ms-1 text-fg-subtle tabular-nums">{tab.count}</span>
                 </Button>

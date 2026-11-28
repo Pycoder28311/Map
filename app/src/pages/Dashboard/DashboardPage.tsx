@@ -44,8 +44,8 @@ export default function DashboardPage() {
             <NightBackdrop />
             <div className="relative mx-auto flex max-w-[65rem] flex-col gap-12 px-4 pt-8 pb-24">
                 <div className="flex justify-end">
-                    <Button
-                        variant="ghost"
+                    <Button tone="gray"
+                       
                         icon={showIcons ? LuEyeOff : LuEye}
                         onClick={() => setShowIcons((v) => !v)}
                         aria-pressed={showIcons}
@@ -86,7 +86,7 @@ export default function DashboardPage() {
                     <p className="text-body text-fg-muted">
                         Signed in as {session?.user.name} ({session?.user.email})
                     </p>
-                    <Button variant="ghost" icon={LuLogOut} onClick={signOut}>
+                    <Button tone="gray" icon={LuLogOut} onClick={signOut}>
                         Sign out
                     </Button>
                 </footer>

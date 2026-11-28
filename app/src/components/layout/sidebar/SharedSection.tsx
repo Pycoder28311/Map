@@ -94,11 +94,11 @@ export default function SharedSection({ compact }: { compact: boolean }) {
           {shared.status === 'error' && <p className="px-(--btn-px) text-small text-danger">{shared.error}</p>}
           <div className="flex items-center gap-1">
             {shared.cursor && (
-              <Button variant="ghost" size="sm" plain disabled={shared.status === 'loading'} onClick={() => void load(true)}>
+              <Button variant="underline" size="sm" disabled={shared.status === 'loading'} onClick={() => void load(true)}>
                 Show more
               </Button>
             )}
-            <Button variant="ghost" size="sm" plain icon={LuRefreshCw} className="ms-auto" disabled={shared.status === 'loading'} onClick={() => void load(false)}>
+            <Button variant="underline" size="sm" icon={LuRefreshCw} className="ms-auto" disabled={shared.status === 'loading'} onClick={() => void load(false)}>
               Refresh
             </Button>
           </div>

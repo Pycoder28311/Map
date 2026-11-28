@@ -15,7 +15,7 @@ export default function ResourceColumn({ resource, place }: { resource: AnyResou
   if (list.status === 'loading') return <p className="px-2 py-2 text-body text-fg-subtle">Loading…</p>
   if (list.status === 'error') {
     return (
-      <Button variant="text" onClick={list.refresh} className="m-2 self-start text-danger">
+      <Button variant="underline" onClick={list.refresh} className="m-2 self-start text-danger">
         Could not load. Try again
       </Button>
     )

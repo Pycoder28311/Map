@@ -100,8 +100,8 @@ export default function CreateFab() {
             <span className="min-w-0 truncate">
               Created {made.label.toLowerCase()} <strong className="font-medium">{made.name}</strong>
             </span>
-            <Button
-              variant="text"
+            <Button variant="underline"
+             
               onClick={() => {
                 openLayout(single({ type: made.panelType, id: made.id }))
                 setMade(null)

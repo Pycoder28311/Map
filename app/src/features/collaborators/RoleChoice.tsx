@@ -15,9 +15,9 @@ export default function RoleChoice({ value, onChange, disabled, label = 'Role' }
           key={r.value}
           role="radio"
           aria-checked={value === r.value}
-          variant={value === r.value ? 'selected' : 'ghost'}
+          variant={value === r.value ? 'primary' : 'underline'}
           size="sm"
-          plain
+         
           title={r.text}
           disabled={disabled}
           onClick={() => value !== r.value && onChange(r.value)}

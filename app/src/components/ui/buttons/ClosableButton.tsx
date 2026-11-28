@@ -19,7 +19,7 @@ type Props = {
 export default function ClosableButton({ icon, iconAnimation = 'none', children, onClick, onClose, closeLabel = 'Close' }: Props) {
   return (
     <div className="flex min-w-0 flex-1 items-center">
-      <Button variant="ghost" icon={icon} iconAnimation={iconAnimation} onClick={onClick} className="min-w-0 flex-1 justify-start">
+      <Button tone="gray" icon={icon} iconAnimation={iconAnimation} onClick={onClick} className="min-w-0 flex-1 justify-start">
         {children}
       </Button>
       <IconButton icon={LuX} label={closeLabel} onClick={onClose} />

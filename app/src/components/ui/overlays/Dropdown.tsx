@@ -84,9 +84,9 @@ export default function Dropdown<T extends string>({ value, options, onChange, l
       {TriggerIcon ? (
         <IconButton ref={triggerRef} icon={TriggerIcon} label={label} size="sm" popoverTarget={id} aria-haspopup="menu" className={`shrink-0 ${className}`} />
       ) : (
-        <Button
+        <Button tone="gray"
           ref={triggerRef}
-          variant="ghost"
+         
           size="sm"
           icon={Icon}
           popoverTarget={id}

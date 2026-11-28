@@ -24,9 +24,9 @@ export default function InsertMenu({ editor, onImage }: { editor: Editor; onImag
     >
       <div className="flex flex-col gap-0.5">
         {INSERTS.map((i) => (
-          <Button
+          <Button tone="gray"
             key={i.value}
-            variant="ghost"
+           
             size="sm"
             icon={i.icon}
             className="w-full justify-start"

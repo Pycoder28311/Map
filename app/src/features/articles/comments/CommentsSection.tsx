@@ -120,10 +120,10 @@ export default function CommentsSection({ articleId }: { articleId: number }) {
         size="sm"
         footer={
           <>
-            <Button variant="ghost" filled onClick={() => setDeleting(null)}>
+            <Button tone="gray" onClick={() => setDeleting(null)}>
               Cancel
             </Button>
-            <Button danger onClick={() => deleting && void remove(deleting)}>
+            <Button tone="red" onClick={() => deleting && void remove(deleting)}>
               Delete
             </Button>
           </>

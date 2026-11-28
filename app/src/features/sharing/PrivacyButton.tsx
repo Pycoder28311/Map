@@ -41,9 +41,9 @@ export default function PrivacyButton({ objectType, objectId, visibility, what }
         overflow
         trigger={
           <Button
-            variant={open ? 'selected' : 'ghost'}
+            variant={open ? 'primary' : 'underline'}
             size="sm"
-            plain
+           
             icon={unlocked ? Opened : Shut}
             aria-haspopup="dialog"
             aria-expanded={open}

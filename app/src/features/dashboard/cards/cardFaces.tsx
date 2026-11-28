@@ -130,7 +130,7 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
         >
           <FolderFace contents={contents ?? []} dropping={dropping} pending={pending} readOnly={readOnly} />
         </div>
-        <ButtonLook data-card-title-box variant="secondary" size="xs" icon={Icon} className="absolute left-3 top-0 max-w-[80%] min-w-0 -translate-y-1/2">
+        <ButtonLook data-card-title-box size="xs" icon={Icon} className="absolute left-3 top-0 max-w-[80%] min-w-0 -translate-y-1/2">
           <span data-card-title className="min-w-0 truncate">
             {title}
           </span>
@@ -143,7 +143,7 @@ export default function CardFace({ resource, item, title, contents, dropping, pe
   return (
     <div {...box} className={`${cardOf(CARD_SIZE)} bg-note ${className}`}>
       <div data-card-body className="flex items-center gap-2 px-0.5 pe-8 pt-0.5">
-        <ButtonLook data-card-title-box variant="secondary" size="sm" icon={Icon} className="min-w-0">
+        <ButtonLook data-card-title-box size="sm" icon={Icon} className="min-w-0">
           <span data-card-title className="min-w-0 truncate">
             {title}
           </span>

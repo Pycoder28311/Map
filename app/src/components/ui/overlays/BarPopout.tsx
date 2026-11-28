@@ -81,7 +81,7 @@ type Props = {
  * Near the bar's right end or the sidebar (within 2 × --popout-radius) it sticks to that edge too:
  * its side runs flush along it, and a concave corner below joins it to the edge (barPopoutEdges.ts).
  *
- *   <BarPopout mode="click" trigger={<Button variant="ghost">History</Button>}>
+ *   <BarPopout mode="click" trigger={<Button tone="gray">History</Button>}>
  *     <RecentList />
  *   </BarPopout>
  */

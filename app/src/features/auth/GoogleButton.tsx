@@ -31,7 +31,7 @@ function GoogleButtonWeb() {
 
     return (
         <div className="flex flex-col gap-2">
-            <Button variant="secondary" icon={FcGoogle} onClick={continueWithGoogle} disabled={loading}>
+            <Button variant="underline" icon={FcGoogle} onClick={continueWithGoogle} disabled={loading}>
                 {loading ? 'Opening Google...' : 'Continue with Google'}
             </Button>
             <ErrorText>{error}</ErrorText>

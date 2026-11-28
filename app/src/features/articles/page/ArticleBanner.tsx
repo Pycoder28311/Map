@@ -103,7 +103,7 @@ export default function ArticleBanner({ image, onChange, onUploadImage, onUpload
       ) : (
         <div style={{ height: `calc(9rem + ${REACH}px)` }}>
           <div style={FADE} className="size-full bg-fill">
-            <Button variant="ghost" plain icon={LuImagePlus} disabled={busy} onClick={() => picker.current?.click()} className="w-full justify-center" style={{ height: `calc(100% - ${REACH}px)` }}>
+            <Button variant="underline" icon={LuImagePlus} disabled={busy} onClick={() => picker.current?.click()} className="w-full justify-center" style={{ height: `calc(100% - ${REACH}px)` }}>
               {busy ? 'Uploading…' : 'Add banner image'}
             </Button>
           </div>

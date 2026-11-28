@@ -36,7 +36,7 @@ export default function ArticleActions({ name, panelKey, isPublic, isOwner, shar
   return (
     <div className="relative flex items-center justify-end gap-3">
       {/* Not made yet: it will put the text of a note in the article */}
-      <Button variant="text" size="md" disabled title="Add text from a note (soon)">
+      <Button variant="underline" size="md" disabled title="Add text from a note (soon)">
         Import from Notes
       </Button>
       {/* The owner's Private / Public is in the ⋯ menu; the others have Save here */}
@@ -49,7 +49,7 @@ export default function ArticleActions({ name, panelKey, isPublic, isOwner, shar
           onOpenChange={onSharing}
           align="end"
           trigger={
-            <Button variant={sharing ? 'selected' : 'ghost'} size="sm" plain filled icon={LuShare2} aria-expanded={sharing} onClick={() => onSharing(!sharing)}>
+            <Button variant={sharing ? 'primary' : 'underline'} size="sm" icon={LuShare2} aria-expanded={sharing} onClick={() => onSharing(!sharing)}>
               Share
             </Button>
           }

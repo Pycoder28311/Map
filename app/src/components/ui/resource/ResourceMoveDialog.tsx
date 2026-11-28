@@ -77,13 +77,13 @@ export default function ResourceMoveDialog({ resource, item, onClose }: Props) {
     <Modal open onClose={onClose} title={`Move "${item.title || resource.ui.untitled}" to`} size="sm">
       <ul className="flex max-h-80 flex-col gap-1 overflow-y-auto">
         <li>
-          <Button variant="ghost" plain icon={LuUnlink} className="w-full justify-start" disabled={busy} onClick={() => void move(null)}>
+          <Button variant="underline" icon={LuUnlink} className="w-full justify-start" disabled={busy} onClick={() => void move(null)}>
             No parent (Orphans)
           </Button>
         </li>
         {places.map(({ target, type, id, title, depth }) => (
           <li key={`${target.name}:${id}`} style={{ paddingInlineStart: `${depth * 0.625}rem` }}>
-            <Button variant="ghost" plain icon={target.ui.icon} className="w-full justify-start" disabled={busy} onClick={() => void move({ type, id, resource: target.name })}>
+            <Button variant="underline" icon={target.ui.icon} className="w-full justify-start" disabled={busy} onClick={() => void move({ type, id, resource: target.name })}>
               <span className="truncate">{title}</span>
             </Button>
           </li>

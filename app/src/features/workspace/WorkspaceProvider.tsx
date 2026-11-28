@@ -78,7 +78,7 @@ function WorkspaceDnd({ children }: { children: ReactNode }) {
       {/* Anything else (a pane, a layout tile…): a label next to the pointer */}
       <DragOverlay dropAnimation={null} modifiers={[followPointer]}>
         {dragging && !objectOf(dragging) && (
-          <ButtonLook variant="secondary">{dragging.label}</ButtonLook>
+          <ButtonLook>{dragging.label}</ButtonLook>
         )}
       </DragOverlay>
     </DndContext>

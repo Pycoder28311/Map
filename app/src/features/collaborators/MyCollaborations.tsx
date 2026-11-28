@@ -72,10 +72,10 @@ export default function MyCollaborations() {
         ))}
       </ul>
       {state.cursor && (
-        <Button
-          variant="ghost"
+        <Button variant="underline"
+         
           size="sm"
-          plain
+         
           className="self-start"
           disabled={state.status === 'loading'}
           onClick={() => {

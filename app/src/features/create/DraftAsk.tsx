@@ -17,7 +17,7 @@ export default function DraftAsk({ question, busy = false, onCancel, onCreate }:
     <div role="alertdialog" aria-label={question} className="flex w-full flex-col items-center gap-3">
       <p className="text-body font-medium">{question}</p>
       <div className="flex w-full gap-base">
-        <Button variant="ghost" filled size="lg" onClick={onCancel} disabled={busy} className="flex-1 justify-center">
+        <Button tone="gray" size="lg" onClick={onCancel} disabled={busy} className="flex-1 justify-center">
           Cancel
         </Button>
         <Button size="lg" onClick={onCreate} disabled={busy} className="flex-1 justify-center">

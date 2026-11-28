@@ -11,8 +11,8 @@ export default function HomePage() {
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-16">
       <p className="text-body">Test</p>
 
-      <ButtonLink
-        variant="ghost"
+      <ButtonLink tone="gray"
+       
         icon={DownloadIcon}
         iconAnimation="download"
         href="https://github.com/Pycoder28311/Map/releases/download/test01/app-0.1.0-1.x86_64.rpm"
@@ -23,12 +23,12 @@ export default function HomePage() {
 
       <div className="flex gap-2">
         <ButtonLink to="/sign-in">Sign in</ButtonLink>
-        <ButtonLink to="/sign-up" variant="secondary">
+        <ButtonLink variant="underline" to="/sign-up">
           Sign up
         </ButtonLink>
       </div>
 
-      <Button variant="secondary" onClick={increment} className="self-start">
+      <Button variant="underline" onClick={increment} className="self-start">
         Clicked {count} times
       </Button>
 

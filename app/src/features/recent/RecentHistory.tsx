@@ -17,8 +17,7 @@ export default function RecentHistory() {
       onOpenChange={setOpen}
       trigger={
         <Button
-          variant="ghost"
-          plain
+          variant="underline"
           icon={LuHistory}
           aria-expanded={open}
           aria-haspopup="dialog"

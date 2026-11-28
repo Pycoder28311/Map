@@ -91,7 +91,7 @@ export default function DragFloat() {
         {surface ? (
           surface.look(item)
         ) : (
-          <ButtonLook variant="secondary" icon={Icon}>
+          <ButtonLook icon={Icon}>
             {item.label}
           </ButtonLook>
         )}

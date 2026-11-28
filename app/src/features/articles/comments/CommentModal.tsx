@@ -86,7 +86,7 @@ function CommentForm({ store, target, onDone }: { store: CommentsStore; target: 
         ) : (
           <span className="flex-1 text-small text-fg-subtle">{text.length > COMMENT_MAX * 0.9 ? `${COMMENT_MAX - text.length} left` : ''}</span>
         )}
-        <Button variant="text" size="sm" type="submit" disabled={!text.trim() || busy || unchanged}>
+        <Button variant="underline" size="sm" type="submit" disabled={!text.trim() || busy || unchanged}>
           {busy ? 'Posting…' : target.kind === 'edit' ? 'Save' : 'Post'}
         </Button>
       </div>

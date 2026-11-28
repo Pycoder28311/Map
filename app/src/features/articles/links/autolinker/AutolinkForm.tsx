@@ -64,7 +64,7 @@ export default function AutolinkForm({ text, self, phrases, draft, words, onDraf
         {/* At the top right: Delete (this autolinker, while one is edited), and an X that closes the draft */}
         <div className="flex shrink-0 items-center gap-1">
           {editingRule && (
-            <Button variant="ghost" size="sm" plain icon={LuTrash2} className="text-danger" onClick={() => onDelete(editingRule)}>
+            <Button variant="underline" size="sm" icon={LuTrash2} className="text-danger" onClick={() => onDelete(editingRule)}>
               Delete
             </Button>
           )}
@@ -127,7 +127,7 @@ export default function AutolinkForm({ text, self, phrases, draft, words, onDraf
         </div>
 
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="sm" plain onClick={() => onCancel()}>
+          <Button variant="underline" size="sm" onClick={() => onCancel()}>
             Cancel
           </Button>
           <Button size="sm" disabled={words.length === 0 || !target} onClick={onSave}>

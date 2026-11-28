@@ -159,10 +159,10 @@ export default function DraftCard({ resource, initial, onCreated, onDone }: Prop
           </p>
         )}
         <div className={`flex w-full items-center justify-between gap-base border-t border-line-strong bg-surface/90 p-base shadow-md backdrop-blur-sm ${onMap ? '' : 'rounded-b-(--card-radius)'}`}>
-          <Button variant="ghost" filled onClick={onDone} disabled={busy || settling} className="flex-1">
+          <Button tone="gray" onClick={onDone} disabled={busy || settling} className="flex-1">
             Cancel
           </Button>
-          <Button plain type="submit" disabled={!valid || busy || settling} className="flex-1">
+          <Button type="submit" disabled={!valid || busy || settling} className="flex-1">
             {busy && !settling ? 'Creating…' : 'Create'}
           </Button>
         </div>

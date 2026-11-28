@@ -73,7 +73,7 @@ export default function TrashModal({ trashed, onClose }: { trashed: ReturnType<t
         title="Trash"
         footer={
           total > 0 && (
-            <Button variant="secondary" className="text-danger" icon={LuTrash2} onClick={() => setEmptying(true)}>
+            <Button variant="underline" className="text-danger" icon={LuTrash2} onClick={() => setEmptying(true)}>
               Empty trash
             </Button>
           )
@@ -128,13 +128,13 @@ export default function TrashModal({ trashed, onClose }: { trashed: ReturnType<t
           size="sm"
           footer={
             <>
-              <Button variant="ghost" plain filled onClick={() => setDeletingLayout(null)}>
+              <Button variant="underline" onClick={() => setDeletingLayout(null)}>
                 Cancel
               </Button>
-              <Button
-                variant="ghost"
-                plain
-                filled
+              <Button variant="underline"
+               
+               
+               
                 className="text-danger"
                 onClick={() => {
                   setLayoutError(null)
@@ -166,11 +166,11 @@ export default function TrashModal({ trashed, onClose }: { trashed: ReturnType<t
           size="sm"
           footer={
             <>
-              <Button variant="secondary" onClick={() => setEmptying(false)} disabled={emptyBusy}>
+              <Button variant="underline" onClick={() => setEmptying(false)} disabled={emptyBusy}>
                 Cancel
               </Button>
-              <Button
-                variant="secondary"
+              <Button variant="underline"
+               
                 className="text-danger"
                 disabled={emptyBusy}
                 onClick={async () => {

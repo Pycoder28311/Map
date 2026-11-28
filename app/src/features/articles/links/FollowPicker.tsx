@@ -45,9 +45,9 @@ export default function FollowPicker({ onPick, chosen, onRemove, autoFocus = tru
             key={t.id}
             role="tab"
             aria-selected={tab === t.id}
-            variant={tab === t.id ? 'selected' : 'ghost'}
+            variant={tab === t.id ? 'primary' : 'underline'}
             size="sm"
-            plain
+           
             icon={t.icon}
             className={`min-w-0 basis-0 justify-center whitespace-nowrap [--btn-icon-size:0.875rem]! transition-[flex-grow,background-color,color,padding] duration-200 motion-reduce:transition-none ${tab === t.id ? 'grow-3' : 'grow-2'}`}
             onClick={() => setTab(t.id)}
@@ -67,9 +67,9 @@ export default function FollowPicker({ onPick, chosen, onRemove, autoFocus = tru
                   key={person.id}
                   role="option"
                   aria-selected={picked}
-                  variant={picked ? 'selected' : 'ghost'}
+                  variant={picked ? 'primary' : 'underline'}
                   size="sm"
-                  plain
+                 
                   className={PICK_ROW}
                   onClick={() => onPick({ kind: 'person', personId: person.id })}
                 >
@@ -85,7 +85,7 @@ export default function FollowPicker({ onPick, chosen, onRemove, autoFocus = tru
             </p>
           </div>
           {onRemove && chosen?.kind === 'person' && (
-            <Button variant="ghost" size="sm" className="self-end" onClick={onRemove}>
+            <Button tone="gray" size="sm" className="self-end" onClick={onRemove}>
               Remove
             </Button>
           )}

@@ -59,11 +59,11 @@ export default function ObjectPicker({ onPick, only, exclude, chosen, listHeight
       {kinds.length > 1 && (
         // One line of kinds, never wrapped: it scrolls sideways when it is too wide
         <div role="group" aria-label="Kind" className={`flex shrink-0 flex-nowrap gap-0.5 overflow-x-auto [scrollbar-color:var(--divider-line)_transparent] [scrollbar-width:thin] ${archive ? 'border-t border-line pt-1' : ''}`}>
-          <Button variant={kind === 'all' ? 'selected' : 'ghost'} size="sm" plain aria-pressed={kind === 'all'} className="shrink-0" onClick={() => setKind('all')}>
+          <Button variant={kind === 'all' ? 'primary' : 'underline'} size="sm" aria-pressed={kind === 'all'} className="shrink-0" onClick={() => setKind('all')}>
             All
           </Button>
           {kinds.map(({ type, resource }) => (
-            <Button key={type} variant={kind === type ? 'selected' : 'ghost'} size="sm" plain aria-pressed={kind === type} className="shrink-0" onClick={() => setKind(type)}>
+            <Button key={type} variant={kind === type ? 'primary' : 'underline'} size="sm" aria-pressed={kind === type} className="shrink-0" onClick={() => setKind(type)}>
               {resource.ui.label}
             </Button>
           ))}
@@ -79,9 +79,9 @@ export default function ObjectPicker({ onPick, only, exclude, chosen, listHeight
               key={`${hit.type}:${hit.id}`}
               role="option"
               aria-selected={picked}
-              variant={picked ? 'selected' : 'ghost'}
+              variant={picked ? 'primary' : 'underline'}
               size="sm"
-              plain
+             
               icon={resource?.ui.icon}
               className={`${PICK_ROW} [--btn-icon-size:0.875rem]!`}
               onClick={() => onPick(hit)}
@@ -109,7 +109,7 @@ export default function ObjectPicker({ onPick, only, exclude, chosen, listHeight
       {archive && (
         // Stuck to the bottom of the section, centred, under a line
         <div className="mt-auto flex justify-center border-t border-line pt-1">
-          <Button variant="text" size="sm" icon={LuArchive} aria-pressed={archived} className="[--btn-icon-size:0.75rem]!" onClick={() => setArchived(!archived)}>
+          <Button variant="underline" size="sm" icon={LuArchive} aria-pressed={archived} className="[--btn-icon-size:0.75rem]!" onClick={() => setArchived(!archived)}>
             {archived ? 'Hide archive' : 'See archive'}
           </Button>
         </div>

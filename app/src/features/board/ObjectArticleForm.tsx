@@ -64,7 +64,7 @@ function ArticleFields({ article, mapId, objectId, onClose, onOpenFull }: { arti
           className="min-w-0 flex-1"
         />
       </FormHeader>
-      <Button variant="secondary" size="sm" icon={LuExternalLink} className="self-start" onClick={onOpenFull}>
+      <Button variant="underline" size="sm" icon={LuExternalLink} className="self-start" onClick={onOpenFull}>
         Open the full article
       </Button>
       <InfoBox
@@ -113,8 +113,8 @@ export default function ObjectArticleForm({ mapId, objectId, articleId, onClose 
           <p className="min-w-0 flex-1 text-body text-fg-muted">This article was deleted.</p>
           <IconButton icon={LuX} label="Close" onClick={onClose} />
         </div>
-        <Button
-          variant="secondary"
+        <Button variant="underline"
+         
           size="sm"
           icon={LuUnlink}
           className="self-start"

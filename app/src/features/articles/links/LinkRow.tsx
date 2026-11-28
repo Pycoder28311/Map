@@ -139,7 +139,7 @@ export default function LinkRow({ editor, text, self, articleId, expanded, place
               onPick={(hit) => apply({ kind: 'object', type: hit.type, id: hit.id }, insertAt ? hit.title : undefined)}
             />
             {onRemove && (
-              <Button variant="ghost" size="sm" className="self-end" onClick={onRemove}>
+              <Button tone="gray" size="sm" className="self-end" onClick={onRemove}>
                 Remove
               </Button>
             )}
@@ -211,10 +211,10 @@ export default function LinkRow({ editor, text, self, articleId, expanded, place
         <div className="justify-self-end">
           {/* sortBy2: a Shade button with its text only, without the white corner elements and without an arrow */}
           <HoverInfo title="Autolinker" text="Links the words you choose everywhere they are written in the article." side="top" delay={TIP_DELAY}>
-            <Button
-              variant="ghost"
+            <Button variant="underline"
+             
               size="sm"
-              plain
+             
               aria-pressed={auto}
               onMouseDown={keepFocus}
               onClick={() => toggle('auto')}
@@ -236,7 +236,7 @@ export default function LinkRow({ editor, text, self, articleId, expanded, place
           <Button size="sm" disabled={!canMark} onMouseDown={keepFocus} onClick={mark}>
             Mark it
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => setMarking(null)}>
+          <Button tone="gray" size="sm" onClick={() => setMarking(null)}>
             Cancel
           </Button>
         </div>

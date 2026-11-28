@@ -717,7 +717,7 @@ export default function BoardEditor({ mapId, starter }: { mapId: string; starter
         {!visitor && (saver.dirty || saver.saving) && (
           // Save: its own floating piece at the bottom centre of the page, only while there are changes not saved
           <div className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 border border-line bg-surface p-1 shadow-lg">
-            <Button variant="ghost" plain disabled={saver.saving} onClick={() => void saver.save()} title="Save the map (Ctrl+S)">
+            <Button variant="underline" disabled={saver.saving} onClick={() => void saver.save()} title="Save the map (Ctrl+S)">
               {saver.saving ? 'Saving…' : 'Save'}
             </Button>
           </div>
@@ -859,8 +859,8 @@ export default function BoardEditor({ mapId, starter }: { mapId: string; starter
         {text.notice && <Notice text={text.notice} onDismiss={text.dismissNotice} />}
         <LinkPickBar mapId={mapId} board={board.objects} />
         {!visitor && !text.editing && (
-          <Button
-            variant="ghost"
+          <Button tone="gray"
+           
             icon={LuGalleryHorizontal}
             onClick={() => setPresenting(true)}
             className={`absolute start-1/2 bottom-3 -translate-x-1/2 ${FLOAT}`}

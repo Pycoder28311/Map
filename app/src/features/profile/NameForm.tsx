@@ -48,7 +48,7 @@ export default function NameForm({ name }: { name: string }) {
           </span>
         )}
         {changed && (
-          <Button variant="ghost" plain onClick={() => setValue(name)} disabled={saving}>
+          <Button variant="underline" onClick={() => setValue(name)} disabled={saving}>
             Cancel
           </Button>
         )}

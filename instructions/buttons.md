@@ -8,57 +8,59 @@ Every button in the app is a Dark Fantasy UI button (`Workspace/Coding/Experimen
 ```
 app/src/styles/buttons.css            THE look of every button (the same in every theme). Change a button here.
 app/src/components/ui/buttons/
-├── buttonStyles.ts                   LOOK: which button each variant is (one line each)
+├── buttonStyles.ts                   LOOK (the text buttons' styles), TONE (primary's colours), ICON_LOOK (icon-only buttons)
 ├── Button.tsx                        <button>
 ├── ButtonLink.tsx                    a link (`to` / `href`) that looks like Button
 ├── NavButton.tsx                     a navigation link; the current page keeps the hover look
-├── IconButton.tsx                    square, only an icon (needs `label`)
-├── SplitButton.tsx                   Venom in two pieces: an icon piece and a label piece (Add, Create)
+├── IconButton.tsx                    square, only an icon (needs `label`); its looks are unchanged
+├── LinkButton.tsx                    Link: small text that lightens when hovered
 ├── ClosableButton.tsx                a button with an ✕ button beside it
-├── PanelFrame.tsx                    the big gold square (Venom in gold, `.ui-btn-gold`, with a soft shadow; only its +): ONLY the floating Create button, which grows into the Create modal
-├── ButtonLook.tsx                    looks like Button, isn't one (a dragged label)
-├── ButtonContent.tsx                 (inside Button, ButtonLink, NavButton: icon + label, Stone's face)
+├── PanelFrame.tsx                    the big gold square: ONLY the floating Create button, which grows into the Create modal
+├── ButtonLook.tsx                    looks like Button, isn't one (the Dashboard cards' names, a dragged label)
+├── ButtonContent.tsx                 (inside Button, ButtonLink, NavButton: icon, label, icon on the right)
 └── buttons.test.ts                   fails when a button is made any other way
-app/src/components/ui/overlays/ExtendMenu.tsx   a button that grows into its own menu (Shade or Venom split)
+app/src/components/ui/overlays/ExtendMenu.tsx   a primary button that grows into its own menu (Sort by, Add +)
 ```
 
-## Which one
+## Which one (buttons with text)
 
-| Variant | Button | For |
+There are **four styles**, nothing else: no `plain`, `filled`, `danger` or `noline` modifiers.
+
+| Style | How | For |
 |---|---|---|
-| `primary` | Venom (green) | the main action of a place (Save, Sign in, the modal's Create) |
-| `create` | Venom | making something new; as `SplitButton` for Add / Create with an icon |
-| `secondary` | Stone (grey block) | the other actions; buttons floating over a board or a picture |
-| `ghost` | Shade (no background until hovered) | quiet actions, toolbars, navigation, menu triggers |
-| `selected` | Shade, kept in its hover look | the chosen one of a group (or pass `aria-pressed`) |
-| `text` | Underline | a text action in running text (Show more, Try again, Open) |
+| **Primary** | `<Button>` (`variant="primary"`, the default) | every framed button: the Cancel-like frame and panel, bone label in the pixel font, no diamonds |
+| **Underline** | `variant="underline"` | quiet actions: toolbars, menu rows, tabs and chips not chosen, Show more, Try again |
+| **Leather** | `variant="leather"` | the leather buttons (as before) |
+| **Link** | `<LinkButton>` | small text that lightens when hovered (the columns' "Show all") |
 
-`round` (IconButton only, `.ui-btn-round`) makes a circle with a line and a shadow, for buttons floating over a border: the article's
-Zoom / Messages / Notes on its body's left edge.
+Primary has three **tones** (`tone`, only on primary):
 
-`size="sm"` is a smaller button for tight rows (board panels, row headers, chips). `size="lg"` is as tall as a text field (`--field-h`, 40px)
-with a bigger icon and text: the navbar's Recent History button, level with the search field.
+| Tone | Look | For |
+|---|---|---|
+| `green` (default) | the gray panel with a soft teal glow inside (the old Venom's) | the main action (Save, Sign in, Create, Add +), and the **chosen** one of a group |
+| `gray` | the plain gray panel | the other actions (Cancel, Share, Sort by), the cards' names (`ButtonLook`'s default) |
+| `red` | a red panel | Delete, Sign out |
 
-**LinkButton** (`LinkButton.tsx`, `.ui-btn-link` in `buttons.css`) is the simplest one: just small text that lightens when hovered; no
-padding, background, brackets or underline. `to` makes it a link, otherwise it is a button. Used for the columns' "Show all". Its
-look is not a `.ui-btn`, so the button settings don't apply to it.
+A chosen / not chosen pair: `variant={on ? 'primary' : 'underline'}` (a tab, a filter chip), or `tone={on ? 'green' : 'gray'}`
+when both should be framed.
 
-**ButtonLook** is a button's look on something you can't press: the names on the Dashboard's cards (Stone, like the Recent History button).
+**Icons on either side:** `icon` (before the label) and `iconRight` (after it), on Button, ButtonLink, NavButton and ButtonLook.
 
-**sortBy2** is the "Sort by" type of button (the Dashboard rows' `ExtendMenu variant="ghost"`) **without the white corner elements and without
-the arrow**: a Shade button with only its text and no background until hovered (`<Button variant="ghost" size="sm" plain>Cancel</Button>`).
-Say "sortBy2" to ask for one.
+**Sizes** (all styles): `size="xs" | "sm" | "md" (default) | "lg"`.
 
-**ExtendMenu** (a button that grows into its menu): open, it is dark grey (`--color-shade`). A `create` one (Venom split)
-turns its + into an ✕ and its label into "None" (`openLabel`); its two pieces then become Shade buttons. **The hover of
-Shade, of Sort by and of that open ✕ / None is one thing**: Shade's `--btn-hover-bg` (`--color-shade-hover`, a light
-veil) and its brackets, in `buttons.css`. The menu items' hover uses the same colour.
+**Icon-only buttons** (`IconButton`) keep their own looks: `ghost`, `selected`, `secondary`, `primary`, `text`, and `round`.
+
+**ExtendMenu** (a button that grows into its menu): `variant="ghost"` is a gray primary ("Sort by"); `variant="create"` a green
+one with its icon on the right ("Add +", the + turning into an ✕ and its label into "None" while open). Open, the box is dark grey.
 
 ```tsx
-<Button variant="secondary" icon={LuShare2} onClick={share}>Share</Button>
+<Button onClick={save}>Save</Button>
+<Button tone="gray" icon={LuShare2} onClick={share}>Share</Button>
+<Button iconRight={LuPlus} onClick={add}>Note</Button>
+<Button tone="red" icon={LuTrash2} onClick={remove}>Delete</Button>
+<Button variant="underline" size="sm" onClick={more}>Show more</Button>
 <IconButton icon={LuX} label="Close" onClick={close} />
-<SplitButton icon={<LuPlus />} iconPosition="right" onClick={add}>Note</SplitButton>
-<ExtendMenu variant="create" label="Add" items={kinds} onSelect={create} splitIcon={(open) => (open ? <LuX /> : <LuPlus />)}>Add</ExtendMenu>
+<ExtendMenu variant="create" label="Add" items={kinds} onSelect={create}>Add</ExtendMenu>
 ```
 
 ## Rules (buttons.test.ts checks them)
@@ -68,7 +70,7 @@ veil) and its brackets, in `buttons.css`. The menu items' hover uses the same co
   test, with how many each file has and why. A new one goes there too, with its reason.
 - **No `ui-btn…` classes outside the buttons** (and ExtendMenu's box).
 - **`PanelFrame` only in `features/create/CreateFab.tsx`.**
-- **No look in `className`** on Button, ButtonLink, NavButton, IconButton, SplitButton: no `bg-`, `text-[`, padding,
+- **No look in `className`** on Button, ButtonLink, NavButton, IconButton: no `bg-`, `text-[`, padding,
   `rounded`, `shadow`, `border`. Layout classes are fine (`ms-auto`, `w-full`, `justify-start`, `absolute`, `opacity-0`).
   A look that is needed in several places becomes a modifier in `buttons.css` (like `.ui-btn-sm`).
 
@@ -77,7 +79,7 @@ veil) and its brackets, in `buttons.css`. The menu items' hover uses the same co
 - **One button** (e.g. Venom's green): its block in `buttons.css` (`.ui-btn-venom`). Each block starts with its settings
   (`--btn-bg`, `--btn-pad-x`, `--btn-hover-*` …); the defaults are in `.ui-btn`. Colours are the `--color-*` tokens at the
   top of the file.
-- **Which button a variant is**: `LOOK` in `buttonStyles.ts` (e.g. `secondary: 'ui-btn-shade'`).
+- **Which style a variant is**: `LOOK` in `buttonStyles.ts` (primary is `.ui-btn-shade`); a tone is `TONE` (`.ui-tone-green`, `.ui-tone-red`).
 - **A new kind of button**: a new block in `buttons.css`, a new entry in `LOOK`.
 - The pixel unit is `--px` (2px) at the top of `buttons.css`; every size is a multiple of it.
 
@@ -109,19 +111,19 @@ a soft shadow, a lighter grey while typed in. Without its faint corner marks on 
 
 To change either, change the `--input-*` values at the top of `fields.css` (one change moves both). The faint black-leather look has four (the sidebar rows and the cards' text part have it and the inner shadow; the text fields are the same box without them): `--input-grain` (strength of the pebbled grain, 0 to 1), `--input-grain-size`, `--input-sheen` (soft diagonal light) and `--input-edge-light` (thin light on the top edge). The inner shadow (from every edge, more at the bottom) has its own four: `--input-inner-rgb` (colour), `--input-inner-bottom` and `--input-inner-sides` (strength, 0 to 1), `--input-inner-spread` (how far it spreads in). The rows and the input boxes share one border (drawn inside, so no size change): `--row-border-color` (and `--row-border-color-hover`, `--row-border-width`) in the same place; transparent until a colour is set.
 
-## Stone's rocky border
+## Stone's rocky border (icon-only buttons: IconButton `secondary`)
 
 Stone's face (`.ui-btn-stone-face`) is cut to a polygon with points a little in from a straight edge, so its border is rough, not straight
 (`clip-path: var(--btn-rock)` in `buttons.css`). The polygon is made by `components/ui/buttons/rockEdge.ts` and set once in `main.tsx`; its
 two numbers are there: `ROCK_POINTS` (how many points along the long sides) and `ROCK_INTENSITY` (how far in a point can be, px; 0 is straight).
-While a Venom button (primary, create, the red Delete) is held it has no inner shadow, only one flat, darker colour (`--btn-press-bg`).
+While a Venom icon button (IconButton `primary`) is held it has no inner shadow, only one flat, darker colour (`--btn-press-bg`).
 
 Every Stone button has the same border. Its face has soft inner shadows (no light line on top, no dark band under it): `--stone-shade-sides`, `--stone-shade-bottom` (strength, 0 to 1) and `--stone-shade-spread` (px) at the top of the Map block of `.ui-btn-stone` in `buttons.css`, in the colour of the fields' inner shadow (`--input-inner-rgb`).
 
 ## Shade without brackets
 
-`.ui-btn-plain` (`buttons.css`): Shade (or Venom) whose white corner brackets never slide out, hovered, current or chosen.
-`IconButton` adds it to its Shade variants (`iconButtonClass`), so the icon-only buttons have the hover background only.
+`.ui-btn-plain` (`buttons.css`): Shade whose white corner brackets never slide out, hovered, current or chosen. Only
+`IconButton` uses it (not a prop of Button any more): it adds it to its Shade variants (`iconButtonClass`), so the icon-only buttons have the hover background only.
 
 Copy new colours into the `:root` block at the top. Everything after "Map: additions" is this app's own: keep it.
 

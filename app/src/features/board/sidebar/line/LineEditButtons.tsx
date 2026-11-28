@@ -9,13 +9,13 @@ export default function LineEditButtons({ mode, onSplit, onErase, splitLabel = '
   return (
     <div className="flex gap-1">
       <HoverInfo title="Eraser" text="Drag over the object to erase the parts under the circle." side="bottom">
-        <Button variant={mode === 'erase' ? 'selected' : 'ghost'} size="sm" plain aria-pressed={mode === 'erase'} onClick={onErase} className="flex-1">
+        <Button variant={mode === 'erase' ? 'primary' : 'underline'} size="sm" aria-pressed={mode === 'erase'} onClick={onErase} className="flex-1">
           Eraser
         </Button>
       </HoverInfo>
       {canSplit && (
         <HoverInfo title={splitLabel} text="Click it, then click the point of the line to cut it in two." side="bottom">
-          <Button variant={mode === 'split' ? 'selected' : 'ghost'} size="sm" plain aria-pressed={mode === 'split'} onClick={onSplit} className="flex-1">
+          <Button variant={mode === 'split' ? 'primary' : 'underline'} size="sm" aria-pressed={mode === 'split'} onClick={onSplit} className="flex-1">
             {splitLabel}
           </Button>
         </HoverInfo>

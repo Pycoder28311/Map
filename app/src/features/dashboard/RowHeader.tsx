@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { LuChevronDown, LuPencil, LuPlus } from 'react-icons/lu'
 import ExtendMenu, { type ExtendMenuItem } from '../../components/ui/overlays/ExtendMenu'
 import { SORT_LABEL, type CardSort } from './sortByDate'
-import SplitButton from '../../components/ui/buttons/SplitButton'
+import Button from '../../components/ui/buttons/Button'
 import IconButton from '../../components/ui/buttons/IconButton'
 
 type SortChoice = CardSort | 'manual'
@@ -91,9 +91,9 @@ export default function RowHeader({ name, reflowId, onRename, onOpen, sort, onSo
           <LuChevronDown aria-hidden className="ui-extend-flip size-4" />
         </ExtendMenu>
         {create.kinds.length === 1 && (
-          <SplitButton icon={<LuPlus />} iconPosition="right" onClick={() => create.onCreate(only.value)}>
+          <Button iconRight={LuPlus} onClick={() => create.onCreate(only.value)}>
             {only.label}
-          </SplitButton>
+          </Button>
         )}
         {create.kinds.length > 1 && (
           <ExtendMenu

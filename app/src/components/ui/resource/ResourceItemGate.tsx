@@ -30,7 +30,7 @@ export default function ResourceItemGate({ resource, id, children }: Props) {
         <p role="alert" className="text-body text-danger">
           {error?.message ?? `Could not load the ${what}.`}
         </p>
-        <Button variant="secondary" onClick={refresh}>
+        <Button variant="underline" onClick={refresh}>
           Try again
         </Button>
       </div>
@@ -41,8 +41,8 @@ export default function ResourceItemGate({ resource, id, children }: Props) {
     return (
       <div className="flex flex-col items-start gap-3 p-4">
         <p className="text-body text-fg-muted">This {what} is in the Trash.</p>
-        <Button
-          variant="secondary"
+        <Button variant="underline"
+         
           disabled={restoring}
           onClick={() => {
             setRestoring(true)

@@ -14,7 +14,7 @@ export default function LinkPickBar({ mapId, board }: { mapId: string; board: Bo
       <span className="text-body">
         Linking <strong className="font-medium">{object?.name || object?.kind || 'object'}</strong>: click the notes in the sidebar
       </span>
-      <Button variant="primary" icon={LuCheck} onClick={stopLinkPick}>
+      <Button icon={LuCheck} onClick={stopLinkPick}>
         Done
       </Button>
     </div>

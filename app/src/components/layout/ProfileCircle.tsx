@@ -31,7 +31,7 @@ type Item = { label: string; icon: ComponentType<{ className?: string }>; onClic
 /** One row of the menu: icon, label and its tag, the whole width */
 function MenuRow({ label, icon, onClick, tag, disabled, title }: Item) {
   return (
-    <Button variant="ghost" plain icon={icon} disabled={disabled} title={title} className={`w-full justify-start ${ROW_PAD}`} onClick={onClick}>
+    <Button variant="underline" icon={icon} disabled={disabled} title={title} className={`w-full justify-start ${ROW_PAD}`} onClick={onClick}>
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span className="truncate">{label}</span>
         {tag}
@@ -81,7 +81,7 @@ function ProfileMenu({ user, onClose }: { user: { id: string; name: string; emai
   return (
     <nav aria-label="Your account" className="flex w-72 flex-col p-1">
       {/* View profile: the picture and the name big, the action small under the name */}
-      <Button variant="ghost" plain className={`w-full justify-start ${ROW_PAD}`} onClick={() => go('/profile')}>
+      <Button variant="underline" className={`w-full justify-start ${ROW_PAD}`} onClick={() => go('/profile')}>
         <span className="flex min-w-0 flex-1 items-center gap-3 py-1 text-start">
           <Avatar person={{ id: user.id, name: user.name, image: user.image ?? null }} size="size-12" />
           <span className="flex min-w-0 flex-col">

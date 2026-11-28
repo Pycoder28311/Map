@@ -19,7 +19,7 @@ export default function ItemConflictModal({ what, conflict, onKeepMine, onUseSer
       size="sm"
       footer={
         <>
-          <Button variant="secondary" onClick={onUseServers}>
+          <Button variant="underline" onClick={onUseServers}>
             Use the saved version
           </Button>
           <Button onClick={onKeepMine}>Keep my changes</Button>

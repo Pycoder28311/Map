@@ -3,16 +3,15 @@ import { LuPlus } from 'react-icons/lu'
 import { useTimeout } from '../../../lib/useTimeout'
 import Button from '../buttons/Button'
 import ButtonLook from '../buttons/ButtonLook'
-import { splitButtonClass } from '../buttons/buttonStyles'
-import SplitButton, { SplitContent } from '../buttons/SplitButton'
 import type { ButtonIcon } from '../icons/IconSlot'
 import { extendShift, roomOf } from './extendShift'
 
 // The box that grows is a button of the same look (styles/buttons.css, "ExtendMenu"): closed, its button shows; open,
 // it is the button's face, with the options in it
+// it is the button's face, with the options in it. Both kinds are the primary button: gray ("Sort by") or green (create: "Add +")
 const BOX = {
   ghost: 'ui-btn ui-btn-shade ui-extend',
-  create: 'ui-btn ui-btn-venom ui-extend',
+  create: 'ui-btn ui-btn-shade ui-tone-green ui-extend',
 } as const
 
 export type ExtendMenuItem<T extends string> = { value: T; label: string; icon?: ButtonIcon }
@@ -20,7 +19,7 @@ export type ExtendMenuItem<T extends string> = { value: T; label: string; icon?:
 type Content = ReactNode | ((open: boolean) => ReactNode)
 
 type Props<T extends string> = {
-  /** ghost: a Shade button ("Sort by"); create: a Venom split button (an icon piece and a label piece: "Add +") */
+  /** ghost: a primary gray button ("Sort by"); create: a primary green button with its icon on the right ("Add +") */
   variant?: keyof typeof BOX
   items: ExtendMenuItem<T>[]
   /** The option the closed button already shows (e.g. the current kind): left out of the options */
@@ -30,11 +29,11 @@ type Props<T extends string> = {
   label: string
   /** The button's content (e.g. "Sort by ▾"; create: its label); a function gets whether the menu is open (e.g. to show an ✕) */
   children: Content
-  /** create: the icon piece's content. Left out: a + that turns into an ✕ while open */
+  /** create: its icon. Left out: a + that turns into an ✕ while open */
   splitIcon?: Content
   /** create: the label while open (the button's own label is then not a choice any more) */
   openLabel?: ReactNode
-  /** create: which side the icon piece is on */
+  /** create: which side its icon is on */
   iconPosition?: 'left' | 'right'
   /** Which way it extends: down from the button (default), or up (for a button at the bottom of its container) */
   direction?: 'down' | 'up'
@@ -69,7 +68,7 @@ export default function ExtendMenu<T extends string>({
   children,
   splitIcon,
   openLabel = 'None',
-  iconPosition = 'left',
+  iconPosition = 'right',
   direction = 'down',
   className = '',
 }: Props<T>) {
@@ -150,22 +149,20 @@ export default function ExtendMenu<T extends string>({
       : button
     : undefined
 
-  // The button, closed (the sizer's copy) or as it is now. A split button, open: its pieces are Shade buttons (each its
-  // own hover), its label "None", its + turned into an ✕ (styles/buttons.css, ExtendMenu)
-  const split = (isOpen: boolean) => ({
-    icon: splitIcon === undefined ? <span className="ui-extend-turn"><LuPlus /></span> : render(splitIcon, isOpen),
-    iconPosition,
-    pieceClassName: isOpen ? 'ui-btn ui-btn-shade' : '',
-    // Both labels in one cell, only one shown: the piece is as wide as the wider one, open or closed, so the pieces
-    // never move or change size (styles/buttons.css, .ui-extend-labels)
-    children: (
+  // A create button's content, closed (the sizer's copy) or as it is now: its label ("None" while open, both in one cell so it never
+  // changes size: styles/buttons.css .ui-extend-labels) and its icon, a + that turns into an ✕ while open
+  const createIcon = (isOpen: boolean) => (splitIcon === undefined ? <span className="ui-extend-turn flex"><LuPlus /></span> : render(splitIcon, isOpen))
+  const createContent = (isOpen: boolean) => (
+    <>
+      {iconPosition === 'left' && createIcon(isOpen)}
       <span className="ui-extend-labels">
         <span data-shown={!isOpen}>{render(children, isOpen)}</span>
         <span data-shown={isOpen}>{openLabel}</span>
       </span>
-    ),
-  })
-  const content = (isOpen: boolean) => (variant === 'create' ? <SplitContent {...split(isOpen)} /> : render(children, isOpen))
+      {iconPosition === 'right' && createIcon(isOpen)}
+    </>
+  )
+  const content = (isOpen: boolean) => (variant === 'create' ? createContent(isOpen) : render(children, isOpen))
   const toggle = {
     'aria-haspopup': 'menu' as const,
     'aria-expanded': open,
@@ -181,7 +178,7 @@ export default function ExtendMenu<T extends string>({
     // In front of everything beside it while it is open (and while it folds back)
     <div ref={wrapRef} className={`relative inline-flex ${open || closing ? 'z-30' : ''} ${className}`}>
       <div ref={sizerRef} aria-hidden className="invisible flex">
-        {variant === 'create' ? <div className={splitButtonClass()}>{content(false)}</div> : <ButtonLook variant="ghost">{content(false)}</ButtonLook>}
+        <ButtonLook tone={variant === 'create' ? 'green' : 'gray'} className="gap-(--btn-gap)">{content(false)}</ButtonLook>
       </div>
       {/* The options, laid out in full but unseen: their natural size is what the button grows to */}
       <div ref={optionsRef} aria-hidden className={`${BOX[variant]} invisible pointer-events-none absolute top-0 left-0 -z-10 inline-flex flex-col`}>
@@ -203,14 +200,9 @@ export default function ExtendMenu<T extends string>({
         // button's own content (centred) stays where it is (next to an edge the whole box moves over a little: `shift`)
         className={`${BOX[variant]} absolute ${direction === 'up' ? 'bottom-0 flex-col-reverse' : 'top-0 flex-col'} flex left-1/2 -translate-x-1/2 z-20`}
       >
-        {variant === 'create' ? (
-          // Its own size, centred: the box grows around it, and it stays where it was
-          <SplitButton {...toggle} {...split(open)} className="shrink-0 self-center" />
-        ) : (
-          <Button variant="ghost" {...toggle}>
-            {render(children, open)}
-          </Button>
-        )}
+        <Button tone={variant === 'create' ? 'green' : 'gray'} {...toggle} className={`${toggle.className} gap-(--btn-gap)`}>
+          {content(open)}
+        </Button>
         <div id={id} role="menu" aria-label={label} inert={!open} className="ui-extend-menu flex shrink-0 flex-col">
           {items.map((item) => {
             const Icon = item.icon

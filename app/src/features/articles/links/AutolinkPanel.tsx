@@ -152,16 +152,16 @@ export default function AutolinkPanel({ text, self, startText, rules, onRules, u
       smoothSize
       actions={
         <>
-          <Button variant="text" size="sm" icon={LuDownload} className="[--btn-icon-size:0.75rem]!" onClick={() => setImporting(true)}>
+          <Button variant="underline" size="sm" icon={LuDownload} className="[--btn-icon-size:0.75rem]!" onClick={() => setImporting(true)}>
             Import from other article
           </Button>
           {/* Add New turns into Cancel while a new draft is open */}
           {formOpen && !editing ? (
-            <Button size="sm" plain icon={LuX} onClick={() => start(false)}>
+            <Button size="sm" icon={LuX} onClick={() => start(false)}>
               Cancel
             </Button>
           ) : (
-            <Button size="sm" plain icon={LuPlus} onClick={() => start(true)}>
+            <Button size="sm" icon={LuPlus} onClick={() => start(true)}>
               Add New
             </Button>
           )}

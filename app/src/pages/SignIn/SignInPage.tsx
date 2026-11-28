@@ -95,7 +95,7 @@ export default function SignInPage() {
                     <Button type="submit" disabled={loading || !email.trim() || !password}>
                         {loading ? 'Signing in...' : 'Sign in'}
                     </Button>
-                    <Button variant="secondary" onClick={() => switchMode('code-email')}>
+                    <Button variant="underline" onClick={() => switchMode('code-email')}>
                         Sign in with email code
                     </Button>
                 </form>
@@ -108,7 +108,7 @@ export default function SignInPage() {
                     <Button type="submit" disabled={loading || !email.trim()}>
                         {loading ? 'Sending...' : 'Send code'}
                     </Button>
-                    <Button variant="secondary" onClick={() => switchMode('password')}>
+                    <Button variant="underline" onClick={() => switchMode('password')}>
                         Use password instead
                     </Button>
                 </form>
@@ -133,10 +133,10 @@ export default function SignInPage() {
                     <Button type="submit" disabled={loading || otp.trim().length !== 6}>
                         {loading ? 'Signing in...' : 'Sign in'}
                     </Button>
-                    <Button variant="secondary" onClick={() => sendCode()} disabled={loading}>
+                    <Button variant="underline" onClick={() => sendCode()} disabled={loading}>
                         Send a new code
                     </Button>
-                    <Button variant="secondary" onClick={() => switchMode('password')}>
+                    <Button variant="underline" onClick={() => switchMode('password')}>
                         Use password instead
                     </Button>
                 </form>

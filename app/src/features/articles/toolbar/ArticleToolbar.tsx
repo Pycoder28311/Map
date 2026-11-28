@@ -147,10 +147,10 @@ export default function ArticleToolbar({ editor: own, onUploadImage, onUploadErr
         <div className="flex shrink-0 items-center gap-base">
           <Separator />
           <HoverInfo title={secondRow ? TOOLBAR_TIPS.hideSecondRow : TOOLBAR_TIPS.showSecondRow} side="top" delay={TIP_DELAY}>
-            <Button
-              variant="ghost"
+            <Button variant="underline"
+             
               size="sm"
-              plain
+             
               aria-expanded={secondRow}
               onMouseDown={keepFocus}
               onClick={() => onSecondRowChange(!secondRow)}
@@ -192,9 +192,9 @@ export default function ArticleToolbar({ editor: own, onUploadImage, onUploadErr
                   {!state.selected && (
                     <HoverInfo title="Link types" text={TOOLBAR_TIPS.linkTypes} side="top" delay={TIP_DELAY}>
                       <Button
-                        variant={linkTypes.shown ? 'selected' : 'ghost'}
+                        variant={linkTypes.shown ? 'primary' : 'underline'}
                         size="sm"
-                        plain
+                       
                         icon={LuExternalLink}
                         aria-pressed={linkTypes.shown}
                         onMouseDown={keepFocus}

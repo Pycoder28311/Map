@@ -105,7 +105,7 @@ export default function SearchPanel({
       <div ref={resultsRef} className="flex w-96 shrink-0 flex-col gap-2">
         <div className="flex min-h-7 flex-wrap items-center gap-1">
           <Button
-            variant={filtersOpen ? 'selected' : 'ghost'}
+            tone={filtersOpen ? 'green' : 'gray'}
             size="sm"
             icon={LuSlidersHorizontal}
             onClick={() => onFiltersOpen(!filtersOpen)}
@@ -116,7 +116,7 @@ export default function SearchPanel({
           </Button>
           {hasFilters(filters) ? (
             chips.map((c) => (
-              <Button key={c.key} variant="secondary" size="sm" onClick={c.remove} aria-label={`Remove filter ${c.label}`}>
+              <Button variant="underline" key={c.key} size="sm" onClick={c.remove} aria-label={`Remove filter ${c.label}`}>
                 {c.label}
                 <LuX className="size-3" aria-hidden />
               </Button>

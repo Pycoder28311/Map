@@ -106,7 +106,7 @@ export default function ObjectDraftForm({ mapId, object, board, onClose }: Props
           objectId={object.id}
           extra={
             <HoverInfo title="Create article" text="Makes the real article from this title, Info box and text; this element then edits it." side="top" delay={TIP_DELAY}>
-              <Button variant="ghost" size="md" plain filled disabled={busy} onClick={() => void create()}>
+              <Button variant="underline" size="md" disabled={busy} onClick={() => void create()}>
                 {busy ? 'Making the article…' : 'Create article'}
               </Button>
             </HoverInfo>

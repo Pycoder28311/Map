@@ -55,10 +55,10 @@ export default function ProjectFolders({ resource, item }: { resource: AnyResour
               onOpenChange={(next) => setOpenKey(next ? key : null)}
               trigger={
                 <Button
-                  variant={within.has(key) ? 'selected' : 'ghost'}
+                  variant={within.has(key) ? 'primary' : 'underline'}
                   size="sm"
-                  plain
-                  filled
+                 
+                 
                   icon={folder.resource.ui.icon}
                   aria-expanded={open}
                   onClick={() => setOpenKey(open ? null : key)}
@@ -105,7 +105,7 @@ function FolderResourceItems({ folder, resource, local, onOpen }: { folder: Entr
       {local === null && read.status === 'loading' && <li className="px-2 py-1 text-small text-fg-subtle">Loading…</li>}
       {items.map((i) => (
         <li key={i.id}>
-          <Button variant="ghost" size="sm" icon={resource.ui.icon} onClick={() => onOpen(resource, i)} className="w-full justify-start">
+          <Button tone="gray" size="sm" icon={resource.ui.icon} onClick={() => onOpen(resource, i)} className="w-full justify-start">
             {resource.ui.row.title(i)}
           </Button>
         </li>

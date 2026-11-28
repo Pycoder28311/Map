@@ -59,7 +59,7 @@ export default function MessageLinkForm({ editor, articleId, link, onDone, onRem
         <p role="alert" className="text-small text-danger">
           {state.error}
         </p>
-        <Button variant="secondary" size="sm" onClick={() => loadMessage(link.id, true)}>
+        <Button variant="underline" size="sm" onClick={() => loadMessage(link.id, true)}>
           Try again
         </Button>
       </div>
@@ -70,7 +70,7 @@ export default function MessageLinkForm({ editor, articleId, link, onDone, onRem
       <div className="flex flex-col items-start gap-2">
         <p className="text-small text-fg-muted">This message was deleted.</p>
         {onRemove && (
-          <Button variant="secondary" size="sm" onClick={onRemove}>
+          <Button variant="underline" size="sm" onClick={onRemove}>
             Remove the link
           </Button>
         )}

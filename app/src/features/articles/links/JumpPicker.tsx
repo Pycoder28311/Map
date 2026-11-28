@@ -46,9 +46,9 @@ export default function JumpPicker({ text, onPick, onMarkPlace, chosen, onRemove
               <Button
                 role="option"
                 aria-selected={picked}
-                variant={picked ? 'selected' : 'ghost'}
+                variant={picked ? 'primary' : 'underline'}
                 size="sm"
-                plain
+               
                 icon={targetIcon(target)}
                 className={`${PICK_ROW} [--btn-icon-size:0.875rem]!`}
                 onClick={() => onPick(target.to)}
@@ -62,12 +62,12 @@ export default function JumpPicker({ text, onPick, onMarkPlace, chosen, onRemove
       </div>
       <div className="flex items-center justify-between gap-2">
         {onMarkPlace && (
-          <Button variant="ghost" size="sm" icon={LuMapPinPlus} onClick={onMarkPlace}>
+          <Button tone="gray" size="sm" icon={LuMapPinPlus} onClick={onMarkPlace}>
             Mark a place…
           </Button>
         )}
         {onRemove && (
-          <Button variant="ghost" size="sm" className="ms-auto" onClick={onRemove}>
+          <Button tone="gray" size="sm" className="ms-auto" onClick={onRemove}>
             Remove
           </Button>
         )}

@@ -16,7 +16,7 @@ export default function InboxPage() {
       <header className="flex items-center gap-3">
         <LuInbox aria-hidden className="size-7 text-fg-muted" />
         <h1 className="text-3xl font-semibold tracking-tight">Inbox</h1>
-        <Button variant="ghost" size="sm" plain icon={LuRefreshCw} className="ms-auto" disabled={pending.status === 'loading'} onClick={() => void pending.reload()}>
+        <Button variant="underline" size="sm" icon={LuRefreshCw} className="ms-auto" disabled={pending.status === 'loading'} onClick={() => void pending.reload()}>
           Refresh
         </Button>
       </header>
@@ -39,7 +39,7 @@ export default function InboxPage() {
         {answered.status === 'error' && <p className="text-body text-danger">{answered.error}</p>}
         <InboxList items={answered.items} label="Answered invitations" />
         {answered.cursor && (
-          <Button variant="ghost" size="sm" plain className="self-start" disabled={answered.status === 'loading'} onClick={() => void answered.more()}>
+          <Button variant="underline" size="sm" className="self-start" disabled={answered.status === 'loading'} onClick={() => void answered.more()}>
             Show more
           </Button>
         )}

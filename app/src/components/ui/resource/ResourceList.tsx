@@ -22,7 +22,7 @@ export default function ResourceList<T>({ list, renderItem, keyOf, empty, limit,
         <p role="alert" className="text-body text-danger">
           {list.error?.message ?? 'Could not load.'}
         </p>
-        <Button variant="secondary" onClick={list.refresh}>
+        <Button variant="underline" onClick={list.refresh}>
           Try again
         </Button>
       </div>
@@ -38,7 +38,7 @@ export default function ResourceList<T>({ list, renderItem, keyOf, empty, limit,
         ))}
       </ul>
       {!limit && list.hasMore && (
-        <Button variant="ghost" className="mt-1" onClick={list.loadMore} disabled={list.loadingMore}>
+        <Button tone="gray" className="mt-1" onClick={list.loadMore} disabled={list.loadingMore}>
           {list.loadingMore ? 'Loading…' : 'Load more'}
         </Button>
       )}

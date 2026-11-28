@@ -74,7 +74,7 @@ export default function CollaborationCard({ invitation }: { invitation: Invitati
             <Button size="sm" icon={LuCheck} disabled={busy} onClick={() => void reply('accepted')}>
               Accept
             </Button>
-            <Button variant="secondary" size="sm" icon={LuX} disabled={busy} onClick={() => void reply('declined')}>
+            <Button variant="underline" size="sm" icon={LuX} disabled={busy} onClick={() => void reply('declined')}>
               Decline
             </Button>
           </div>

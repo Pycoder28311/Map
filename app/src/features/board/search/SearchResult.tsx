@@ -74,10 +74,10 @@ export default function SearchResult({ entry, object, open, onToggle, onShow, on
             ))}
           </dl>
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" size="sm" icon={LuLocateFixed} onClick={onShow}>
+            <Button variant="underline" size="sm" icon={LuLocateFixed} onClick={onShow}>
               Show on map
             </Button>
-            <Button variant="ghost" size="sm" icon={LuPencil} onClick={onEdit}>
+            <Button tone="gray" size="sm" icon={LuPencil} onClick={onEdit}>
               Edit
             </Button>
           </div>

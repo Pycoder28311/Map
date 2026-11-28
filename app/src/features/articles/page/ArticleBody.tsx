@@ -152,7 +152,7 @@ export default function ArticleBody(props: Props) {
                   onOpenChange={setAdding}
                   onSection={props.onSection}
                   trigger={
-                    <Button variant="ghost" size="sm" plain filled icon={LuPlus} aria-expanded={adding} onMouseDown={keepFocus} onClick={() => setAdding(!adding)}>
+                    <Button variant="underline" size="sm" icon={LuPlus} aria-expanded={adding} onMouseDown={keepFocus} onClick={() => setAdding(!adding)}>
                       Add section
                     </Button>
                   }

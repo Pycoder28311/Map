@@ -228,9 +228,9 @@ export default function DropdownField({
       className={`flex items-stretch ${bordered && open ? 'rounded-t-(--field-radius)' : 'rounded-(--field-radius)'} ${bordered ? 'border border-line-strong bg-surface focus-within:border-fg-subtle' : 'ui-dropfield-plain'} ${width}`}
     >
       {children ?? (
-        <Button
-          variant="ghost"
-          plain
+        <Button variant="underline"
+         
+         
           popoverTarget={id}
           aria-haspopup="menu"
           aria-label={`${label}: ${current?.label ?? ''}`}

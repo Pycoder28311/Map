@@ -192,7 +192,7 @@ export default function MapTitleBar({ mapId, save, form, editorWidth, panel, onP
         </CrackedPanel>
         {/* The three buttons' pieces: a little shorter than the name's, centred beside it, with less room round their buttons */}
         <div className={`pointer-events-auto flex h-11 shrink-0 items-stretch self-center p-1 ${PIECE}`}>
-          <Button variant="ghost" plain noline className={`${TITLE_TEXT} h-full [--btn-pad-x:0.5rem]!`} aria-expanded={panel === 'notes'} aria-pressed={panel === 'notes'} onClick={() => toggle('notes')}>
+          <Button variant="underline" className={`${TITLE_TEXT} h-full [--btn-pad-x:0.5rem]!`} aria-expanded={panel === 'notes'} aria-pressed={panel === 'notes'} onClick={() => toggle('notes')}>
             Notes
           </Button>
         </div>

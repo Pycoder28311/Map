@@ -11,7 +11,7 @@ export default function ZoomControls({ scale, onZoom, onFit }: Props) {
   return (
     <div className={`absolute start-3 bottom-3 flex items-center gap-0.5 p-1 ${FLOAT} ${shift}`}>
       <IconButton icon={LuMinus} label="Zoom out (−)" onClick={() => onZoom(1 / 1.25)} />
-      <Button variant="ghost" size="sm" title="Fit the board (0)" onClick={onFit} className="min-w-14 tabular-nums">
+      <Button tone="gray" size="sm" title="Fit the board (0)" onClick={onFit} className="min-w-14 tabular-nums">
         {Math.round(scale * 100)}%
       </Button>
       <IconButton icon={LuPlus} label="Zoom in (+)" onClick={() => onZoom(1.25)} />

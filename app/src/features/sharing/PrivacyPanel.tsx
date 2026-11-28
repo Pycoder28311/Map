@@ -86,8 +86,8 @@ function Invite({ sharing, what }: { sharing: Sharing; what: string }) {
             {candidates.map((f) => (
               <li key={f.user.id}>
                 <Button
-                  variant={chosen === f.user.id ? 'selected' : 'ghost'}
-                  plain
+                  variant={chosen === f.user.id ? 'primary' : 'underline'}
+                 
                   size="sm"
                   aria-pressed={chosen === f.user.id}
                   className="w-full justify-start"
@@ -157,8 +157,8 @@ export default function PrivacyPanel({ sharing, what }: { sharing: Sharing; what
             key={c.value}
             role="radio"
             aria-checked={sharing.visibility === c.value}
-            variant={sharing.visibility === c.value ? 'selected' : 'ghost'}
-            plain
+            variant={sharing.visibility === c.value ? 'primary' : 'underline'}
+           
             icon={c.icon}
             disabled={busy}
             className="w-full justify-start"
@@ -202,7 +202,7 @@ export default function PrivacyPanel({ sharing, what }: { sharing: Sharing; what
                 <span className="min-w-0 flex-1 truncate text-body">
                   {i.to.name} <span className="text-small text-fg-subtle">· {ROLE_LABEL[i.payload.role]}</span>
                 </span>
-                <Button variant="ghost" size="xs" plain disabled={busy} onClick={() => void act(() => sharing.unsend(i))}>
+                <Button variant="underline" size="xs" disabled={busy} onClick={() => void act(() => sharing.unsend(i))}>
                   Unsend
                 </Button>
               </li>

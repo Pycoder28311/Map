@@ -244,12 +244,12 @@ export default function DashboardSections() {
       })}
       {/* Below the last project: a new project (it is a root, so it comes in no row's parent) */}
       {projectResource && (
-        <Button variant="ghost" icon={LuPlus} onClick={() => setCreating({ resource: projectResource })} className="self-start">
+        <Button tone="gray" icon={LuPlus} onClick={() => setCreating({ resource: projectResource })} className="self-start">
           Create project
         </Button>
       )}
       {kids.hasMore && (
-        <Button variant="text" onClick={kids.loadMore} className="self-start">
+        <Button variant="underline" onClick={kids.loadMore} className="self-start">
           Load more items
         </Button>
       )}

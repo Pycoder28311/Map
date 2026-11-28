@@ -2,15 +2,16 @@ import { useId, useRef, type ReactNode, type ToggleEvent } from 'react'
 import { closeOnOutsideScroll } from '../../../lib/popoverScroll'
 import { LuChevronLeft, LuChevronRight } from 'react-icons/lu'
 import Button from '../buttons/Button'
-import type { ButtonSize, ButtonVariant } from '../buttons/buttonStyles'
+import type { ButtonSize, ButtonTone, ButtonVariant } from '../buttons/buttonStyles'
 import type { ButtonIcon, PlainIcon } from '../icons/IconSlot'
 import { DROPDOWN_ITEM, DROPDOWN_MENU } from './Dropdown'
 
 export type SideMenuItem<T extends string> = { value: T; label: string; icon?: PlainIcon }
 
 type Props<T extends string> = {
-  /** The button's look (default: ghost, filled, without the white corners) */
+  /** The button's look (default: underline; a primary one in its tone) */
   variant?: ButtonVariant
+  tone?: ButtonTone
   items: SideMenuItem<T>[]
   onSelect: (value: T) => void
   /** The pointer (or the keyboard) is on an option, or left them all (null): e.g. to show a preview of it */
@@ -37,7 +38,7 @@ type Props<T extends string> = {
  * with the button's: for a button at the bottom of a box that sits at the right of the page. A pick, a click outside, Esc, scrolling or
  * resizing closes it.
  */
-export default function SideMenu<T extends string>({ variant = 'ghost', items, onSelect, onHover, label, icon = LuChevronLeft, lead, size = 'sm', children, className = '', side = 'left', arrowEnd = false }: Props<T>) {
+export default function SideMenu<T extends string>({ variant = 'underline', tone, items, onSelect, onHover, label, icon = LuChevronLeft, lead, size = 'sm', children, className = '', side = 'left', arrowEnd = false }: Props<T>) {
   const id = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -79,7 +80,7 @@ export default function SideMenu<T extends string>({ variant = 'ghost', items, o
 
   return (
     <>
-      <Button ref={triggerRef} variant={variant} size={size} plain={variant === 'ghost'} filled={variant === 'ghost'} icon={arrowEnd ? lead : icon} popoverTarget={id} aria-haspopup="menu" className={`justify-center ${className}`}>
+      <Button ref={triggerRef} variant={variant} tone={tone} size={size} icon={arrowEnd ? lead : icon} popoverTarget={id} aria-haspopup="menu" className={`justify-center ${className}`}>
         {children}
         {/* (after the text, a small gap from it) */}
         {arrowEnd && <LuChevronRight aria-hidden className="ms-1" />}

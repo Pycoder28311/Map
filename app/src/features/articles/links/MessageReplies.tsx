@@ -27,11 +27,11 @@ function ReplyForm({ value, onChange, onSubmit, label, button, busy, onCancel, a
     <form onSubmit={submit} className="flex items-end gap-2 rounded-(--card-radius) border border-line px-2 py-1">
       <TextAreaField label={label} placeholder={`${label}…`} value={value} maxLength={MESSAGE_REPLY_MAX} autoFocus={autoFocus} onChange={(e) => onChange(e.target.value)} onKeyDown={sendOnCtrlEnter} className="max-h-32 min-w-0 flex-1 py-1" />
       {onCancel && (
-        <Button variant="ghost" size="sm" onClick={onCancel}>
+        <Button tone="gray" size="sm" onClick={onCancel}>
           Cancel
         </Button>
       )}
-      <Button variant="secondary" size="sm" type="submit" disabled={!value.trim() || busy}>
+      <Button variant="underline" size="sm" type="submit" disabled={!value.trim() || busy}>
         {button}
       </Button>
     </form>

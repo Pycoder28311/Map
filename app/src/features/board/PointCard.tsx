@@ -49,7 +49,7 @@ export default function PointCard({ point, view, size, onMore }: Props) {
         </div>
         <PointDescription text={point.description} className={`${hover ? 'line-clamp-3' : 'line-clamp-4'} overflow-hidden`} />
         {onMore && (
-          <Button variant="secondary" onClick={onMore}>
+          <Button variant="underline" onClick={onMore}>
             Show more
           </Button>
         )}

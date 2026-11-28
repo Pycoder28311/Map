@@ -89,13 +89,11 @@ export function TextButton(props: {
       <Button
         icon={props.icon}
         size={props.small ? 'xs' : 'sm'}
-        plain
-        filled={props.filled}
-        variant={props.underline ? 'text' : props.active ? 'selected' : 'ghost'}
+        variant={props.underline || !props.active ? 'underline' : 'primary'}
         aria-pressed={props.active}
         disabled={props.disabled}
         title={props.title}
-        // The icon close to the text, the text of a field for all of them; a plain one has the bar's icon size (1.25rem), the big one (Section) a smaller icon (`!` wins over the bar's)
+        // The icon close to the text, the text of a field for all of them; a one has the bar's icon size (1.25rem), the big one (Section) a smaller icon (`!` wins over the bar's)
         // (one font size only: two `!` sizes on a button, the later in the stylesheet wins, whatever order they are written in)
         className={`[--btn-icon-gap:0.25rem]! font-normal! [--btn-text:var(--fg)]! [--btn-hover-text:var(--fg)]! ${
           props.small

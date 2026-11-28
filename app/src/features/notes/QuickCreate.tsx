@@ -311,7 +311,7 @@ export default function QuickCreate({ tall = false }: { tall?: boolean } = {}) {
             {/* Open: not a dropdown, one button for each kind; the chosen one is outlined */}
             {!tall &&
               QUICK.map((r) => (
-                <Button key={r.name} plain variant={r === kind ? 'selected' : 'ghost'} icon={r.ui.icon} onClick={() => chooseKind(r.name)} aria-pressed={r === kind}>
+                <Button key={r.name} variant={r === kind ? 'primary' : 'underline'} icon={r.ui.icon} onClick={() => chooseKind(r.name)} aria-pressed={r === kind}>
                   {r.ui.label}
                 </Button>
               ))}

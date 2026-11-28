@@ -1,12 +1,13 @@
 import type { ComponentProps, ReactNode } from 'react'
-import { iconButtonClass, type ButtonSize, type ButtonVariant } from './buttonStyles'
+import { iconButtonClass, type ButtonSize, type IconButtonVariant } from './buttonStyles'
 import { ICON_EFFECT_GROUP, iconEffectClass, type IconEffects } from '../icons/iconEffects'
 import type { PlainIcon } from '../icons/IconSlot'
 
 type Props = Omit<ComponentProps<'button'>, 'children'> & IconEffects & {
   /** Required: screen-reader name and tooltip, since there is no visible text */
   label: string
-  variant?: ButtonVariant
+  /** Its look (buttonStyles.ts ICON_LOOK): ghost (default), selected, secondary, primary, text */
+  variant?: IconButtonVariant
   size?: ButtonSize
   /** A brighter icon (near white) with no background: the navbar's menu button */
   bright?: boolean

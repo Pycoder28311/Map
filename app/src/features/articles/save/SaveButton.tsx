@@ -6,7 +6,7 @@ import { useSaved } from './savedStore'
 export default function SaveButton({ panelKey }: { panelKey: string }) {
   const [saved, setSaved] = useSaved(panelKey)
   return (
-    <Button variant={saved ? 'selected' : 'ghost'} size="sm" plain icon={saved ? LuBookmarkCheck : LuBookmark} aria-pressed={saved} onClick={() => setSaved(!saved)}>
+    <Button variant={saved ? 'primary' : 'underline'} size="sm" icon={saved ? LuBookmarkCheck : LuBookmark} aria-pressed={saved} onClick={() => setSaved(!saved)}>
       {saved ? 'Saved' : 'Save'}
     </Button>
   )

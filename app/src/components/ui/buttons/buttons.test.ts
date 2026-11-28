@@ -98,7 +98,7 @@ describe('buttons', () => {
       .filter((f) => !f.path.startsWith(BUTTONS))
       .map((f) => ({ path: f.path, count: (code(f.text).match(/<button\b/g) ?? []).length }))
       .filter((f) => f.count !== (ALLOWED[f.path]?.count ?? 0))
-      .map((f) => `${f.path}: ${f.count} <button> (allowed: ${ALLOWED[f.path]?.count ?? 0}). Use Button / IconButton / SplitButton / ButtonLink / NavButton`)
+      .map((f) => `${f.path}: ${f.count} <button> (allowed: ${ALLOWED[f.path]?.count ?? 0}). Use Button / IconButton / ButtonLink / NavButton`)
     expect(wrong).toEqual([])
   })
 

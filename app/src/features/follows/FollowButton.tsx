@@ -31,9 +31,9 @@ export default function FollowButton({ person, followsMe = false, onError }: Pro
 
   return (
     <Button
-      variant={following ? 'ghost' : 'primary'}
+      variant={following ? 'underline' : 'primary'}
       size="sm"
-      plain={following}
+     
       icon={following ? LuUserCheck : LuUserPlus}
       aria-pressed={following}
       disabled={busy}

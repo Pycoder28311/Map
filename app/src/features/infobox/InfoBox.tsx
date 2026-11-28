@@ -194,19 +194,19 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError,
           <div className={`mt-2 flex items-center ${cracked || !addRow ? 'justify-center gap-1' : 'w-full gap-sm'}`}>
             {/* The article's page, and a form whose style already gave it its sections: one underlined Add info with every kind */}
             {cracked || !addRow ? (
-              <SideMenu variant="text" label="Add info" side={menuSide} items={TYPES} onSelect={add} onHover={setPreview}>
+              <SideMenu label="Add info" side={menuSide} items={TYPES} onSelect={add} onHover={setPreview}>
                 Add info
               </SideMenu>
             ) : (
               // A point's or an object's form: the two usual rows each with a button, the rest in a menu (its arrow after the text)
               <>
                 {QUICK.map((q) => (
-                  <Button
+                  <Button variant="underline"
                     key={q.type}
-                    variant="ghost"
+                   
                     size="md"
-                    plain
-                    filled
+                   
+                   
                     icon={q.icon}
                     className="min-w-0 flex-1"
                     // (no preview while hovered: it would push the buttons down from under the pointer, and back)
@@ -215,7 +215,7 @@ export default function InfoBox({ value, onChange, onUploadImage, onUploadError,
                     {q.label}
                   </Button>
                 ))}
-                <SideMenu variant="ghost" size="md" className="min-w-0 flex-1" label="Add other" side={menuSide} arrowEnd items={OTHER} onSelect={add} onHover={setPreview}>
+                <SideMenu size="md" className="min-w-0 flex-1" label="Add other" side={menuSide} arrowEnd items={OTHER} onSelect={add} onHover={setPreview}>
                   Add other
                 </SideMenu>
               </>
@@ -321,7 +321,7 @@ function Picture({
           </div>
         </>
       ) : (
-        <Button variant="ghost" plain icon={LuImagePlus} disabled={busy} onClick={() => picker.current?.click()} className="size-full justify-center">
+        <Button variant="underline" icon={LuImagePlus} disabled={busy} onClick={() => picker.current?.click()} className="size-full justify-center">
           {busy ? 'Uploading…' : 'Add picture'}
         </Button>
       )}

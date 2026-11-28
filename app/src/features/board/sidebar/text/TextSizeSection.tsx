@@ -42,7 +42,7 @@ export default function TextSizeSection({ source }: Props) {
     <SidebarSection id="size" title="Size">
       <div className="flex items-center gap-1">
         {PRESETS.map((p) => (
-          <Button key={p.label} variant={size === p.size ? 'primary' : 'ghost'} aria-pressed={size === p.size} onMouseDown={keep} onClick={() => onCommit(p.size)}>
+          <Button key={p.label} tone={size === p.size ? 'green' : 'gray'} aria-pressed={size === p.size} onMouseDown={keep} onClick={() => onCommit(p.size)}>
             {p.label}
           </Button>
         ))}

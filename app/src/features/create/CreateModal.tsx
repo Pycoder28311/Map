@@ -122,7 +122,7 @@ export default function CreateModal({ kind, active, onCancel, onCreated }: Props
             const Icon = k.ui.icon
             return (
               <li key={k.name} className="shrink-0">
-                <Button variant="ghost" plain size="sm" icon={Icon} aria-pressed={k === resource} onClick={() => pick(k.name)}>
+                <Button variant="underline" size="sm" icon={Icon} aria-pressed={k === resource} onClick={() => pick(k.name)}>
                   {k.ui.label}
                 </Button>
               </li>
@@ -174,10 +174,10 @@ export default function CreateModal({ kind, active, onCancel, onCreated }: Props
         ) : (
           <>
             <span className="me-auto text-small text-fg-subtle">Ctrl+Enter</span>
-            <Button variant="primary" type="submit" form={formId} disabled={!canCreate}>
+            <Button type="submit" form={formId} disabled={!canCreate}>
               {busy ? 'Creating…' : 'Create'}
             </Button>
-            <Button variant="ghost" filled onClick={onCancel} disabled={busy}>
+            <Button tone="gray" onClick={onCancel} disabled={busy}>
               Cancel
             </Button>
           </>

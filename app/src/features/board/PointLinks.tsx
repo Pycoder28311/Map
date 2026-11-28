@@ -20,7 +20,7 @@ export default function PointLinks({ links, board, onShowBoardObject }: { links:
       <ul className="flex flex-wrap gap-1.5">
         {links.map((link, i) => (
           <li key={i}>
-            <Button variant="secondary" size="sm" onClick={() => go(link)}>
+            <Button variant="underline" size="sm" onClick={() => go(link)}>
               <LinkName link={link} board={board} />
             </Button>
           </li>

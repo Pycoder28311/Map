@@ -11,7 +11,7 @@ export function FormActions({ onRemove, canApply = true }: { onRemove?: () => vo
   return (
     <div className="flex justify-end gap-2">
       {onRemove && (
-        <Button variant="ghost" size="sm" onClick={onRemove}>
+        <Button tone="gray" size="sm" onClick={onRemove}>
           Remove
         </Button>
       )}

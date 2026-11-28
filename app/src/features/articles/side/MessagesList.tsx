@@ -61,7 +61,7 @@ function NotInText({ editor, articleId, ranges }: { editor: Editor; articleId: n
   if (items === null) {
     return (
       <div className="flex flex-col gap-1 border-t border-line pt-1">
-        <Button variant="ghost" size="sm" plain className="justify-start" disabled={loading} onClick={() => void load(false)}>
+        <Button variant="underline" size="sm" className="justify-start" disabled={loading} onClick={() => void load(false)}>
           {loading ? 'Loading…' : 'Not in the text'}
         </Button>
         {error && <p className="px-1 text-small text-danger">{error}</p>}
@@ -117,7 +117,7 @@ function NotInText({ editor, articleId, ranges }: { editor: Editor; articleId: n
         ))}
       </ul>
       {cursor && (
-        <Button variant="ghost" size="sm" plain disabled={loading} onClick={() => void load(true)}>
+        <Button variant="underline" size="sm" disabled={loading} onClick={() => void load(true)}>
           {loading ? 'Loading…' : 'Show more'}
         </Button>
       )}
@@ -164,7 +164,7 @@ export default function MessagesList({ text, editor, articleId, canEdit, onOpen,
               <li key={`${m.from}:${m.href}`} className={`flex flex-col p-1 ${CARD}`}>
                 {/* The header: the words it is on (they open it), its ⋯ at the top right */}
                 <div className="flex items-center gap-0.5">
-                  <Button variant="ghost" size="sm" plain className="min-w-0 flex-1 justify-start" onClick={() => onOpen(m)}>
+                  <Button variant="underline" size="sm" className="min-w-0 flex-1 justify-start" onClick={() => onOpen(m)}>
                     <span className="min-w-0 truncate">“{m.text}”</span>
                   </Button>
                   {canEdit && <TreeMenu label={`More: ${m.text}`} groups={[[{ label: 'Edit', icon: LuPencil, onClick: () => onEdit(m) }]]} />}

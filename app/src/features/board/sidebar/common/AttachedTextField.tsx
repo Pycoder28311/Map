@@ -95,12 +95,12 @@ export default function AttachedTextField({ mapId, owner, board, below, belowFil
       {text && !changed && (
         <div className="flex gap-base">
           <HoverInfo title="Edit text" text="Selects the text, to change its font, size and colour." side="left" delay={TIP_DELAY}>
-            <Button variant="ghost" size="sm" plain filled icon={LuPencil} className="flex-1" onClick={() => select(mapId, [text.id])}>
+            <Button variant="underline" size="sm" icon={LuPencil} className="flex-1" onClick={() => select(mapId, [text.id])}>
               Edit text
             </Button>
           </HoverInfo>
           <HoverInfo title="Remove" text={area ? 'Takes the text out of the area (and its name).' : 'Takes the text off the line.'} side="left" delay={TIP_DELAY}>
-            <Button variant="ghost" size="sm" plain filled icon={LuTrash2} className="flex-1" onClick={remove}>
+            <Button variant="underline" size="sm" icon={LuTrash2} className="flex-1" onClick={remove}>
               Remove
             </Button>
           </HoverInfo>
@@ -108,8 +108,8 @@ export default function AttachedTextField({ mapId, owner, board, below, belowFil
       )}
       {text && !area && side && (
         <div className="flex gap-1">
-          <Button
-            variant="secondary"
+          <Button variant="underline"
+           
             icon={side === 'above' ? LuArrowDownToLine : LuArrowUpToLine}
             title={side === 'above' ? 'Put the text below the line' : 'Put the text above the line'}
             onClick={() => updateObject(mapId, text.id, placeOnSide(owner as LineObject, text, side === 'above' ? 'below' : 'above'))}

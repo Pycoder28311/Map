@@ -11,7 +11,7 @@ export default function MapConflictModal({ onKeepMine, onUseSaved }: { onKeepMin
       size="sm"
       footer={
         <>
-          <Button variant="secondary" onClick={onUseSaved}>
+          <Button variant="underline" onClick={onUseSaved}>
             Load the saved one
           </Button>
           <Button onClick={onKeepMine}>Save mine over it</Button>

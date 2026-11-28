@@ -18,7 +18,7 @@ export function FollowButton({ person }: { person: Person }) {
   const [following, setFollowing] = useFollowing(person.id)
   return (
     <Button
-      variant={following ? 'ghost' : 'primary'}
+      tone={following ? 'gray' : 'green'}
       size="sm"
       icon={following ? LuUserCheck : LuUserPlus}
       aria-pressed={following}
@@ -47,7 +47,7 @@ export default function PersonCard({ person }: { person: Person }) {
       {person.projects.length > 0 && (
         <div className="flex flex-col items-start">
           {person.projects.map((p) => (
-            <Button key={p.url} variant="text" size="sm" icon={LuExternalLink} onClick={() => openInNewTab(p.url)}>
+            <Button variant="underline" key={p.url} size="sm" icon={LuExternalLink} onClick={() => openInNewTab(p.url)}>
               {p.title}
             </Button>
           ))}

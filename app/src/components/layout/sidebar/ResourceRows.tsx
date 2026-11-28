@@ -334,7 +334,7 @@ export default function ResourceRows({ resource, tree, compact, only, prefix = '
     list.status === 'loading' ? (
       'Loading…'
     ) : list.status === 'error' ? (
-      <Button variant="text" onClick={list.refresh}>
+      <Button variant="underline" onClick={list.refresh}>
         Could not load. Try again
       </Button>
     ) : nodes.length === 0 ? (

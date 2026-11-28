@@ -64,7 +64,7 @@ export default function CollaboratorsList({ objectType, objectId, what }: Props)
           Collaborators <span className="text-fg-subtle">· {people.length}</span>
         </h2>
         {mine && (
-          <Button variant="ghost" size="xs" plain icon={LuLogOut} className="ms-auto" onClick={() => setAsking(true)}>
+          <Button variant="underline" size="xs" icon={LuLogOut} className="ms-auto" onClick={() => setAsking(true)}>
             Leave
           </Button>
         )}
@@ -90,10 +90,10 @@ export default function CollaboratorsList({ objectType, objectId, what }: Props)
         size="sm"
         footer={
           <>
-            <Button variant="ghost" size="sm" plain onClick={() => setAsking(false)}>
+            <Button variant="underline" size="sm" onClick={() => setAsking(false)}>
               Cancel
             </Button>
-            <Button size="sm" danger disabled={leaving} onClick={() => void leave()}>
+            <Button tone="red" size="sm" disabled={leaving} onClick={() => void leave()}>
               {leaving ? 'Leaving…' : 'Leave'}
             </Button>
           </>

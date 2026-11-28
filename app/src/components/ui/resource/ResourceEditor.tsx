@@ -64,7 +64,7 @@ function ItemForm({ resource, note, onClose, focusField = 'title', showClose = t
       )}
       <div className="mt-2 flex items-center gap-2">
         {isOwner && (
-          <Button variant="ghost" icon={LuTrash2} className="text-danger" onClick={() => setDeleting(true)}>
+          <Button tone="gray" icon={LuTrash2} className="text-danger" onClick={() => setDeleting(true)}>
             Delete
           </Button>
         )}
@@ -74,8 +74,8 @@ function ItemForm({ resource, note, onClose, focusField = 'title', showClose = t
         {!readOnly && <SaveStatus status={autosave.status} />}
         <span className="ms-auto text-small text-fg-subtle">Created {DAY_MONTH_YEAR.format(new Date(note.createdAt))}</span>
         {onClose && showClose && (
-          <Button
-            variant="ghost"
+          <Button tone="gray"
+           
             onClick={() => {
               void autosave.flush().finally(onClose)
             }}

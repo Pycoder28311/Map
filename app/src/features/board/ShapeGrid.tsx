@@ -59,7 +59,7 @@ export default function ShapeGrid({ value, onPick, onClear }: Props) {
         ))}
       </ul>
       {SHAPE_TYPES.length > fit && (
-        <Button variant="text" aria-expanded={more} onClick={() => setMore(!more)} className="self-center">
+        <Button variant="underline" aria-expanded={more} onClick={() => setMore(!more)} className="self-center">
           {more ? 'Show less' : 'Show more'}
         </Button>
       )}

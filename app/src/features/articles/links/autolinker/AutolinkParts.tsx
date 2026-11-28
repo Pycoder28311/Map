@@ -65,7 +65,7 @@ export function UrlColumn({ chosen, onPick }: { chosen: ArticleLink | null; onPi
       }}
     >
       <input aria-label="Link" placeholder="https://…" value={url} onChange={(e) => setUrl(e.target.value)} maxLength={LIMITS.url} className={SIMPLE_INPUT} />
-      <Button type="submit" variant="text" size="sm" icon={LuCheck} aria-pressed={chosen?.kind === 'url' && chosen.url === full} disabled={!valid} className="self-start">
+      <Button variant="underline" type="submit" size="sm" icon={LuCheck} aria-pressed={chosen?.kind === 'url' && chosen.url === full} disabled={!valid} className="self-start">
         Use this link
       </Button>
     </form>

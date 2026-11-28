@@ -72,11 +72,11 @@ export default function ShareOptions({ id, onChoose }: { id: string; onChoose?: 
       </div>
 
       <div className="flex gap-2">
-        <Button variant="secondary" icon={copied ? LuCheck : LuCopy} onClick={copy} className="flex-1">
+        <Button variant="underline" icon={copied ? LuCheck : LuCopy} onClick={copy} className="flex-1">
           {copied ? 'Copied' : 'Copy link'}
         </Button>
         {'share' in navigator && (
-          <Button variant="secondary" icon={LuShare2} onClick={() => navigator.share({ title: name, url }).catch(() => {})}>
+          <Button variant="underline" icon={LuShare2} onClick={() => navigator.share({ title: name, url }).catch(() => {})}>
             Share…
           </Button>
         )}
@@ -91,7 +91,7 @@ export default function ShareOptions({ id, onChoose }: { id: string; onChoose?: 
       </div>
 
       {onChoose && (
-        <Button variant="text" onClick={onChoose} className="self-start">
+        <Button variant="underline" onClick={onChoose} className="self-start">
           Choose another
         </Button>
       )}

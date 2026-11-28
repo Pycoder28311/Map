@@ -100,7 +100,7 @@ export default function ResourceCreateDialog({ resource, initial, onClose, onCre
           <DraftAsk question={`Create this ${resource.ui.label.toLowerCase()}?`} busy={busy} onCancel={onClose} onCreate={() => void make()} />
         ) : (
           <>
-            <Button variant="ghost" filled onClick={onClose} disabled={busy}>
+            <Button tone="gray" onClick={onClose} disabled={busy}>
               Cancel
             </Button>
             <Button type="submit" form={formId} disabled={!valid || busy}>

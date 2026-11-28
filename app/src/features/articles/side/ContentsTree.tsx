@@ -74,9 +74,9 @@ export default function ContentsTree({ text }: { text: ArticleText }) {
             folds && <span aria-hidden className="w-7 shrink-0" />
           )}
           <Button
-            variant={current === heading.index ? 'selected' : 'ghost'}
+            variant={current === heading.index ? 'primary' : 'underline'}
             size="sm"
-            plain
+           
             icon={LuHash}
             aria-current={current === heading.index ? 'location' : undefined}
             className="min-w-0 flex-1 justify-start"

@@ -250,7 +250,7 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
       {n === 0 && status !== 'ready' ? (
         // The layouts are on their way (or could not be read)
         status === 'error' ? (
-          <Button variant="text" onClick={refresh} className="self-start">
+          <Button variant="underline" onClick={refresh} className="self-start">
             <SectionNote compact={compact}>Could not load. Try again</SectionNote>
           </Button>
         ) : (
@@ -337,13 +337,13 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
           size="sm"
           footer={
             <>
-              <Button variant="ghost" plain filled onClick={() => setDeleting(null)}>
+              <Button variant="underline" onClick={() => setDeleting(null)}>
                 Cancel
               </Button>
-              <Button
-                variant="ghost"
-                plain
-                filled
+              <Button variant="underline"
+               
+               
+               
                 className="text-danger"
                 onClick={() => {
                   attempt('delete the layout', () => deleteLayout(deleting.id))
@@ -365,9 +365,9 @@ export default function LayoutsSection({ compact }: { compact: boolean }) {
 /** The full-width Create layout button (in the rail, only its icon) */
 function CreateButton({ compact, onClick, className = '' }: { compact: boolean; onClick: () => void; className?: string }) {
   return (
-    <Button
-      variant="ghost"
-      plain
+    <Button variant="underline"
+     
+     
       icon={LuLayoutTemplate}
       onClick={onClick}
       title="Create layout"

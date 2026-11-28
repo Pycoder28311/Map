@@ -421,9 +421,55 @@
     --_bg: var(--btn-hover-bg);
   }
 
+  /* Map: Primary's tones (Button tone=…, buttonStyles.ts). Gray: the frame above as it is. Green: the same frame and gray panel with the
+     old Venom's soft teal glow inside (no diamonds). Red: a red panel (Delete, Sign out) */
+  .ui-btn-shade.ui-tone-green:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend) {
+    --_glow: 93 191 186;
+    --_glow-a: 0.55;
+    --_glowl:
+      linear-gradient(to bottom, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) left calc(var(--vpx) * 5) top calc(var(--vpx) * 3) / calc(100% - var(--vpx) * 10) calc(var(--vpx) * 6) no-repeat,
+      linear-gradient(to top, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) left calc(var(--vpx) * 5) bottom calc(var(--vpx) * 4) / calc(100% - var(--vpx) * 10) calc(var(--vpx) * 6) no-repeat,
+      linear-gradient(to right, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) left calc(var(--vpx) * 5) top calc(var(--vpx) * 3) / calc(var(--vpx) * 15) calc(var(--vpx) * 12) no-repeat,
+      linear-gradient(to left, rgb(var(--_glow) / calc(var(--_glow-a) * 1)), rgb(var(--_glow) / calc(var(--_glow-a) * 0.62)) 22%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.3)) 50%, rgb(var(--_glow) / calc(var(--_glow-a) * 0.1)) 75%, transparent) right calc(var(--vpx) * 5) top calc(var(--vpx) * 3) / calc(var(--vpx) * 15) calc(var(--vpx) * 12) no-repeat;
+    background: var(--_glowl), linear-gradient(var(--_bg), var(--_bg)) var(--_panel);
+  }
+
+  .ui-btn-shade.ui-tone-green:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):hover:not(:disabled),
+  .ui-btn-shade.ui-tone-green:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):is([aria-current='page'], [aria-pressed='true'], .ui-btn-selected) {
+    --_glow-a: 0.8;
+  }
+
+  .ui-btn-shade.ui-tone-green:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):active:not(:disabled) {
+    --_glow-a: 0.4;
+  }
+
+  .ui-btn-shade.ui-tone-green:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):disabled {
+    --_glow-a: 0.3;
+  }
+
+  /* an open (or folding) ExtendMenu: the box's band is round it all, no glow of its own */
+  .ui-extend:is([data-open='true'], [data-closing='true'])>.ui-btn-shade.ui-tone-green:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend) {
+    background: none;
+  }
+
+  .ui-btn-shade.ui-tone-red:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend) {
+    --btn-bg: #a8322d;
+    --btn-hover-bg: #bf3b35;
+  }
+
+  .ui-btn-shade.ui-tone-red:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend):active:not(:disabled) {
+    --_bg: #7e2622;
+  }
+
+  /* an icon after the label (Button iconRight): the same room as one before it, mirrored */
+  .ui-btn-icon.ui-btn-icon-right {
+    margin-left: calc(var(--btn-icon-gap) - var(--_pull, 0px));
+    margin-right: calc(var(--btn-icon-edge) - var(--btn-pad-x) + var(--_pull, 0px) / 2);
+  }
+
   /* in an ExtendMenu ("Sort by"), closed: its panel (the box behind it is see-through); open (and folding back): no frame or panel of
      its own, the box's band is round it all */
-  .ui-extend>.ui-btn.ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend) {
+  .ui-extend>.ui-btn.ui-btn-shade:not(.ui-btn-filled, .ui-btn-plain, .ui-btn-square, .ui-extend, .ui-tone-green) {
     background: linear-gradient(var(--_bg), var(--_bg)) var(--_panel);
   }
 

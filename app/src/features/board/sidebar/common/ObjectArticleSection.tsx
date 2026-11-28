@@ -58,7 +58,7 @@ export default function ObjectArticleSection({ mapId, object, onOpenArticle }: {
       <div className="flex items-center gap-1">
         {!made && (
           <HoverInfo title="Import article" text="Connects one of your articles to it, instead of making a new one." side="left" delay={TIP_DELAY}>
-            <Button variant="ghost" size="sm" plain aria-expanded={importing} onClick={() => setImporting(!importing)}>
+            <Button variant="underline" size="sm" aria-expanded={importing} onClick={() => setImporting(!importing)}>
               Import article
             </Button>
           </HoverInfo>
@@ -69,7 +69,7 @@ export default function ObjectArticleSection({ mapId, object, onOpenArticle }: {
           side="left"
           delay={TIP_DELAY}
         >
-          <Button variant="ghost" size="sm" plain filled onClick={() => onOpenArticle(object.id)}>
+          <Button variant="underline" size="sm" onClick={() => onOpenArticle(object.id)}>
             {made ? 'Open article' : 'Create article'}
           </Button>
         </HoverInfo>
@@ -90,7 +90,7 @@ export default function ObjectArticleSection({ mapId, object, onOpenArticle }: {
             }}
           />
           {found.map((a) => (
-            <Button key={String(a.id)} variant="ghost" size="sm" plain className="justify-start" onClick={() => importArticle(Number(a.id))}>
+            <Button variant="underline" key={String(a.id)} size="sm" className="justify-start" onClick={() => importArticle(Number(a.id))}>
               {articles.ui.row.title(a)}
             </Button>
           ))}
